@@ -1,0 +1,22 @@
+# Credenciais e variáveis locais
+.env
+.env.*
+env.local
+*.env
+
+# Dependências
+node_modules/
+
+# Builds e testes
+dist/
+build/
+playwright-report/
+test-results/
+
+# Logs
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+.tools/

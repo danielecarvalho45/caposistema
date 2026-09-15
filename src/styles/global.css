@@ -1,0 +1,71 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--color-background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--color-text);
+  background: var(--color-background);
+  font-family: var(--font-family-sans);
+  line-height: 1.5;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-blue);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+p,
+dl,
+dd {
+  margin: 0;
+}
+
+.app-context-loading {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: var(--space-6);
+  color: var(--color-muted);
+  background:
+    radial-gradient(circle at top left, rgb(0 96 182 / 10%), transparent 35%),
+    var(--color-background);
+}
+
+.eyebrow {
+  color: var(--color-brand-blue);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}

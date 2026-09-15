@@ -1,0 +1,88 @@
+.home-page {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.home-welcome,
+.home-access {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 4px 16px rgb(30 45 60 / 4%);
+}
+
+.home-welcome {
+  padding: clamp(20px, 4vw, 32px);
+  border-color: #dcece2;
+  background: linear-gradient(135deg, #fff, #f4faf7);
+}
+
+.home-welcome h1 {
+  margin-top: var(--space-2);
+  color: var(--color-text);
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: 1.2;
+}
+
+.home-welcome > p:not(.eyebrow):not(.home-slogan) {
+  max-width: 760px;
+  margin-top: var(--space-3);
+  color: #5e6c64;
+}
+
+.home-slogan {
+  margin-top: var(--space-4);
+  color: #355441;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.home-access {
+  padding: clamp(20px, 4vw, 28px);
+}
+
+.home-access h2 {
+  margin: var(--space-2) 0 0;
+  font-size: 1.25rem;
+}
+
+.home-access-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-6) 0 0;
+}
+
+.home-access-grid > div {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: #fbfcfd;
+}
+
+.home-access-grid dt {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.home-access-grid dd {
+  margin: var(--space-2) 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.home-access-note {
+  margin-top: var(--space-4);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 620px) {
+  .home-access-grid {
+    grid-template-columns: 1fr;
+  }
+}
