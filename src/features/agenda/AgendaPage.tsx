@@ -1,0 +1,815 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  getRpcService,
+  loadingState,
+  type AgendaAppointment,
+  type AvailableAppointmentSlot,
+  type AsyncState,
+  type ReschedulableAppointment,
+} from '../../lib/supabase/rpc'
+import type { AccessContext } from '../../types/access'
+import './agenda-page.css'
+
+type AgendaView = 'day' | 'week' | 'month'
+
+type AgendaLoader = (
+  startDate: string,
+  endDate: string,
+  professionalId: string | null,
+) => Promise<AsyncState<readonly AgendaAppointment[]>>
+
+const defaultAgendaLoader: AgendaLoader = (
+  startDate,
+  endDate,
+  professionalId,
+) => getRpcService().getAgenda(startDate, endDate, professionalId)
+
+function dateInputValue(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function localDate(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function agendaBounds(anchor: string, view: AgendaView) {
+  const start = localDate(anchor)
+  const end = new Date(start)
+
+  if (view === 'week') {
+    const weekday = start.getDay() || 7
+    start.setDate(start.getDate() - weekday + 1)
+    end.setTime(start.getTime())
+    end.setDate(end.getDate() + 6)
+  } else if (view === 'month') {
+    start.setDate(1)
+    end.setMonth(end.getMonth() + 1, 0)
+  }
+
+  return { startDate: dateInputValue(start), endDate: dateInputValue(end) }
+}
+
+function moveAnchor(anchor: string, view: AgendaView, direction: -1 | 1) {
+  const date = localDate(anchor)
+  if (view === 'day') date.setDate(date.getDate() + direction)
+  if (view === 'week') date.setDate(date.getDate() + 7 * direction)
+  if (view === 'month') date.setMonth(date.getMonth() + direction)
+  return dateInputValue(date)
+}
+
+function formatPeriod(startDate: string, endDate: string, view: AgendaView) {
+  const formatter = new Intl.DateTimeFormat(
+    'pt-BR',
+    view === 'month'
+      ? { month: 'long', year: 'numeric' }
+      : { day: '2-digit', month: '2-digit', year: 'numeric' },
+  )
+  if (view === 'month' || startDate === endDate) {
+    return formatter.format(localDate(startDate))
+  }
+  return `${formatter.format(localDate(startDate))} a ${formatter.format(localDate(endDate))}`
+}
+
+function formatDateTime(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      }).format(date)
+}
+
+function appointmentDay(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+  return dateInputValue(date)
+}
+
+function formatTimeRange(appointment: AgendaAppointment) {
+  const formatter = new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const start = new Date(appointment.appointment_date)
+  if (Number.isNaN(start.getTime())) return appointment.appointment_date
+
+  const startLabel = formatter.format(start)
+  if (!appointment.appointment_end) return startLabel
+
+  const end = new Date(appointment.appointment_end)
+  return Number.isNaN(end.getTime())
+    ? startLabel
+    : `${startLabel}–${formatter.format(end)}`
+}
+
+function datesBetween(startDate: string, endDate: string) {
+  const dates: string[] = []
+  const cursor = localDate(startDate)
+  const end = localDate(endDate)
+  while (cursor <= end) {
+    dates.push(dateInputValue(cursor))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return dates
+}
+
+function appointmentsForDay(
+  appointments: readonly AgendaAppointment[],
+  day: string,
+) {
+  return appointments.filter(
+    (appointment) => appointmentDay(appointment.appointment_date) === day,
+  )
+}
+
+function AppointmentTable({
+  appointments,
+  includeDate = true,
+  showSpecialty = true,
+}: Readonly<{
+  appointments: readonly AgendaAppointment[]
+  includeDate?: boolean
+  showSpecialty?: boolean
+}>) {
+  return (
+    <div className="assistential-table-wrap">
+      <table className="assistential-table">
+        <caption>{appointments.length} agendamento(s)</caption>
+        <thead>
+          <tr>
+            <th scope="col">{includeDate ? 'Data e hora' : 'Horário'}</th>
+            <th scope="col">Paciente</th>
+            <th scope="col">Profissional</th>
+            {showSpecialty && <th scope="col">Especialidade</th>}
+            <th scope="col">Tipo</th>
+            <th scope="col">Situação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {appointments.map((appointment) => (
+            <tr key={appointment.appointment_id}>
+              <td>
+                {includeDate
+                  ? formatDateTime(appointment.appointment_date)
+                  : formatTimeRange(appointment)}
+              </td>
+              <td>{appointment.patient_name}</td>
+              <td>{appointment.professional_name}</td>
+              {showSpecialty && (
+                <td>{appointment.specialty_name ?? 'Não informada'}</td>
+              )}
+              <td>{appointment.appointment_type}</td>
+              <td>{appointment.attendance_status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function AgendaResults({
+  appointments,
+  startDate,
+  endDate,
+  view,
+  showSpecialty,
+}: Readonly<{
+  appointments: readonly AgendaAppointment[]
+  startDate: string
+  endDate: string
+  view: AgendaView
+  showSpecialty: boolean
+}>) {
+  if (view === 'day') {
+    return (
+      <AppointmentTable
+        appointments={appointments}
+        showSpecialty={showSpecialty}
+      />
+    )
+  }
+
+  const days = datesBetween(startDate, endDate)
+  if (view === 'week') {
+    const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+    })
+    return (
+      <div className="agenda-week" aria-label="Agenda da semana">
+        {days.map((day) => {
+          const dayAppointments = appointmentsForDay(appointments, day)
+          return (
+            <article className="agenda-week-day" key={day}>
+              <h3>{dateFormatter.format(localDate(day))}</h3>
+              {dayAppointments.length > 0 ? (
+                <AppointmentTable
+                  appointments={dayAppointments}
+                  includeDate={false}
+                  showSpecialty={showSpecialty}
+                />
+              ) : (
+                <p>Nenhum atendimento neste dia.</p>
+              )}
+            </article>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const first = localDate(startDate)
+  const leadingDays = (first.getDay() + 6) % 7
+  const calendarStart = new Date(first)
+  calendarStart.setDate(calendarStart.getDate() - leadingDays)
+  const calendarDays = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(calendarStart)
+    date.setDate(date.getDate() + index)
+    return dateInputValue(date)
+  })
+
+  return (
+    <div className="agenda-month" aria-label="Agenda do mês">
+      {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((weekday) => (
+        <strong className="agenda-month-weekday" key={weekday}>
+          {weekday}
+        </strong>
+      ))}
+      {calendarDays.map((day) => {
+        const dayAppointments = appointmentsForDay(appointments, day)
+        const outsideMonth = localDate(day).getMonth() !== first.getMonth()
+        return (
+          <article
+            className={`agenda-month-day${outsideMonth ? ' is-outside' : ''}`}
+            key={day}
+          >
+            <time dateTime={day}>{localDate(day).getDate()}</time>
+            {dayAppointments.map((appointment) => (
+              <div
+                className="agenda-month-appointment"
+                key={appointment.appointment_id}
+              >
+                <strong>{formatTimeRange(appointment)}</strong>
+                <span>{appointment.patient_name}</span>
+                <small>
+                  {showSpecialty
+                    ? appointment.specialty_name ?? appointment.appointment_type
+                    : appointment.appointment_type}
+                </small>
+              </div>
+            ))}
+          </article>
+        )
+      })}
+    </div>
+  )
+}
+
+export function AgendaPage({
+  accessContext,
+  loadAgenda = defaultAgendaLoader,
+  showSpecialty = true,
+}: Readonly<{
+  accessContext: AccessContext
+  loadAgenda?: AgendaLoader
+  showSpecialty?: boolean
+}>) {
+  const [view, setView] = useState<AgendaView>('day')
+  const [showScheduleForm, setShowScheduleForm] = useState(false)
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
+  const [selectedSlotStart, setSelectedSlotStart] = useState('')
+  const [availableSlots, setAvailableSlots] = useState<readonly AvailableAppointmentSlot[]>([])
+  const [appointmentPatientQuery, setAppointmentPatientQuery] = useState('')
+  const [appointmentPatientId, setAppointmentPatientId] = useState('')
+  const [appointmentPatients, setAppointmentPatients] = useState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]>([])
+  const [appointmentType, setAppointmentType] = useState('')
+  const [appointmentOrigin, setAppointmentOrigin] = useState('')
+  const [appointmentNotes, setAppointmentNotes] = useState('')
+  const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
+  const [showRescheduleForm, setShowRescheduleForm] = useState(false)
+  const [reschedulableAppointments, setReschedulableAppointments] = useState<readonly ReschedulableAppointment[]>([])
+  const [selectedReschedulableId, setSelectedReschedulableId] = useState('')
+  const [rescheduleReason, setRescheduleReason] = useState('')
+  const [rescheduleOrigin, setRescheduleOrigin] = useState('')
+  const [rescheduleNotes, setRescheduleNotes] = useState('')
+  const [anchorDate, setAnchorDate] = useState(() => dateInputValue(new Date()))
+  const [state, setState] =
+    useState<AsyncState<readonly AgendaAppointment[]>>(loadingState)
+  const requestSequence = useRef(0)
+  const { startDate, endDate } = agendaBounds(anchorDate, view)
+  const roleCodes = accessContext.roles.map((role) => role.code)
+  const isProfessional =
+    Boolean(accessContext.professional_id) &&
+    roleCodes.some((role) =>
+      [
+        'profissional',
+        'medico_clinico_geral',
+        'nutricao',
+        'assistencia_social',
+        'assistente_social',
+        'social',
+      ].includes(role),
+    )
+  const canAccess = roleCodes.some((role) =>
+    [
+      'administrador',
+      'administrativo_operacional',
+      'coordenador',
+      'profissional',
+      'medico_clinico_geral',
+      'nutricao',
+      'assistencia_social',
+      'assistente_social',
+      'social',
+    ].includes(role),
+  )
+  const professionalId = isProfessional
+    ? accessContext.professional_id
+    : selectedProfessionalId || null
+  const contextHasFixedSpecialty = roleCodes.some((role) =>
+    ['nutricao', 'medico_clinico_geral'].includes(role),
+  )
+  const shouldShowSpecialty = showSpecialty && !contextHasFixedSpecialty
+  const professionalOptions =
+    state.status === 'success'
+      ? Array.from(
+          new Map(
+            state.data
+              .filter((appointment) => appointment.professional_id)
+              .map((appointment) => [
+                appointment.professional_id,
+                appointment.professional_name,
+              ]),
+          ),
+        )
+      : []
+
+  const load = useCallback(async () => {
+    const requestId = ++requestSequence.current
+    setState(loadingState())
+    const nextState = await loadAgenda(startDate, endDate, professionalId)
+    if (requestId === requestSequence.current) setState(nextState)
+  }, [endDate, loadAgenda, professionalId, startDate])
+
+  async function searchAppointmentPatients() {
+    const query = appointmentPatientQuery.trim()
+    if (query.length < 2) return
+    const result = await getRpcService().searchReferralPatients(query, 20, 0)
+    setAppointmentPatients(result.status === 'success' ? result.data : [])
+  }
+
+  async function createAppointment() {
+    if (!appointmentPatientId || !selectedProfessionalId || !selectedSlotStart || !appointmentType) {
+      setAppointmentFeedback('Selecione paciente, profissional, horário e tipo de atendimento.')
+      return
+    }
+    setAppointmentFeedback('Criando agendamento no banco…')
+    const result = await getRpcService().createAppointment({
+      patientId: appointmentPatientId,
+      professionalId: selectedProfessionalId,
+      slotStart: selectedSlotStart,
+      appointmentType,
+      generalNotes: appointmentNotes.trim() || null,
+      operationalOrigin: appointmentOrigin.trim() || null,
+    })
+    if (result.status === 'success') {
+      setAppointmentFeedback('Agendamento criado. Agenda recarregada do banco.')
+      setAppointmentPatientId('')
+      setAppointmentPatientQuery('')
+      setAppointmentPatients([])
+      setSelectedSlotStart('')
+      setAppointmentType('')
+      setAppointmentNotes('')
+      await load()
+    } else if (result.status === 'error') {
+      setAppointmentFeedback(result.error.message)
+    }
+  }
+
+  async function rescheduleAppointment() {
+    if (!selectedReschedulableId || !selectedProfessionalId || !selectedSlotStart || rescheduleReason.trim().length < 3) {
+      setAppointmentFeedback('Selecione agendamento, novo horário e informe o motivo da remarcação.')
+      return
+    }
+    setAppointmentFeedback('Remarcando agendamento no banco…')
+    const result = await getRpcService().rescheduleAppointment({
+      appointmentId: selectedReschedulableId,
+      newProfessionalId: selectedProfessionalId,
+      newSlotStart: selectedSlotStart,
+      reason: rescheduleReason.trim(),
+      origin: rescheduleOrigin.trim(),
+      newNotes: rescheduleNotes.trim(),
+    })
+    if (result.status === 'success') {
+      setAppointmentFeedback('Agendamento remarcado. Agenda recarregada do banco.')
+      setShowRescheduleForm(false)
+      setSelectedReschedulableId('')
+      setRescheduleReason('')
+      setRescheduleOrigin('')
+      setRescheduleNotes('')
+      await load()
+    } else if (result.status === 'error') setAppointmentFeedback(result.error.message)
+  }
+
+  useEffect(() => {
+    if (!canAccess || (isProfessional && !professionalId)) return
+    const requestId = ++requestSequence.current
+    void loadAgenda(startDate, endDate, professionalId).then((nextState) => {
+      if (requestId === requestSequence.current) setState(nextState)
+    })
+    return () => {
+      requestSequence.current += 1
+    }
+  }, [
+    canAccess,
+    endDate,
+    isProfessional,
+    loadAgenda,
+    professionalId,
+    startDate,
+  ])
+
+  useEffect(() => {
+    if (isProfessional || !selectedProfessionalId) {
+      setAvailableSlots([])
+      setSelectedSlotStart('')
+      return
+    }
+    let active = true
+    void getRpcService()
+      .getAvailableAppointmentSlots(selectedProfessionalId, anchorDate)
+      .then((nextState) => {
+        if (!active) return
+        setAvailableSlots(nextState.status === 'success' ? nextState.data : [])
+        setSelectedSlotStart('')
+      })
+    return () => {
+      active = false
+    }
+  }, [anchorDate, isProfessional, selectedProfessionalId])
+
+  useEffect(() => {
+    if (!showRescheduleForm || !appointmentPatientId || !selectedProfessionalId) {
+      setReschedulableAppointments([])
+      setSelectedReschedulableId('')
+      return
+    }
+    let active = true
+    void getRpcService()
+      .getReschedulableAppointments(appointmentPatientId, selectedProfessionalId, anchorDate, 50)
+      .then((nextState) => {
+        if (!active) return
+        setReschedulableAppointments(nextState.status === 'success' ? nextState.data : [])
+        setSelectedReschedulableId('')
+      })
+    return () => {
+      active = false
+    }
+  }, [anchorDate, appointmentPatientId, selectedProfessionalId, showRescheduleForm])
+
+  if (!canAccess || (isProfessional && !professionalId)) {
+    return (
+      <section
+        className="assistential-page"
+        aria-labelledby="agenda-blocked-title"
+      >
+        <div className="assistential-card">
+          <p className="eyebrow">Agenda</p>
+          <h2 id="agenda-blocked-title">Agenda indisponível</h2>
+          <p>
+            Esta conta não possui um contexto autorizado para consultar a
+            agenda.
+          </p>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="assistential-page" aria-labelledby="agenda-title">
+      <div className="assistential-card">
+        <div className="assistential-heading">
+          <div>
+            <p className="eyebrow">
+              {isProfessional ? 'Operacional assistencial' : 'Operacional geral'}
+            </p>
+            <h2 id="agenda-title">
+              {isProfessional ? 'Agenda' : 'Agenda Geral'}
+            </h2>
+            <p>
+              {isProfessional
+                ? 'Seus atendimentos no período selecionado.'
+                : 'Atendimentos e movimentações autorizados no período selecionado.'}
+            </p>
+          </div>
+          <div className="assistential-filters">
+            {!isProfessional && (
+              <label>
+                Profissional
+                <select
+                  value={selectedProfessionalId}
+                  disabled={professionalOptions.length === 0}
+                  onChange={(event) => {
+                    setSelectedProfessionalId(event.target.value)
+                    setState(loadingState())
+                  }}
+                >
+                  <option value="">
+                    {professionalOptions.length === 0
+                      ? 'Nenhum profissional no período'
+                      : 'Todos os profissionais'}
+                  </option>
+                  {professionalOptions.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name ?? 'Profissional sem nome'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <label>
+              Data de referência
+              <input
+                type="date"
+                required
+                value={anchorDate}
+                onChange={(event) => {
+                  if (event.target.value) {
+                    setState(loadingState())
+                    setAnchorDate(event.target.value)
+                  }
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={state.status === 'loading'}
+              onClick={() => void load()}
+            >
+              Atualizar
+            </button>
+          </div>
+        </div>
+
+        {!isProfessional && (
+          <>
+            <div className="agenda-actions" aria-label="Operações da agenda">
+              <button
+                type="button"
+                className="agenda-action-primary"
+                aria-expanded={showScheduleForm}
+                onClick={() => setShowScheduleForm((current) => !current)}
+              >
+                Agendar
+              </button>
+              <button type="button">Consultar</button>
+              <button type="button" aria-expanded={showRescheduleForm} onClick={() => setShowRescheduleForm((current) => !current)}>Remarcar</button>
+            </div>
+          </>
+        )}
+
+        {showScheduleForm && !isProfessional && (
+          <section className="agenda-schedule-form" aria-labelledby="schedule-title">
+            <div className="agenda-section-heading">
+              <div>
+                <p className="eyebrow">Atendimento e Acompanhamento</p>
+                <h3 id="schedule-title">Novo Agendamento</h3>
+              </div>
+            </div>
+            <div className="agenda-form-grid">
+              <label>
+                Paciente *
+                <input
+                  type="search"
+                  placeholder="Nome, Nº CAPO ou CMS"
+                  value={appointmentPatientQuery}
+                  onChange={(event) => setAppointmentPatientQuery(event.target.value)}
+                  onBlur={() => void searchAppointmentPatients()}
+                />
+                {appointmentPatients.length > 0 && (
+                  <select
+                    value={appointmentPatientId}
+                    onChange={(event) => {
+                      setAppointmentPatientId(event.target.value)
+                      const patient = appointmentPatients.find((item) => item.patient_id === event.target.value)
+                      if (patient) setAppointmentPatientQuery(patient.full_name)
+                    }}
+                  >
+                    <option value="">Selecionar paciente encontrado</option>
+                    {appointmentPatients.map((patient) => (
+                      <option key={patient.patient_id} value={patient.patient_id}>
+                        {patient.full_name} · {patient.patient_number ?? patient.cms ?? 'Identificação disponível'}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </label>
+              <label>
+                Especialidade *
+                <input type="text" placeholder="Especialidade" />
+              </label>
+              <label>
+                Profissional *
+                <select
+                  value={selectedProfessionalId}
+                  disabled={professionalOptions.length === 0}
+                  onChange={(event) => {
+                    setSelectedProfessionalId(event.target.value)
+                    setState(loadingState())
+                  }}
+                >
+                  <option value="">Selecionar profissional</option>
+                  {professionalOptions.map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name ?? 'Profissional sem nome'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Data *
+                <input type="date" value={anchorDate} onChange={(event) => setAnchorDate(event.target.value)} />
+              </label>
+              <label className="agenda-form-wide">
+                Horários disponíveis *
+                <div className="agenda-slot-picker" aria-live="polite">
+                  {availableSlots.length === 0 ? (
+                    <span className="agenda-empty-slot">Selecione profissional e data.</span>
+                  ) : (
+                    availableSlots.map((slot) => (
+                      <button
+                        type="button"
+                        className={selectedSlotStart === slot.slot_start ? 'is-selected' : undefined}
+                        key={slot.slot_start}
+                        onClick={() => setSelectedSlotStart(slot.slot_start)}
+                      >
+                        {slot.slot_time}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </label>
+              <label>
+                Tipo *
+                <select value={appointmentType} onChange={(event) => setAppointmentType(event.target.value)}>
+                  <option value="">Selecionar</option>
+                  <option>Primeiro atendimento no CAPO</option>
+                  <option>Primeiro atendimento na especialidade</option>
+                  <option>Retorno</option>
+                  <option>Remarcação</option>
+                </select>
+              </label>
+              <label>
+                Origem
+                <input type="text" placeholder="Origem da demanda" value={appointmentOrigin} onChange={(event) => setAppointmentOrigin(event.target.value)} />
+              </label>
+              <label className="agenda-form-wide">
+                Observação administrativa mínima
+                <textarea rows={3} value={appointmentNotes} onChange={(event) => setAppointmentNotes(event.target.value)} />
+              </label>
+            </div>
+            <div className="agenda-form-actions">
+              <button type="button" disabled={!appointmentPatientId || !selectedProfessionalId || !selectedSlotStart || !appointmentType} onClick={() => void createAppointment()}>
+                Confirmar agendamento
+              </button>
+            </div>
+            {appointmentFeedback && <p className="agenda-contract-note" role="status">{appointmentFeedback}</p>}
+            <p className="agenda-contract-note">
+              A confirmação será liberada quando o contrato de criação de
+              agendamento estiver disponível no banco.
+            </p>
+          </section>
+        )}
+
+        {showRescheduleForm && !isProfessional && (
+          <section className="agenda-schedule-form" aria-labelledby="reschedule-title">
+            <div className="agenda-section-heading">
+              <p className="eyebrow">Atendimento e Acompanhamento</p>
+              <h3 id="reschedule-title">Remarcação / Retorno</h3>
+            </div>
+            <div className="agenda-form-grid">
+              <label>
+                Agendamento
+                <select value={selectedReschedulableId} onChange={(event) => setSelectedReschedulableId(event.target.value)} disabled={reschedulableAppointments.length === 0}>
+                  <option value="">{reschedulableAppointments.length ? 'Selecionar agendamento' : 'Selecione paciente e profissional'}</option>
+                  {reschedulableAppointments.map((item) => <option key={item.appointment_id} value={item.appointment_id}>{item.patient_name} · {new Date(item.appointment_date).toLocaleString('pt-BR')}</option>)}
+                </select>
+              </label>
+              <label>
+                Novo horário
+                <select value={selectedSlotStart} onChange={(event) => setSelectedSlotStart(event.target.value)} disabled={availableSlots.length === 0}>
+                  <option value="">Selecionar horário</option>
+                  {availableSlots.map((slot) => <option key={slot.slot_start} value={slot.slot_start}>{slot.slot_time}</option>)}
+                </select>
+              </label>
+              <label>
+                Motivo *
+                <input value={rescheduleReason} onChange={(event) => setRescheduleReason(event.target.value)} />
+              </label>
+              <label>
+                Origem
+                <input value={rescheduleOrigin} onChange={(event) => setRescheduleOrigin(event.target.value)} />
+              </label>
+              <label className="agenda-form-wide">
+                Novas observações
+                <textarea rows={3} value={rescheduleNotes} onChange={(event) => setRescheduleNotes(event.target.value)} />
+              </label>
+            </div>
+            <div className="agenda-form-actions">
+              <button type="button" disabled={!selectedReschedulableId || !selectedSlotStart || rescheduleReason.trim().length < 3} onClick={() => void rescheduleAppointment()}>Aplicar remarcação</button>
+            </div>
+          </section>
+        )}
+
+        <div className="agenda-toolbar">
+          <div
+            className="agenda-tabs"
+            role="tablist"
+            aria-label="Visualização da agenda"
+          >
+            {(['day', 'week', 'month'] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                role="tab"
+                aria-selected={view === option}
+                onClick={() => {
+                  setState(loadingState())
+                  setView(option)
+                }}
+              >
+                {{ day: 'Dia', week: 'Semana', month: 'Mês' }[option]}
+              </button>
+            ))}
+          </div>
+          <div className="agenda-navigation" aria-label="Navegar pelo período">
+            <button
+              type="button"
+              aria-label="Período anterior"
+              onClick={() => {
+                setState(loadingState())
+                setAnchorDate((date) => moveAnchor(date, view, -1))
+              }}
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setState(loadingState())
+                setAnchorDate(dateInputValue(new Date()))
+              }}
+            >
+              Hoje
+            </button>
+            <button
+              type="button"
+              aria-label="Próximo período"
+              onClick={() => {
+                setState(loadingState())
+                setAnchorDate((date) => moveAnchor(date, view, 1))
+              }}
+            >
+              Próximo
+            </button>
+          </div>
+          <strong className="agenda-period" aria-live="polite">
+            {formatPeriod(startDate, endDate, view)}
+          </strong>
+        </div>
+
+        <div aria-live="polite">
+          {state.status === 'loading' && <p>Carregando agenda…</p>}
+          {(state.status === 'empty' ||
+            (state.status === 'success' && state.data.length === 0)) && (
+            <p>Nenhum agendamento encontrado no período.</p>
+          )}
+          {state.status === 'error' && (
+            <div className="assistential-error" role="alert">
+              <p>Não foi possível carregar a agenda: {state.error.message}</p>
+              <button type="button" onClick={() => void load()}>
+                Tentar novamente
+              </button>
+            </div>
+          )}
+          {state.status === 'success' && state.data.length > 0 && (
+            <AgendaResults
+              appointments={state.data}
+              startDate={startDate}
+              endDate={endDate}
+              view={view}
+              showSpecialty={shouldShowSpecialty}
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}

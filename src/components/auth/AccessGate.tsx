@@ -3,7 +3,15 @@ import {
   useAccessFlow,
   type AccessFeedback,
 } from '../../features/access/access-context'
+import { ConstructionScreen } from '../layout/ConstructionScreen'
 import './access-gate.css'
+
+const demoGestorUsername =
+  (import.meta.env.VITE_CAPO_DEMO_USERNAME ?? 'gestor').trim()
+const demoGestorPassword =
+  (import.meta.env.VITE_CAPO_DEMO_PASSWORD ?? '').trim()
+const canUseDemoGestorAccount =
+  import.meta.env.DEV || import.meta.env.MODE === 'development'
 
 function Feedback({ feedback }: { feedback: AccessFeedback | null }) {
   if (!feedback) return null
@@ -68,8 +76,8 @@ function PasswordInput({
 
 function LoginStep() {
   const { busy, feedback, login, showRecovery } = useAccessFlow()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [username, setUsername] = useState(demoGestorUsername)
+  const [password, setPassword] = useState(demoGestorPassword)
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -107,6 +115,25 @@ function LoginStep() {
           autoComplete="current-password"
           placeholder="Digite sua senha"
         />
+        {canUseDemoGestorAccount && (
+          <button
+            className="auth-link"
+            type="button"
+            onClick={() => {
+              setUsername(demoGestorUsername)
+              setPassword(demoGestorPassword)
+              if (demoGestorUsername && demoGestorPassword) {
+                void login(demoGestorUsername, demoGestorPassword)
+              } else {
+                document.getElementById('password')?.focus()
+              }
+            }}
+          >
+            {demoGestorPassword
+              ? 'Entrar como Daniele — Gestor titular'
+              : 'Preencher usuário do gestor titular'}
+          </button>
+        )}
         <button className="auth-link" type="button" onClick={showRecovery}>
           Esqueceu sua senha?
         </button>
@@ -190,6 +217,144 @@ function EmailSentStep() {
         onClick={showLogin}
       >
         Voltar para o login
+      </button>
+    </section>
+  )
+}
+
+function mfaQrSource(qrCode: string) {
+  const value = qrCode.trim()
+  return value.startsWith('<svg')
+    ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(value)}`
+    : value
+}
+
+function MfaEnrollmentStep() {
+  const { busy, feedback, mfaEnrollment, verifyMfaEnrollment, logout } =
+    useAccessFlow()
+  const [code, setCode] = useState('')
+  if (!mfaEnrollment) return null
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    void verifyMfaEnrollment(code)
+  }
+
+  return (
+    <section className="auth-step" aria-labelledby="auth-mfa-enroll-title">
+      <h1 id="auth-mfa-enroll-title">Proteção em duas etapas</h1>
+      <p className="auth-subtitle">
+        Configure seu autenticador para concluir o acesso seguro ao CAPO.
+      </p>
+      <div className="mfa-qr-wrap">
+        <img
+          className="mfa-qr"
+          src={mfaQrSource(mfaEnrollment.qrCode)}
+          alt="QR Code para configurar autenticação em duas etapas"
+        />
+        <div>
+          <strong>Leia o QR Code no seu aplicativo autenticador.</strong>
+          <code className="mfa-secret">{mfaEnrollment.secret}</code>
+        </div>
+      </div>
+      <form onSubmit={submit} noValidate>
+        <div className="auth-field">
+          <label htmlFor="mfaEnrollCode">Código de 6 números</label>
+          <input
+            id="mfaEnrollCode"
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            autoFocus
+          />
+        </div>
+        <Feedback feedback={feedback} />
+        <button
+          className="auth-primary auth-full"
+          type="submit"
+          disabled={busy}
+          aria-busy={busy}
+        >
+          Validar e continuar
+        </button>
+      </form>
+      <button
+        className="auth-link auth-back"
+        type="button"
+        onClick={() => void logout()}
+      >
+        Sair
+      </button>
+    </section>
+  )
+}
+
+function MfaChallengeStep() {
+  const { busy, feedback, mfaFactors, verifyExistingMfa, logout } =
+    useAccessFlow()
+  const [factorId, setFactorId] = useState(mfaFactors[0]?.id ?? '')
+  const [code, setCode] = useState('')
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    void verifyExistingMfa(factorId, code)
+  }
+
+  return (
+    <section className="auth-step" aria-labelledby="auth-mfa-challenge-title">
+      <h1 id="auth-mfa-challenge-title">Verificação em duas etapas</h1>
+      <p className="auth-subtitle">
+        Digite o código do seu aplicativo autenticador.
+      </p>
+      <form onSubmit={submit} noValidate>
+        {mfaFactors.length > 1 && (
+          <div className="auth-field">
+            <label htmlFor="mfaFactorSelect">Autenticador</label>
+            <select
+              id="mfaFactorSelect"
+              value={factorId}
+              onChange={(event) => setFactorId(event.target.value)}
+            >
+              {mfaFactors.map((factor, index) => (
+                <option key={factor.id} value={factor.id}>
+                  {factor.friendlyName ?? `Autenticador ${index + 1}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <div className="auth-field">
+          <label htmlFor="mfaChallengeCode">Código de 6 números</label>
+          <input
+            id="mfaChallengeCode"
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            autoFocus
+          />
+        </div>
+        <Feedback feedback={feedback} />
+        <button
+          className="auth-primary auth-full"
+          type="submit"
+          disabled={busy}
+          aria-busy={busy}
+        >
+          Verificar
+        </button>
+      </form>
+      <button
+        className="auth-link auth-back"
+        type="button"
+        onClick={() => void logout()}
+      >
+        Sair
       </button>
     </section>
   )
@@ -387,6 +552,9 @@ function BlockedStep() {
 
 export function AccessGate({ children }: { children: ReactNode }) {
   const { screen } = useAccessFlow()
+  if (window.location.pathname === '/em-construcao') {
+    return <ConstructionScreen />
+  }
   if (screen === 'authenticated') return children
 
   const step = {
@@ -395,6 +563,8 @@ export function AccessGate({ children }: { children: ReactNode }) {
     recover: <RecoveryStep />,
     'email-sent': <EmailSentStep />,
     'new-password': <NewPasswordStep />,
+    'mfa-enroll': <MfaEnrollmentStep />,
+    'mfa-challenge': <MfaChallengeStep />,
     'legal-term': <LegalTermStep />,
     'first-access': <FirstAccessStep />,
     blocked: <BlockedStep />,

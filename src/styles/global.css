@@ -7,14 +7,17 @@
 html {
   min-width: 320px;
   min-height: 100%;
-  background: var(--color-background);
+  background:
+    radial-gradient(circle at 22% 2%, rgb(114 196 255 / 12%), transparent 30%),
+    radial-gradient(circle at 95% 92%, rgb(241 72 153 / 5.5%), transparent 26%),
+    linear-gradient(135deg, #fbfdff 0%, #f3f9fe 43%, #fbf9ff 72%, #fffafd 100%);
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   color: var(--color-text);
-  background: var(--color-background);
+  background: transparent;
   font-family: var(--font-family-sans);
   line-height: 1.5;
 }
@@ -36,6 +39,17 @@ textarea {
 
 :focus-visible {
   outline: 3px solid var(--color-brand-blue);
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd,
+small {
+  margin: 0;
 }
 
 img {

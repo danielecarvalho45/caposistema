@@ -9,7 +9,12 @@ import {
 } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type LegalTerm } from '../../lib/supabase/rpc'
-import { getAccessAuthApi, type AccessAuthApi } from './auth-api'
+import {
+  getAccessAuthApi,
+  type AccessAuthApi,
+  type MfaTotpEnrollment,
+  type MfaTotpFactor,
+} from './auth-api'
 import { validateAccessContext, validateSixDigitPassword } from './access-rules'
 
 export type AccessScreen =
@@ -18,6 +23,8 @@ export type AccessScreen =
   | 'recover'
   | 'email-sent'
   | 'new-password'
+  | 'mfa-enroll'
+  | 'mfa-challenge'
   | 'legal-term'
   | 'first-access'
   | 'blocked'
@@ -28,7 +35,13 @@ export type AccessFeedback = Readonly<{
   message: string
 }>
 
-type RpcService = ReturnType<typeof getRpcService>
+type RpcService = Pick<
+  ReturnType<typeof getRpcService>,
+  | 'getCurrentLegalTerm'
+  | 'getMyAccessContext'
+  | 'acceptLegalTerm'
+  | 'completeFirstAccess'
+>
 
 type AccessFlow = Readonly<{
   screen: AccessScreen
@@ -37,6 +50,8 @@ type AccessFlow = Readonly<{
   sentStatus: string
   legalTerm: LegalTerm | null
   accessContext: AccessContext | null
+  mfaEnrollment: MfaTotpEnrollment | null
+  mfaFactors: readonly MfaTotpFactor[]
   busy: boolean
 }>
 
@@ -50,6 +65,8 @@ type AccessActions = Readonly<{
     confirmation: string,
   ) => Promise<void>
   cancelPasswordRecovery: () => Promise<void>
+  verifyMfaEnrollment: (code: string) => Promise<void>
+  verifyExistingMfa: (factorId: string, code: string) => Promise<void>
   acceptLegalTerm: () => Promise<void>
   completeFirstAccess: (
     currentPassword: string,
@@ -68,6 +85,8 @@ const initialFlow: AccessFlow = {
     'Se o e-mail estiver cadastrado e autorizado, as instruções de recuperação serão enviadas.',
   legalTerm: null,
   accessContext: null,
+  mfaEnrollment: null,
+  mfaFactors: [],
   busy: false,
 }
 
@@ -243,6 +262,93 @@ export function AccessProvider({
     }))
   }, [authApi, rpcService, setLoading])
 
+  const runPostMfaAccessGate = useCallback(async () => {
+    setLoading('Verificando o Termo vigente…')
+    const result = await rpcService.getCurrentLegalTerm()
+    if (result.status !== 'success') {
+      if (result.status === 'error' && isExpiredSessionError(result.error)) {
+        try {
+          await authApi.signOut('local')
+        } catch {
+          // A interface ainda deve descartar o acesso local.
+        }
+        setFlow({
+          ...initialFlow,
+          screen: 'login',
+          feedback: {
+            type: 'error',
+            message: 'Sua sessão expirou. Entre novamente no CAPO.',
+          },
+        })
+        return
+      }
+      const message =
+        result.status === 'error'
+          ? friendlyAuthError(result.error, 'term')
+          : 'Não foi possível carregar o Termo vigente. Tente novamente.'
+      setFlow((current) => ({
+        ...current,
+        screen: 'blocked',
+        feedback: { type: 'error', message },
+        busy: false,
+      }))
+      return
+    }
+
+    if (!result.data.accepted) {
+      setFlow((current) => ({
+        ...current,
+        screen: 'legal-term',
+        legalTerm: result.data,
+        feedback: null,
+        busy: false,
+      }))
+      return
+    }
+    await loadAccessContext()
+  }, [authApi, loadAccessContext, rpcService, setLoading])
+
+  const ensureMfaAal2 = useCallback(async (): Promise<boolean> => {
+    setLoading('Verificando autenticação em duas etapas…')
+    const assurance = await authApi.getMfaAssuranceLevel()
+    const currentLevel = assurance.currentLevel ?? 'aal1'
+    const nextLevel = assurance.nextLevel ?? 'aal1'
+
+    if (currentLevel === 'aal2') return true
+
+    if (nextLevel === 'aal2') {
+      const factors = (await authApi.listMfaTotpFactors()).filter(
+        (factor) => factor.id && factor.status !== 'unverified',
+      )
+      if (factors.length === 0) {
+        throw new Error('Nenhum fator TOTP verificado foi localizado.')
+      }
+      setFlow((current) => ({
+        ...current,
+        screen: 'mfa-challenge',
+        mfaEnrollment: null,
+        mfaFactors: factors,
+        feedback: null,
+        busy: false,
+      }))
+      return false
+    }
+
+    const enrollment = await authApi.enrollMfaTotp()
+    if (!enrollment.id || !enrollment.qrCode || !enrollment.secret) {
+      throw new Error('Não foi possível preparar o segundo fator.')
+    }
+    setFlow((current) => ({
+      ...current,
+      screen: 'mfa-enroll',
+      mfaEnrollment: enrollment,
+      mfaFactors: [],
+      feedback: null,
+      busy: false,
+    }))
+    return false
+  }, [authApi, setLoading])
+
   const runProtectedAccessGate = useCallback(async () => {
     setLoading('Verificando segurança da sessão…')
     try {
@@ -252,49 +358,8 @@ export function AccessProvider({
         return
       }
 
-      setLoading('Verificando o Termo vigente…')
-      const result = await rpcService.getCurrentLegalTerm()
-      if (result.status !== 'success') {
-        if (result.status === 'error' && isExpiredSessionError(result.error)) {
-          try {
-            await authApi.signOut('local')
-          } catch {
-            // A interface ainda deve descartar o acesso local.
-          }
-          setFlow({
-            ...initialFlow,
-            screen: 'login',
-            feedback: {
-              type: 'error',
-              message: 'Sua sessão expirou. Entre novamente no CAPO.',
-            },
-          })
-          return
-        }
-        const message =
-          result.status === 'error'
-            ? friendlyAuthError(result.error, 'term')
-            : 'Não foi possível carregar o Termo vigente. Tente novamente.'
-        setFlow((current) => ({
-          ...current,
-          screen: 'blocked',
-          feedback: { type: 'error', message },
-          busy: false,
-        }))
-        return
-      }
-
-      if (!result.data.accepted) {
-        setFlow((current) => ({
-          ...current,
-          screen: 'legal-term',
-          legalTerm: result.data,
-          feedback: null,
-          busy: false,
-        }))
-        return
-      }
-      await loadAccessContext()
+      if (!(await ensureMfaAal2())) return
+      await runPostMfaAccessGate()
     } catch (error) {
       setFlow({
         ...initialFlow,
@@ -302,7 +367,7 @@ export function AccessProvider({
         feedback: { type: 'error', message: friendlyAuthError(error, 'boot') },
       })
     }
-  }, [authApi, loadAccessContext, rpcService, setLoading])
+  }, [authApi, ensureMfaAal2, runPostMfaAccessGate, setLoading])
 
   useEffect(() => {
     let active = true
@@ -467,6 +532,85 @@ export function AccessProvider({
               busy: false,
             }))
           }
+        }
+      },
+      async verifyMfaEnrollment(code) {
+        const factorId = flow.mfaEnrollment?.id
+        if (!/^\d{6}$/.test(code)) {
+          setFlow((current) => ({
+            ...current,
+            feedback: {
+              type: 'error',
+              message: 'Informe o código de 6 números do autenticador.',
+            },
+          }))
+          return
+        }
+        if (!factorId) {
+          setFlow((current) => ({
+            ...current,
+            feedback: {
+              type: 'error',
+              message:
+                'Configuração do segundo fator indisponível. Tente entrar novamente.',
+            },
+          }))
+          return
+        }
+        try {
+          setLoading('Ativando autenticação em duas etapas…')
+          await authApi.challengeAndVerifyMfa(factorId, code)
+          await runProtectedAccessGate()
+        } catch (error) {
+          setFlow((current) => ({
+            ...current,
+            screen: 'mfa-enroll',
+            feedback: {
+              type: 'error',
+              message: friendlyAuthError(error, 'mfa'),
+            },
+            busy: false,
+          }))
+        }
+      },
+      async verifyExistingMfa(factorId, code) {
+        if (!/^\d{6}$/.test(code)) {
+          setFlow((current) => ({
+            ...current,
+            feedback: {
+              type: 'error',
+              message: 'Informe o código de 6 números do autenticador.',
+            },
+          }))
+          return
+        }
+        if (
+          !factorId ||
+          !flow.mfaFactors.some((factor) => factor.id === factorId)
+        ) {
+          setFlow((current) => ({
+            ...current,
+            feedback: {
+              type: 'error',
+              message: 'Fator de autenticação indisponível. Tente novamente.',
+            },
+          }))
+          return
+        }
+        try {
+          setLoading('Validando autenticação em duas etapas…')
+          await authApi.challengeAndVerifyMfa(factorId, code)
+          await runProtectedAccessGate()
+        } catch (error) {
+          setFlow((current) => ({
+            ...current,
+            screen: 'mfa-challenge',
+            feedback: {
+              type: 'error',
+              message: friendlyAuthError(error, 'mfa'),
+            },
+            busy: false,
+          }))
         }
       },
       async recoverPassword(email) {
@@ -699,6 +843,8 @@ export function AccessProvider({
       authApi,
       flow.accessContext?.username,
       flow.legalTerm,
+      flow.mfaEnrollment?.id,
+      flow.mfaFactors,
       loadAccessContext,
       rpcService,
       runProtectedAccessGate,

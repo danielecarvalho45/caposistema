@@ -4,6 +4,41 @@
 **Tipo:** fundação técnica do frontend  
 **Objetivo:** transformar os HTMLs monolíticos atuais em uma base única, modular e testável, preservando o comportamento existente e sem alterar o banco de produção nesta tarefa.
 
+## Regra vigente de construção por tela
+
+Tela atual: **Entrada / Login / MFA**.
+
+Estado: **EM CONSTRUÇÃO — AGUARDANDO VALIDAÇÃO REAL E APROVAÇÃO DA RESPONSÁVEL**.
+
+Nenhuma outra tela pode ser iniciada, concluída ou congelada enquanto esta tela
+não receber a aprovação explícita `APROVADA — PODE CONGELAR E SEGUIR`.
+
+Checklist da tela atual:
+
+1. diagnóstico: executado;
+2. construção: login, recuperação, primeiro acesso, MFA/TOTP, termo e bloqueios
+   implementados;
+3. integração real: Edge Function `login-by-username` versão 5 implantada,
+   sessão Supabase, MFA `aal2` e RPCs reais integrados;
+4. testes funcionais automatizados: executados;
+5. testes de navegação por mouse e teclado: executados;
+6. testes responsivos em 375 × 667 e desktop: executados;
+7. falhas encontradas: caminho diagnóstico fixo removido, SDK da Edge Function
+   pinado, resposta genérica de credencial inválida verificada fisicamente e
+   limite de 30 segundos adicionado para a interface nunca permanecer presa em
+   `Entrando...` quando o serviço não responder;
+8. screenshots reais: `evidencias/entrada-login-desktop.png` e
+   `evidencias/entrada-login-mobile.png`;
+9. aprovação da responsável: **pendente**, incluindo entrada manual com
+   credencial e TOTP reais;
+10. congelamento: **proibido até a aprovação explícita**.
+
+Validação mais recente em 2026-09-16: ESLint e TypeScript sem erros, 61 testes
+unitários aprovados, build de produção aprovado e 6 testes físicos Playwright
+aprovados no Chromium. O aviso não bloqueante do Vite sobre o bundle principal
+maior que 500 kB permanece registrado para uma otimização futura, sem abrir uma
+nova tela nesta etapa.
+
 ## 1. Contexto confirmado
 
 - O diretório contém seis interfaces HTML independentes: Gestor, Coordenador, Auxiliar Administrativo, Assistência Social, Nutrição e Médico Clínico Geral.
@@ -235,7 +270,7 @@ em `.tools/`; isso não altera o código distribuído.
 |---|---|
 | `npm run lint` | aprovado, sem erros |
 | `npm run typecheck` | aprovado, sem erros |
-| `npm test` | 7 arquivos e 30 testes aprovados |
+| `npm test` | 7 arquivos e 38 testes aprovados |
 | `npm run build` | aprovado; 84 módulos transformados |
 | `npm run format:check` | aprovado, sem divergências de formatação |
 | `npm run test:e2e` | 3 testes Playwright aprovados no Chrome: desktop, teclado/foco visível e viewport móvel de 375 x 667 |
@@ -280,21 +315,13 @@ inválido.
 
 ### 11.4 Divergências e pendências registradas
 
-1. **MFA não implementado:** o requisito aparece nas Etapas 5 e 7, mas não há
-   fluxo MFA na SPA nem implementação funcional correspondente nos seis HTMLs
-   de referência; eles contêm apenas estilos com o nome `mfa`. O contrato de
-   exigência, cadastro, desafio, recuperação e nível AAL também não está
-   definido nos documentos consultados. A implementação deve ser uma tarefa de
-   segurança separada, validada contra a configuração real do Supabase.
-2. **Homologação física pendente:** login válido, e-mail de recuperação,
-   aceite do termo, primeiro acesso e logout foram verificados por testes com
-   adaptadores controlados, mas não com uma conta real. Nenhuma credencial de
-   teste autorizada foi usada nesta etapa e nenhuma gravação produtiva foi
-   realizada.
-3. **Histórico Git indisponível:** a ausência de `.git` impede comprovar que
-   credenciais nunca apareceram em commits anteriores. Antes do primeiro commit,
-   deve-se inicializar ou vincular o repositório e repetir a inspeção do índice.
+1. **Homologação real do MFA pendente:** o fluxo MFA/TOTP homologado em
+   `referencias/index_capo_com_mfa.html` foi transportado para a SPA. A aplicação
+   consulta o AAL, cadastra ou lista fatores TOTP, executa o desafio e somente
+   libera Termo, contexto e roteamento depois de confirmar `aal2`. Os testes
+   automatizados validam essa ordem; falta apenas homologar o fluxo com uma conta
+   real e autorizada do Supabase.
 
-Com essas ressalvas, a fundação local está validada para preparar a tarefa
+Com essa ressalva, a fundação local está validada para preparar a tarefa
 seguinte. A integração operacional real continua condicionada à inspeção dos
 contratos físicos e à autorização de acesso ao ambiente Supabase.

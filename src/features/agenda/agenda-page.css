@@ -1,0 +1,301 @@
+@import '../professional/assistential-page.css';
+
+.agenda-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5, 1.25rem);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: #f7f9f8;
+}
+
+.agenda-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.agenda-actions button,
+.agenda-form-actions button {
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  background: #fff;
+  font-weight: 700;
+}
+
+.agenda-actions .agenda-action-primary {
+  color: #fff;
+  border-color: var(--color-brand-blue);
+  background: var(--color-brand-blue);
+}
+
+.agenda-schedule-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: rgb(255 255 255 / 82%);
+}
+
+.agenda-section-heading h3 {
+  margin-top: var(--space-1);
+  color: var(--color-text);
+  font-size: 1.15rem;
+}
+
+.agenda-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.agenda-form-grid label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.agenda-form-grid input,
+.agenda-form-grid select,
+.agenda-form-grid textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  background: #f8fbfd;
+}
+
+.agenda-form-wide {
+  grid-column: 1 / -1;
+}
+
+.agenda-empty-slot {
+  display: grid;
+  min-height: 44px;
+  place-items: center;
+  padding: 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.agenda-slot-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-medium);
+  background: #f8fbfd;
+}
+
+.agenda-slot-picker button {
+  min-width: 72px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  background: #fff;
+  font-weight: 700;
+}
+
+.agenda-slot-picker button.is-selected {
+  color: #fff;
+  border-color: var(--color-brand-blue);
+  background: var(--color-brand-blue);
+}
+
+.agenda-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.agenda-contract-note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.agenda-form-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.agenda-tabs,
+.agenda-navigation {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.agenda-tabs button[aria-selected='true'] {
+  border-color: var(--color-brand-blue);
+  background: var(--color-brand-blue);
+  color: #fff;
+}
+
+.agenda-period {
+  margin-left: auto;
+  color: var(--color-text);
+  text-transform: capitalize;
+}
+
+.assistential-filters {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.assistential-filters label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.assistential-filters select,
+.assistential-filters input {
+  min-width: 180px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  background: #f8fbfd;
+}
+
+.agenda-week {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.agenda-week-day {
+  min-width: 0;
+}
+
+.agenda-week-day h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--color-brand-blue);
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+.agenda-week-day > p {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text-muted);
+}
+
+.agenda-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(7rem, 1fr));
+  min-width: 52rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+.agenda-month-weekday {
+  padding: var(--space-2);
+  background: #eef3f6;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.agenda-month-day {
+  min-height: 7.5rem;
+  padding: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.agenda-month-day:nth-child(7n) {
+  border-right: 0;
+}
+
+.agenda-month-day.is-outside {
+  background: #f7f9f8;
+  color: var(--color-text-muted);
+  opacity: 0.65;
+}
+
+.agenda-month-appointment {
+  display: grid;
+  gap: 0.1rem;
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border-left: 3px solid var(--color-brand-blue);
+  border-radius: var(--radius-small, 0.25rem);
+  background: #eef6fc;
+  color: var(--color-text);
+  font-size: 0.78rem;
+}
+
+.agenda-month-appointment span,
+.agenda-month-appointment small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 760px) {
+  .agenda-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .agenda-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-form-wide {
+    grid-column: auto;
+  }
+
+  .agenda-toolbar,
+  .agenda-tabs,
+  .agenda-navigation {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .assistential-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .assistential-filters select,
+  .assistential-filters input {
+    width: 100%;
+  }
+
+  .agenda-period {
+    margin-left: 0;
+  }
+
+  .agenda-month {
+    grid-template-columns: repeat(7, minmax(5.5rem, 1fr));
+    min-width: 42rem;
+  }
+}

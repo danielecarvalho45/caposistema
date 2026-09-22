@@ -14,6 +14,8 @@ type LoginResponse = {
   code?: unknown
 }
 
+const AUTH_REQUEST_TIMEOUT_MS = 30_000
+
 export class AccessAuthError extends Error {
   readonly status: number
   readonly code?: string
@@ -28,6 +30,23 @@ export class AccessAuthError extends Error {
     this.code = options.code
   }
 }
+
+export type MfaAssuranceLevel = Readonly<{
+  currentLevel: string | null
+  nextLevel: string | null
+}>
+
+export type MfaTotpFactor = Readonly<{
+  id: string
+  friendlyName: string | null
+  status: string
+}>
+
+export type MfaTotpEnrollment = Readonly<{
+  id: string
+  qrCode: string
+  secret: string
+}>
 
 async function functionError(
   error: unknown,
@@ -110,9 +129,38 @@ function parseLoginResponse(value: unknown): {
   }
 }
 
+async function withAuthTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(
+            new AccessAuthError(
+              'Tempo limite do serviço de autenticação excedido.',
+              { status: 504, code: 'auth_timeout' },
+            ),
+          )
+        }, timeoutMs)
+      }),
+    ])
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId)
+  }
+}
+
 export type AccessAuthApi = Readonly<{
   getSession: () => Promise<Session | null>
   loginByUsername: (username: string, password: string) => Promise<Session>
+  getMfaAssuranceLevel: () => Promise<MfaAssuranceLevel>
+  listMfaTotpFactors: () => Promise<readonly MfaTotpFactor[]>
+  enrollMfaTotp: () => Promise<MfaTotpEnrollment>
+  challengeAndVerifyMfa: (factorId: string, code: string) => Promise<void>
   verifyUsernamePassword: (username: string, password: string) => Promise<void>
   resetPasswordForEmail: (email: string, redirectTo: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
@@ -124,11 +172,15 @@ export type AccessAuthApi = Readonly<{
 
 export function createAccessAuthApi(
   client: SupabaseClient<Database>,
+  requestTimeoutMs = AUTH_REQUEST_TIMEOUT_MS,
 ): AccessAuthApi {
   async function requestLogin(username: string, password: string) {
-    const { data, error } = await client.functions.invoke('login-by-username', {
-      body: { username, password },
-    })
+    const { data, error } = await withAuthTimeout(
+      client.functions.invoke('login-by-username', {
+        body: { username, password },
+      }),
+      requestTimeoutMs,
+    )
     if (error) throw await functionError(error, data)
     return parseLoginResponse(data)
   }
@@ -145,6 +197,43 @@ export function createAccessAuthApi(
       if (error) throw error
       if (!data.session) throw new AccessAuthError('Sessão não iniciada.')
       return data.session
+    },
+    async getMfaAssuranceLevel() {
+      const { data, error } =
+        await client.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (error) throw error
+      return {
+        currentLevel: data.currentLevel,
+        nextLevel: data.nextLevel,
+      }
+    },
+    async listMfaTotpFactors() {
+      const { data, error } = await client.auth.mfa.listFactors()
+      if (error) throw error
+      return data.totp.map((factor) => ({
+        id: factor.id,
+        friendlyName: factor.friendly_name ?? null,
+        status: factor.status,
+      }))
+    },
+    async enrollMfaTotp() {
+      const { data, error } = await client.auth.mfa.enroll({
+        factorType: 'totp',
+        friendlyName: 'CAPO',
+      })
+      if (error) throw error
+      return {
+        id: data.id,
+        qrCode: data.totp.qr_code,
+        secret: data.totp.secret,
+      }
+    },
+    async challengeAndVerifyMfa(factorId, code) {
+      const { error } = await client.auth.mfa.challengeAndVerify({
+        factorId,
+        code,
+      })
+      if (error) throw error
     },
     async verifyUsernamePassword(username, password) {
       await requestLogin(username, password)

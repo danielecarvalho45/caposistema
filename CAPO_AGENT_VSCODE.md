@@ -53,7 +53,171 @@ Não substituir uma arquitetura aprovada por uma alternativa própria.
 
 ---
 
-# 3. REGRA GERAL ANTI-LOOP
+# 3. REGRA DE CONSTRUÇÃO PARALELA CONTROLADA POR TELA
+
+O projeto pode avançar em múltiplas frentes simultâneas somente quando não
+houver conflito de arquivos, contratos ou dependências centrais. Cada frente
+deve possuir uma única tela ou módulo claramente definido.
+
+## Frentes autorizadas
+
+- FRENTE A — Acesso: Login, MFA/TOTP, AAL2, Termo, contexto e roteamento;
+- FRENTE B — Fila Operacional: `TAREFA_02`;
+- FRENTE C — Faltosos: `TAREFA_03`;
+- FRENTE D — Solicitações: `TAREFA_04`;
+- FRENTE E — Aniversariantes: `TAREFA_05`;
+- FRENTE F — Encaminhamentos: `TAREFA_06`;
+- FRENTE G — Área Assistencial: `TAREFA_07`.
+
+Cada frente deve:
+
+1. identificar os arquivos que utilizará;
+2. trabalhar somente nos arquivos necessários à própria tela;
+3. não alterar arquivos pertencentes a outra frente;
+4. não alterar autenticação, roteamento, contexto, cliente Supabase ou
+  componentes globais sem autorização;
+5. não alterar CSS global quando uma solução local for suficiente;
+6. não mudar contratos de RPC existentes;
+7. não criar dados fictícios ou bypass de segurança;
+8. não modificar tela aprovada/congelada.
+
+Se duas frentes precisarem modificar o mesmo arquivo compartilhado, parar a
+segunda alteração, registrar o conflito e aguardar integração controlada.
+
+Considerar como núcleo protegido: autenticação, `AccessGate`, `access-context`,
+cliente Supabase, roteamento principal, configuração Vite, estilos globais,
+layout global, sidebar global e componentes compartilhados. Somente a FRENTE A
+pode alterar o núcleo de acesso.
+
+## Conclusão de cada frente
+
+Uma frente não pode assumir outra tela antes de concluir a sua. Para classificar
+uma tela como **PRONTA PARA HOMOLOGAÇÃO**, executar:
+
+1. construção completa;
+2. integração com dados reais disponíveis;
+3. estados de carregamento, vazio e erro;
+4. navegação e ações autorizadas;
+5. responsividade;
+6. typecheck e testes da própria tela;
+7. screenshot real;
+8. relatório final.
+
+Classificar como **BLOQUEADA** quando qualquer requisito estiver impedido.
+Não declarar uma tela aprovada: a aprovação pertence exclusivamente à
+responsável pelo projeto. As telas são apresentadas individualmente para
+homologação, e a homologação de uma frente não exige esperar as demais.
+
+## Autorização de avanço automático
+
+A responsável autoriza o agente a continuar diretamente de uma etapa para a
+seguinte e de uma frente para outra, sem solicitar confirmação a cada avanço,
+desde que não exista conflito com:
+
+- comandos mais recentes da responsável;
+- este agente e os demais manuais vigentes do CAPO;
+- contratos, arquivos compartilhados ou dependências centrais;
+- bases de consulta e estado físico do projeto.
+
+Perguntar somente quando houver conflito real, divergência documental ou risco
+de alterar uma base protegida. Na ausência de conflito, executar a próxima etapa,
+testar, registrar o estado e continuar. Bloqueios objetivos continuam sendo
+reportados e não podem ser mascarados como homologação ou aprovação.
+
+# MODO DE CONTINUIDADE CONTROLADA — COMANDO MAIS RECENTE
+
+O comando mais recente da responsável amplia a lista oficial de frentes
+autorizadas para 24 frentes: acesso/roteamento; estrutura visual global;
+painéis iniciais; agenda/agendamento; fila; faltosos; solicitações;
+aniversariantes; encaminhamentos; área assistencial; Médico Clínico; Nutrição;
+Assistência Social; Familiar/Cuidador; Transporte; Renovação de Receita;
+Odontologia; Encerramentos/Ciclos; Notificações; Relatórios/Auditoria;
+TI/Manutenção; Integração real com Supabase; Testes Automatizados; e
+Homologação Visual.
+
+Esta autorização substitui a limitação anterior de avanço somente até a
+TAREFA_08. Continuar automaticamente dentro da frente atual e assumir a
+próxima frente autorizada disponível quando a anterior estiver **PRONTA PARA
+HOMOLOGAÇÃO** ou bloqueada por dependência real, sem declarar aprovação.
+
+Para cada frente, manter registro de tela/módulo, status permitido, percentual
+físico aproximado, arquivos envolvidos, testes, resultado, bloqueios e próximo
+passo. Não usar dados fictícios, mocks ou persistência simulada em novas
+validações; dados reais devem ser consultados pelos contratos autorizados.
+Fixtures existentes de testes não representam homologação nem dados do CAPO.
+
+Paralelismo só é permitido entre frentes sem conflito de arquivo, contrato ou
+dependência central. Autenticação/roteamento, componentes globais, cliente
+Supabase e contratos compartilhados permanecem protegidos contra alteração
+direta por frentes concorrentes.
+
+## CONSTRUÇÃO SIMULTÂNEA CONTÍNUA — COMANDO MAIS RECENTE
+
+Frentes autorizadas não formam uma fila sequencial. Uma frente bloqueada deve
+ser mantida registrada com seu motivo, enquanto outras frentes independentes
+continuam simultaneamente. Não aguardar a resolução de uma frente bloqueada
+para iniciar ou continuar as demais.
+
+Manter, quando houver trabalho seguro disponível, entre 6 e 8 frentes ativas,
+distribuídas nas esteiras de construção, integração e testes/homologação.
+Testar continuamente enquanto outras frentes avançam.
+
+Auditar e ativar em paralelo as frentes 13 a 24: Assistência Social;
+Familiar/Cuidador; Transporte; Renovação de Receita; Odontologia;
+Encerramentos/Ciclos; Notificações; Relatórios/Auditoria; TI/Manutenção;
+Integração real com Supabase; Testes Automatizados; e Homologação Visual.
+
+Antes de cada alteração, identificar arquivos da frente, arquivos compartilhados
+e conflitos. Frentes independentes podem avançar em seus próprios arquivos;
+conflitos no núcleo protegido aguardam integração central.
+
+Em frentes clínicas, bloquear somente a função sem documentação/contrato
+suficiente. Continuar o que for estruturalmente seguro e já contratado,
+separando **CONSTRUÍVEL**, **DEPENDÊNCIA** e **BLOQUEIO ESPECÍFICO**. Não
+inventar regras clínicas, dados, mocks, permissões ou contratos.
+
+Manter quadro vivo com frente, módulo, status, arquivos, percentual físico,
+testes, bloqueio e próxima ação. Uma frente pronta entra na fila de homologação
+sem interromper a construção das demais.
+
+# CONSULTA DOCUMENTAL OBRIGATÓRIA — COMANDO MAIS RECENTE
+
+Antes de construir, bloquear, alterar ou concluir qualquer frente, consultar os
+documentos oficiais vigentes: Manual Técnico do CAPO, Manual do Projeto CAPO,
+Manual Estrutural do CAPO, Manual da Interface do CAPO e, quando aplicável,
+Especificação Estrutural da Interface, Matriz Funcional de Perfis e Automações,
+documentação vigente do Supabase e documentos específicos do módulo.
+
+Em divergência, prevalecem: instrução direta mais recente; documento oficial
+mais recente; especificação estrutural; Manual da Interface; Manual Técnico;
+Manual do Projeto; implementação física compatível.
+
+Antes de declarar documentação não localizada, pesquisar fisicamente o projeto,
+a pasta de documentação, nomes e termos equivalentes, o índice legado, React,
+RPCs e migrations. Antes de bloquear uma frente inteira, separar itens
+**CONSTRUÍVEIS**, **DEPENDÊNCIAS** e **BLOQUEIOS ESPECÍFICOS** e continuar todos
+os itens verdes.
+
+Confrontar sempre manuais, índice de referência, implementação React, contratos
+Supabase e testes existentes. Não inferir regra clínica, assistencial,
+administrativa ou de segurança ausente nos documentos; bloquear somente o item
+sem base e preservar os demais itens seguros.
+
+# 4. REGRA VISUAL OBRIGATÓRIA DO INDEX CAPO
+
+Todas as telas devem reutilizar fielmente o padrão visual do Index CAPO aprovado
+como referência. Não iniciar redesign nem criar identidade visual nova.
+
+Preservar cabeçalho, sidebar, logotipo, cores, tipografia, cards, botões,
+espaçamentos, rodapé, navegação geral e comportamento responsivo aprovado.
+As diferenças entre telas devem existir somente no conteúdo funcional específico
+de cada módulo.
+
+Antes de considerar uma tela pronta, comparar com o Index de referência,
+confirmar a identidade CAPO, gerar screenshot real e apresentar para homologação.
+Em caso de dúvida, reutilizar o padrão do Index.
+
+# 5. REGRA GERAL ANTI-LOOP
 
 Antes de concluir qualquer coisa sobre um arquivo, função, RPC, tabela ou comportamento:
 

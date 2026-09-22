@@ -1,0 +1,27 @@
+.homologation-selector {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  padding: 10px 22px;
+  border-bottom: 1px solid #f0c36b;
+  background: #fff8df;
+  color: #5f4700;
+  font-size: 0.75rem;
+}
+
+.homologation-selector > div:first-child { margin-right: auto; }
+.homologation-selector strong,
+.homologation-selector span { display: block; }
+.homologation-selector label { display: grid; gap: 4px; font-weight: 700; }
+.homologation-selector select { min-width: 165px; padding: 7px; border: 1px solid #d5b45f; border-radius: 7px; background: white; }
+.homologation-actions { display: flex; gap: 7px; }
+.homologation-actions button { padding: 8px 10px; border: 1px solid #aa8120; border-radius: 7px; background: white; color: #5f4700; font-weight: 800; cursor: pointer; }
+.homologation-actions .homologation-finish { color: #8b2148; border-color: #d59aae; }
+.homologation-selector p { width: 100%; margin: 0; color: #8b2148; }
+
+@media (max-width: 900px) {
+  .homologation-selector { align-items: stretch; flex-direction: column; padding: 10px 14px; }
+  .homologation-selector > div:first-child { margin-right: 0; }
+  .homologation-selector select { width: 100%; }
+  .homologation-actions { flex-wrap: wrap; }
+}

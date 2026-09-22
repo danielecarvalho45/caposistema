@@ -1,23 +1,24 @@
 :root {
-  --color-brand-blue: #0060b6;
+  --color-brand-blue: #006bd9;
   --color-brand-pink: #f14899;
   --color-brand-yellow: #faba03;
-  --color-brand-green: #82c32b;
-  --color-background: #f5f7f9;
-  --color-surface: #ffffff;
-  --color-text: #1c2634;
-  --color-muted: #6d7785;
-  --color-border: #e3e8ed;
-  --color-blue-soft: #edf5fc;
-  --color-green-soft: #f1f9eb;
-  --font-family-sans: Arial, Helvetica, sans-serif;
-  --radius-medium: 12px;
-  --radius-large: 20px;
-  --shadow-card: 0 18px 50px rgb(28 38 52 / 10%);
+  --color-brand-green: #0f9f59;
+  --color-background: #f5f8fb;
+  --color-surface: rgba(255, 255, 255, 0.78);
+  --color-text: #17365f;
+  --color-muted: #617b9c;
+  --color-border: #d9e7f3;
+  --color-blue-soft: rgba(232, 246, 255, 0.72);
+  --color-green-soft: rgba(235, 251, 241, 0.72);
+  --font-family-sans: 'Segoe UI', Arial, Helvetica, sans-serif;
+  --radius-medium: 9px;
+  --radius-large: 12px;
+  --shadow-card: 0 2px 10px rgb(31 67 104 / 2.5%);
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
 }

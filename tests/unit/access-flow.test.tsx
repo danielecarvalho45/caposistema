@@ -72,6 +72,17 @@ function createAuthApi(overrides: Partial<AccessAuthApi> = {}): AccessAuthApi {
   return {
     getSession: vi.fn().mockResolvedValue(null),
     loginByUsername: vi.fn().mockResolvedValue(session),
+    getMfaAssuranceLevel: vi.fn().mockResolvedValue({
+      currentLevel: 'aal2',
+      nextLevel: 'aal2',
+    }),
+    listMfaTotpFactors: vi.fn().mockResolvedValue([]),
+    enrollMfaTotp: vi.fn().mockResolvedValue({
+      id: 'new-factor-id',
+      qrCode: '<svg></svg>',
+      secret: 'CAPO-TOTP-SECRET',
+    }),
+    challengeAndVerifyMfa: vi.fn().mockResolvedValue(undefined),
     verifyUsernamePassword: vi.fn().mockResolvedValue(undefined),
     resetPasswordForEmail: vi.fn().mockResolvedValue(undefined),
     updatePassword: vi.fn().mockResolvedValue(undefined),
@@ -138,8 +149,12 @@ describe('entrada única CAPO', () => {
     const user = userEvent.setup()
 
     await screen.findByRole('heading', { name: 'Bem-vindo ao Sistema CAPO' })
-    await user.type(screen.getByLabelText('Usuário'), 'usuario')
-    await user.type(screen.getByLabelText('Senha'), '654321')
+    const usernameInput = screen.getByLabelText('Usuário')
+    const passwordInput = screen.getByLabelText('Senha')
+    await user.clear(usernameInput)
+    await user.clear(passwordInput)
+    await user.type(usernameInput, 'usuario')
+    await user.type(passwordInput, '654321')
     await user.click(screen.getByRole('button', { name: 'Entrar no CAPO' }))
 
     expect(
@@ -167,6 +182,155 @@ describe('entrada única CAPO', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Tentativa 1 de 3',
     )
+  })
+
+  it('cadastra TOTP e somente consulta Termo e contexto após confirmar aal2', async () => {
+    const getMfaAssuranceLevel = vi
+      .fn()
+      .mockResolvedValueOnce({ currentLevel: 'aal1', nextLevel: 'aal1' })
+      .mockResolvedValue({ currentLevel: 'aal2', nextLevel: 'aal2' })
+    const authApi = createAuthApi({
+      getSession: vi.fn().mockResolvedValue(session),
+      getMfaAssuranceLevel,
+    })
+    const rpcService = createRpcService()
+    renderFlow(authApi, rpcService)
+    const user = userEvent.setup()
+
+    await screen.findByRole('heading', { name: 'Proteção em duas etapas' })
+    expect(screen.getByRole('img', { name: /QR Code/ })).toBeVisible()
+    expect(screen.getByText('CAPO-TOTP-SECRET')).toBeVisible()
+    expect(rpcService.getCurrentLegalTerm).not.toHaveBeenCalled()
+    expect(rpcService.getMyAccessContext).not.toHaveBeenCalled()
+
+    await user.type(screen.getByLabelText('Código de 6 números'), '654321')
+    await user.click(
+      screen.getByRole('button', { name: 'Validar e continuar' }),
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: 'Área protegida' }),
+    ).toBeVisible()
+    expect(authApi.enrollMfaTotp).toHaveBeenCalledOnce()
+    expect(authApi.challengeAndVerifyMfa).toHaveBeenCalledWith(
+      'new-factor-id',
+      '654321',
+    )
+    expect(getMfaAssuranceLevel).toHaveBeenCalledTimes(2)
+    expect(getMfaAssuranceLevel.mock.invocationCallOrder[1]).toBeLessThan(
+      vi.mocked(rpcService.getCurrentLegalTerm).mock.invocationCallOrder[0],
+    )
+    expect(
+      vi.mocked(rpcService.getCurrentLegalTerm).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(rpcService.getMyAccessContext).mock.invocationCallOrder[0],
+    )
+  })
+
+  it('valida um fator TOTP existente antes de liberar o Termo', async () => {
+    const getMfaAssuranceLevel = vi
+      .fn()
+      .mockResolvedValueOnce({ currentLevel: 'aal1', nextLevel: 'aal2' })
+      .mockResolvedValue({ currentLevel: 'aal2', nextLevel: 'aal2' })
+    const authApi = createAuthApi({
+      getSession: vi.fn().mockResolvedValue(session),
+      getMfaAssuranceLevel,
+      listMfaTotpFactors: vi.fn().mockResolvedValue([
+        {
+          id: 'verified-factor-id',
+          friendlyName: 'CAPO',
+          status: 'verified',
+        },
+      ]),
+    })
+    const rpcService = createRpcService()
+    renderFlow(authApi, rpcService)
+    const user = userEvent.setup()
+
+    await screen.findByRole('heading', {
+      name: 'Verificação em duas etapas',
+    })
+    expect(rpcService.getCurrentLegalTerm).not.toHaveBeenCalled()
+    expect(rpcService.getMyAccessContext).not.toHaveBeenCalled()
+
+    await user.type(screen.getByLabelText('Código de 6 números'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Verificar' }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Área protegida' }),
+    ).toBeVisible()
+    expect(authApi.listMfaTotpFactors).toHaveBeenCalledOnce()
+    expect(authApi.enrollMfaTotp).not.toHaveBeenCalled()
+    expect(authApi.challengeAndVerifyMfa).toHaveBeenCalledWith(
+      'verified-factor-id',
+      '123456',
+    )
+  })
+
+  it('mantém Termo e contexto bloqueados quando o código TOTP é inválido', async () => {
+    const authApi = createAuthApi({
+      getSession: vi.fn().mockResolvedValue(session),
+      getMfaAssuranceLevel: vi
+        .fn()
+        .mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal2' }),
+      listMfaTotpFactors: vi.fn().mockResolvedValue([
+        {
+          id: 'verified-factor-id',
+          friendlyName: 'CAPO',
+          status: 'verified',
+        },
+      ]),
+    })
+    const rpcService = createRpcService()
+    renderFlow(authApi, rpcService)
+    const user = userEvent.setup()
+
+    await screen.findByRole('heading', {
+      name: 'Verificação em duas etapas',
+    })
+    await user.type(screen.getByLabelText('Código de 6 números'), '123')
+    await user.click(screen.getByRole('button', { name: 'Verificar' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Informe o código de 6 números',
+    )
+    expect(authApi.challengeAndVerifyMfa).not.toHaveBeenCalled()
+    expect(rpcService.getCurrentLegalTerm).not.toHaveBeenCalled()
+    expect(rpcService.getMyAccessContext).not.toHaveBeenCalled()
+  })
+
+  it('não avança após o desafio enquanto a sessão continuar em aal1', async () => {
+    const authApi = createAuthApi({
+      getSession: vi.fn().mockResolvedValue(session),
+      getMfaAssuranceLevel: vi
+        .fn()
+        .mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal2' }),
+      listMfaTotpFactors: vi.fn().mockResolvedValue([
+        {
+          id: 'verified-factor-id',
+          friendlyName: 'CAPO',
+          status: 'verified',
+        },
+      ]),
+    })
+    const rpcService = createRpcService()
+    renderFlow(authApi, rpcService)
+    const user = userEvent.setup()
+
+    await screen.findByRole('heading', {
+      name: 'Verificação em duas etapas',
+    })
+    await user.type(screen.getByLabelText('Código de 6 números'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Verificar' }))
+
+    await waitFor(() =>
+      expect(authApi.getMfaAssuranceLevel).toHaveBeenCalledTimes(2),
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Verificação em duas etapas' }),
+    ).toBeVisible()
+    expect(rpcService.getCurrentLegalTerm).not.toHaveBeenCalled()
+    expect(rpcService.getMyAccessContext).not.toHaveBeenCalled()
   })
 
   it('solicita recuperação sem revelar se o e-mail existe', async () => {

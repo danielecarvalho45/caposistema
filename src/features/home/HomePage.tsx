@@ -1,4 +1,12 @@
+import { useEffect, useState } from 'react'
+import {
+  getRpcService,
+  loadingState,
+  type AsyncState,
+  type BirthdayOverview,
+} from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
+import { ProfileDashboard } from './ProfileDashboard'
 import './home-page.css'
 
 function normalized(value: string | null | undefined) {
@@ -12,28 +20,287 @@ function pluralizeCapabilities(total: number) {
     : `${total} permissões funcionais reconhecidas`
 }
 
+type HomePageProps = Readonly<{
+  accessContext: AccessContext
+  loadBirthdays?: () => Promise<AsyncState<BirthdayOverview>>
+}>
+
+function formatDateOnly(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) return value
+  return new Intl.DateTimeFormat('pt-BR').format(new Date(year, month - 1, day))
+}
+
+function GestorDashboardDetails({
+  birthdays,
+}: Readonly<{ birthdays: AsyncState<BirthdayOverview> }>) {
+  const patientBirthdays =
+    birthdays.status === 'success' ? birthdays.data.patients : []
+  const teamBirthdays = birthdays.status === 'success' ? birthdays.data.team : []
+
+  return (
+    <>
+      <section className="gestor-dashboard-grid" aria-label="Visão geral do sistema">
+        <article className="gestor-panel gestor-agenda-panel">
+          <header className="gestor-panel-head">
+            <h2>
+              <span aria-hidden="true">▣</span> Agenda do dia{' '}
+              <em>— Todos os profissionais</em>
+            </h2>
+            <span>Visão geral diária</span>
+          </header>
+          <div className="gestor-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Horário</th>
+                  <th>Paciente</th>
+                  <th>Profissional</th>
+                  <th>Especialidade</th>
+                  <th>Tipo</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={6}>Nenhum agendamento disponível.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <span className="gestor-panel-foot">Agenda geral do dia ›</span>
+        </article>
+
+        <aside className="gestor-side-stack">
+          <article className="gestor-panel">
+            <header className="gestor-panel-head">
+              <h2>
+                <span aria-hidden="true">🎂</span> Aniversariantes de hoje
+              </h2>
+            </header>
+            <div className="gestor-tabs">
+              <span>Pacientes</span>
+              <span>Equipe CAPO</span>
+            </div>
+            <div className="gestor-empty-state">
+              {patientBirthdays.length === 0 && teamBirthdays.length === 0
+                ? 'Nenhum aniversariante disponível.'
+                : [...patientBirthdays, ...teamBirthdays]
+                    .map((person) => person.full_name)
+                    .join(', ')}
+            </div>
+          </article>
+
+          <article className="gestor-panel">
+            <header className="gestor-panel-head">
+              <h2>
+                <span aria-hidden="true">◷</span> Atividades Recentes
+              </h2>
+            </header>
+            <div className="gestor-empty-state">
+              Nenhuma atividade registrada.
+            </div>
+          </article>
+        </aside>
+      </section>
+
+      <section className="gestor-summary-grid" aria-label="Resumo do sistema">
+        <article className="gestor-panel gestor-register-card">
+          <header className="gestor-panel-head">
+            <h2>
+              <span aria-hidden="true">👥</span> Cadastro de Profissional
+            </h2>
+          </header>
+          <p>Gerenciar profissionais e permissões</p>
+          <span className="gestor-card-arrow" aria-hidden="true">›</span>
+        </article>
+        <article className="gestor-panel">
+          <header className="gestor-panel-head">
+            <h2>
+              <span aria-hidden="true">▥</span> Indicadores do Sistema
+            </h2>
+          </header>
+          <div className="gestor-metrics">
+            <div><strong>—</strong><small>Pacientes ativos</small></div>
+            <div><strong>—</strong><small>Consultas realizadas</small></div>
+            <div><strong>—</strong><small>Faltosos</small></div>
+            <div><strong>—</strong><small>Solicitações em andamento</small></div>
+          </div>
+        </article>
+        <article className="gestor-panel">
+          <header className="gestor-panel-head">
+            <h2><span aria-hidden="true">⚙</span> Status do Sistema</h2>
+          </header>
+          <div className="gestor-system-status"><span /> <strong>—</strong></div>
+          <small>Nenhum estado técnico registrado.</small>
+        </article>
+      </section>
+    </>
+  )
+}
+
 export function HomePage({
   accessContext,
-}: Readonly<{ accessContext: AccessContext }>) {
+  loadBirthdays = getRpcService().getBirthdays,
+}: HomePageProps) {
+  const [birthdays, setBirthdays] =
+    useState<AsyncState<BirthdayOverview>>(loadingState())
   const displayName =
     normalized(accessContext.full_name) ?? accessContext.username
   const contextName =
     normalized(accessContext.primary_context.name) ?? 'Contexto autorizado'
   const functionTitle = normalized(accessContext.function_title)
+  const primaryCode = normalized(accessContext.primary_context.code)
+  const isAdministrativeOperational =
+    primaryCode === 'administrativo_operacional'
+  const isGestor = primaryCode === 'administrador'
+  const canViewBirthdays = accessContext.roles.some((role) =>
+    [
+      'administrador',
+      'administrativo_operacional',
+      'coordenador',
+      'profissional',
+      'medico_clinico_geral',
+      'nutricao',
+      'assistencia_social',
+      'assistente_social',
+      'social',
+    ].includes(role.code),
+  )
+
+  useEffect(() => {
+    if (!canViewBirthdays) return
+    let active = true
+    void loadBirthdays().then((state) => active && setBirthdays(state))
+    return () => {
+      active = false
+    }
+  }, [canViewBirthdays, loadBirthdays])
 
   return (
     <div className="home-page">
-      <section className="home-welcome" aria-labelledby="home-title">
-        <p className="eyebrow">Início</p>
-        <h1 id="home-title">Olá, {displayName}</h1>
-        <p>
-          Seu acesso ao CAPO foi validado. Os módulos operacionais serão
-          incorporados progressivamente a esta área de trabalho.
-        </p>
-        <p className="home-slogan">Acolher, cuidar e caminhar juntos.</p>
-      </section>
+      {!isGestor && (
+        <section className="home-welcome" aria-labelledby="home-title">
+          <p className="eyebrow">Início</p>
+          <h1 id="home-title">Olá, {displayName}</h1>
+          <p>
+            Seu acesso ao CAPO foi validado. Os módulos operacionais serão
+            incorporados progressivamente a esta área de trabalho.
+          </p>
+          <p className="home-slogan">Acolher, cuidar e caminhar juntos.</p>
+        </section>
+      )}
 
-      <section className="home-access" aria-labelledby="access-summary-title">
+      <ProfileDashboard accessContext={accessContext} />
+
+      {isGestor && <GestorDashboardDetails birthdays={birthdays} />}
+
+      {!isGestor && canViewBirthdays && (
+        <section className="home-birthdays" aria-labelledby="birthdays-title">
+          <div className="home-birthdays-heading">
+            <div>
+              <p className="eyebrow">Hoje</p>
+              <h2 id="birthdays-title">Aniversariantes de hoje</h2>
+            </div>
+            {birthdays.status === 'success' && (
+              <span>{formatDateOnly(birthdays.data.reference_date)}</span>
+            )}
+          </div>
+
+          {birthdays.status === 'loading' && (
+            <p aria-live="polite">Carregando aniversariantes autorizados…</p>
+          )}
+          {birthdays.status === 'error' && (
+            <p className="home-birthdays-error" role="alert">
+              Não foi possível carregar os aniversariantes autorizados.
+            </p>
+          )}
+          {birthdays.status === 'empty' && (
+            <p>Nenhum aniversariante autorizado foi retornado.</p>
+          )}
+          {birthdays.status === 'success' && (
+            <div className="home-birthday-grid">
+              <article>
+                <h3>Pacientes</h3>
+                {birthdays.data.patients.length === 0 ? (
+                  <p>Nenhum paciente acompanhado faz aniversário hoje.</p>
+                ) : (
+                  <ul>
+                    {birthdays.data.patients.map((patient) => (
+                      <li key={patient.patient_id}>
+                        <strong>{patient.full_name}</strong>
+                        {(patient.patient_number || patient.cms) && (
+                          <small>
+                            {patient.patient_number
+                              ? `Nº CAPO ${patient.patient_number}`
+                              : ''}
+                            {patient.patient_number && patient.cms ? ' · ' : ''}
+                            {patient.cms ? `CMS ${patient.cms}` : ''}
+                          </small>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+              <article>
+                <h3>Equipe CAPO</h3>
+                {birthdays.data.team.length === 0 ? (
+                  <p>Nenhum integrante da equipe faz aniversário hoje.</p>
+                ) : (
+                  <ul>
+                    {birthdays.data.team.map((member) => (
+                      <li key={member.professional_id}>
+                        <strong>{member.full_name}</strong>
+                        <small>{member.function_title}</small>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            </div>
+          )}
+          <p className="home-birthdays-note">
+            A lista respeita o contexto de acesso. Contato de aniversário não é
+            liberado sem autorização registrada no backend.
+          </p>
+        </section>
+      )}
+
+      {isAdministrativeOperational && (
+        <section className="home-ops" aria-labelledby="operational-panel-title">
+          <div>
+            <p className="eyebrow">Operacional</p>
+            <h2 id="operational-panel-title">Painel Operacional</h2>
+          </div>
+
+          <div className="home-ops-grid">
+            <article className="home-metric">
+              <span className="home-metric-label">Contexto principal</span>
+              <strong>{contextName}</strong>
+            </article>
+            <article className="home-metric">
+              <span className="home-metric-label">Perfis ativos</span>
+              <strong>{accessContext.roles.length}</strong>
+            </article>
+            <article className="home-metric">
+              <span className="home-metric-label">Permissões</span>
+              <strong>{accessContext.capabilities.length}</strong>
+            </article>
+          </div>
+
+          <div className="home-capabilities">
+            <h3>Permissões vigentes</h3>
+            <ul>
+              {accessContext.capabilities.map((capability) => (
+                <li key={capability}>{capability}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {!isGestor && <section className="home-access" aria-labelledby="access-summary-title">
         <div>
           <p className="eyebrow">Acesso atual</p>
           <h2 id="access-summary-title">Resumo do seu contexto</h2>
@@ -64,7 +331,7 @@ export function HomePage({
           A disponibilidade de cada módulo continuará sendo validada pelas
           regras de acesso do backend.
         </p>
-      </section>
+      </section>}
     </div>
   )
 }

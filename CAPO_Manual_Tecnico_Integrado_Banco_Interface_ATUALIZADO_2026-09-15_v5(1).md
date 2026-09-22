@@ -9,7 +9,7 @@
 ## Resumo executivo
 
 - BLOCO 10: **VERDE / CONGELADO**.
-- BLOCO 1 Pendências: 1A/1B/1C verdes; 1D identificou gap de leitura da fila para AO; 1D-B e 1E pendentes.
+- BLOCO 1 Pendências: 1A/1B/1C/1D-B verdes; a leitura da fila foi liberada ao AO pela migration `20260915204911`; 1E permanece pendente somente de homologação real porque não há conta AO ativa no projeto.
 - Contexto principal por conta: backend **VERDE** pela migration `20260915120544`; `index.html` atual consome `primary_context`, mas ainda não está dentro do ZIP canônico v7.
 - Backend possui atualmente **122 functions/RPCs de interface/contexto**; o ZIP canônico atual ainda consome diretamente, na maior parte dos perfis, apenas Auth/Termo/Contexto.
 - Próxima fase: auditoria/manutenção conjunta automatizada banco + interface, com reparo mínimo e teste por microetapa.
@@ -49,19 +49,19 @@
 
 ## Fila de reparos
 
-- 1. Pendências — **AMARELO** — Executar 1D-B; depois 1E teste final e congelamento. Bug notify_waiting_list foi movido ao Bloco 9.
+- 1. Pendências — **AMARELO** — 1D-B corrigida e integrada à SPA; concluir 1E com conta AO real/autorizada e então congelar. Bug notify_waiting_list permanece no Bloco 9.
 
-- 2. Faltosos — **AMARELO** — Auditoria formal do bloco atual + integração real das telas atuais; confirmar baixa/pendência/notificação fim a fim.
+- 2. Faltosos — **AMARELO / HOMOLOGAÇÃO REAL PENDENTE** — Backend separado de Busca Ativa e integrado à rota `/faltosos` da SPA pelas migrations `20260916140950` e `20260916141613`. Contatos possuem histórico próprio; acesso operacional restrito a AO/Administração/Coordenação; criação notifica AO; remarcação efetivada vincula o novo agendamento e encerra a pendência; alterações entram em auditoria/timeline. Falta homologar com conta AO e ocorrência reais. Evidências em `TAREFA_03_AUDITORIA_FALTOSOS.md`.
 
-- 3. Solicitações — **AMARELO** — Fechar estados atuais, devolução/retorno, notificações e integração real dos perfis.
+- 3. Solicitações — **AMARELO / HOMOLOGAÇÃO REAL PENDENTE** — Estados recebida/em atendimento/devolvida/concluída/recusada/cancelada, complemento e reenvio pelo solicitante, histórico, auditoria e notificações foram integrados à rota `/solicitacoes` pelas migrations `20260916145256` e `20260916150103`. A leitura autenticada administrativa foi validada sem dados; falta homologar as transições com solicitações e perfis reais. Evidências em `TAREFA_04_SOLICITACOES.md`.
 
-- 4. Aniversariantes — **AMARELO** — Confirmar fonte/contrato canônico, permissões e carregamento real; homologar todos os perfis.
+- 4. Aniversariantes — **AMARELO / CADASTRO E HOMOLOGAÇÃO REAL PENDENTES** — Fonte canônica confirmada em `patients.birth_date` e `professionals.birth_date`; RPC sanitizada `get_birthdays_for_interface` integrada à página inicial pela migration `20260916150852`. Administração/AO/Coordenação veem pacientes no escopo institucional; profissionais recebem somente pacientes sob responsabilidade ou vínculo de agenda. A resposta não expõe nascimento completo, idade ou telefone. Homologação transacional com paciente de teste passou e foi revertida; faltam datas reais da equipe e contas reais de todos os perfis. Evidências em `TAREFA_05_ANIVERSARIANTES.md`.
 
-- 5. Encaminhamento interprofissional — **AMARELO** — Fechar contrato completo origem/destino/estados/recipient notification e integrar interface.
+- 5. Encaminhamento interprofissional — **AMARELO / HOMOLOGAÇÃO REAL E VÍNCULOS DE CONTA PENDENTES** — Contrato completo de origem, especialidade solicitada, triagem, destinatário, estados, histórico e notificações integrado à rota `/encaminhamentos` pelas migrations `20260916152126`, `20260916152438` e `20260916182745`. O fluxo transacional completo passou e foi revertido. Os seis profissionais assistenciais ativos ainda não possuem contas vinculadas e, corretamente, não podem ser atribuídos nem notificados até a regularização. Evidências em `TAREFA_06_ENCAMINHAMENTOS_INTERPROFISSIONAIS.md`.
 
-- 6. Demais especialidades — **VERDE backend / AMARELO interface** — Implementar CAPOProfissionalAssistencialIntegration/loaders reais; Psicologia/Fisioterapia/futuras especialidades sem HTML novo por especialidade.
+- 6. Demais especialidades — **AMARELO / CONTAS E DADOS REAIS PENDENTES** — Área compartilhada `/atuacao`, agenda real e `CAPOProfissionalAssistencialIntegration` implantadas para Psicologia, Fisioterapia e futuras especialidades, sem HTML duplicado, pela migration `20260916183355`. A busca retorna somente pacientes vinculados à atuação autenticada e o resumo consome o relatório operacional canônico. Homologação transacional passou e foi revertida; faltam contas vinculadas aos seis profissionais assistenciais ativos e dados assistenciais reais para validação ponta a ponta. Evidências em `TAREFA_07_AREA_ASSISTENCIAL_COMPARTILHADA.md`.
 
-- 7. Logs — **VERDE backend / AMARELO interface** — Integrar dashboard/status/integrações/logs/histórico no Index TI atual e fazer reconciliação final do bloco.
+- 7. Logs — **AMARELO / CONTA TI E TELEMETRIA REAL PENDENTES** — Painel, estado do sistema, integrações, logs runtime e histórico persistido de suporte foram integrados à rota `/tecnica` da SPA usando exclusivamente os contratos canônicos existentes. A conta Administradora real homologou as leituras; os quatro componentes internos estão operacionais e a dependência de Auth administrativo permanece `desconhecido` porque ainda não há telemetria runtime. Não existe conta ativa com papel `administrador_tecnico`, nem logs/chamados reais para homologação específica de TI. Evidências em `TAREFA_08_LOGS_E_OBSERVABILIDADE_TECNICA.md`.
 
 - 8. Funções / Procedures — **AMARELO** — Auditar duplicidades/legado, autorização, retornos, erros, concorrência e contratos efetivamente consumidos.
 

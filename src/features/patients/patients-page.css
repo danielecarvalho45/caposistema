@@ -1,0 +1,172 @@
+.patients-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.patients-actions button,
+.patients-form-actions button {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  background: #fff;
+  font-weight: 700;
+}
+
+.patients-actions button.is-active {
+  color: #fff;
+  border-color: var(--color-brand-blue);
+  background: var(--color-brand-blue);
+}
+
+.patients-register {
+  display: grid;
+  gap: 1rem;
+}
+
+.patients-section-heading h2 {
+  margin-top: 0.25rem;
+}
+
+.patients-section-heading p:not(.eyebrow) {
+  margin-top: 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+
+.patients-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.patients-form-grid label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.patients-form-grid input,
+.patients-form-grid select,
+.patients-form-grid textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  background: #f8fbfd;
+}
+
+.patients-span-2 {
+  grid-column: span 2;
+}
+
+.patients-span-all {
+  grid-column: 1 / -1;
+}
+
+.patients-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.patients-generated-note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.patients-form-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 700px) {
+  .patients-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .patients-span-2,
+  .patients-span-all {
+    grid-column: auto;
+  }
+}
+
+.patients-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.patients-card-actions a {
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-brand-blue);
+  background: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.patients-offer {
+  display: grid;
+  gap: 1rem;
+}
+
+.patients-offer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+}
+
+.patients-field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.patients-message-preview {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  background: #f8fbfd;
+  resize: vertical;
+}
+
+.patients-offer-actions {
+  justify-content: flex-start;
+  margin-top: 0.75rem;
+}
+
+.patients-offer-status {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  color: var(--color-muted);
+  background: #f8fbfd;
+  font-size: 0.8rem;
+}
+
+.patients-offer-status strong {
+  color: var(--color-text);
+}
+
+@media (max-width: 700px) {
+  .patients-offer-grid {
+    grid-template-columns: 1fr;
+  }
+}

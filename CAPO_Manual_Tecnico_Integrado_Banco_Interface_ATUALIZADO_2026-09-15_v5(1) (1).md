@@ -59,9 +59,9 @@
 
 - 5. Encaminhamento interprofissional — **AMARELO** — Fechar contrato completo origem/destino/estados/recipient notification e integrar interface.
 
-- 6. Demais especialidades — **VERDE backend / AMARELO interface** — Implementar CAPOProfissionalAssistencialIntegration/loaders reais; Psicologia/Fisioterapia/futuras especialidades sem HTML novo por especialidade.
+- 6. Demais especialidades — **AMARELO / CONTAS E DADOS REAIS PENDENTES** — Área compartilhada `/atuacao`, agenda real e `CAPOProfissionalAssistencialIntegration` implantadas para Psicologia, Fisioterapia e futuras especialidades, sem HTML duplicado, pela migration `20260916183355`. A busca retorna somente pacientes vinculados à atuação autenticada e o resumo consome o relatório operacional canônico. Homologação transacional passou e foi revertida; faltam contas vinculadas aos seis profissionais assistenciais ativos e dados assistenciais reais para validação ponta a ponta. Evidências em `TAREFA_07_AREA_ASSISTENCIAL_COMPARTILHADA.md`.
 
-- 7. Logs — **VERDE backend / AMARELO interface** — Integrar dashboard/status/integrações/logs/histórico no Index TI atual e fazer reconciliação final do bloco.
+- 7. Logs — **AMARELO / CONTA TI E TELEMETRIA REAL PENDENTES** — Painel, estado do sistema, integrações, logs runtime e histórico persistido de suporte foram integrados à rota `/tecnica` da SPA usando exclusivamente os contratos canônicos existentes. A conta Administradora real homologou as leituras; os quatro componentes internos estão operacionais e a dependência de Auth administrativo permanece `desconhecido` porque ainda não há telemetria runtime. Não existe conta ativa com papel `administrador_tecnico`, nem logs/chamados reais para homologação específica de TI. Evidências em `TAREFA_08_LOGS_E_OBSERVABILIDADE_TECNICA.md`.
 
 - 8. Funções / Procedures — **AMARELO** — Auditar duplicidades/legado, autorização, retornos, erros, concorrência e contratos efetivamente consumidos.
 

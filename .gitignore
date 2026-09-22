@@ -15,6 +15,7 @@ test-results/
 
 # Logs
 *.log
+.validation.txt
 
 # Sistema operacional
 .DS_Store

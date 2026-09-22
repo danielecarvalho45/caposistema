@@ -1,0 +1,202 @@
+.family-caregiver-page {
+  display: grid;
+  gap: 1.5rem;
+}
+.family-caregiver-header,
+.family-caregiver-notice,
+.family-caregiver-sections,
+.family-caregiver-pending {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #d9e2ea);
+  border-radius: 0.75rem;
+  padding: clamp(1.1rem, 2vw, 1.75rem);
+  box-shadow: 0 0.5rem 1.5rem rgb(25 55 80 / 7%);
+}
+.family-caregiver-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  background: linear-gradient(120deg, #f4fbf8 0%, #fffaf1 100%);
+}
+.family-caregiver-back {
+  width: fit-content;
+  color: #246da7;
+  font-weight: 700;
+  text-decoration: none;
+}
+.family-caregiver-back:hover,
+.family-caregiver-back:focus-visible {
+  text-decoration: underline;
+}
+.family-caregiver-header h1,
+.family-caregiver-sections h2 {
+  margin: 0;
+  color: var(--text-strong, #15364b);
+}
+.family-caregiver-header p:not(.eyebrow) {
+  max-width: 52rem;
+  margin: 0.5rem 0 0;
+  color: var(--text-muted, #587080);
+}
+.family-caregiver-connection {
+  color: #17634d;
+  background: #e3f5ed;
+  border: 1px solid #acdcca;
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.family-caregiver-notice {
+  border-left: 0.3rem solid #d9a85f;
+}
+.family-caregiver-notice strong,
+.family-caregiver-pending strong {
+  color: #7a4a12;
+}
+.family-caregiver-notice p,
+.family-caregiver-pending p {
+  margin: 0.5rem 0 0;
+  color: var(--text-muted, #587080);
+}
+.family-caregiver-sections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.family-caregiver-sections article {
+  min-height: 8.5rem;
+  padding: 1rem;
+  border: 1px solid #d9e2ea;
+  border-radius: 0.45rem;
+  background: #fcfdfd;
+}
+.family-caregiver-sections h2 {
+  font-size: 1rem;
+}
+.family-caregiver-sections p {
+  margin: 0.7rem 0 0.4rem;
+  color: #15364b;
+  font-weight: 600;
+}
+.family-caregiver-sections span,
+.family-caregiver-pending small {
+  color: #587080;
+  font-size: 0.88rem;
+}
+.family-caregiver-pending {
+  background: #fffaf1;
+  border-color: #f0d5a9;
+}
+.family-caregiver-pending small {
+  display: block;
+  margin-top: 0.75rem;
+}
+.family-caregiver-panel {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #d9e2ea);
+  border-radius: 0.75rem;
+  padding: 1.1rem;
+}
+.family-caregiver-panel h2 {
+  margin: 0 0 0.85rem;
+  color: var(--text-strong, #15364b);
+  font-size: 1.05rem;
+}
+.family-caregiver-search,
+.family-caregiver-form,
+.family-caregiver-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+.family-caregiver-form {
+  align-items: stretch;
+}
+.family-caregiver-form label {
+  flex: 1 1 13rem;
+}
+.family-caregiver-search label,
+.family-caregiver-panel > label {
+  display: grid;
+  gap: 0.35rem;
+  flex: 1 1 16rem;
+  color: #15364b;
+  font-weight: 600;
+}
+.family-caregiver-panel input,
+.family-caregiver-panel select,
+.family-caregiver-panel textarea {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #b9c9d5;
+  border-radius: 0.35rem;
+  font: inherit;
+}
+.family-caregiver-panel textarea {
+  min-height: 4rem;
+  width: 100%;
+}
+.family-caregiver-panel button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #246da7;
+  border-radius: 0.35rem;
+  background: #246da7;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.family-caregiver-panel button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.family-caregiver-results,
+.family-caregiver-history {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.family-caregiver-results button {
+  width: 100%;
+  text-align: left;
+}
+.family-caregiver-history li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border-left: 0.25rem solid #acdcca;
+  background: #f4fbf8;
+}
+.family-caregiver-history span,
+.family-caregiver-history small,
+.family-caregiver-selected {
+  color: #587080;
+}
+.family-caregiver-error {
+  padding: 0.75rem;
+  border-left: 0.3rem solid #b94a48;
+  background: #fff0ef;
+  color: #7a2523;
+}
+.family-caregiver-feedback {
+  padding: 0.75rem;
+  border-left: 0.3rem solid #2d8a68;
+  background: #e3f5ed;
+  color: #17634d;
+}
+@media (max-width: 720px) {
+  .family-caregiver-header {
+    display: grid;
+  }
+  .family-caregiver-connection {
+    width: fit-content;
+  }
+  .family-caregiver-sections {
+    grid-template-columns: 1fr;
+  }
+}
