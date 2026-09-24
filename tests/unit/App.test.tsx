@@ -276,8 +276,10 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'Olá, Nome real' }),
     ).toBeVisible()
     expect(
-      screen.getAllByRole('heading', { name: 'Painel Operacional' }),
-    ).toHaveLength(2)
+      screen.getByRole('heading', {
+        name: 'Painel administrativo operacional',
+      }),
+    ).toBeVisible()
     expect(screen.getByRole('img', { name: /CAPO/ })).toHaveAttribute(
       'src',
       '/assets/capo-logo.jpg',
@@ -329,11 +331,6 @@ describe('App', () => {
 
     expect(
       screen.getByRole('heading', { name: 'Acessos rápidos' }),
-    ).toBeVisible()
-    expect(
-      screen.getByRole('heading', {
-        name: 'Agenda do dia — Todos os profissionais',
-      }),
     ).toBeVisible()
     expect(
       screen.queryByRole('heading', { name: 'Painel Operacional' }),
@@ -420,7 +417,7 @@ describe('App', () => {
       '/agenda',
     )
 
-    expect(screen.getByRole('heading', { name: 'Agenda Geral' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Agenda' })).toBeVisible()
     expect(
       await screen.findByText('Nenhum agendamento encontrado no período.'),
     ).toBeVisible()
@@ -450,7 +447,7 @@ describe('App', () => {
     expect(document.getElementById('app-sidebar')).toHaveClass('is-open')
     expect(screen.getByRole('button', { name: '← Voltar' })).toBeVisible()
     expect(
-      screen.getByText('sistema CAPO — Gestão Administrativa e Operacional'),
+      screen.getByText('CAPO — Centro de Acolhimento ao Paciente Oncológico'),
     ).toBeVisible()
   })
 
@@ -467,10 +464,11 @@ describe('App', () => {
       '/agenda',
     )
 
-    expect(screen.getByRole('heading', { name: 'Agenda Geral' })).toBeVisible()
-    for (const link of screen.getAllByRole('link', { name: 'Agenda Geral' })) {
-      expect(link).toHaveAttribute('aria-current', 'page')
-    }
+    expect(screen.getByRole('heading', { name: 'Agenda' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Agenda' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     expect(screen.getByRole('link', { name: 'Início' })).toHaveAttribute(
       'href',
       '/',
@@ -718,9 +716,10 @@ describe('App', () => {
     expect(
       await screen.findByText('Nenhuma solicitação encontrada.'),
     ).toBeVisible()
-    for (const link of screen.getAllByRole('link', { name: 'Solicitações' })) {
-      expect(link).toHaveAttribute('aria-current', 'page')
-    }
+    expect(screen.getByRole('link', { name: 'Solicitações' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 
   it('oferece encaminhamentos aos perfis integrados e exibe estado vazio real', async () => {

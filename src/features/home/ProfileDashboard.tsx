@@ -71,11 +71,6 @@ const links: Record<string, readonly DashboardLink[]> = {
   ],
   coordenador: [
     {
-      path: '/gestor/equipe',
-      label: 'Coordenação do Serviço',
-      description: 'Equipe, continuidade e decisões gerenciais.',
-    },
-    {
       path: '/agenda',
       label: 'Agendas da Equipe',
       description: 'Consultar o período autorizado.',
@@ -100,21 +95,6 @@ const links: Record<string, readonly DashboardLink[]> = {
       label: 'Encerramentos',
       description: 'Acompanhar ciclos autorizados.',
     },
-    {
-      path: '/gestor/timeline',
-      label: 'Linha do Tempo',
-      description: 'Acompanhar eventos operacionais.',
-    },
-    {
-      path: '/gestor/auditoria',
-      label: 'Auditoria',
-      description: 'Consultar registros autorizados.',
-    },
-    {
-      path: '/gestor/suporte',
-      label: 'Suporte',
-      description: 'Acompanhar suporte do serviço.',
-    },
   ],
   administrativo_operacional: [
     {
@@ -137,31 +117,6 @@ const links: Record<string, readonly DashboardLink[]> = {
       label: 'Solicitações',
       description: 'Receber e tratar demandas.',
     },
-    {
-      path: '/transporte',
-      label: 'Transporte',
-      description: 'Acompanhar providências autorizadas.',
-    },
-    {
-      path: '/familiar-cuidador',
-      label: 'Familiares',
-      description: 'Consultar vínculos administrativos.',
-    },
-    {
-      path: '/odontologia',
-      label: 'Odontologia',
-      description: 'Acompanhar encaminhamentos autorizados.',
-    },
-    {
-      path: '/receita',
-      label: 'Renovação de Receita',
-      description: 'Acompanhar o fluxo administrativo.',
-    },
-    {
-      path: '/notificacoes',
-      label: 'Avisos',
-      description: 'Pendências e mudanças de estado.',
-    },
   ],
   profissional: [
     {
@@ -176,8 +131,8 @@ const links: Record<string, readonly DashboardLink[]> = {
     },
     {
       path: '/solicitacoes',
-      label: 'Solicitar ao Coordenador',
-      description: 'Enviar e acompanhar uma solicitação.',
+      label: 'Solicitações',
+      description: 'Acompanhar solicitações profissionais.',
     },
     {
       path: '/encaminhamentos',
@@ -188,38 +143,6 @@ const links: Record<string, readonly DashboardLink[]> = {
       path: '/relatorios',
       label: 'Relatórios',
       description: 'Consultar resultados autorizados.',
-    },
-  ],
-  medico_clinico_geral: [
-    {
-      path: '/agenda',
-      label: 'Minha Agenda',
-      description: 'Dia, semana e mês dos atendimentos clínicos.',
-    },
-    {
-      path: '/receita',
-      label: 'Renovação de Receita',
-      description: 'Analisar solicitações médicas autorizadas.',
-    },
-    {
-      path: '/encaminhamentos',
-      label: 'Encaminhamentos',
-      description: 'Acompanhar encaminhamentos interprofissionais.',
-    },
-    {
-      path: '/encerramentos',
-      label: 'Encerramento próprio',
-      description: 'Solicitar o encerramento da própria especialidade.',
-    },
-    {
-      path: '/solicitacoes',
-      label: 'Solicitar ao Coordenador',
-      description: 'Enviar e acompanhar uma solicitação.',
-    },
-    {
-      path: '/relatorios',
-      label: 'Relatórios',
-      description: 'Consultar indicadores autorizados.',
     },
   ],
   nutricao: [
@@ -237,33 +160,6 @@ const links: Record<string, readonly DashboardLink[]> = {
       path: '/relatorios',
       label: 'Relatórios da Nutrição',
       description: 'Consultar indicadores autorizados.',
-    },
-  ],
-  assistencia_social: [
-    {
-      path: '/assistencia-social',
-      label: 'Acompanhamento Social',
-      description: 'Abrir a agenda e os acompanhamentos sociais.',
-    },
-    {
-      path: '/familiar-cuidador',
-      label: 'Familiar / Cuidador',
-      description: 'Consultar vínculos autorizados.',
-    },
-    {
-      path: '/encaminhamentos',
-      label: 'Encaminhamentos',
-      description: 'Acompanhar destinos autorizados.',
-    },
-    {
-      path: '/solicitacoes',
-      label: 'Solicitar ao Coordenador',
-      description: 'Enviar e acompanhar uma solicitação.',
-    },
-    {
-      path: '/encerramentos',
-      label: 'Encerramento social',
-      description: 'Solicitar o encerramento autorizado.',
     },
   ],
   administrador_tecnico: [
@@ -294,13 +190,8 @@ export function ProfileDashboard({
 }: Readonly<{ accessContext: AccessContext }>) {
   const primaryCode = accessContext.primary_context.code ?? ''
   const dashboardKey = primaryCode || 'profissional'
-  const contextLinks =
-    links[dashboardKey] ??
-    (['assistente_social', 'social'].includes(dashboardKey)
-      ? links.assistencia_social
-      : links.profissional)
-  const availableLinks = contextLinks.filter((item) =>
-    canAccessAppRoute(accessContext, item.path),
+  const availableLinks = (links[dashboardKey] ?? links.profissional ?? []).filter(
+    (item) => canAccessAppRoute(accessContext, item.path),
   )
 
   if (availableLinks.length === 0) return null

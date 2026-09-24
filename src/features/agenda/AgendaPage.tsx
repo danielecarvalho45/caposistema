@@ -131,10 +131,14 @@ function AppointmentTable({
   appointments,
   includeDate = true,
   showSpecialty = true,
+  onAttendance,
+  busyAppointmentId,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
   includeDate?: boolean
   showSpecialty?: boolean
+  onAttendance?: (appointmentId: string, action: string) => void
+  busyAppointmentId?: string | null
 }>) {
   return (
     <div className="assistential-table-wrap">
@@ -148,6 +152,7 @@ function AppointmentTable({
             {showSpecialty && <th scope="col">Especialidade</th>}
             <th scope="col">Tipo</th>
             <th scope="col">Situação</th>
+            {onAttendance && <th scope="col">Ações</th>}
           </tr>
         </thead>
         <tbody>
@@ -165,6 +170,13 @@ function AppointmentTable({
               )}
               <td>{appointment.appointment_type}</td>
               <td>{appointment.attendance_status}</td>
+              {onAttendance && (
+                <td>
+                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmar')}>Confirmar</button>
+                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'falta')}>Falta</button>
+                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'retorno')}>Retorno</button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -179,18 +191,24 @@ function AgendaResults({
   endDate,
   view,
   showSpecialty,
+  onAttendance,
+  busyAppointmentId,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
   startDate: string
   endDate: string
   view: AgendaView
   showSpecialty: boolean
+  onAttendance?: (appointmentId: string, action: string) => void
+  busyAppointmentId?: string | null
 }>) {
   if (view === 'day') {
     return (
       <AppointmentTable
         appointments={appointments}
         showSpecialty={showSpecialty}
+        onAttendance={onAttendance}
+        busyAppointmentId={busyAppointmentId}
       />
     )
   }
@@ -214,6 +232,8 @@ function AgendaResults({
                   appointments={dayAppointments}
                   includeDate={false}
                   showSpecialty={showSpecialty}
+                  onAttendance={onAttendance}
+                  busyAppointmentId={busyAppointmentId}
                 />
               ) : (
                 <p>Nenhum atendimento neste dia.</p>
@@ -293,6 +313,9 @@ export function AgendaPage({
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
+  const [attendanceNotes, setAttendanceNotes] = useState('')
+  const [attendanceReason, setAttendanceReason] = useState('')
+  const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
   const [showRescheduleForm, setShowRescheduleForm] = useState(false)
   const [reschedulableAppointments, setReschedulableAppointments] = useState<readonly ReschedulableAppointment[]>([])
   const [selectedReschedulableId, setSelectedReschedulableId] = useState('')
@@ -416,6 +439,31 @@ export function AgendaPage({
       setRescheduleNotes('')
       await load()
     } else if (result.status === 'error') setAppointmentFeedback(result.error.message)
+  }
+
+  async function updateAttendance(appointmentId: string, action: string) {
+    if (busyAppointmentId) return
+    if (action === 'falta' && attendanceReason.trim().length < 3) {
+      setAppointmentFeedback('Informe o motivo da falta antes de registrar.')
+      return
+    }
+    setBusyAppointmentId(appointmentId)
+    setAppointmentFeedback('Atualizando atendimento no banco...')
+    const result = await getRpcService().updateAppointmentAttendance({
+      appointmentId,
+      action,
+      notes: attendanceNotes.trim(),
+      reason: attendanceReason.trim(),
+    })
+    if (result.status === 'success') {
+      setAttendanceNotes('')
+      setAttendanceReason('')
+      setAppointmentFeedback('Atendimento atualizado. Agenda recarregada do banco.')
+      await load()
+    } else {
+      setAppointmentFeedback(result.status === 'error' ? result.error.message : 'A atualização não retornou confirmação.')
+    }
+    setBusyAppointmentId(null)
   }
 
   useEffect(() => {
@@ -785,6 +833,13 @@ export function AgendaPage({
           </strong>
         </div>
 
+        {isProfessional && (
+          <div className="agenda-attendance-notes">
+            <label>Observação do atendimento<input value={attendanceNotes} onChange={(event) => setAttendanceNotes(event.target.value)} /></label>
+            <label>Motivo da falta<input value={attendanceReason} onChange={(event) => setAttendanceReason(event.target.value)} /></label>
+          </div>
+        )}
+
         <div aria-live="polite">
           {state.status === 'loading' && <p>Carregando agenda…</p>}
           {(state.status === 'empty' ||
@@ -806,6 +861,8 @@ export function AgendaPage({
               endDate={endDate}
               view={view}
               showSpecialty={shouldShowSpecialty}
+              onAttendance={isProfessional ? updateAttendance : undefined}
+              busyAppointmentId={busyAppointmentId}
             />
           )}
         </div>

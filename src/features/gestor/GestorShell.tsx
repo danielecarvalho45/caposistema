@@ -1,9 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import type { AccessContext } from '../../types/access'
-import { CapoFooter } from '../../components/layout/CapoFooter'
-import { CapoHeader } from '../../components/layout/CapoHeader'
-import { HomologationSelector } from '../access/HomologationSelector'
+import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import './gestor.css'
 
 type GestorShellProps = Readonly<{
@@ -23,22 +21,37 @@ const serviceItems: readonly NavItem[] = [
   { path: '/faltosos', icon: '◷', label: 'Faltosos' },
   { path: '/gestor/busca-ativa', icon: '⌕', label: 'Busca Ativa' },
   { path: '/encerramentos', icon: '✓', label: 'Encerramentos' },
+  { path: '/gestor/familiares', icon: '♧', label: 'Familiares e Acompanhamentos' },
+  { path: '/encaminhamentos', icon: '↗', label: 'Encaminhamentos' },
+  { path: '/odontologia', icon: '🦷', label: 'Odontologia' },
+  { path: '/receita', icon: '💊', label: 'Renovação de Receita' },
 ]
 
 const managementItems: readonly NavItem[] = [
-  { path: '/gestor/equipe', icon: '♟', label: 'Coordenação' },
-  { path: '/relatorios', icon: '▥', label: 'Relatórios e Indicadores' },
+  { path: '/gestor/operacional', icon: '●', label: 'Pendências e Notificações' },
+  { path: '/gestor/equipe', icon: '♟', label: 'Equipe e Agendas' },
+  { path: '/gestor/timeline', icon: '◷', label: 'Linha do Tempo Operacional' },
+  { path: '/gestor/auditoria', icon: '▥', label: 'Auditoria e Relatórios' },
+  { path: '/relatorios', icon: '▥', label: 'Relatórios' },
+  { path: '/notificacoes', icon: '●', label: 'Notificações' },
+  { path: '/gestor/suporte', icon: '?', label: 'Suporte' },
 ]
 
-function NavGroup({ label, items, activePath }: Readonly<{
+function NavGroup({ label, items, activePath, accessContext }: Readonly<{
   label: string
   items: readonly NavItem[]
   activePath: string
+  accessContext: AccessContext
 }>) {
+  const authorizedItems = items.filter((item) =>
+    canAccessAppRoute(accessContext, item.path as AppRoute),
+  )
+  if (authorizedItems.length === 0) return null
+
   return (
     <div className="gestor-nav-group">
       <p>{label}</p>
-      {items.map((item) => (
+      {authorizedItems.map((item) => (
         <Link
           className="gestor-nav-link"
           aria-current={activePath === item.path ? 'page' : undefined}
@@ -60,57 +73,45 @@ export function GestorShell({
   onLogout,
 }: GestorShellProps) {
   const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div className="gestor-shell">
-      <aside
-        id="gestor-sidebar"
-        className={`gestor-sidebar${menuOpen ? ' is-open' : ''}`}
-        aria-label="Navegação do Gestor"
-      >
+      <aside className="gestor-sidebar" aria-label="Navegação do Gestor">
         <div className="gestor-brand"><img src="/assets/capo-logo.jpg" alt="CAPO" /></div>
         <nav className="gestor-nav" aria-label="Módulos do Gestor">
           <Link className="gestor-nav-link" to="/" aria-current={activePath === '/' ? 'page' : undefined}>
             <span aria-hidden="true">⌂</span> Início
           </Link>
-          <NavGroup label="Atendimento e Acompanhamento" items={serviceItems} activePath={activePath} />
-          <NavGroup label="Gestão do Serviço" items={managementItems} activePath={activePath} />
-          <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} />
-          <NavGroup label="TI / Manutenção" items={[{ path: '/tecnica', icon: '🛠', label: 'Área Técnica' }]} activePath={activePath} />
+          <NavGroup label="Atendimento e Acompanhamento" items={serviceItems} activePath={activePath} accessContext={accessContext} />
+          <NavGroup label="Gestão do Serviço" items={managementItems} activePath={activePath} accessContext={accessContext} />
+          <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
+          <NavGroup label="TI / Manutenção" items={[{ path: '/tecnica', icon: '🛠', label: 'Área Técnica' }]} activePath={activePath} accessContext={accessContext} />
         </nav>
         <button className="gestor-logout" type="button" onClick={() => void onLogout()}>↪ Sair</button>
         <p className="gestor-motto">Juntos<br />pela vida <span>♡</span></p>
+        <div className="gestor-connection" aria-label="Status de conexão">
+          <span>Conexão</span>
+          <strong><i aria-hidden="true" />Disponível</strong>
+        </div>
       </aside>
-      <button
-        className={`gestor-sidebar-backdrop${menuOpen ? ' is-visible' : ''}`}
-        type="button"
-        aria-label="Fechar menu"
-        tabIndex={menuOpen ? 0 : -1}
-        onClick={() => setMenuOpen(false)}
-      />
 
       <section className="gestor-workspace">
-        <CapoHeader
-          className="gestor-header"
-          displayName={accessContext.full_name ?? accessContext.username}
-          userCaption=""
-          contextName="Administrador"
-          currentPath={activePath}
-          onBack={() => navigate('/')}
-          backLabel="Voltar"
-          profileLabel="Administrador do Sistema"
-          showBackOnHome
-          onMenuOpen={() => setMenuOpen(true)}
-          menuId="gestor-sidebar"
-          menuOpen={menuOpen}
-          showNotifications
-        />
-        {accessContext.is_homologation_account && (
-          <HomologationSelector accessContext={accessContext} />
-        )}
+        <header className="gestor-header">
+          <div><h1>{accessContext.full_name ?? accessContext.username}</h1><p>Administrador do Sistema / Titular</p></div>
+          <div className="gestor-header-actions">
+            {activePath !== '/' && <button type="button" onClick={() => navigate('/')}>Voltar</button>}
+            <span>Administrador</span>
+            <small>🔒 Sessão individual</small>
+          </div>
+        </header>
         <main className="gestor-main" aria-label="Ambiente do Administrador do Sistema">{children}</main>
-        <CapoFooter className="gestor-footer" />
+        <footer className="gestor-footer">
+          <span>Sistema CAPO — Gestão Administrativa e Operacional</span>
+          <span>Elaborado e desenvolvido por Daniele Cristina Silva de Carvalho — Auxiliar Administrativo do CAPO</span>
+          <span>Secretaria Municipal de Saúde de Pouso Alegre – MG</span>
+          <span>Ambiente restrito • Dados protegidos • Acesso individual e auditado • Uso exclusivo autorizado</span>
+          <span>Privacidade e Segurança</span>
+        </footer>
       </section>
     </div>
   )

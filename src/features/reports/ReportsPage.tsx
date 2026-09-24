@@ -10,6 +10,7 @@ import {
   createReportsIntegration,
   type CAPOReportsIntegration,
 } from './reports-integration'
+import { getRpcService } from '../../lib/supabase/rpc'
 import './reports-page.css'
 
 const defaultIntegration = createReportsIntegration()
@@ -69,6 +70,15 @@ function startOfCurrentMonth() {
   return dateInputValue(new Date(date.getFullYear(), date.getMonth(), 1))
 }
 
+function dashboardEntries(value: unknown): readonly [string, string | number | boolean][] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return []
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, item]) =>
+    typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+      ? [[key, item] as const]
+      : [],
+  )
+}
+
 export function ReportsPage({
   accessContext,
   integration = defaultIntegration,
@@ -90,6 +100,7 @@ export function ReportsPage({
   const [endDate, setEndDate] = useState(() => dateInputValue(new Date()))
   const [reportState, setReportState] =
     useState<AsyncState<AssistentialOperationalReport>>(loadingState)
+  const [dashboardState, setDashboardState] = useState<AsyncState<unknown>>(loadingState)
   const isProfessional =
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some(
@@ -128,6 +139,17 @@ export function ReportsPage({
     }
   }, [endDate, integration, isProfessional, selectedSpecialty, startDate])
 
+  useEffect(() => {
+    const specialtyId = isProfessional ? selectedSpecialty || null : null
+    if (isProfessional && !specialtyId) return
+    let active = true
+    const loadDashboard = integration.loadDashboard ?? ((from, to, specialty) => getRpcService().getReportsDashboard(from, to, specialty))
+    void loadDashboard(startDate, endDate, specialtyId).then((nextState) => {
+      if (active) setDashboardState(nextState)
+    })
+    return () => { active = false }
+  }, [endDate, integration, isProfessional, selectedSpecialty, startDate])
+
   if (!isProfessional && isManager) {
     return (
       <section className="reports-page" aria-labelledby="manager-reports-title">
@@ -138,11 +160,7 @@ export function ReportsPage({
             <p>Indicadores institucionais de agenda, filas, faltosos, solicitações e fluxos autorizados.</p>
           </div>
         </header>
-        <article className="reports-card">
-          <h3>Visão gerencial</h3>
-          <p>O painel está reservado para os indicadores retornados pelo contrato gerencial oficial.</p>
-          <p className="reports-muted">Nenhum indicador gerencial real foi retornado nesta sessão.</p>
-        </article>
+        <DashboardPanel state={dashboardState} />
       </section>
     )
   }
@@ -263,8 +281,17 @@ export function ReportsPage({
               })}
             </div>
           )}
+          <DashboardPanel state={dashboardState} />
         </article>
       )}
     </section>
   )
+}
+
+function DashboardPanel({ state }: Readonly<{ state: AsyncState<unknown> }>) {
+  if (state.status === 'loading') return <article className="reports-card"><p>Carregando dashboard oficial...</p></article>
+  if (state.status === 'empty') return <article className="reports-card"><p>Nenhum indicador autorizado foi retornado.</p></article>
+  if (state.status === 'error') return <article className="reports-card reports-error" role="alert"><p>Não foi possível carregar o dashboard: {state.error.message}</p></article>
+  const entries = dashboardEntries(state.data)
+  return <article className="reports-card"><h3>Dashboard oficial</h3>{entries.length === 0 ? <p>O backend não retornou métricas escalares para este contexto.</p> : <dl className="reports-metrics">{entries.map(([key, value]) => <div key={key}><dt>{metricLabel(key)}</dt><dd>{String(value)}</dd></div>)}</dl>}</article>
 }

@@ -31,9 +31,12 @@ export function QueuePage({
   const [state, setState] =
     useState<AsyncState<readonly PendingItem[]>>(loadingState)
   const isAdministrativeOperational =
+    accessContext.primary_context.code === 'administrador' ||
     accessContext.primary_context.code === 'administrativo_operacional' ||
     accessContext.roles.some(
-      (role) => role.code === 'administrativo_operacional',
+      (role) =>
+        role.code === 'administrador' ||
+        role.code === 'administrativo_operacional',
     )
 
   const load = useCallback(async () => {

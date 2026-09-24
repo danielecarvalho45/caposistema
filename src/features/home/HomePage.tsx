@@ -31,114 +31,6 @@ function formatDateOnly(value: string) {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(year, month - 1, day))
 }
 
-function GestorDashboardDetails({
-  birthdays,
-}: Readonly<{ birthdays: AsyncState<BirthdayOverview> }>) {
-  const patientBirthdays =
-    birthdays.status === 'success' ? birthdays.data.patients : []
-  const teamBirthdays = birthdays.status === 'success' ? birthdays.data.team : []
-
-  return (
-    <>
-      <section className="gestor-dashboard-grid" aria-label="Visão geral do sistema">
-        <article className="gestor-panel gestor-agenda-panel">
-          <header className="gestor-panel-head">
-            <h2>
-              <span aria-hidden="true">▣</span> Agenda do dia{' '}
-              <em>— Todos os profissionais</em>
-            </h2>
-            <span>Visão geral diária</span>
-          </header>
-          <div className="gestor-table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Horário</th>
-                  <th>Paciente</th>
-                  <th>Profissional</th>
-                  <th>Especialidade</th>
-                  <th>Tipo</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colSpan={6}>Nenhum agendamento disponível.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <span className="gestor-panel-foot">Agenda geral do dia ›</span>
-        </article>
-
-        <aside className="gestor-side-stack">
-          <article className="gestor-panel">
-            <header className="gestor-panel-head">
-              <h2>
-                <span aria-hidden="true">🎂</span> Aniversariantes de hoje
-              </h2>
-            </header>
-            <div className="gestor-tabs">
-              <span>Pacientes</span>
-              <span>Equipe CAPO</span>
-            </div>
-            <div className="gestor-empty-state">
-              {patientBirthdays.length === 0 && teamBirthdays.length === 0
-                ? 'Nenhum aniversariante disponível.'
-                : [...patientBirthdays, ...teamBirthdays]
-                    .map((person) => person.full_name)
-                    .join(', ')}
-            </div>
-          </article>
-
-          <article className="gestor-panel">
-            <header className="gestor-panel-head">
-              <h2>
-                <span aria-hidden="true">◷</span> Atividades Recentes
-              </h2>
-            </header>
-            <div className="gestor-empty-state">
-              Nenhuma atividade registrada.
-            </div>
-          </article>
-        </aside>
-      </section>
-
-      <section className="gestor-summary-grid" aria-label="Resumo do sistema">
-        <article className="gestor-panel gestor-register-card">
-          <header className="gestor-panel-head">
-            <h2>
-              <span aria-hidden="true">👥</span> Cadastro de Profissional
-            </h2>
-          </header>
-          <p>Gerenciar profissionais e permissões</p>
-          <span className="gestor-card-arrow" aria-hidden="true">›</span>
-        </article>
-        <article className="gestor-panel">
-          <header className="gestor-panel-head">
-            <h2>
-              <span aria-hidden="true">▥</span> Indicadores do Sistema
-            </h2>
-          </header>
-          <div className="gestor-metrics">
-            <div><strong>—</strong><small>Pacientes ativos</small></div>
-            <div><strong>—</strong><small>Consultas realizadas</small></div>
-            <div><strong>—</strong><small>Faltosos</small></div>
-            <div><strong>—</strong><small>Solicitações em andamento</small></div>
-          </div>
-        </article>
-        <article className="gestor-panel">
-          <header className="gestor-panel-head">
-            <h2><span aria-hidden="true">⚙</span> Status do Sistema</h2>
-          </header>
-          <div className="gestor-system-status"><span /> <strong>—</strong></div>
-          <small>Nenhum estado técnico registrado.</small>
-        </article>
-      </section>
-    </>
-  )
-}
-
 export function HomePage({
   accessContext,
   loadBirthdays = getRpcService().getBirthdays,
@@ -153,18 +45,12 @@ export function HomePage({
   const primaryCode = normalized(accessContext.primary_context.code)
   const isAdministrativeOperational =
     primaryCode === 'administrativo_operacional'
-  const isGestor = primaryCode === 'administrador'
   const canViewBirthdays = accessContext.roles.some((role) =>
     [
       'administrador',
       'administrativo_operacional',
       'coordenador',
       'profissional',
-      'medico_clinico_geral',
-      'nutricao',
-      'assistencia_social',
-      'assistente_social',
-      'social',
     ].includes(role.code),
   )
 
@@ -179,23 +65,19 @@ export function HomePage({
 
   return (
     <div className="home-page">
-      {!isGestor && (
-        <section className="home-welcome" aria-labelledby="home-title">
-          <p className="eyebrow">Início</p>
-          <h1 id="home-title">Olá, {displayName}</h1>
-          <p>
-            Seu acesso ao CAPO foi validado. Os módulos operacionais serão
-            incorporados progressivamente a esta área de trabalho.
-          </p>
-          <p className="home-slogan">Acolher, cuidar e caminhar juntos.</p>
-        </section>
-      )}
+      <section className="home-welcome" aria-labelledby="home-title">
+        <p className="eyebrow">Início</p>
+        <h1 id="home-title">Olá, {displayName}</h1>
+        <p>
+          Seu acesso ao CAPO foi validado. Os módulos operacionais serão
+          incorporados progressivamente a esta área de trabalho.
+        </p>
+        <p className="home-slogan">Acolher, cuidar e caminhar juntos.</p>
+      </section>
 
       <ProfileDashboard accessContext={accessContext} />
 
-      {isGestor && <GestorDashboardDetails birthdays={birthdays} />}
-
-      {!isGestor && canViewBirthdays && (
+      {canViewBirthdays && (
         <section className="home-birthdays" aria-labelledby="birthdays-title">
           <div className="home-birthdays-heading">
             <div>
@@ -300,7 +182,7 @@ export function HomePage({
         </section>
       )}
 
-      {!isGestor && <section className="home-access" aria-labelledby="access-summary-title">
+      <section className="home-access" aria-labelledby="access-summary-title">
         <div>
           <p className="eyebrow">Acesso atual</p>
           <h2 id="access-summary-title">Resumo do seu contexto</h2>
@@ -331,7 +213,7 @@ export function HomePage({
           A disponibilidade de cada módulo continuará sendo validada pelas
           regras de acesso do backend.
         </p>
-      </section>}
+      </section>
     </div>
   )
 }

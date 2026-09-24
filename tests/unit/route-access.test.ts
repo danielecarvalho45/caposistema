@@ -195,12 +195,15 @@ describe('route access', () => {
     expect(canAccessAppRoute(gestor, '/gestor/equipe')).toBe(true)
     expect(canAccessAppRoute(gestor, '/gestor/administracao')).toBe(true)
     expect(canAccessAppRoute(gestor, '/gestor/auditoria')).toBe(true)
+    expect(canAccessAppRoute(gestor, '/gestor/familiares')).toBe(true)
   })
 
   it('mantém as rotas exclusivas do Gestor fora do Administrativo Operacional', () => {
     expect(isKnownAppRoute('/gestor/equipe')).toBe(true)
     expect(isKnownAppRoute('/gestor/administracao')).toBe(true)
+    expect(isKnownAppRoute('/gestor/familiares')).toBe(true)
     expect(canAccessAppRoute(context, '/gestor/equipe')).toBe(false)
     expect(canAccessAppRoute(context, '/gestor/administracao')).toBe(false)
+    expect(canAccessAppRoute(context, '/gestor/familiares')).toBe(false)
   })
 })

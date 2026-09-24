@@ -83,7 +83,7 @@ export function NutritionPage({
     setBusy(false)
   }
 
-  async function manageDelivery(deliveryId: string, action: string) {
+  async function manageDelivery(deliveryId: string, action: 'confirm') {
     setDeliveriesFeedback(null)
     const result = await getRpcService().manageNutritionAdminDelivery(deliveryId, action)
     if (result.status === 'success') {

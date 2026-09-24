@@ -12,6 +12,11 @@ export type CAPOReportsIntegration = Readonly<{
     startDate: string,
     endDate: string,
   ) => Promise<AsyncState<AssistentialOperationalReport>>
+  loadDashboard?: (
+    startDate: string,
+    endDate: string,
+    specialtyId: string | null,
+  ) => Promise<AsyncState<unknown>>
 }>
 
 export function createReportsIntegration(
@@ -21,5 +26,7 @@ export function createReportsIntegration(
     loadSpecialties: () => service.getMyAssistentialSpecialties(),
     loadReport: (specialtyId, startDate, endDate) =>
       service.getMySpecialtyOperationalReport(specialtyId, startDate, endDate),
+    loadDashboard: (startDate, endDate, specialtyId) =>
+      service.getReportsDashboard(startDate, endDate, specialtyId),
   }
 }

@@ -11,6 +11,133 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      create_technical_support_request_for_interface: {
+        Args: {
+          p_subject: string
+          p_category: string
+          p_description: string
+          p_priority: string
+          p_affected_module: string
+        }
+        Returns: Json
+      }
+      update_appointment_attendance_for_interface: {
+        Args: {
+          p_appointment_id: string
+          p_action: string
+          p_notes: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      get_reports_dashboard_for_interface: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+          p_specialty_id: string | null
+        }
+        Returns: Json
+      }
+      get_patient_timeline_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_before_at: string | null
+          p_before_key: string | null
+          p_limit: number
+        }
+        Returns: Json
+      }
+      get_audit_logs_for_interface: {
+        Args: {
+          p_start_at: string
+          p_end_at: string
+          p_entity_name: string | null
+          p_action: string | null
+          p_actor_account_id: string | null
+          p_record_id: string | null
+          p_before_created_at: string | null
+          p_before_id: string | null
+          p_limit: number
+        }
+        Returns: Json
+      }
+      create_team_member_profile_for_interface: {
+        Args: {
+          p_administrative_responsibility: string | null
+          p_auth_user_id: string | null
+          p_birth_date: string | null
+          p_full_name: string
+          p_function_title: string | null
+          p_is_professional: boolean
+          p_phone: string | null
+          p_primary_specialty_id: string | null
+          p_professional_registration: string | null
+          p_recovery_email: string | null
+          p_role_codes: string[]
+          p_specialty_ids: string[]
+          p_username: string | null
+        }
+        Returns: Json
+      }
+      get_team_management_context_for_interface: {
+        Args: {
+          p_query: string | null
+          p_status: string | null
+          p_limit: number
+          p_offset: number
+        }
+        Returns: Json
+      }
+      update_team_member_profile_for_interface: {
+        Args: {
+          p_professional_id: string
+          p_administrative_responsibility: string | null
+          p_birth_date: string | null
+          p_full_name: string
+          p_function_title: string | null
+          p_is_professional: boolean
+          p_phone: string | null
+          p_primary_specialty_id: string | null
+          p_professional_registration: string | null
+          p_recovery_email: string | null
+          p_role_codes: string[]
+          p_specialty_ids: string[]
+          p_username: string | null
+        }
+        Returns: Json
+      }
+      set_team_member_active_for_interface: {
+        Args: { p_professional_id: string; p_active: boolean; p_reason: string }
+        Returns: Json
+      }
+      set_team_member_primary_context_for_interface: {
+        Args: { p_user_account_id: string; p_role_code: string }
+        Returns: Json
+      }
+      get_effective_professional_capabilities: {
+        Args: { p_professional_id: string }
+        Returns: Json
+      }
+      set_professional_capability_for_interface: {
+        Args: {
+          p_professional_id: string
+          p_capability_code: string
+          p_is_enabled: boolean
+        }
+        Returns: Json
+      }
+      remove_professional_capability_for_interface: {
+        Args: { p_professional_id: string; p_capability_code: string }
+        Returns: Json
+      }
+      set_specialty_capability_status_for_interface: {
+        Args: {
+          p_specialty_id: string
+          p_capability_code: string
+          p_is_enabled: boolean
+        }
+        Returns: Json
+      }
       accept_legal_term: {
         Args: { p_legal_term_id: string }
         Returns: {

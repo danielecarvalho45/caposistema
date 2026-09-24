@@ -47,6 +47,39 @@ export type HomologationOptions = Readonly<{
   specialties: readonly HomologationSpecialtyOption[]
 }>
 
+export type TeamMemberProfileInput = Readonly<{
+  administrativeResponsibility: string | null
+  authUserId: string | null
+  birthDate: string | null
+  fullName: string
+  functionTitle: string | null
+  isProfessional: boolean
+  phone: string | null
+  primarySpecialtyId: string | null
+  professionalRegistration: string | null
+  recoveryEmail: string | null
+  roleCodes: readonly string[]
+  specialtyIds: readonly string[]
+  username: string | null
+}>
+
+function teamProfileArgs(input: TeamMemberProfileInput) {
+  return {
+    p_administrative_responsibility: input.administrativeResponsibility,
+    p_birth_date: input.birthDate,
+    p_full_name: input.fullName,
+    p_function_title: input.functionTitle,
+    p_is_professional: input.isProfessional,
+    p_phone: input.phone,
+    p_primary_specialty_id: input.primarySpecialtyId,
+    p_professional_registration: input.professionalRegistration,
+    p_recovery_email: input.recoveryEmail,
+    p_role_codes: [...input.roleCodes],
+    p_specialty_ids: [...input.specialtyIds],
+    p_username: input.username,
+  }
+}
+
 type ConfirmedJsonArgs = Readonly<Record<string, unknown>>
 
 function parseConfirmedJson(value: unknown) {
@@ -93,6 +126,10 @@ export type PendingItem = Readonly<{
   priority: number | null
   total_count: number
 }>
+
+export type FamilyWaitingListItem = Readonly<Record<string, unknown>>
+export type FamilyQueueCandidate = Readonly<Record<string, unknown>>
+export type NutritionAdminDelivery = Readonly<Record<string, unknown>>
 
 export type NoShowFollowup = Readonly<{
   followup_id: string
@@ -1967,6 +2004,169 @@ async function execute<T>(options: {
 
 export function createRpcService(transport: RpcTransport) {
   return {
+    createTechnicalSupportRequest: (input: {
+      subject: string
+      category: string
+      description: string
+      priority: string
+      affectedModule: string
+    }) =>
+      execute({
+        transport,
+        operation: 'create_technical_support_request_for_interface',
+        args: {
+          p_subject: input.subject,
+          p_category: input.category,
+          p_description: input.description,
+          p_priority: input.priority,
+          p_affected_module: input.affectedModule,
+        },
+        parse: parseConfirmedJson,
+      }),
+    updateAppointmentAttendance: (input: {
+      appointmentId: string
+      action: string
+      notes: string
+      reason: string
+    }) =>
+      execute({
+        transport,
+        operation: 'update_appointment_attendance_for_interface',
+        args: {
+          p_appointment_id: input.appointmentId,
+          p_action: input.action,
+          p_notes: input.notes,
+          p_reason: input.reason,
+        },
+        parse: parseConfirmedJson,
+      }),
+    getReportsDashboard: (
+      startDate: string,
+      endDate: string,
+      specialtyId: string | null,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_reports_dashboard_for_interface',
+        args: {
+          p_start_date: startDate,
+          p_end_date: endDate,
+          p_specialty_id: specialtyId,
+        },
+        parse: parseConfirmedJson,
+      }),
+    getPatientTimeline: (
+      patientId: string,
+      beforeAt: string | null = null,
+      beforeKey: string | null = null,
+      limit = 50,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_patient_timeline_for_interface',
+        args: {
+          p_patient_id: patientId,
+          p_before_at: beforeAt,
+          p_before_key: beforeKey,
+          p_limit: limit,
+        },
+        parse: parseConfirmedJson,
+      }),
+    getAuditLogs: (input: {
+      startAt: string
+      endAt: string
+      entityName?: string | null
+      action?: string | null
+      actorAccountId?: string | null
+      recordId?: string | null
+      beforeCreatedAt?: string | null
+      beforeId?: string | null
+      limit?: number
+    }) =>
+      execute({
+        transport,
+        operation: 'get_audit_logs_for_interface',
+        args: {
+          p_start_at: input.startAt,
+          p_end_at: input.endAt,
+          p_entity_name: input.entityName ?? null,
+          p_action: input.action ?? null,
+          p_actor_account_id: input.actorAccountId ?? null,
+          p_record_id: input.recordId ?? null,
+          p_before_created_at: input.beforeCreatedAt ?? null,
+          p_before_id: input.beforeId ?? null,
+          p_limit: input.limit ?? 50,
+        },
+        parse: parseConfirmedJson,
+      }),
+    getTeamManagementContext: (
+      query: string | null = null,
+      status: string | null = null,
+      limit = 50,
+      offset = 0,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_team_management_context_for_interface',
+        args: { p_query: query, p_status: status, p_limit: limit, p_offset: offset },
+        parse: parseConfirmedJson,
+      }),
+    createTeamMemberProfile: (input: TeamMemberProfileInput) =>
+      execute({
+        transport,
+        operation: 'create_team_member_profile_for_interface',
+        args: { ...teamProfileArgs(input), p_auth_user_id: input.authUserId },
+        parse: parseConfirmedJson,
+      }),
+    updateTeamMemberProfile: (professionalId: string, input: TeamMemberProfileInput) =>
+      execute({
+        transport,
+        operation: 'update_team_member_profile_for_interface',
+        args: { p_professional_id: professionalId, ...teamProfileArgs(input) },
+        parse: parseConfirmedJson,
+      }),
+    setTeamMemberActive: (professionalId: string, active: boolean, reason: string) =>
+      execute({
+        transport,
+        operation: 'set_team_member_active_for_interface',
+        args: { p_professional_id: professionalId, p_active: active, p_reason: reason },
+        parse: parseConfirmedJson,
+      }),
+    setTeamMemberPrimaryContext: (userAccountId: string, roleCode: string) =>
+      execute({
+        transport,
+        operation: 'set_team_member_primary_context_for_interface',
+        args: { p_user_account_id: userAccountId, p_role_code: roleCode },
+        parse: parseConfirmedJson,
+      }),
+    getEffectiveProfessionalCapabilities: (professionalId: string) =>
+      execute({
+        transport,
+        operation: 'get_effective_professional_capabilities',
+        args: { p_professional_id: professionalId },
+        parse: parseConfirmedJson,
+      }),
+    setProfessionalCapability: (professionalId: string, capabilityCode: string, isEnabled: boolean) =>
+      execute({
+        transport,
+        operation: 'set_professional_capability_for_interface',
+        args: { p_professional_id: professionalId, p_capability_code: capabilityCode, p_is_enabled: isEnabled },
+        parse: parseConfirmedJson,
+      }),
+    removeProfessionalCapability: (professionalId: string, capabilityCode: string) =>
+      execute({
+        transport,
+        operation: 'remove_professional_capability_for_interface',
+        args: { p_professional_id: professionalId, p_capability_code: capabilityCode },
+        parse: parseConfirmedJson,
+      }),
+    setSpecialtyCapabilityStatus: (specialtyId: string, capabilityCode: string, isEnabled: boolean) =>
+      execute({
+        transport,
+        operation: 'set_specialty_capability_status_for_interface',
+        args: { p_specialty_id: specialtyId, p_capability_code: capabilityCode, p_is_enabled: isEnabled },
+        parse: parseConfirmedJson,
+      }),
     getMyAccessContext: () =>
       execute({
         transport,
@@ -2038,6 +2238,83 @@ export function createRpcService(transport: RpcTransport) {
         operation: 'get_pending_items_for_interface',
         args: { p_limit: limit, p_offset: offset },
         parse: parsePendingItems,
+      }),
+    getFamilyWaitingList: (
+      status: string | null = null,
+      limit = 50,
+      offset = 0,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_family_waiting_list_for_interface',
+        args: { p_status: status, p_limit: limit, p_offset: offset },
+        parse: parseConfirmedJson as (value: unknown) => readonly FamilyWaitingListItem[],
+      }),
+    getFamilyQueueCandidatesForSlot: (
+      professionalId: string,
+      slotStart: string,
+      limit = 50,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_family_queue_candidates_for_slot',
+        args: {
+          p_professional_id: professionalId,
+          p_slot_start: slotStart,
+          p_limit: limit,
+        },
+        parse: parseConfirmedJson as (value: unknown) => readonly FamilyQueueCandidate[],
+      }),
+    createFamilyPsychologyAppointment: (input: {
+      waitingListId: string
+      professionalId: string
+      slotStart: string
+      generalNotes: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'create_family_psychology_appointment_for_interface',
+        args: {
+          p_waiting_list_id: input.waitingListId,
+          p_professional_id: input.professionalId,
+          p_slot_start: input.slotStart,
+          p_general_notes: input.generalNotes,
+        },
+        parse: parseConfirmedJson,
+      }),
+    updateFamilyWaitingListStatus: (
+      waitingListId: string,
+      action: 'pause' | 'resume' | 'call' | 'cancel' | 'remove',
+      notes: string | null,
+    ) =>
+      execute({
+        transport,
+        operation: 'update_family_waiting_list_status_for_interface',
+        args: {
+          p_waiting_list_id: waitingListId,
+          p_action: action,
+          p_notes: notes,
+        },
+        parse: parseConfirmedJson,
+      }),
+    registerPatientDeath: (input: {
+      patientId: string
+      deathDate: string
+      deathTime: string | null
+      source: 'family_caregiver' | 'health_service' | 'official_document' | 'other_authorized_institution'
+      notes: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'register_patient_death_for_interface',
+        args: {
+          p_patient_id: input.patientId,
+          p_death_date: input.deathDate,
+          p_death_time: input.deathTime,
+          p_source: input.source,
+          p_notes: input.notes,
+        },
+        parse: parseConfirmedJson,
       }),
     getNoShowFollowups: (
       status: string | null = null,
@@ -2551,10 +2828,28 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'get_nutrition_document_for_interface', args: { p_document_id: documentId }, parse: parseConfirmedJson }),
     registerNutritionDelivery: (documentId: string, mode: string) =>
       execute({ transport, operation: 'register_nutrition_delivery_for_interface', args: { p_document_id: documentId, p_mode: mode }, parse: parseConfirmedJson }),
-    getNutritionAdminDeliveries: () =>
-      execute({ transport, operation: 'get_nutrition_admin_deliveries_for_interface', parse: parseConfirmedJson }),
-    manageNutritionAdminDelivery: (deliveryId: string, action: string) =>
-      execute({ transport, operation: 'manage_nutrition_admin_delivery_for_interface', args: { p_delivery_id: deliveryId, p_action: action }, parse: parseConfirmedJson }),
+    getNutritionAdminDeliveries: (
+      status: string | null = null,
+      limit = 50,
+      offset = 0,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_nutrition_admin_deliveries_for_interface',
+        args: { p_status: status, p_limit: limit, p_offset: offset },
+        parse: parseConfirmedJson as (value: unknown) => readonly NutritionAdminDelivery[],
+      }),
+    manageNutritionAdminDelivery: (
+      deliveryId: string,
+      action: 'confirm',
+      reason: string | null = null,
+    ) =>
+      execute({
+        transport,
+        operation: 'manage_nutrition_admin_delivery_for_interface',
+        args: { p_delivery_id: deliveryId, p_action: action, p_reason: reason },
+        parse: parseConfirmedJson,
+      }),
     startFamilyBereavement: (familyMemberId: string) =>
       execute({ transport, operation: 'start_family_bereavement_for_interface', args: { p_family_member_id: familyMemberId }, parse: parseConfirmedJson }),
     getFamilyBereavement: () =>
@@ -2660,7 +2955,9 @@ export function createRpcService(transport: RpcTransport) {
 function createSupabaseTransport(
   client: SupabaseClient<Database>,
 ): RpcTransport {
-  const confirmedRpc = client.rpc as unknown as (
+  // SupabaseClient.rpc uses `this.rest` internally. Bind it before passing it
+  // through the transport so calls keep their client instance.
+  const confirmedRpc = client.rpc.bind(client) as unknown as (
     name: string,
     args?: Record<string, unknown>,
   ) => Promise<{ data: unknown; error: unknown }>
@@ -2687,6 +2984,25 @@ function createSupabaseTransport(
       case 'set_homologation_context_for_interface':
       case 'get_homologation_context_for_interface':
       case 'clear_homologation_context_for_interface':
+      case 'create_technical_support_request_for_interface':
+      case 'update_appointment_attendance_for_interface':
+      case 'get_reports_dashboard_for_interface':
+      case 'get_patient_timeline_for_interface':
+      case 'get_audit_logs_for_interface':
+      case 'create_team_member_profile_for_interface':
+      case 'get_team_management_context_for_interface':
+      case 'update_team_member_profile_for_interface':
+      case 'set_team_member_active_for_interface':
+      case 'set_team_member_primary_context_for_interface':
+      case 'get_effective_professional_capabilities':
+      case 'set_professional_capability_for_interface':
+      case 'remove_professional_capability_for_interface':
+      case 'set_specialty_capability_status_for_interface':
+      case 'get_family_waiting_list_for_interface':
+      case 'get_family_queue_candidates_for_slot':
+      case 'create_family_psychology_appointment_for_interface':
+      case 'update_family_waiting_list_status_for_interface':
+      case 'register_patient_death_for_interface':
         return confirmedRpc(operation, args)
       case 'accept_legal_term':
         return client.rpc(operation, {

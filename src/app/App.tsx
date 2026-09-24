@@ -16,13 +16,15 @@ import { TransportPage } from '../features/transport/TransportPage'
 import { RenewalPrescriptionPage } from '../features/renewals/RenewalPrescriptionPage'
 import { SocialPage } from '../features/social/SocialPage'
 import { FamilyCaregiverPage } from '../features/social/FamilyCaregiverPage'
-import { BereavementPage } from '../features/social/BereavementPage'
 import { DentistryPage } from '../features/dentistry/DentistryPage'
 import { NotificationsPage } from '../features/notifications/NotificationsPage'
 import { ClosuresPage } from '../features/closures/ClosuresPage'
 import { GestorShell } from '../features/gestor/GestorShell'
 import { GestorDashboard } from '../features/gestor/GestorDashboard'
 import { GestorManagementPage } from '../features/gestor/GestorManagementPage'
+import { GestorFamilyPage } from '../features/gestor/GestorFamilyPage'
+import { GestorOperationalPage } from '../features/gestor/GestorOperationalPage'
+import { TechnicalSupportRequest } from '../components/forms/TechnicalSupportRequest'
 import { canAccessAppRoute, isKnownAppRoute } from './route-access'
 import type { Notification } from '../features/notifications/notifications-integration'
 
@@ -88,7 +90,6 @@ export function App() {
   const isNutritionRoute = location.pathname === '/nutricao'
   const isSocialRoute = location.pathname === '/assistencia-social'
   const isFamilyCaregiverRoute = location.pathname === '/familiar-cuidador'
-  const isBereavementRoute = location.pathname === '/luto'
   const isQueueRoute = location.pathname === '/fila'
   const isNoShowsRoute = location.pathname === '/faltosos'
   const isRequestsRoute = location.pathname === '/solicitacoes'
@@ -97,6 +98,7 @@ export function App() {
   const isReferralsRoute = location.pathname === '/encaminhamentos'
   const isDentistryRoute = location.pathname === '/odontologia'
   const isNotificationsRoute = location.pathname === '/notificacoes'
+  const isSupportRoute = location.pathname === '/suporte'
   const isTechnicalRoute = location.pathname === '/tecnica'
   const isReportsRoute = location.pathname === '/relatorios'
   const isClosuresRoute = location.pathname === '/encerramentos'
@@ -126,6 +128,21 @@ export function App() {
     ? canAccessAppRoute(accessContext, location.pathname)
     : false
   const isGestor = accessContext.primary_context.code === 'administrador'
+  const primaryContextCode = accessContext.primary_context.code
+  const isProfessionalHome =
+    location.pathname === '/' &&
+    Boolean(accessContext.professional_id) &&
+    primaryContextCode === 'profissional'
+  const isNutritionHome =
+    location.pathname === '/' &&
+    Boolean(accessContext.professional_id) &&
+    primaryContextCode === 'nutricao'
+  const isSocialHome =
+    location.pathname === '/' &&
+    Boolean(accessContext.professional_id) &&
+    ['assistencia_social', 'assistente_social', 'social'].includes(
+      primaryContextCode ?? '',
+    )
 
   const content = isConstructionRoute ? (
     <ConstructionPage path={location.pathname} />
@@ -133,6 +150,16 @@ export function App() {
     <AccessDeniedPage />
   ) : isGestor && location.pathname === '/' ? (
     <GestorDashboard />
+  ) : isNutritionHome ? (
+    <NutritionPage accessContext={accessContext} />
+  ) : isSocialHome ? (
+    <SocialPage accessContext={accessContext} />
+  ) : isProfessionalHome ? (
+    <AssistentialPage accessContext={accessContext} />
+  ) : location.pathname === '/gestor/familiares' ? (
+    <GestorFamilyPage />
+  ) : location.pathname === '/gestor/operacional' ? (
+    <GestorOperationalPage />
   ) : gestorRoute ? (
     <GestorManagementPage view={gestorRoute} />
   ) : isPatientsRoute ? (
@@ -147,8 +174,6 @@ export function App() {
     <SocialPage accessContext={accessContext} />
   ) : isFamilyCaregiverRoute ? (
     <FamilyCaregiverPage accessContext={accessContext} />
-  ) : isBereavementRoute ? (
-    <BereavementPage accessContext={accessContext} />
   ) : isQueueRoute ? (
     <QueuePage accessContext={accessContext} />
   ) : isNoShowsRoute ? (
@@ -169,6 +194,8 @@ export function App() {
           notificationContextHref(notification, accessContext)
         }
       />
+  ) : isSupportRoute ? (
+    <section className="home-page" aria-labelledby="support-title"><header className="home-welcome"><p className="eyebrow">Suporte técnico</p><h1 id="support-title">Solicitar suporte</h1><p>Descreva o problema para registro no atendimento técnico do CAPO.</p></header><section className="home-profile"><TechnicalSupportRequest affectedModule={location.pathname} /></section></section>
   ) : isTechnicalRoute ? (
     <TechnicalPage accessContext={accessContext} />
   ) : isReportsRoute ? (

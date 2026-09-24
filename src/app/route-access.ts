@@ -8,7 +8,6 @@ export const KNOWN_APP_ROUTES = [
   '/nutricao',
   '/assistencia-social',
   '/familiar-cuidador',
-  '/luto',
   '/fila',
   '/faltosos',
   '/solicitacoes',
@@ -17,6 +16,7 @@ export const KNOWN_APP_ROUTES = [
   '/encaminhamentos',
   '/odontologia',
   '/notificacoes',
+  '/suporte',
   '/tecnica',
   '/relatorios',
   '/encerramentos',
@@ -27,6 +27,8 @@ export const KNOWN_APP_ROUTES = [
   '/gestor/suporte',
   '/gestor/fluxos',
   '/gestor/busca-ativa',
+  '/gestor/familiares',
+  '/gestor/operacional',
   '/em-construcao',
 ] as const
 
@@ -97,27 +99,17 @@ export function canAccessAppRoute(
     case '/em-construcao':
     case '/notificacoes':
       return true
-    case '/luto':
-      return (
-        accessContext.primary_context.code === 'administrador' ||
-        accessContext.primary_context.code === 'coordenador' ||
-        (hasActiveProfessionalContext(accessContext) &&
-          hasRole(accessContext, [
-            'assistencia_social',
-            'assistente_social',
-            'social',
-          ]))
-      )
+    case '/suporte':
+      return accessContext.primary_context.code !== 'administrador_tecnico'
     case '/gestor/equipe':
+    case '/gestor/administracao':
     case '/gestor/timeline':
     case '/gestor/auditoria':
     case '/gestor/suporte':
     case '/gestor/fluxos':
     case '/gestor/busca-ativa':
-      return ['administrador', 'coordenador'].includes(
-        accessContext.primary_context.code ?? '',
-      )
-    case '/gestor/administracao':
+    case '/gestor/familiares':
+    case '/gestor/operacional':
       return accessContext.primary_context.code === 'administrador'
     case '/pacientes':
       return hasRole(accessContext, ['administrador', 'coordenador', 'administrativo_operacional'])
@@ -138,14 +130,13 @@ export function canAccessAppRoute(
       )
     case '/nutricao':
       return (
-        accessContext.primary_context.code === 'administrador' ||
         Boolean(accessContext.professional_id) &&
         hasRole(accessContext, ['nutricao'])
       )
     case '/relatorios':
       return (
-        accessContext.primary_context.code === 'administrador' ||
         hasRole(accessContext, [
+          'administrador',
           'profissional',
           'medico_clinico_geral',
           'nutricao',
@@ -158,25 +149,15 @@ export function canAccessAppRoute(
           Boolean(accessContext.professional_id))
       )
     case '/assistencia-social':
-      return (
-        accessContext.primary_context.code === 'administrador' ||
-        hasActiveProfessionalContext(accessContext)
-      )
     case '/familiar-cuidador':
-      return (
-        accessContext.primary_context.code === 'administrador' ||
-        accessContext.primary_context.code === 'coordenador' ||
-        (hasActiveProfessionalContext(accessContext) &&
-          hasRole(accessContext, [
-            'assistencia_social',
-            'assistente_social',
-            'social',
-          ]))
-      )
+      return hasActiveProfessionalContext(accessContext)
     case '/fila':
       return (
         accessContext.primary_context.code === 'administrativo_operacional' ||
-        hasRole(accessContext, ['administrativo_operacional'])
+        hasRole(accessContext, [
+          'administrador',
+          'administrativo_operacional',
+        ])
       )
     case '/faltosos':
       return hasRole(accessContext, [
@@ -211,21 +192,14 @@ export function canAccessAppRoute(
           ]))
       )
     case '/transporte':
-      return (
-        accessContext.primary_context.code === 'administrador' ||
-        accessContext.capabilities.includes('preencher_solicitacao_transporte')
+      return accessContext.capabilities.includes(
+        'preencher_solicitacao_transporte',
       )
     case '/receita':
-      return (
-        accessContext.primary_context.code === 'administrador' ||
-        accessContext.capabilities.includes('renovacao_receita')
-      )
+      return accessContext.capabilities.includes('renovacao_receita')
     case '/odontologia':
-      return (
-        accessContext.primary_context.code === 'administrador' ||
-        accessContext.capabilities.includes(
-          'emitir_encaminhamento_odontologico_externo',
-        )
+      return accessContext.capabilities.includes(
+        'emitir_encaminhamento_odontologico_externo',
       )
     case '/tecnica':
       return hasRole(accessContext, ['administrador', 'administrador_tecnico'])

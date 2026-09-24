@@ -91,44 +91,7 @@ export function SocialPage({
             e sem dados demonstrativos.
           </p>
         </div>
-        <span className="social-connection">
-          Conexão verificada a cada consulta
-        </span>
       </header>
-
-      <section className="social-quick-access" aria-labelledby="quick-title">
-        <h2 id="quick-title">Acessos rápidos</h2>
-        <div className="social-quick-grid">
-          <a
-            className="social-quick-card social-quick-card--agenda"
-            href="#agenda"
-          >
-            <strong>Minha Agenda</strong>
-            <span>Dia, semana e mês</span>
-          </a>
-          <a
-            className="social-quick-card social-quick-card--followup"
-            href="#acompanhamento-social"
-          >
-            <strong>Acompanhamento Social no Serviço CAPO</strong>
-            <span>Ativos e encerrados</span>
-          </a>
-          <a
-            className="social-quick-card social-quick-card--family"
-            href="/familiar-cuidador"
-          >
-            <strong>Familiar / Cuidador</strong>
-            <span>Vínculo ativo e histórico</span>
-          </a>
-          <a
-            className="social-quick-card social-quick-card--requests"
-            href="#solicitacoes"
-          >
-            <strong>Solicitações</strong>
-            <span>Providências operacionais</span>
-          </a>
-        </div>
-      </section>
 
       <section
         id="agenda"
@@ -145,6 +108,24 @@ export function SocialPage({
           </span>
         </div>
         <AgendaPage accessContext={accessContext} />
+      </section>
+
+      <section className="social-quick-access" aria-labelledby="quick-title">
+        <h2 id="quick-title">Acessos rápidos</h2>
+        <div className="social-quick-grid">
+          <a className="social-quick-card social-quick-card--followup" href="#acompanhamento-social">
+            <strong>Acompanhamento Social no Serviço CAPO</strong>
+            <span>Ativos e encerrados</span>
+          </a>
+          <a className="social-quick-card social-quick-card--family" href="/familiar-cuidador">
+            <strong>Familiar / Cuidador</strong>
+            <span>Vínculo ativo e histórico</span>
+          </a>
+          <a className="social-quick-card social-quick-card--requests" href="#solicitacoes">
+            <strong>Solicitações</strong>
+            <span>Providências operacionais</span>
+          </a>
+        </div>
       </section>
 
       <section
