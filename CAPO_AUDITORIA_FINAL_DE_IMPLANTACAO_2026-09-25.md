@@ -231,6 +231,15 @@ Regra prática:
 - comportamento comum = correção global;
 - particularidade funcional = correção local do perfil.
 
+Se um botão, ação, componente ou fluxo for comum a vários perfis:
+- ele deve ter o mesmo comportamento funcional em todos;
+- qualquer comportamento diferente entre perfis, sem previsão expressa no Manual Estrutural, é considerado divergência e deve ser corrigido;
+- essa divergência NÃO deve virar pendência quando o Manual Estrutural já trouxer regra suficiente para a correção.
+
+Particularidade de perfil existe somente quando a própria função exclusiva daquele perfil estiver prevista na estrutura funcional do CAPO.
+
+O Manual Estrutural é suficiente para distinguir comportamento comum de particularidade funcional.
+
 Não duplicar lógica global em telas específicas quando existir ponto compartilhado adequado para a correção.
 
 ---
