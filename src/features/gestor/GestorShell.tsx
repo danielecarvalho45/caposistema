@@ -106,11 +106,13 @@ export function GestorShell({
         </header>
         <main className="gestor-main" aria-label="Ambiente do Administrador do Sistema">{children}</main>
         <footer className="gestor-footer">
-          <span>Sistema CAPO — Gestão Administrativa e Operacional</span>
-          <span>Elaborado e desenvolvido por Daniele Cristina Silva de Carvalho — Auxiliar Administrativo do CAPO</span>
-          <span>Secretaria Municipal de Saúde de Pouso Alegre – MG</span>
-          <span>Ambiente restrito • Dados protegidos • Acesso individual e auditado • Uso exclusivo autorizado</span>
-          <span>Privacidade e Segurança</span>
+          <div className="gestor-footer-center">
+            <strong>Sistema CAPO — Gestão Administrativa e Operacional</strong>
+            <span>Elaborado e desenvolvido por Daniele Cristina Silva de Carvalho — Auxiliar Administrativo do CAPO</span>
+            <span>Secretaria Municipal de Saúde de Pouso Alegre – MG</span>
+            <span className="gestor-security">Ambiente restrito • Dados protegidos • Acesso individual e auditado • Uso exclusivo autorizado</span>
+          </div>
+          <span className="gestor-footer-right">Privacidade e Segurança</span>
         </footer>
       </section>
     </div>
