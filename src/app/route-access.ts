@@ -47,14 +47,7 @@ export function isKnownAppRoute(path: string): path is AppRoute {
 }
 
 function isProfessionalAssistentialRole(roleCode: string | null | undefined) {
-  return (
-    roleCode === 'profissional' ||
-    roleCode === 'medico_clinico_geral' ||
-    roleCode === 'nutricao' ||
-    roleCode === 'assistencia_social' ||
-    roleCode === 'assistente_social' ||
-    roleCode === 'social'
-  )
+  return roleCode === 'profissional'
 }
 
 function hasRole(accessContext: AccessContext, roles: readonly string[]) {
@@ -62,14 +55,7 @@ function hasRole(accessContext: AccessContext, roles: readonly string[]) {
 }
 
 function hasProfessionalAssistentialRole(accessContext: AccessContext) {
-  return hasRole(accessContext, [
-    'profissional',
-    'medico_clinico_geral',
-    'nutricao',
-    'assistencia_social',
-    'assistente_social',
-    'social',
-  ])
+  return hasRole(accessContext, ['profissional'])
 }
 
 function hasActiveProfessionalContext(accessContext: AccessContext) {
@@ -81,14 +67,7 @@ function hasActiveProfessionalContext(accessContext: AccessContext) {
     !primary.code ||
     !primary.role_id ||
     !(
-      hasRole(accessContext, [
-        'profissional',
-        'medico_clinico_geral',
-        'nutricao',
-        'assistencia_social',
-        'assistente_social',
-        'social',
-      ]) ||
+      hasRole(accessContext, ['profissional']) ||
       isProfessionalAssistentialRole(primary.code)
     )
   ) {
@@ -156,12 +135,7 @@ export function canAccessAppRoute(
         hasRole(accessContext, [
           'administrador',
           'profissional',
-          'medico_clinico_geral',
-          'nutricao',
           'coordenador',
-          'assistencia_social',
-          'assistente_social',
-          'social',
         ]) &&
         (hasRole(accessContext, ['administrador', 'coordenador']) ||
           Boolean(accessContext.professional_id))
@@ -215,13 +189,7 @@ export function canAccessAppRoute(
           'administrativo_operacional',
         ]) ||
         (Boolean(accessContext.professional_id) &&
-          hasRole(accessContext, [
-            'profissional',
-            'assistencia_social',
-            'assistente_social',
-            'assistencia-social',
-            'social',
-          ]))
+          hasRole(accessContext, ['profissional']))
       )
     case '/transporte':
       return hasRole(accessContext, ['administrador', 'administrativo_operacional']) ||
