@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { AccessContext } from '../../types/access'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
+import { getRpcService } from '../../lib/supabase/rpc'
 import './gestor.css'
 
 type GestorShellProps = Readonly<{
@@ -73,6 +74,35 @@ export function GestorShell({
   onLogout,
 }: GestorShellProps) {
   const navigate = useNavigate()
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'available' | 'unavailable'>('checking')
+
+  useEffect(() => {
+    let active = true
+    const verifyConnection = async () => {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (active) setConnectionStatus('unavailable')
+        return
+      }
+      const result = await getRpcService().getMyAccessContext()
+      if (active) setConnectionStatus(result.status === 'success' ? 'available' : 'unavailable')
+    }
+    void verifyConnection()
+    const handleOnline = () => void verifyConnection()
+    const handleOffline = () => setConnectionStatus('unavailable')
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      active = false
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  const connectionLabel = connectionStatus === 'available'
+    ? 'Disponível'
+    : connectionStatus === 'unavailable'
+      ? 'Indisponível'
+      : 'Verificando…'
 
   return (
     <div className="gestor-shell">
@@ -89,9 +119,9 @@ export function GestorShell({
         </nav>
         <button className="gestor-logout" type="button" onClick={() => void onLogout()}>↪ Sair</button>
         <p className="gestor-motto">Juntos<br />pela vida <span>♡</span></p>
-        <div className="gestor-connection" aria-label="Status de conexão">
+        <div className="gestor-connection" data-status={connectionStatus} aria-label={`Conexão — ${connectionLabel}`}>
           <span>Conexão</span>
-          <strong>Estado não verificado</strong>
+          <strong><i aria-hidden="true" />{connectionLabel}</strong>
         </div>
       </aside>
 
@@ -100,6 +130,7 @@ export function GestorShell({
           <div><h1>{accessContext.full_name ?? accessContext.username}</h1><p>Administrador do Sistema / Titular</p></div>
           <div className="gestor-header-actions">
             {activePath !== '/' && <button type="button" onClick={() => navigate('/')}>Voltar</button>}
+            {canAccessAppRoute(accessContext, '/notificacoes') && <button type="button" onClick={() => navigate('/notificacoes')}>Avisos</button>}
             <span>Administrador</span>
             <small>🔒 Sessão individual</small>
           </div>
