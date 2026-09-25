@@ -207,4 +207,27 @@ describe('route access', () => {
     expect(canAccessAppRoute(context, '/gestor/administracao')).toBe(false)
     expect(canAccessAppRoute(context, '/gestor/familiares')).toBe(false)
   })
+
+  it('preserva módulos acumulados pelo papel mesmo quando outro contexto é o principal', () => {
+    const accumulated: AccessContext = {
+      ...context,
+      roles: [
+        { code: 'profissional', name: 'Profissional' },
+        { code: 'coordenador', name: 'Coordenador' },
+        { code: 'administrador', name: 'Administrador' },
+      ],
+      primary_context: {
+        ...context.primary_context,
+        code: 'profissional',
+        name: 'Profissional',
+        is_configured: true,
+      },
+    }
+
+    expect(isKnownAppRoute('/coordenacao')).toBe(true)
+    expect(canAccessAppRoute(accumulated, '/coordenacao')).toBe(true)
+    expect(canAccessAppRoute(accumulated, '/gestor/administracao')).toBe(true)
+    expect(canAccessAppRoute(accumulated, '/gestor/equipe')).toBe(true)
+    expect(canAccessAppRoute(accumulated, '/gestor/auditoria')).toBe(true)
+  })
 })
