@@ -8,9 +8,9 @@ const quickAccess = [
   ['/faltosos', '◷', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
   ['/solicitacoes', '▤', 'Solicitações', 'Analisar e encaminhar', 'purple'],
   ['/transporte', '▰', 'Transporte', 'Providências e acompanhamento', 'yellow'],
-  ['/gestor/equipe', '♟', 'Equipe e Agendas', 'Profissionais e disponibilidade', 'mint'],
+  ['/gestor/familiares', '♟', 'Familiares', 'Cadastro e vínculos', 'mint'],
   ['/encerramentos', '✓', 'Encerramentos', 'Por especialidade', 'slate'],
-  ['/gestor/auditoria', '▥', 'Auditoria e Relatórios', 'Consultas e indicadores', 'violet'],
+  ['/relatorios', '▥', 'Relatórios', 'Consultas e indicadores', 'violet'],
 ] as const
 
 export function GestorDashboard() {
@@ -50,12 +50,13 @@ export function GestorDashboard() {
           {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
           {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}</li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
-        </article></aside>
+        </article>
+        <Link className="gestor-panel" to="/gestor/timeline"><h3>◷ Atividades Recentes</h3><p>Consultar os eventos operacionais registrados.</p></Link></aside>
       </section>
       <section className="gestor-summary-grid" aria-label="Resumo do sistema">
         <Link className="gestor-panel" to="/gestor/administracao"><h3>👥 Cadastro de Profissional</h3><p>Gerenciar profissionais e permissões</p><b>›</b></Link>
         <Link className="gestor-panel" to="/relatorios"><h3>▥ Indicadores do Sistema</h3><p>Consultar indicadores reais no relatório gerencial</p></Link>
-        <Link className="gestor-panel" to="/tecnica"><h3>⚙ TI / Manutenção</h3><p>Área Técnica e suporte autorizado.</p></Link>
+        <Link className="gestor-panel" to="/tecnica"><h3>⚙ Status do Sistema</h3><p>Consultar estado técnico e integrações autorizadas.</p></Link>
       </section>
     </section>
   )
