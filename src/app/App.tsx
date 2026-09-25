@@ -186,13 +186,13 @@ export function App() {
   ) : location.pathname === '/coordenacao/auditoria' ? (
     <AuditLogPage />
   ) : location.pathname === '/coordenacao/busca-ativa' ? (
-    <ActiveSearchPage />
+    <ActiveSearchPage accessContext={accessContext} />
   ) : location.pathname === '/gestor/familiares' ? (
     <GestorFamilyPage />
   ) : location.pathname === '/gestor/operacional' ? (
     <GestorOperationalPage />
   ) : gestorRoute ? (
-    <GestorManagementPage view={gestorRoute} />
+    <GestorManagementPage view={gestorRoute} accessContext={accessContext} />
   ) : isPatientsRoute ? (
     <PatientsPage accessContext={accessContext} />
   ) : isAgendaRoute ? (
