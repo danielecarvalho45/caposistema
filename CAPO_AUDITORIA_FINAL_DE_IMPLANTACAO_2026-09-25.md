@@ -127,7 +127,58 @@ Toda nova correção desta auditoria deve ser acrescentada aqui.
 
 ---
 
-# 6. METODOLOGIA DA AUDITORIA FINAL
+# 6. REGRA FUNDAMENTAL — CLASSIFICAÇÃO E APRESENTAÇÃO DA AUDITORIA
+
+Classificação oficial:
+
+- 🟢 **VERDE** — item correto, aprovado ou já corrigido e conferido.
+- 🔴 **VERMELHO** — erro encontrado durante a auditoria. Após correção e conferência, passa para 🟢 VERDE.
+- 🟡 **AMARELO** — pendência real que depende de decisão da responsável, de teste operacional posterior ou de situação sem comprovação suficiente para correção automática.
+
+Durante a auditoria:
+- não é necessário apresentar tabelas intermediárias à responsável;
+- as correções devem continuar normalmente;
+- o documento mestre pode usar tabelas ou estrutura técnica para facilitar rastreabilidade.
+
+Ao término da auditoria, apresentar apenas uma lista simples com:
+1. o que já estava correto;
+2. o que estava errado;
+3. o que foi corrigido;
+4. o que restou como pendência amarela.
+
+Objetivo final:
+- nenhum item vermelho;
+- itens corretos/corrigidos em verde;
+- somente pendências amarelas justificadas, se existirem.
+
+---
+
+# 7. REGRA FUNDAMENTAL — SEMPRE OBEDECER À DOCUMENTAÇÃO MAIS ATUAL
+
+A documentação mais recente válida deve sempre prevalecer.
+
+Regras:
+- não voltar a documentos antigos para tentar justificar divergências;
+- não usar histórico antigo para reinterpretar regra já definida no documento atual;
+- não criar justificativas com base em documentação obsoleta;
+- não alterar o projeto para acomodar implementação incompatível com a documentação atual.
+
+Se uma regra NÃO estiver comprovada na documentação mais atual:
+- não inventar;
+- não interpretar por conta própria;
+- não remover estrutura potencialmente válida;
+- registrar como 🟡 **PENDÊNCIA DE DECISÃO** somente quando não houver comprovação suficiente ou quando a correção puder danificar outro processo já implantado.
+
+Pendências devem ser exceção, não regra.
+
+Se o Manual Estrutural atual definir claramente o comportamento:
+- considerar a regra comprovada;
+- corrigir de forma cirúrgica;
+- não criar pendência desnecessária.
+
+---
+
+# 8. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
