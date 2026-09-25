@@ -36,10 +36,11 @@ Deno.serve(async (request) => {
   const { data: account, error: accountError } = await admin.from('user_accounts')
     .select('id').eq('auth_user_id', identity.user.id).eq('is_active', true).maybeSingle()
   if (accountError || !account) return reply({ error: 'Acesso não autorizado.' }, 403)
-  const { data: roles, error: rolesError } = await admin.from('user_roles')
-    .select('app_roles!inner(code,is_active)').eq('user_account_id', account.id)
-    .eq('app_roles.code', 'administrador').eq('app_roles.is_active', true).limit(1)
-  if (rolesError || !roles?.length) return reply({ error: 'Somente o administrador pode alterar a equipe.' }, 403)
+  const { data: isAdministrator, error: roleError } = await requester.rpc('has_app_role', {
+    required_role: 'administrador',
+  })
+  if (roleError) return reply({ error: 'Serviço indisponível.' }, 503)
+  if (!isAdministrator) return reply({ error: 'Somente o administrador pode alterar a equipe.' }, 403)
   const { data: target, error: targetError } = await admin.from('user_accounts')
     .select('auth_user_id,is_active').eq('professional_id', professionalId).maybeSingle()
   if (targetError) return reply({ error: 'Serviço indisponível.' }, 503)
