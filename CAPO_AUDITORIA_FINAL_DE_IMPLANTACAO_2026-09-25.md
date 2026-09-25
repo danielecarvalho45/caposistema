@@ -290,7 +290,80 @@ Somente o Projeto/Manual Estrutural vigente pode fundamentar a próxima alteraç
 
 ---
 
-# 11. METODOLOGIA DA AUDITORIA FINAL
+# 11. REGRA DE OURO — ANTI-LOOP
+
+A auditoria e as correções não podem andar em círculos.
+
+## Princípio central
+
+Um item que já foi:
+- analisado fisicamente;
+- confrontado com a documentação vigente;
+- corrigido quando necessário;
+- conferido;
+- classificado como 🟢 VERDE;
+- e congelado;
+
+NÃO deve ser reaberto por dúvida genérica, repetição de problema semelhante em outro módulo ou retorno a documentação antiga.
+
+## Antes de iniciar qualquer nova correção
+
+Verificar primeiro no Documento Mestre da Auditoria Final:
+- se o ponto já foi auditado;
+- qual foi a conclusão;
+- qual correção foi aplicada;
+- qual evidência sustentou a decisão;
+- se o bloco está congelado;
+- se existe pendência relacionada.
+
+Se já estiver resolvido e não houver evidência nova, NÃO repetir a auditoria.
+
+## Um item verde/congelado só pode ser reaberto quando houver
+
+1. evidência física nova de regressão;
+2. conflito comprovado com o Manual Estrutural vigente;
+3. dependência técnica real de outro processo que exija reabertura, seguindo a regra de congelamento controlado;
+4. ordem expressa da responsável pelo projeto.
+
+Fora dessas hipóteses, o item permanece fechado.
+
+## Proibição de loop documental
+
+É proibido:
+- voltar a documentação antiga para tentar contradizer decisão baseada na documentação atual;
+- reabrir item resolvido por interpretação histórica;
+- repetir diagnóstico já concluído sem evidência nova;
+- refazer correção apenas porque o navegador ainda mostra versão antiga em fila de publicação;
+- alterar novamente um ponto só porque outro módulo apresentou erro semelhante;
+- usar relatório antigo para substituir inspeção física atual.
+
+## Tratamento de erro semelhante em outro módulo
+
+Se surgir problema semelhante:
+- analisar o novo ponto no contexto próprio;
+- verificar se é regra global ou particularidade;
+- não presumir que o bloco anterior estava errado;
+- só reabrir o bloco anterior se houver prova concreta de regressão nele.
+
+## Controle de continuidade
+
+Cada correção concluída deve deixar registro suficiente para permitir que a auditoria avance sem retornar ao mesmo ponto:
+- data;
+- perfil/módulo;
+- arquivo ou estrutura afetada;
+- divergência encontrada;
+- fundamento documental;
+- correção aplicada;
+- conferência realizada;
+- status final;
+- indicação de congelamento;
+- caminho de teste operacional posterior, quando aplicável.
+
+Objetivo: a auditoria deve avançar sempre para frente. O histórico serve para impedir repetição de trabalho, não para substituir a documentação normativa.
+
+---
+
+# 12. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
@@ -331,7 +404,7 @@ Registrar:
 
 ---
 
-# 12. REGISTRO DE CORREÇÕES
+# 13. REGISTRO DE CORREÇÕES
 
 ## 7.1 Renovação de Receita
 **Data:** 25/09/2026  
@@ -401,13 +474,13 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
-# 13. PENDÊNCIAS DE DECISÃO
+# 14. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
 
 ---
 
-# 14. FLUXO DOCUMENTAL OFICIAL
+# 15. FLUXO DOCUMENTAL OFICIAL
 
 O projeto passa a trabalhar com três documentos normativos oficiais e fechados:
 
@@ -489,7 +562,7 @@ Após o encerramento da auditoria e dos testes correspondentes, este documento p
 
 ---
 
-# 15. REGRA DE CONTINUIDADE
+# 16. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
