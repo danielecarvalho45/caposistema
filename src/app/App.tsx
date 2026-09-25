@@ -153,13 +153,13 @@ export function App() {
   const isNutritionHome =
     location.pathname === '/' &&
     Boolean(accessContext.professional_id) &&
-    (primaryContextCode === 'nutricao' ||
-      (primaryContextCode === 'profissional' && professionalSpecialty === 'nutricao'))
+    primaryContextCode === 'profissional' &&
+    professionalSpecialty === 'nutricao'
   const isSocialHome =
     location.pathname === '/' &&
     Boolean(accessContext.professional_id) &&
-    (['assistencia_social', 'assistente_social', 'social'].includes(primaryContextCode ?? '') ||
-      (primaryContextCode === 'profissional' && professionalSpecialty === 'assistencia social'))
+    primaryContextCode === 'profissional' &&
+    professionalSpecialty === 'assistencia social'
 
   const content = isConstructionRoute ? (
     <ConstructionPage path={location.pathname} />
