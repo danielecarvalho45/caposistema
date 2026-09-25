@@ -53,7 +53,22 @@ export function createTeamManagementService(): TeamManagementService {
         return { status: 'error', error: normalizeSupabaseError('create-team-member', error) }
       }
     },
-    update: (professionalId, input) => rpc.updateTeamMemberProfile(professionalId, input),
+    update: async (professionalId, input) => {
+      try {
+        const { data, error } = await getSupabaseClient().functions.invoke('update-team-member-profile', {
+          body: { professionalId, profile: input },
+        })
+        if (error) {
+          const body = 'context' in error && error.context instanceof Response
+            ? await error.context.json().catch(() => null) as { error?: string } | null
+            : null
+          throw new Error(body?.error ?? error.message)
+        }
+        return { status: 'success', data }
+      } catch (error) {
+        return { status: 'error', error: normalizeSupabaseError('update-team-member-profile', error) }
+      }
+    },
     setActive: async (professionalId, active, reason) => {
       try {
         const { data, error } = await getSupabaseClient().functions.invoke('set-team-member-active', {

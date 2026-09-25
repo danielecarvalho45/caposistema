@@ -105,7 +105,8 @@ export function AssistentialPage({
     )
   const isClinicalGeneral = accessContext.roles.some(
     (role) => role.code === 'medico_clinico_geral',
-  )
+  ) || accessContext.primary_specialty_name?.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'clinica geral'
   const pageTitle = isClinicalGeneral
     ? 'Atuação do Médico Clínico Geral'
     : 'Minha atuação assistencial'
