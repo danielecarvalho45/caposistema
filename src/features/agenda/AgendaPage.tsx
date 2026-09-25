@@ -177,9 +177,8 @@ function AppointmentTable({
               <td>{appointment.patient_name}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
               {onAttendance && (
                 <td>
-                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmar')}>Confirmar</button>
-                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'falta')}>Falta</button>
-                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'retorno')}>Retorno</button>
+                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}>Confirmar</button>
+                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}>Falta</button>
                 </td>
               )}
               <td>{appointment.professional_name}</td>
@@ -375,36 +374,16 @@ export function AgendaPage({
   const roleCodes = accessContext.roles.map((role) => role.code)
   const isProfessional =
     Boolean(accessContext.professional_id) &&
-    roleCodes.some((role) =>
-      [
-        'profissional',
-        'medico_clinico_geral',
-        'nutricao',
-        'assistencia_social',
-        'assistente_social',
-        'social',
-      ].includes(role),
-    )
+    roleCodes.includes('profissional')
   const canAccess = roleCodes.some((role) =>
-    [
-      'administrador',
-      'administrativo_operacional',
-      'coordenador',
-      'profissional',
-      'medico_clinico_geral',
-      'nutricao',
-      'assistencia_social',
-      'assistente_social',
-      'social',
-    ].includes(role),
+    ['administrador', 'administrativo_operacional', 'coordenador', 'profissional'].includes(role),
   )
   const professionalId = isProfessional
     ? accessContext.professional_id
     : selectedProfessionalId || null
-  const contextHasFixedSpecialty = roleCodes.some((role) =>
-    ['nutricao', 'medico_clinico_geral'].includes(role),
-  )
-  const shouldShowSpecialty = showSpecialty && !contextHasFixedSpecialty
+  const effectiveSpecialties = accessContext.specialties ?? []
+  const contextHasSingleSpecialty = effectiveSpecialties.length === 1
+  const shouldShowSpecialty = showSpecialty && !contextHasSingleSpecialty
   const pendingSpecialties: PatientSpecialtiesState = { status: 'loading' }
   const slotKey = `${selectedProfessionalId}:${anchorDate}`
   const availableSlots = !isProfessional && selectedProfessionalId && slotResult?.key === slotKey ? slotResult.rows : []
@@ -527,7 +506,7 @@ export function AgendaPage({
 
   async function updateAttendance(appointmentId: string, action: string) {
     if (busyAppointmentId) return
-    if (action === 'falta' && attendanceReason.trim().length < 3) {
+    if (action === 'faltou' && attendanceReason.trim().length < 3) {
       setAppointmentFeedback('Informe o motivo da falta antes de registrar.')
       return
     }
@@ -540,7 +519,7 @@ export function AgendaPage({
       reason: attendanceReason.trim(),
     })
     if (result.status === 'success') {
-      const confirmedAppointment = action === 'confirmar' && state.status === 'success'
+      const confirmedAppointment = action === 'confirmado' && state.status === 'success'
         ? state.data.find((appointment) => appointment.appointment_id === appointmentId)
         : undefined
       setAttendanceNotes('')
@@ -844,8 +823,7 @@ export function AgendaPage({
             </div>
             {appointmentFeedback && <p className="agenda-contract-note" role="status">{appointmentFeedback}</p>}
             <p className="agenda-contract-note">
-              A confirmação será liberada quando o contrato de criação de
-              agendamento estiver disponível no banco.
+              O agendamento é confirmado somente após retorno positivo do banco CAPO.
             </p>
           </section>
         )}
