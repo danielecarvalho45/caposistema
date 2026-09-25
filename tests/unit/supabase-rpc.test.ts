@@ -476,11 +476,11 @@ describe('camada de RPCs CAPO', () => {
   it('valida o contrato de renovação de receita', async () => {
     const doctorsTransport = transportWith([
       {
-        doctor_id: 'doctor-id',
-        doctor_name: 'Dr. José Silva',
-        specialty_name: 'Clínica Geral',
+        professional_id: 'doctor-id',
+        full_name: 'Dr. José Silva',
+        function_title: 'Médico - Clínico Geral',
         professional_registration: 'CRM-12345',
-        is_active: true,
+        has_active_account: true,
       },
     ])
 
@@ -493,15 +493,13 @@ describe('camada de RPCs CAPO', () => {
     )
     expect(doctors).toMatchObject({
       status: 'success',
-      data: [{ doctor_id: 'doctor-id', doctor_name: 'Dr. José Silva' }],
+      data: [{ doctor_id: 'doctor-id', doctor_name: 'Dr. José Silva', has_active_account: true }],
     })
 
     const createTransport = transportWith({
       success: true,
-      renewal_id: 'renewal-id',
-      patient_id: 'patient-id',
-      doctor_id: 'doctor-id',
-      status: 'pending_medical_review',
+      request_id: 'renewal-id',
+      status: 'awaiting_medical',
       created_at: '2026-09-16T12:00:00Z',
     })
 
@@ -517,47 +515,52 @@ describe('camada de RPCs CAPO', () => {
       'create_prescription_renewal_for_interface',
       {
         p_patient_id: 'patient-id',
-        p_doctor_id: 'doctor-id',
-        p_prescription_note: 'Renovação por continuidade de tratamento.',
+        p_target_doctor_id: 'doctor-id',
+        p_administrative_note: 'Renovação por continuidade de tratamento.',
       },
     )
     expect(created).toMatchObject({
       status: 'success',
-      data: { renewal_id: 'renewal-id', status: 'pending_medical_review' },
+      data: { renewal_id: 'renewal-id', status: 'awaiting_medical' },
     })
 
     const listTransport = transportWith([
       {
-        renewal_id: 'renewal-id',
+        request_id: 'renewal-id',
         patient_id: 'patient-id',
         patient_name: 'Paciente autorizado',
         patient_number: 'CAPO-1',
         cms: '12345',
-        doctor_id: 'doctor-id',
-        doctor_name: 'Dr. José Silva',
-        specialty_name: 'Clínica Geral',
-        status: 'pending_medical_review',
-        request_note: 'Renovação por continuidade de tratamento.',
-        medical_feedback: null,
-        administrative_feedback: null,
-        created_at: '2026-09-16T12:00:00Z',
-        updated_at: '2026-09-16T12:30:00Z',
-        reviewed_at: null,
+        administrative_note: 'Renovação por continuidade de tratamento.',
+        target_doctor_id: 'doctor-id',
+        target_doctor_name: 'Dr. José Silva',
+        target_doctor_registration: 'CRM-12345',
+        status: 'awaiting_medical',
+        medical_processed_by: null,
+        medical_processed_by_name: null,
+        medical_return: null,
+        medical_returned_at: null,
+        pickup_location: null,
+        final_admin_note: null,
+        patient_contacted_at: null,
         completed_at: null,
         cancelled_at: null,
+        cancellation_reason: null,
+        requested_at: '2026-09-16T12:00:00Z',
+        updated_at: '2026-09-16T12:30:00Z',
+        history: [],
         total_count: 1,
       },
     ])
 
     const renewals = await createRpcService(
       listTransport,
-    ).getPrescriptionRenewals('pending_medical_review', 'doctor-id', 25, 0)
+    ).getPrescriptionRenewals('awaiting_medical', 25, 0)
 
     expect(listTransport).toHaveBeenCalledWith(
       'get_prescription_renewals_for_interface',
       {
-        p_status: 'pending_medical_review',
-        p_doctor_id: 'doctor-id',
+        p_status: 'awaiting_medical',
         p_limit: 25,
         p_offset: 0,
       },
@@ -569,10 +572,8 @@ describe('camada de RPCs CAPO', () => {
 
     const medicalTransport = transportWith({
       success: true,
-      renewal_id: 'renewal-id',
-      action: 'renewed',
-      previous_status: 'pending_medical_review',
-      status: 'renewed',
+      request_id: 'renewal-id',
+      status: 'awaiting_admin',
       updated_at: '2026-09-16T13:00:00Z',
     })
 
@@ -580,51 +581,55 @@ describe('camada de RPCs CAPO', () => {
       medicalTransport,
     ).managePrescriptionRenewalMedical(
       'renewal-id',
-      'renewed',
-      'Receita renovada.',
+      'complete',
+      'Receita renovada e disponível para orientação administrativa.',
     )
 
     expect(medicalTransport).toHaveBeenCalledWith(
       'manage_prescription_renewal_medical_for_interface',
       {
-        p_renewal_id: 'renewal-id',
-        p_action: 'renewed',
-        p_feedback: 'Receita renovada.',
+        p_request_id: 'renewal-id',
+        p_action: 'complete',
+        p_operational_return: 'Receita renovada e disponível para orientação administrativa.',
       },
     )
     expect(medical).toMatchObject({
       status: 'success',
-      data: { status: 'renewed' },
+      data: { status: 'awaiting_admin' },
     })
 
     const adminTransport = transportWith({
       success: true,
-      renewal_id: 'renewal-id',
-      action: 'return_to_medical',
-      previous_status: 'renewed',
-      status: 'returned_to_medical',
-      updated_at: '2026-09-16T14:00:00Z',
+      request_id: 'renewal-id',
+      status: 'completed',
+      completed_at: '2026-09-16T14:00:00Z',
     })
 
     const admin = await createRpcService(
       adminTransport,
-    ).managePrescriptionRenewalAdmin(
-      'renewal-id',
-      'return_to_medical',
-      'Solicitar revisão complementar.',
-    )
+    ).managePrescriptionRenewalAdmin({
+      renewalId: 'renewal-id',
+      action: 'complete',
+      pickupLocation: 'CAPO',
+      finalAdminNote: 'Paciente orientado.',
+      patientContacted: true,
+    })
 
     expect(adminTransport).toHaveBeenCalledWith(
       'manage_prescription_renewal_admin_for_interface',
       {
-        p_renewal_id: 'renewal-id',
-        p_action: 'return_to_medical',
-        p_feedback: 'Solicitar revisão complementar.',
+        p_request_id: 'renewal-id',
+        p_action: 'complete',
+        p_target_doctor_id: null,
+        p_pickup_location: 'CAPO',
+        p_final_admin_note: 'Paciente orientado.',
+        p_patient_contacted: true,
+        p_reason: null,
       },
     )
     expect(admin).toMatchObject({
       status: 'success',
-      data: { status: 'returned_to_medical' },
+      data: { status: 'completed' },
     })
   })
 
