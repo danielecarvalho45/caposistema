@@ -247,9 +247,9 @@ export type AdministrativeRequestCreation = Readonly<{
 export type PrescriptionRenewalDoctor = Readonly<{
   doctor_id: string
   doctor_name: string
-  specialty_name: string | null
+  function_title: string | null
   professional_registration: string | null
-  is_active: boolean
+  has_active_account: boolean
 }>
 
 export type PrescriptionRenewal = Readonly<{
@@ -260,11 +260,14 @@ export type PrescriptionRenewal = Readonly<{
   cms: string | null
   doctor_id: string
   doctor_name: string
-  specialty_name: string | null
+  doctor_registration: string | null
   status: string
   request_note: string | null
   medical_feedback: string | null
   administrative_feedback: string | null
+  pickup_location: string | null
+  patient_contacted_at: string | null
+  cancellation_reason: string | null
   created_at: string
   updated_at: string
   reviewed_at: string | null
@@ -1192,15 +1195,15 @@ function parsePrescriptionRenewalDoctors(
   return value.map((item) => {
     if (!isRecord(item)) throw contractError(operation, 'linha inválida.')
     return {
-      doctor_id: requiredString(item, 'doctor_id', operation),
-      doctor_name: requiredString(item, 'doctor_name', operation),
-      specialty_name: nullableString(item, 'specialty_name', operation),
+      doctor_id: requiredString(item, 'professional_id', operation),
+      doctor_name: requiredString(item, 'full_name', operation),
+      function_title: nullableString(item, 'function_title', operation),
       professional_registration: nullableString(
         item,
         'professional_registration',
         operation,
       ),
-      is_active: requiredBoolean(item, 'is_active', operation),
+      has_active_account: requiredBoolean(item, 'has_active_account', operation),
     }
   })
 }
@@ -1212,7 +1215,7 @@ function parsePrescriptionRenewalCreation(
   if (!isRecord(value)) throw contractError(operation, 'objeto esperado.')
   return {
     success: requiredBoolean(value, 'success', operation),
-    renewal_id: requiredString(value, 'renewal_id', operation),
+    renewal_id: requiredString(value, 'request_id', operation),
     action: typeof value.action === 'string' ? value.action : undefined,
     previous_status:
       typeof value.previous_status === 'string'
@@ -1234,25 +1237,24 @@ function parsePrescriptionRenewals(
   return value.map((item) => {
     if (!isRecord(item)) throw contractError(operation, 'linha inválida.')
     return {
-      renewal_id: requiredString(item, 'renewal_id', operation),
+      renewal_id: requiredString(item, 'request_id', operation),
       patient_id: requiredString(item, 'patient_id', operation),
       patient_name: requiredString(item, 'patient_name', operation),
       patient_number: nullableString(item, 'patient_number', operation),
       cms: nullableString(item, 'cms', operation),
-      doctor_id: requiredString(item, 'doctor_id', operation),
-      doctor_name: requiredString(item, 'doctor_name', operation),
-      specialty_name: nullableString(item, 'specialty_name', operation),
+      doctor_id: requiredString(item, 'target_doctor_id', operation),
+      doctor_name: requiredString(item, 'target_doctor_name', operation),
+      doctor_registration: nullableString(item, 'target_doctor_registration', operation),
       status: requiredString(item, 'status', operation),
-      request_note: nullableString(item, 'request_note', operation),
-      medical_feedback: nullableString(item, 'medical_feedback', operation),
-      administrative_feedback: nullableString(
-        item,
-        'administrative_feedback',
-        operation,
-      ),
-      created_at: requiredString(item, 'created_at', operation),
+      request_note: nullableString(item, 'administrative_note', operation),
+      medical_feedback: nullableString(item, 'medical_return', operation),
+      administrative_feedback: nullableString(item, 'final_admin_note', operation),
+      pickup_location: nullableString(item, 'pickup_location', operation),
+      patient_contacted_at: nullableString(item, 'patient_contacted_at', operation),
+      cancellation_reason: nullableString(item, 'cancellation_reason', operation),
+      created_at: requiredString(item, 'requested_at', operation),
       updated_at: requiredString(item, 'updated_at', operation),
-      reviewed_at: nullableString(item, 'reviewed_at', operation),
+      reviewed_at: nullableString(item, 'medical_returned_at', operation),
       completed_at: nullableString(item, 'completed_at', operation),
       cancelled_at: nullableString(item, 'cancelled_at', operation),
       total_count: requiredNumber(item, 'total_count', operation),
@@ -1267,7 +1269,7 @@ function parsePrescriptionRenewalMutation(
   if (!isRecord(value)) throw contractError(operation, 'objeto esperado.')
   return {
     success: requiredBoolean(value, 'success', operation),
-    renewal_id: requiredString(value, 'renewal_id', operation),
+    renewal_id: requiredString(value, 'request_id', operation),
     action: typeof value.action === 'string' ? value.action : undefined,
     previous_status:
       typeof value.previous_status === 'string'
@@ -2488,21 +2490,20 @@ export function createRpcService(transport: RpcTransport) {
     createPrescriptionRenewal: (
       patientId: string,
       doctorId: string,
-      prescriptionNote: string | null,
+      administrativeNote: string | null,
     ) =>
       execute({
         transport,
         operation: 'create_prescription_renewal_for_interface',
         args: {
           p_patient_id: patientId,
-          p_doctor_id: doctorId,
-          p_prescription_note: prescriptionNote,
+          p_target_doctor_id: doctorId,
+          p_administrative_note: administrativeNote,
         },
         parse: parsePrescriptionRenewalCreation,
       }),
     getPrescriptionRenewals: (
       status: string | null = null,
-      doctorId: string | null = null,
       limit = 50,
       offset = 0,
     ) =>
@@ -2511,7 +2512,6 @@ export function createRpcService(transport: RpcTransport) {
         operation: 'get_prescription_renewals_for_interface',
         args: {
           p_status: status,
-          p_doctor_id: doctorId,
           p_limit: limit,
           p_offset: offset,
         },
@@ -2519,31 +2519,39 @@ export function createRpcService(transport: RpcTransport) {
       }),
     managePrescriptionRenewalMedical: (
       renewalId: string,
-      action: string,
-      feedback: string | null = null,
+      action: 'start' | 'complete',
+      operationalReturn: string | null = null,
     ) =>
       execute({
         transport,
         operation: 'manage_prescription_renewal_medical_for_interface',
         args: {
-          p_renewal_id: renewalId,
+          p_request_id: renewalId,
           p_action: action,
-          p_feedback: feedback,
+          p_operational_return: operationalReturn,
         },
         parse: parsePrescriptionRenewalMutation,
       }),
-    managePrescriptionRenewalAdmin: (
-      renewalId: string,
-      action: string,
-      feedback: string | null = null,
-    ) =>
+    managePrescriptionRenewalAdmin: (input: {
+      renewalId: string
+      action: 'retarget' | 'complete' | 'cancel'
+      targetDoctorId?: string | null
+      pickupLocation?: string | null
+      finalAdminNote?: string | null
+      patientContacted?: boolean
+      reason?: string | null
+    }) =>
       execute({
         transport,
         operation: 'manage_prescription_renewal_admin_for_interface',
         args: {
-          p_renewal_id: renewalId,
-          p_action: action,
-          p_feedback: feedback,
+          p_request_id: input.renewalId,
+          p_action: input.action,
+          p_target_doctor_id: input.targetDoctorId ?? null,
+          p_pickup_location: input.pickupLocation ?? null,
+          p_final_admin_note: input.finalAdminNote ?? null,
+          p_patient_contacted: input.patientContacted ?? false,
+          p_reason: input.reason ?? null,
         },
         parse: parsePrescriptionRenewalMutation,
       }),
@@ -3336,6 +3344,53 @@ function createSupabaseTransport(
       case 'get_technical_support_history_for_interface':
         return client.rpc(operation, {
           p_request_id: String(args?.p_request_id ?? ''),
+        })
+      case 'get_prescription_renewal_doctors_for_interface':
+        return client.rpc(operation)
+      case 'create_prescription_renewal_for_interface':
+        return client.rpc(operation, {
+          p_patient_id: String(args?.p_patient_id ?? ''),
+          p_target_doctor_id: String(args?.p_target_doctor_id ?? ''),
+          p_administrative_note:
+            typeof args?.p_administrative_note === 'string'
+              ? args.p_administrative_note
+              : null,
+        })
+      case 'get_prescription_renewals_for_interface':
+        return client.rpc(operation, {
+          p_status:
+            typeof args?.p_status === 'string' ? args.p_status : undefined,
+          p_limit: Number(args?.p_limit ?? 50),
+          p_offset: Number(args?.p_offset ?? 0),
+        })
+      case 'manage_prescription_renewal_medical_for_interface':
+        return client.rpc(operation, {
+          p_request_id: String(args?.p_request_id ?? ''),
+          p_action: String(args?.p_action ?? ''),
+          p_operational_return:
+            typeof args?.p_operational_return === 'string'
+              ? args.p_operational_return
+              : null,
+        })
+      case 'manage_prescription_renewal_admin_for_interface':
+        return client.rpc(operation, {
+          p_request_id: String(args?.p_request_id ?? ''),
+          p_action: String(args?.p_action ?? ''),
+          p_target_doctor_id:
+            typeof args?.p_target_doctor_id === 'string'
+              ? args.p_target_doctor_id
+              : null,
+          p_pickup_location:
+            typeof args?.p_pickup_location === 'string'
+              ? args.p_pickup_location
+              : null,
+          p_final_admin_note:
+            typeof args?.p_final_admin_note === 'string'
+              ? args.p_final_admin_note
+              : null,
+          p_patient_contacted: args?.p_patient_contacted === true,
+          p_reason:
+            typeof args?.p_reason === 'string' ? args.p_reason : null,
         })
       case 'complete_first_access':
       case 'get_birthdays_for_interface':
