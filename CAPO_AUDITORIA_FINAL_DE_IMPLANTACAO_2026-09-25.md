@@ -178,7 +178,40 @@ Se o Manual Estrutural atual definir claramente o comportamento:
 
 ---
 
-# 8. METODOLOGIA DA AUDITORIA FINAL
+# 8. REGRA FUNDAMENTAL — CONGELAMENTO CONTROLADO
+
+Quando um bloco for corrigido, conferido internamente e classificado como 🟢 VERDE:
+
+- o bloco deve ser considerado **CONGELADO**;
+- correções futuras de outros módulos não podem alterar esse bloco automaticamente;
+- o objetivo do congelamento é impedir que uma correção desconstrua outra já concluída.
+
+Se uma nova correção depender tecnicamente da reabertura de um bloco congelado:
+
+1. verificar primeiro se existe outra solução segura que preserve o bloco congelado;
+2. se não existir alternativa comprovadamente segura, apresentar imediatamente à responsável:
+   - qual bloco precisaria ser reaberto;
+   - qual nova correção depende disso;
+   - por que a reabertura seria necessária;
+   - quais processos podem ser afetados;
+3. se houver resposta imediata da responsável, seguir a decisão recebida;
+4. se não houver resposta imediata:
+   - NÃO reabrir o bloco;
+   - registrar o caso como 🟡 **PENDÊNCIA DE DECISÃO**;
+   - continuar normalmente a auditoria e as demais correções.
+
+A pendência deve registrar claramente que:
+- o processo anterior está correto e congelado;
+- o novo processo precisa potencialmente tocar naquele bloco;
+- a reabertura depende de decisão consciente para evitar regressão.
+
+Um bloco congelado só pode ser reaberto:
+- por decisão expressa da responsável pelo projeto; ou
+- quando houver regressão comprovada e a correção tiver sido previamente apresentada conforme esta regra.
+
+---
+
+# 9. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
@@ -219,7 +252,7 @@ Registrar:
 
 ---
 
-# 7. REGISTRO DE CORREÇÕES
+# 10. REGISTRO DE CORREÇÕES
 
 ## 7.1 Renovação de Receita
 **Data:** 25/09/2026  
@@ -289,13 +322,13 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
-# 8. PENDÊNCIAS DE DECISÃO
+# 11. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
 
 ---
 
-# 9. REGRA DE CONTINUIDADE
+# 12. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
