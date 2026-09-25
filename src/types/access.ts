@@ -3,6 +3,12 @@ export type AccessRole = Readonly<{
   name: string
 }>
 
+export type AccessSpecialty = Readonly<{
+  specialty_id: string
+  specialty_name: string
+  is_primary: boolean
+}>
+
 // O código é deliberadamente string: os valores válidos pertencem ao contrato
 // físico de resolve_user_primary_context(), não a uma prioridade do frontend.
 export type PrimaryContext = Readonly<{
@@ -43,6 +49,7 @@ export type AccessContext = Readonly<{
   recovery_email: string | null
   professional_id: string | null
   primary_specialty_name?: string | null
+  specialties: readonly AccessSpecialty[]
   full_name: string | null
   function_title: string | null
   professional_registration: string | null
