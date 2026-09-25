@@ -49,7 +49,7 @@ export type AccessContext = Readonly<{
   recovery_email: string | null
   professional_id: string | null
   primary_specialty_name?: string | null
-  specialties: readonly AccessSpecialty[]
+  specialties?: readonly AccessSpecialty[]
   full_name: string | null
   function_title: string | null
   professional_registration: string | null
