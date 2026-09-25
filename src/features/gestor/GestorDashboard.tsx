@@ -26,16 +26,6 @@ export function GestorDashboard() {
   }, [])
   return (
     <section className="gestor-dashboard" aria-labelledby="gestor-dashboard-title">
-      <section className="gestor-welcome-approved" aria-label="Boas-vindas">
-        <div className="gestor-welcome-copy">
-          <h1>Olá, seja bem-vinda ao CAPO.</h1>
-          <p>Tenha um ótimo dia de trabalho.</p>
-        </div>
-        <div className="gestor-slogan-approved" aria-label="Mensagem institucional">
-          <span>Cuidar hoje.</span>
-          <strong>Mais possibilidades amanhã.</strong>
-        </div>
-      </section>
       <h2 id="gestor-dashboard-title">Painel Geral do CAPO</h2>
       <section aria-labelledby="gestor-quick-title">
         <h3 id="gestor-quick-title">Acessos rápidos</h3>
