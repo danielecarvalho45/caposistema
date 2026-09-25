@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import type { AccessContext } from '../../types/access'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getRpcService } from '../../lib/supabase/rpc'
+import { getNotificationsService } from '../notifications/notifications-integration'
 import './gestor.css'
 
 type GestorShellProps = Readonly<{
@@ -75,6 +76,7 @@ export function GestorShell({
 }: GestorShellProps) {
   const navigate = useNavigate()
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'available' | 'unavailable'>('checking')
+  const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
 
   useEffect(() => {
     let active = true
@@ -104,6 +106,18 @@ export function GestorShell({
       ? 'Indisponível'
       : 'Verificando…'
 
+  useEffect(() => {
+    if (!canAccessAppRoute(accessContext, '/notificacoes')) return
+    let active = true
+    void getNotificationsService().getNotifications(true, 1, 0).then((state) => {
+      if (!active) return
+      setUnreadNotifications(state.status === 'success' ? (state.data[0]?.total_count ?? 0) : null)
+    })
+    return () => { active = false }
+  }, [accessContext])
+
+  const profileLabel = accessContext.primary_context.name?.trim() || 'Administrador'
+
   return (
     <div className="gestor-shell">
       <aside className="gestor-sidebar" aria-label="Navegação do Gestor">
@@ -127,14 +141,40 @@ export function GestorShell({
 
       <section className="gestor-workspace">
         <header className="gestor-header">
-          <div><h1>{accessContext.full_name ?? accessContext.username}</h1><p>Administrador do Sistema / Titular</p></div>
+          <div className="gestor-user">
+            <h1>{accessContext.full_name ?? accessContext.username}</h1>
+            <p>Administrador do Sistema / Titular</p>
+          </div>
           <div className="gestor-header-actions">
-            {activePath !== '/' && <button type="button" onClick={() => navigate('/')}>Voltar</button>}
-            {canAccessAppRoute(accessContext, '/notificacoes') && <button type="button" onClick={() => navigate('/notificacoes')}>Avisos</button>}
-            <span>Administrador</span>
-            <small>🔒 Sessão individual</small>
+            <button type="button" onClick={() => navigate('/')}>← <span>Voltar</span></button>
+            {canAccessAppRoute(accessContext, '/notificacoes') && (
+              <button className="gestor-notice-button" type="button" onClick={() => navigate('/notificacoes')}>
+                <span aria-hidden="true">🔔</span><span>Avisos</span>
+                {unreadNotifications !== null && unreadNotifications > 0 && (
+                  <b className="gestor-notice-badge" aria-label={`${unreadNotifications} avisos não lidos`}>
+                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  </b>
+                )}
+              </button>
+            )}
+            <button className="gestor-profile-button" type="button" onClick={() => navigate('/perfil')}>
+              <span aria-hidden="true">👤</span>
+              <span>Perfil: {profileLabel}</span>
+              <span aria-hidden="true">⌄</span>
+            </button>
           </div>
         </header>
+        <section className="gestor-welcome-approved" aria-label="Boas-vindas">
+          <div className="gestor-welcome-copy">
+            <h2>Olá, seja bem-vinda ao CAPO.</h2>
+            <p>Tenha um ótimo dia de trabalho.</p>
+          </div>
+          <span className="gestor-welcome-heart" aria-hidden="true">♡</span>
+          <div className="gestor-slogan-approved" aria-label="Mensagem institucional">
+            <span>Cuidar hoje.</span>
+            <strong>Mais possibilidades amanhã.</strong>
+          </div>
+        </section>
         <main className="gestor-main" aria-label="Ambiente do Administrador do Sistema">{children}</main>
         <footer className="gestor-footer">
           <div className="gestor-footer-center">
