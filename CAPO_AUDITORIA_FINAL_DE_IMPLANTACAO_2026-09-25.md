@@ -211,7 +211,31 @@ Um bloco congelado só pode ser reaberto:
 
 ---
 
-# 9. METODOLOGIA DA AUDITORIA FINAL
+# 9. REGRA FUNDAMENTAL — CORREÇÕES GLOBAIS X PARTICULARIDADES DE PERFIL
+
+Quando uma divergência for comum a vários perfis:
+
+- corrigir automaticamente no ponto compartilhado;
+- aplicar a correção de forma consistente a todos os perfis afetados;
+- evitar repetir a mesma correção em vários arquivos específicos;
+- verificar previamente os consumidores conhecidos do componente, fluxo, regra ou integração compartilhada;
+- preservar particularidades de cada perfil.
+
+Quando a divergência for específica de um perfil:
+
+- corrigir somente dentro daquele perfil;
+- não alterar outros perfis;
+- não transformar particularidade local em regra global.
+
+Regra prática:
+- comportamento comum = correção global;
+- particularidade funcional = correção local do perfil.
+
+Não duplicar lógica global em telas específicas quando existir ponto compartilhado adequado para a correção.
+
+---
+
+# 10. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
@@ -252,7 +276,7 @@ Registrar:
 
 ---
 
-# 10. REGISTRO DE CORREÇÕES
+# 11. REGISTRO DE CORREÇÕES
 
 ## 7.1 Renovação de Receita
 **Data:** 25/09/2026  
@@ -322,13 +346,13 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
-# 11. PENDÊNCIAS DE DECISÃO
+# 12. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
 
 ---
 
-# 12. FLUXO DOCUMENTAL OFICIAL
+# 13. FLUXO DOCUMENTAL OFICIAL
 
 O projeto passa a trabalhar com três documentos normativos oficiais e fechados:
 
@@ -410,7 +434,7 @@ Após o encerramento da auditoria e dos testes correspondentes, este documento p
 
 ---
 
-# 13. REGRA DE CONTINUIDADE
+# 14. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
