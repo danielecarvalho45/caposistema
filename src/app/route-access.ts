@@ -174,11 +174,13 @@ export function canAccessAppRoute(
         hasRole(accessContext, ['profissional'])
     case '/fila':
       return (
-        accessContext.primary_context.code === 'administrativo_operacional' ||
         hasRole(accessContext, [
           'administrador',
           'administrativo_operacional',
-        ])
+          'coordenador',
+        ]) ||
+        (Boolean(accessContext.professional_id) &&
+          hasRole(accessContext, ['profissional']))
       )
     case '/faltosos':
       return hasRole(accessContext, [
@@ -187,7 +189,6 @@ export function canAccessAppRoute(
         'administrativo_operacional',
       ])
     case '/solicitacoes':
-    case '/encaminhamentos':
       return (
         (Boolean(accessContext.professional_id) && hasProfessionalAssistentialRole(accessContext)) ||
         hasRole(accessContext, [
@@ -195,6 +196,16 @@ export function canAccessAppRoute(
           'coordenador',
           'administrativo_operacional',
         ])
+      )
+    case '/encaminhamentos':
+      return (
+        hasRole(accessContext, [
+          'administrador',
+          'coordenador',
+          'administrativo_operacional',
+        ]) ||
+        (Boolean(accessContext.professional_id) &&
+          accessContext.capabilities.includes('encaminhamento_interprofissional'))
       )
     case '/encerramentos':
       return (
@@ -213,15 +224,14 @@ export function canAccessAppRoute(
           ]))
       )
     case '/transporte':
-      return hasRole(accessContext, ['administrador']) || accessContext.capabilities.includes(
-        'preencher_solicitacao_transporte',
-      )
+      return hasRole(accessContext, ['administrador', 'administrativo_operacional']) ||
+        accessContext.capabilities.includes('preencher_solicitacao_transporte')
     case '/receita':
-      return hasRole(accessContext, ['administrador']) || accessContext.capabilities.includes('renovacao_receita')
+      return hasRole(accessContext, ['administrador', 'administrativo_operacional']) ||
+        accessContext.capabilities.includes('renovacao_receita')
     case '/odontologia':
-      return hasRole(accessContext, ['administrador']) || accessContext.capabilities.includes(
-        'emitir_encaminhamento_odontologico_externo',
-      )
+      return hasRole(accessContext, ['administrador', 'administrativo_operacional']) ||
+        accessContext.capabilities.includes('emitir_encaminhamento_odontologico_externo')
     case '/tecnica':
       return hasRole(accessContext, ['administrador', 'administrador_tecnico'])
   }
