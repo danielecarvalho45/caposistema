@@ -372,62 +372,71 @@ export type Database = {
       get_prescription_renewal_doctors_for_interface: {
         Args: Record<never, never>
         Returns: {
-          doctor_id: string
-          doctor_name: string
-          specialty_name: string | null
+          professional_id: string
+          full_name: string
+          function_title: string | null
           professional_registration: string | null
-          is_active: boolean
+          has_active_account: boolean
         }[]
       }
       create_prescription_renewal_for_interface: {
         Args: {
           p_patient_id: string
-          p_doctor_id: string
-          p_prescription_note?: string | null
+          p_target_doctor_id: string
+          p_administrative_note?: string | null
         }
         Returns: Json
       }
       get_prescription_renewals_for_interface: {
         Args: {
           p_status?: string | null
-          p_doctor_id?: string | null
           p_limit?: number
           p_offset?: number
         }
         Returns: {
-          renewal_id: string
+          request_id: string
           patient_id: string
           patient_name: string
           patient_number: string | null
           cms: string | null
-          doctor_id: string
-          doctor_name: string
-          specialty_name: string | null
+          administrative_note: string | null
+          target_doctor_id: string
+          target_doctor_name: string
+          target_doctor_registration: string | null
           status: string
-          request_note: string | null
-          medical_feedback: string | null
-          administrative_feedback: string | null
-          created_at: string
-          updated_at: string
-          reviewed_at: string | null
+          medical_processed_by: string | null
+          medical_processed_by_name: string | null
+          medical_return: string | null
+          medical_returned_at: string | null
+          pickup_location: string | null
+          final_admin_note: string | null
+          patient_contacted_at: string | null
           completed_at: string | null
           cancelled_at: string | null
+          cancellation_reason: string | null
+          requested_at: string
+          updated_at: string
+          history: Json
           total_count: number
         }[]
       }
       manage_prescription_renewal_medical_for_interface: {
         Args: {
-          p_renewal_id: string
+          p_request_id: string
           p_action: string
-          p_feedback?: string | null
+          p_operational_return?: string | null
         }
         Returns: Json
       }
       manage_prescription_renewal_admin_for_interface: {
         Args: {
-          p_renewal_id: string
+          p_request_id: string
           p_action: string
-          p_feedback?: string | null
+          p_target_doctor_id?: string | null
+          p_pickup_location?: string | null
+          p_final_admin_note?: string | null
+          p_patient_contacted?: boolean
+          p_reason?: string | null
         }
         Returns: Json
       }
