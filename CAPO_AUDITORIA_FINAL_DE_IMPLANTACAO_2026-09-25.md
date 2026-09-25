@@ -244,7 +244,53 @@ Não duplicar lógica global em telas específicas quando existir ponto comparti
 
 ---
 
-# 10. METODOLOGIA DA AUDITORIA FINAL
+# 10. REGRA DE OURO — LEITURA MINUCIOSA DO PROJETO ESTRUTURAL
+
+O Projeto/Manual Estrutural é a referência principal da auditoria funcional e deve ser analisado minuciosamente para cada perfil.
+
+É proibido:
+- ler apenas o primeiro organograma e presumir que os demais perfis seguem a mesma estrutura;
+- transferir automaticamente funções de um perfil para outro;
+- concluir por analogia sem conferir o desenho específico do perfil;
+- realizar correções em sequência por interpretação própria.
+
+Para cada perfil auditado, deve ser feito pente fino de:
+- organograma completo;
+- responsabilidades;
+- módulos;
+- ações;
+- botões;
+- fluxos;
+- automações;
+- integrações com o banco;
+- particularidades exclusivas;
+- comportamentos comuns compartilhados.
+
+Exemplo de aplicação:
+- ao auditar Gestor/Titular, analisar toda a estrutura prevista para Gestor/Titular;
+- ao auditar Nutrição, analisar toda a estrutura prevista para Nutrição;
+- aplicar a mesma metodologia individual aos demais perfis.
+
+## Regra contra correções em avalanche
+
+Cada correção deve ser tratada como unidade independente.
+
+Fluxo obrigatório:
+1. identificar a divergência;
+2. interromper qualquer inferência em cascata;
+3. consultar o Projeto/Manual Estrutural especificamente no ponto correspondente;
+4. analisar o impacto da correção;
+5. verificar relação com componentes globais, particularidades de perfil e blocos congelados;
+6. corrigir somente o que estiver comprovado;
+7. conferir o resultado antes de avançar para a próxima correção.
+
+Uma correção não autoriza automaticamente outra correção derivada.
+
+Somente o Projeto/Manual Estrutural vigente pode fundamentar a próxima alteração funcional.
+
+---
+
+# 11. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
@@ -285,7 +331,7 @@ Registrar:
 
 ---
 
-# 11. REGISTRO DE CORREÇÕES
+# 12. REGISTRO DE CORREÇÕES
 
 ## 7.1 Renovação de Receita
 **Data:** 25/09/2026  
@@ -355,13 +401,13 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
-# 12. PENDÊNCIAS DE DECISÃO
+# 13. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
 
 ---
 
-# 13. FLUXO DOCUMENTAL OFICIAL
+# 14. FLUXO DOCUMENTAL OFICIAL
 
 O projeto passa a trabalhar com três documentos normativos oficiais e fechados:
 
@@ -443,7 +489,7 @@ Após o encerramento da auditoria e dos testes correspondentes, este documento p
 
 ---
 
-# 14. REGRA DE CONTINUIDADE
+# 15. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
