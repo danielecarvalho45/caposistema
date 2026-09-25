@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
-import { getRpcService, loadingState, type AsyncState } from '../../lib/supabase/rpc'
+import { getRpcService, loadingState, type AgendaAppointment, type AsyncState } from '../../lib/supabase/rpc'
 import { AgendaPage } from '../agenda/AgendaPage'
 import {
   createClosuresIntegration,
@@ -32,7 +32,7 @@ export function SocialPage({
   const [socialSpecialtyFor, setSocialSpecialtyFor] = useState<string | null>(null)
   const [social, setSocial] =
     useState<AsyncState<readonly SocialFollowup[]>>(loadingState)
-  const [cycleId, setCycleId] = useState('')
+  const [selectedAppointment, setSelectedAppointment] = useState<AgendaAppointment | null>(null)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -81,19 +81,27 @@ export function SocialPage({
     setBusy(false)
   }
 
-  async function startSocial(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!cycleId.trim() || reason.trim().length < 5 || busy) return
+  function openConfirmedPatient(appointment: AgendaAppointment) {
+    setSelectedAppointment(appointment)
+    setFeedback(null)
+    globalThis.document.getElementById('acompanhamento-social')?.scrollIntoView?.({ block: 'start' })
+  }
+
+  async function startSocial() {
+    if (!selectedAppointment || busy) return
     setBusy(true)
     setFeedback(null)
-    const result = await integration.startSocial(cycleId.trim(), reason.trim())
+    const result = await integration.startSocial(
+      selectedAppointment.patient_id,
+      selectedAppointment.appointment_id,
+    )
     if (result.status === 'success') {
       const reloaded = await reloadSocial()
       if (reloaded.status === 'success' || reloaded.status === 'empty') {
         setFeedback('Acompanhamento social iniciado e recarregado do backend.')
-        setCycleId('')
-        setReason('')
-      } else setFeedback('A operação foi recebida, mas a atualização do acompanhamento falhou.')
+      } else {
+        setFeedback('A operação foi recebida, mas a atualização do acompanhamento falhou.')
+      }
     } else if (result.status === 'error') {
       setFeedback(result.error.message)
     }
@@ -139,7 +147,7 @@ export function SocialPage({
             Faltosos seguem fluxo próprio
           </span>
         </div>
-        <AgendaPage accessContext={accessContext} />
+        <AgendaPage accessContext={accessContext} onConfirmed={openConfirmedPatient} />
       </section>
 
       <section
@@ -154,29 +162,14 @@ export function SocialPage({
           </div>
           <p>Registros ativos e encerrados consultados no backend oficial.</p>
         </div>
-        {canOperateSocial && (
-          <form className="social-followup-form" onSubmit={startSocial}>
-            <label>
-              ID do ciclo
-              <input
-                value={cycleId}
-                onChange={(event) => setCycleId(event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Motivo de abertura
-              <textarea
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                minLength={5}
-                required
-              />
-            </label>
-            <button type="submit" disabled={busy || reason.trim().length < 5}>
+        {canOperateSocial && selectedAppointment && (
+          <div className="social-followup-form">
+            <strong>Paciente confirmado na agenda: {selectedAppointment.patient_name}</strong>
+            <p>O acompanhamento será vinculado ao agendamento confirmado e ao ciclo CAPO correspondente.</p>
+            <button type="button" disabled={busy} onClick={() => void startSocial()}>
               Iniciar acompanhamento social
             </button>
-          </form>
+          </div>
         )}
         {social.status === 'loading' && <p>Carregando acompanhamentos sociais...</p>}
         {social.status === 'empty' && (
