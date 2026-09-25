@@ -874,6 +874,16 @@ function parseAccessContext(value: unknown): AccessContext {
     primary_specialty_name: value.primary_specialty_name === undefined
       ? null
       : nullableString(value, 'primary_specialty_name', operation),
+    specialties: Array.isArray(value.specialties)
+      ? value.specialties.map((item) => {
+          if (!isRecord(item)) throw contractError(operation, 'especialidade inválida.')
+          return {
+            specialty_id: requiredString(item, 'specialty_id', operation),
+            specialty_name: requiredString(item, 'specialty_name', operation),
+            is_primary: requiredBoolean(item, 'is_primary', operation),
+          }
+        })
+      : [],
     full_name: nullableString(value, 'full_name', operation),
     function_title: nullableString(value, 'function_title', operation),
     professional_registration: nullableString(
