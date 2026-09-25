@@ -2134,6 +2134,13 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_query: query, p_status: status, p_limit: limit, p_offset: offset },
         parse: parseConfirmedJson,
       }),
+    createSpecialty: (name: string) =>
+      execute({
+        transport,
+        operation: 'create_specialty_for_interface',
+        args: { p_name: name },
+        parse: parseConfirmedJson,
+      }),
     createTeamMemberProfile: (input: TeamMemberProfileInput) =>
       execute({
         transport,

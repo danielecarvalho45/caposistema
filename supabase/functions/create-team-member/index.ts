@@ -37,10 +37,12 @@ Deno.serve(async (request) => {
 
   const email = typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : ''
   const password = typeof payload.temporaryPassword === 'string' ? payload.temporaryPassword : ''
+  const initiallyActive = payload.initiallyActive !== false
+  const inactiveReason = typeof payload.inactiveReason === 'string' ? payload.inactiveReason.trim() : ''
   const profile = payload.profile
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 72 ||
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(password) || password === '123456' ||
       !profile || typeof profile !== 'object' || Array.isArray(profile)) {
-    return json({ error: 'Informe e-mail, senha provisória de 8 a 72 caracteres e os dados do profissional.' }, 400)
+    return json({ error: 'Informe e-mail, senha provisória de 6 números diferente de 123456 e os dados do profissional.' }, 400)
   }
 
   const fields = profile as Record<string, unknown>
@@ -50,6 +52,9 @@ Deno.serve(async (request) => {
       fields.roleCodes.some((role) => typeof role !== 'string') ||
       fields.specialtyIds.some((id) => typeof id !== 'string')) {
     return json({ error: 'Confira o nome, usuário, papéis e e-mail de recuperação.' }, 400)
+  }
+  if (!initiallyActive && (inactiveReason.length < 5 || inactiveReason.length > 500)) {
+    return json({ error: 'Informe o motivo da inativação com 5 a 500 caracteres.' }, 400)
   }
 
   const admin = createClient(url, serviceKey, {
@@ -85,8 +90,16 @@ Deno.serve(async (request) => {
     return json({ error: createError?.message ?? 'Não foi possível criar a conta de acesso.' }, 400)
   }
 
+  if (!initiallyActive) {
+    const { error: banError } = await admin.auth.admin.updateUserById(created.user.id, { ban_duration: '876000h' })
+    if (banError) {
+      await admin.auth.admin.deleteUser(created.user.id)
+      return json({ error: 'Não foi possível manter a conta inicialmente inativa.' }, 400)
+    }
+  }
+
   const { data: result, error: profileError } = await requester.rpc(
-    'create_team_member_profile_for_interface',
+    'create_team_member_with_status_for_interface',
     {
       p_auth_user_id: created.user.id,
       p_full_name: fields.fullName,
@@ -101,6 +114,8 @@ Deno.serve(async (request) => {
       p_specialty_ids: fields.specialtyIds,
       p_primary_specialty_id: fields.primarySpecialtyId,
       p_birth_date: fields.birthDate,
+      p_initially_active: initiallyActive,
+      p_inactive_reason: initiallyActive ? null : inactiveReason,
     },
   )
 
