@@ -11,6 +11,32 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      get_waiting_list_for_interface: {
+        Args: {
+          p_specialty_id?: string | null
+          p_status?: string | null
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json
+      }
+      add_patient_to_waiting_list_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_specialty_id: string
+          p_priority?: number
+          p_notes?: string | null
+        }
+        Returns: Json
+      }
+      update_waiting_list_status_for_interface: {
+        Args: {
+          p_waiting_list_id: string
+          p_action: string
+          p_notes?: string | null
+        }
+        Returns: Json
+      }
       get_initial_active_searches_for_interface: {
         Args: { p_flow_status?: string | null; p_limit?: number; p_offset?: number }
         Returns: Json
