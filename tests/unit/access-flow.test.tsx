@@ -154,13 +154,13 @@ describe('entrada única CAPO', () => {
     expect(usernameInput).toHaveValue('')
     expect(passwordInput).toHaveValue('')
     await user.type(usernameInput, 'usuario')
-    await user.type(passwordInput, '654321')
+    await user.type(passwordInput, 'Capo2026')
     await user.click(screen.getByRole('button', { name: 'Entrar no CAPO' }))
 
     expect(
       await screen.findByRole('heading', { name: 'Área protegida' }),
     ).toBeVisible()
-    expect(authApi.loginByUsername).toHaveBeenCalledWith('usuario', '654321')
+    expect(authApi.loginByUsername).toHaveBeenCalledWith('usuario', 'Capo2026')
   })
 
   it('mantém erro de login visível', async () => {
@@ -336,7 +336,7 @@ describe('entrada única CAPO', () => {
       name: 'Alterar senha do primeiro acesso',
     })
     await user.type(screen.getByLabelText('Senha atual'), '111111')
-    await user.type(screen.getByLabelText('Nova senha de 6 números'), '654321')
+    await user.type(screen.getByLabelText('Nova senha'), 'Capo2026')
     await user.click(
       screen.getByRole('button', { name: 'Concluir primeiro acesso' }),
     )
@@ -349,7 +349,7 @@ describe('entrada única CAPO', () => {
       'usuario',
       '111111',
     )
-    expect(authApi.updatePassword).toHaveBeenCalledWith('654321')
+    expect(authApi.updatePassword).toHaveBeenCalledWith('Capo2026')
     expect(rpcService.completeFirstAccess).toHaveBeenCalled()
   })
 
@@ -379,7 +379,7 @@ describe('entrada única CAPO', () => {
       name: 'Alterar senha do primeiro acesso',
     })
     await user.type(screen.getByLabelText('Senha atual'), '111111')
-    await user.type(screen.getByLabelText('Nova senha de 6 números'), '654321')
+    await user.type(screen.getByLabelText('Nova senha'), 'Capo2026')
     await user.click(
       screen.getByRole('button', { name: 'Concluir primeiro acesso' }),
     )
