@@ -19,6 +19,7 @@ const serviceItems: readonly NavItem[] = [
   { path: '/pacientes', icon: '👥', label: 'Pacientes' },
   { path: '/agenda', icon: '▣', label: 'Agenda Geral' },
   { path: '/solicitacoes', icon: '▤', label: 'Solicitações' },
+  { path: '/transporte', icon: '▰', label: 'Transporte' },
   { path: '/gestor/fluxos', icon: '◉', label: 'Fluxos e Acompanhamentos' },
   { path: '/faltosos', icon: '◷', label: 'Faltosos' },
   { path: '/gestor/busca-ativa', icon: '⌕', label: 'Busca Ativa' },
