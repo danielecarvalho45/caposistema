@@ -4,6 +4,7 @@ import { GestorTeamPage } from './GestorTeamPage'
 import { TechnicalSupportRequest } from '../../components/forms/TechnicalSupportRequest'
 import { OperationalTimeline } from './OperationalTimeline'
 import { AuditLogPage } from './AuditLogPage'
+import type { AccessContext } from '../../types/access'
 
 type ManagementView = 'equipe' | 'administracao' | 'timeline' | 'auditoria' | 'suporte' | 'fluxos' | 'busca-ativa'
 
@@ -17,12 +18,12 @@ const content: Record<ManagementView, Readonly<{ kicker: string; title: string; 
   'busca-ativa': { kicker: 'Atendimento e Acompanhamento', title: 'Busca Ativa', description: 'Acompanhamento de pacientes com perda de seguimento.' },
 }
 
-export function GestorManagementPage({ view }: Readonly<{ view: ManagementView }>) {
+export function GestorManagementPage({ view, accessContext }: Readonly<{ view: ManagementView; accessContext: AccessContext }>) {
   const page = content[view]
   if (view === 'equipe' || view === 'administracao') return <GestorTeamPage />
   if (view === 'timeline') return <OperationalTimeline />
   if (view === 'auditoria') return <AuditLogPage />
-  if (view === 'busca-ativa') return <ActiveSearchPage />
+  if (view === 'busca-ativa') return <ActiveSearchPage accessContext={accessContext} />
   if (view === 'suporte') return <section className="gestor-route" aria-labelledby="support-title"><header><span>Gestão do Serviço</span><h2 id="support-title">Suporte</h2><p>Solicitação técnica registrada pelo backend CAPO.</p></header><article className="gestor-panel"><TechnicalSupportRequest affectedModule="gestor" /></article></section>
   return (
     <section className="gestor-route" aria-labelledby="gestor-route-title">
