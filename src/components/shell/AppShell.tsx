@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import { authorizedNavigationItems } from '../navigation/navigation-config'
 import { getNotificationsService } from '../../features/notifications/notifications-integration'
+import { getRpcService } from '../../lib/supabase/rpc'
 import './app-shell.css'
 
 type AppShellProps = Readonly<{
@@ -29,6 +30,7 @@ export function AppShell({
   const [unreadNotifications, setUnreadNotifications] = useState<number | null>(
     null,
   )
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'available' | 'unavailable'>('checking')
   const mainRef = useRef<HTMLElement>(null)
   const currentPath = activePath || '/'
   const displayName =
@@ -59,6 +61,34 @@ export function AppShell({
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [menuOpen])
+
+  useEffect(() => {
+    let active = true
+    const verifyConnection = async () => {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (active) setConnectionStatus('unavailable')
+        return
+      }
+      const result = await getRpcService().getMyAccessContext()
+      if (active) setConnectionStatus(result.status === 'success' ? 'available' : 'unavailable')
+    }
+    void verifyConnection()
+    const handleOnline = () => void verifyConnection()
+    const handleOffline = () => setConnectionStatus('unavailable')
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      active = false
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  const connectionLabel = connectionStatus === 'available'
+    ? 'Disponível'
+    : connectionStatus === 'unavailable'
+      ? 'Indisponível'
+      : 'Verificando…'
 
   useEffect(() => {
     if (!canAccessNotifications) return
@@ -181,9 +211,9 @@ export function AppShell({
           <br />
           pela vida <span aria-hidden="true">♡</span>
         </p>
-        <div className="app-connection" aria-label="Status de conexão">
+        <div className="app-connection" data-status={connectionStatus} aria-label={`Conexão — ${connectionLabel}`}>
           <span>Conexão</span>
-          <strong>Estado não verificado</strong>
+          <strong><i aria-hidden="true" />{connectionLabel}</strong>
         </div>
       </aside>
 
@@ -220,6 +250,9 @@ export function AppShell({
               >
                 ← Voltar
               </button>
+            )}
+            {canAccessNotifications && (
+              <Link className="app-back-button" to="/notificacoes">Avisos</Link>
             )}
             <p className="app-context-label" title={contextName}>
               {contextName}
