@@ -78,12 +78,11 @@ Deno.serve(async (request) => {
   if (accountError) return json({ error: 'Serviço indisponível.' }, 503)
   if (!account) return json({ error: 'Acesso não autorizado.' }, 403)
 
-  const { data: roles, error: rolesError } = await admin.from('user_roles')
-    .select('app_roles!inner(code,is_active)')
-    .eq('user_account_id', account.id).eq('app_roles.code', 'administrador')
-    .eq('app_roles.is_active', true).limit(1)
-  if (rolesError) return json({ error: 'Serviço indisponível.' }, 503)
-  if (!roles?.length) return json({ error: 'Somente o administrador pode cadastrar a equipe.' }, 403)
+  const { data: isAdministrator, error: roleError } = await requester.rpc('has_app_role', {
+    required_role: 'administrador',
+  })
+  if (roleError) return json({ error: 'Serviço indisponível.' }, 503)
+  if (!isAdministrator) return json({ error: 'Somente o administrador pode cadastrar a equipe.' }, 403)
 
   if (existingProfessionalId) {
     const { data: existing, error: existingError } = await admin.from('professionals')
