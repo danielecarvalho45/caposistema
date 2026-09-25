@@ -47,12 +47,12 @@ describe('GestorTeamPage', () => {
     render(<GestorTeamPage service={service} />)
     fireEvent.click(await screen.findByRole('button', { name: /Profissional cadastrado/ }))
     fireEvent.change(screen.getByLabelText('E-mail de recuperação'), { target: { value: 'pessoa@exemplo.org' } })
-    fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/), { target: { value: '247985' } })
+    fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/), { target: { value: 'Capo2026' } })
     fireEvent.click(screen.getByLabelText('Profissional'))
-    fireEvent.click(screen.getByRole('button', { name: 'Criar acesso e salvar perfil' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Criar acesso' }))
     await waitFor(() => expect(create).toHaveBeenCalledWith(
       expect.objectContaining({ username: 'profissional.cadastrado', recoveryEmail: 'pessoa@exemplo.org' }),
-      '247985', true, '', 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0',
+      'Capo2026', true, '', 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0',
     ))
   })
 
