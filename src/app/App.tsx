@@ -141,20 +141,24 @@ export function App() {
     : false
   const isGestor = accessContext.primary_context.code === 'administrador'
   const primaryContextCode = accessContext.primary_context.code
+  const professionalSpecialty = accessContext.primary_specialty_name
+    ?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
   const isProfessionalHome =
     location.pathname === '/' &&
     Boolean(accessContext.professional_id) &&
-    primaryContextCode === 'profissional'
+    primaryContextCode === 'profissional' &&
+    professionalSpecialty !== 'nutricao' &&
+    professionalSpecialty !== 'assistencia social'
   const isNutritionHome =
     location.pathname === '/' &&
     Boolean(accessContext.professional_id) &&
-    primaryContextCode === 'nutricao'
+    (primaryContextCode === 'nutricao' ||
+      (primaryContextCode === 'profissional' && professionalSpecialty === 'nutricao'))
   const isSocialHome =
     location.pathname === '/' &&
     Boolean(accessContext.professional_id) &&
-    ['assistencia_social', 'assistente_social', 'social'].includes(
-      primaryContextCode ?? '',
-    )
+    (['assistencia_social', 'assistente_social', 'social'].includes(primaryContextCode ?? '') ||
+      (primaryContextCode === 'profissional' && professionalSpecialty === 'assistencia social'))
 
   const content = isConstructionRoute ? (
     <ConstructionPage path={location.pathname} />

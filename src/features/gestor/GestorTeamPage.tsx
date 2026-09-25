@@ -4,6 +4,8 @@ import {
   type AsyncState,
   type TeamMemberProfileInput,
 } from '../../lib/supabase/rpc'
+import { getSupabaseClient } from '../../lib/supabase/client'
+import { normalizeSupabaseError } from '../../lib/supabase/errors'
 
 type RecordValue = Readonly<Record<string, unknown>>
 
@@ -20,7 +22,7 @@ type Option = Readonly<{ id: string; label: string }>
 
 export type TeamManagementService = Readonly<{
   getContext: (query: string | null, status: string | null, limit: number, offset: number) => Promise<AsyncState<unknown>>
-  create: (input: TeamMemberProfileInput) => Promise<AsyncState<unknown>>
+  create: (input: TeamMemberProfileInput, temporaryPassword: string) => Promise<AsyncState<unknown>>
   update: (professionalId: string, input: TeamMemberProfileInput) => Promise<AsyncState<unknown>>
   setActive: (professionalId: string, active: boolean, reason: string) => Promise<AsyncState<unknown>>
   setPrimaryContext: (userAccountId: string, roleCode: string) => Promise<AsyncState<unknown>>
@@ -34,7 +36,22 @@ export function createTeamManagementService(): TeamManagementService {
   const rpc = getRpcService()
   return {
     getContext: (query, status, limit, offset) => rpc.getTeamManagementContext(query, status, limit, offset),
-    create: (input) => rpc.createTeamMemberProfile(input),
+    create: async (input, temporaryPassword) => {
+      try {
+        const { data, error } = await getSupabaseClient().functions.invoke('create-team-member', {
+          body: { email: input.recoveryEmail, temporaryPassword, profile: input },
+        })
+        if (error) {
+          const body = 'context' in error && error.context instanceof Response
+            ? await error.context.json().catch(() => null) as { error?: string } | null
+            : null
+          throw new Error(body?.error ?? error.message)
+        }
+        return { status: 'success', data }
+      } catch (error) {
+        return { status: 'error', error: normalizeSupabaseError('create-team-member', error) }
+      }
+    },
     update: (professionalId, input) => rpc.updateTeamMemberProfile(professionalId, input),
     setActive: (professionalId, active, reason) => rpc.setTeamMemberActive(professionalId, active, reason),
     setPrimaryContext: (userAccountId, roleCode) => rpc.setTeamMemberPrimaryContext(userAccountId, roleCode),
@@ -145,6 +162,7 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   const [context, setContext] = useState<unknown>(null)
   const [selected, setSelected] = useState<TeamMember | null>(null)
   const [profile, setProfile] = useState<TeamMemberProfileInput>(blankProfile)
+  const [temporaryPassword, setTemporaryPassword] = useState('')
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
   const [activeReason, setActiveReason] = useState('')
@@ -160,7 +178,6 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   })
   const roles = optionList(context, ['roles', 'available_roles', 'role_options'], ['role_code', 'code'], ['role_name', 'name', 'role_code'])
   const specialties = optionList(context, ['specialties', 'available_specialties', 'specialty_options'], ['specialty_id', 'id'], ['specialty_name', 'name'])
-  const accounts = optionList(context, ['available_user_accounts', 'user_accounts', 'unlinked_user_accounts'], ['user_account_id', 'auth_user_id', 'id'], ['full_name', 'username', 'email'])
 
   async function reload() {
     setLoading(true)
@@ -216,14 +233,16 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!profile.fullName.trim()) { setFeedback('Informe o nome completo.'); return }
-    if (!selected && !profile.authUserId) { setFeedback('Selecione uma conta retornada pelo backend para cadastrar o profissional.'); return }
+    if (!selected && (!profile.recoveryEmail || temporaryPassword.length < 8)) { setFeedback('Informe o e-mail e uma senha provisória de pelo menos 8 caracteres.'); return }
+    if (!selected && profile.isProfessional && !profile.primarySpecialtyId) { setFeedback('Selecione a especialidade principal do profissional.'); return }
     const result = selected
       ? await service.update(selected.professionalId, profile)
-      : await service.create(profile)
+      : await service.create(profile, temporaryPassword)
     if (result.status !== 'success') { setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.'); return }
     setFeedback(selected ? 'Profissional atualizado.' : 'Profissional cadastrado.')
     setSelected(null)
     setProfile(blankProfile())
+    setTemporaryPassword('')
     await reload()
   }
 
@@ -245,7 +264,7 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
       <form className="gestor-panel gestor-team-form" onSubmit={(event) => void saveProfile(event)}>
         <div className="gestor-team-heading"><h3>{selected ? 'Editar profissional' : 'Cadastrar profissional'}</h3>{selected && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Cancelar edição</button>}</div>
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
-        {!selected && <label>Conta de acesso<select required value={profile.authUserId ?? ''} onChange={(event) => setProfile({ ...profile, authUserId: nullable(event.target.value) })}><option value="">{accounts.length ? 'Selecione uma conta disponível' : 'Nenhuma identidade disponível no Supabase Auth'}</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select><small>Crie primeiro o usuário em Supabase → Authentication → Users com o mesmo e-mail de recuperação. Depois atualize esta lista.</small></label>}
+        {!selected && <label>Conta de acesso: senha provisória<input type="password" autoComplete="new-password" required minLength={8} value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>O e-mail de recuperação informado abaixo será usado para criar a conta de acesso junto com o cadastro.</small></label>}
         <div className="gestor-field-grid"><label>Função<input value={profile.functionTitle ?? ''} onChange={(event) => setProfile({ ...profile, functionTitle: nullable(event.target.value) })} /></label><label>Usuário<input value={profile.username ?? ''} onChange={(event) => setProfile({ ...profile, username: nullable(event.target.value) })} /></label><label>E-mail de recuperação<input type="email" value={profile.recoveryEmail ?? ''} onChange={(event) => setProfile({ ...profile, recoveryEmail: nullable(event.target.value) })} /></label><label>Telefone<input value={profile.phone ?? ''} onChange={(event) => setProfile({ ...profile, phone: nullable(event.target.value) })} /></label><label>Data de nascimento<input type="date" value={profile.birthDate ?? ''} onChange={(event) => setProfile({ ...profile, birthDate: nullable(event.target.value) })} /></label><label>Registro profissional<input value={profile.professionalRegistration ?? ''} onChange={(event) => setProfile({ ...profile, professionalRegistration: nullable(event.target.value) })} /></label><label>Responsabilidade administrativa<input value={profile.administrativeResponsibility ?? ''} onChange={(event) => setProfile({ ...profile, administrativeResponsibility: nullable(event.target.value) })} /></label><label>Especialidade principal<select value={profile.primarySpecialtyId ?? ''} onChange={(event) => setProfile({ ...profile, primarySpecialtyId: nullable(event.target.value) })}><option value="">Não definida</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label></div>
         <label className="gestor-check"><input type="checkbox" checked={profile.isProfessional} onChange={(event) => setProfile({ ...profile, isProfessional: event.target.checked })} />Perfil profissional</label>
         <fieldset><legend>Papéis</legend>{roles.map((role) => <label className="gestor-check" key={role.id}><input type="checkbox" checked={profile.roleCodes.includes(role.id)} onChange={(event) => toggleCodes('roleCodes', role.id, event.target.checked)} />{role.label}</label>)}</fieldset>

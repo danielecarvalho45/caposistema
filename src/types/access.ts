@@ -42,6 +42,7 @@ export type AccessContext = Readonly<{
   is_active: boolean
   recovery_email: string | null
   professional_id: string | null
+  primary_specialty_name?: string | null
   full_name: string | null
   function_title: string | null
   professional_registration: string | null

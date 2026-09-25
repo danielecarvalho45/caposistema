@@ -868,6 +868,9 @@ function parseAccessContext(value: unknown): AccessContext {
     is_active: requiredBoolean(value, 'is_active', operation),
     recovery_email: nullableString(value, 'recovery_email', operation),
     professional_id: nullableString(value, 'professional_id', operation),
+    primary_specialty_name: value.primary_specialty_name === undefined
+      ? null
+      : nullableString(value, 'primary_specialty_name', operation),
     full_name: nullableString(value, 'full_name', operation),
     function_title: nullableString(value, 'function_title', operation),
     professional_registration: nullableString(
