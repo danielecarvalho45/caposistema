@@ -103,6 +103,15 @@ function selectedCodes(value: unknown): readonly string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
+function selectedField(value: unknown, key: string): readonly string[] {
+  if (!Array.isArray(value)) return []
+  return value.flatMap((item) => {
+    if (typeof item === 'string') return [item]
+    const record = asRecord(item)
+    return record ? [text(record, key)].filter((code): code is string => code !== null) : []
+  })
+}
+
 function memberInput(member: TeamMember): TeamMemberProfileInput {
   const profile = member.profile
   return {
@@ -113,11 +122,12 @@ function memberInput(member: TeamMember): TeamMemberProfileInput {
     functionTitle: member.functionTitle,
     isProfessional: profile.is_professional !== false,
     phone: text(profile, 'phone'),
-    primarySpecialtyId: text(profile, 'primary_specialty_id'),
+    primarySpecialtyId: text(asRecord(profile.primary_context) ?? profile, 'primary_specialty_id') ??
+      selectedField(profile.specialties, 'specialty_id')[0] ?? null,
     professionalRegistration: text(profile, 'professional_registration'),
     recoveryEmail: text(profile, 'recovery_email'),
-    roleCodes: selectedCodes(profile.role_codes),
-    specialtyIds: selectedCodes(profile.specialty_ids),
+    roleCodes: selectedCodes(profile.role_codes).length ? selectedCodes(profile.role_codes) : selectedField(profile.roles, 'code'),
+    specialtyIds: selectedCodes(profile.specialty_ids).length ? selectedCodes(profile.specialty_ids) : selectedField(profile.specialties, 'specialty_id'),
     username: text(profile, 'username'),
   }
 }
@@ -143,10 +153,10 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   const [feedback, setFeedback] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const team = records(context, ['team_members', 'professionals', 'members', 'items']).flatMap((item) => {
+  const team = records(context, ['team', 'team_members', 'professionals', 'members', 'items']).flatMap((item) => {
     const professionalId = text(item, 'professional_id')
     const fullName = text(item, 'full_name', 'professional_name', 'name')
-    return professionalId && fullName ? [{ professionalId, fullName, userAccountId: text(item, 'user_account_id', 'auth_user_id'), functionTitle: text(item, 'function_title'), active: enabled(item), profile: item }] : []
+    return professionalId && fullName ? [{ professionalId, fullName, userAccountId: text(item, 'user_account_id', 'auth_user_id'), functionTitle: text(item, 'function_title'), active: item.status === 'ativo' || (item.status == null && enabled(item)), profile: item }] : []
   })
   const roles = optionList(context, ['roles', 'available_roles', 'role_options'], ['role_code', 'code'], ['role_name', 'name', 'role_code'])
   const specialties = optionList(context, ['specialties', 'available_specialties', 'specialty_options'], ['specialty_id', 'id'], ['specialty_name', 'name'])
@@ -229,13 +239,13 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
     <div className="gestor-team-layout">
       <article className="gestor-panel gestor-team-list">
         <div className="gestor-team-heading"><h3>Equipe</h3><button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Novo profissional</button></div>
-        <div className="gestor-search-row"><input aria-label="Buscar equipe" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou usuário" /><select aria-label="Situação da equipe" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">Todas as situações</option><option value="active">Ativos</option><option value="inactive">Inativos</option></select><button type="button" onClick={() => void reload()}>Buscar</button></div>
+        <div className="gestor-search-row"><input aria-label="Buscar equipe" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou usuário" /><select aria-label="Situação da equipe" value={status} onChange={(event) => setStatus(event.target.value)}><option value="">Todas as situações</option><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select><button type="button" onClick={() => void reload()}>Buscar</button></div>
         {loading ? <p role="status">Carregando equipe...</p> : team.length === 0 ? <p>Nenhum profissional retornado.</p> : <ul className="gestor-result-list">{team.map((member) => <li key={member.professionalId}><button type="button" className={selected?.professionalId === member.professionalId ? 'is-selected' : ''} onClick={() => chooseMember(member)}><strong>{member.fullName}</strong><small>{member.functionTitle ?? 'Sem função informada'} · {member.active ? 'Ativo' : 'Inativo'}</small></button></li>)}</ul>}
       </article>
       <form className="gestor-panel gestor-team-form" onSubmit={(event) => void saveProfile(event)}>
         <div className="gestor-team-heading"><h3>{selected ? 'Editar profissional' : 'Cadastrar profissional'}</h3>{selected && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Cancelar edição</button>}</div>
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
-        {!selected && <label>Conta de acesso<select required value={profile.authUserId ?? ''} onChange={(event) => setProfile({ ...profile, authUserId: nullable(event.target.value) })}><option value="">Selecione uma conta disponível</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select></label>}
+        {!selected && <label>Conta de acesso<select required value={profile.authUserId ?? ''} onChange={(event) => setProfile({ ...profile, authUserId: nullable(event.target.value) })}><option value="">{accounts.length ? 'Selecione uma conta disponível' : 'Nenhuma identidade disponível no Supabase Auth'}</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select><small>Crie primeiro o usuário em Supabase → Authentication → Users com o mesmo e-mail de recuperação. Depois atualize esta lista.</small></label>}
         <div className="gestor-field-grid"><label>Função<input value={profile.functionTitle ?? ''} onChange={(event) => setProfile({ ...profile, functionTitle: nullable(event.target.value) })} /></label><label>Usuário<input value={profile.username ?? ''} onChange={(event) => setProfile({ ...profile, username: nullable(event.target.value) })} /></label><label>E-mail de recuperação<input type="email" value={profile.recoveryEmail ?? ''} onChange={(event) => setProfile({ ...profile, recoveryEmail: nullable(event.target.value) })} /></label><label>Telefone<input value={profile.phone ?? ''} onChange={(event) => setProfile({ ...profile, phone: nullable(event.target.value) })} /></label><label>Data de nascimento<input type="date" value={profile.birthDate ?? ''} onChange={(event) => setProfile({ ...profile, birthDate: nullable(event.target.value) })} /></label><label>Registro profissional<input value={profile.professionalRegistration ?? ''} onChange={(event) => setProfile({ ...profile, professionalRegistration: nullable(event.target.value) })} /></label><label>Responsabilidade administrativa<input value={profile.administrativeResponsibility ?? ''} onChange={(event) => setProfile({ ...profile, administrativeResponsibility: nullable(event.target.value) })} /></label><label>Especialidade principal<select value={profile.primarySpecialtyId ?? ''} onChange={(event) => setProfile({ ...profile, primarySpecialtyId: nullable(event.target.value) })}><option value="">Não definida</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label></div>
         <label className="gestor-check"><input type="checkbox" checked={profile.isProfessional} onChange={(event) => setProfile({ ...profile, isProfessional: event.target.checked })} />Perfil profissional</label>
         <fieldset><legend>Papéis</legend>{roles.map((role) => <label className="gestor-check" key={role.id}><input type="checkbox" checked={profile.roleCodes.includes(role.id)} onChange={(event) => toggleCodes('roleCodes', role.id, event.target.checked)} />{role.label}</label>)}</fieldset>
