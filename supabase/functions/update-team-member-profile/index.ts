@@ -41,10 +41,11 @@ Deno.serve(async (request) => {
   const { data: caller } = await admin.from('user_accounts').select('id')
     .eq('auth_user_id', requesterIdentity.user.id).eq('is_active', true).maybeSingle()
   if (!caller) return reply({ error: 'Acesso não autorizado.' }, 403)
-  const { data: roles } = await admin.from('user_roles').select('app_roles!inner(code,is_active)')
-    .eq('user_account_id', caller.id).eq('app_roles.code', 'administrador')
-    .eq('app_roles.is_active', true).limit(1)
-  if (!roles?.length) return reply({ error: 'Somente o administrador pode editar a equipe.' }, 403)
+  const { data: isAdministrator, error: roleError } = await requester.rpc('has_app_role', {
+    required_role: 'administrador',
+  })
+  if (roleError) return reply({ error: 'Serviço indisponível.' }, 503)
+  if (!isAdministrator) return reply({ error: 'Somente o administrador pode editar a equipe.' }, 403)
   const { data: target, error: accountError } = await admin.from('user_accounts')
     .select('auth_user_id').eq('professional_id', professionalId).maybeSingle()
   if (accountError || !target?.auth_user_id) return reply({ error: 'Conta não vinculada ao profissional.' }, 404)
