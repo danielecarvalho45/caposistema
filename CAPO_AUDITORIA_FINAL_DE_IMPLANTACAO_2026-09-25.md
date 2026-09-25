@@ -390,7 +390,26 @@ Se não houver necessidade de decisão, a auditoria deve continuar sem interrup�
 
 ---
 
-# 13. METODOLOGIA DA AUDITORIA FINAL
+# 13. REGRA OPERACIONAL — RELATÓRIO ÚNICO AO FINAL
+
+Durante a auditoria:
+- não apresentar relatórios intermediários;
+- não apresentar resumos de cada microcorreção;
+- não exigir conferência da responsável após cada bloco;
+- trabalhar internamente com autonomia conforme os manuais vigentes e as regras desta auditoria;
+- registrar tecnicamente todas as verificações, correções, evidências, congelamentos e pendências no Documento Mestre.
+
+A responsável só deve ser interrompida quando existir uma pendência real que dependa de decisão humana conforme as regras já definidas.
+
+Ao término de toda a auditoria:
+- gerar um único relatório final consolidado;
+- entregar esse relatório em PDF;
+- incluir no PDF o que estava correto, o que estava errado, o que foi corrigido, o que foi congelado e eventuais pendências restantes;
+- o PDF final deve servir como documento de continuidade caso seja necessário prosseguir em outro chat.
+
+---
+
+# 14. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
@@ -431,7 +450,7 @@ Registrar:
 
 ---
 
-# 14. REGISTRO DE CORREÇÕES
+# 15. REGISTRO DE CORREÇÕES
 
 ## 7.1 Renovação de Receita
 **Data:** 25/09/2026  
@@ -501,13 +520,13 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
-# 15. PENDÊNCIAS DE DECISÃO
+# 16. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
 
 ---
 
-# 16. FLUXO DOCUMENTAL OFICIAL
+# 17. FLUXO DOCUMENTAL OFICIAL
 
 O projeto passa a trabalhar com três documentos normativos oficiais e fechados:
 
@@ -589,7 +608,7 @@ Após o encerramento da auditoria e dos testes correspondentes, este documento p
 
 ---
 
-# 17. REGRA DE CONTINUIDADE
+# 18. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
