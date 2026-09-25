@@ -276,7 +276,6 @@
 
 .app-main {
   width: 100%;
-  width: 100%;
   max-width: none;
   flex: 1;
   padding: 12px 16px 0;
@@ -461,3 +460,66 @@
 .app-connection[data-status='available'] strong{color:#287a49}.app-connection[data-status='available'] strong i{background:#0f9f59}
 .app-connection[data-status='unavailable'] strong{color:#9f3446}.app-connection[data-status='unavailable'] strong i{background:#d74b5f}
 .app-header-actions a.app-back-button{display:inline-flex;align-items:center;min-height:38px;padding:8px 11px;text-decoration:none}
+
+.app-welcome-approved{
+  display:flex;
+  min-height:94px;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:15px 24px;
+  margin-bottom:14px;
+  border:1px solid #d9e7f3;
+  border-radius:9px;
+  background:rgb(255 255 255 / 72%);
+  box-shadow:0 2px 10px rgb(31 67 104 / 2.5%);
+}
+.app-welcome-copy h1{
+  margin:0;
+  color:#17365f;
+  font-size:29px;
+  line-height:1.15;
+  font-weight:400;
+  letter-spacing:-.025em;
+}
+.app-welcome-copy p{
+  margin:5px 0 0;
+  color:#617b9c;
+  font-size:20px;
+  line-height:1.2;
+  font-weight:300;
+  letter-spacing:-.015em;
+}
+.app-slogan-approved{
+  min-width:310px;
+  padding-right:28px;
+  color:#0754d4;
+  font-family:'Segoe Script','Bradley Hand','Brush Script MT',cursive;
+  font-size:23px;
+  font-style:italic;
+  line-height:1.02;
+  text-align:left;
+  transform:rotate(-1.5deg);
+}
+.app-slogan-approved span,.app-slogan-approved strong{display:block;font-weight:500}
+.app-slogan-approved strong{position:relative;padding-bottom:5px}
+.app-slogan-approved strong::after{
+  content:'';
+  position:absolute;
+  right:0;
+  bottom:0;
+  left:0;
+  height:2px;
+  border-radius:999px;
+  background:#f14899;
+}
+@media(max-width:820px){
+  .app-welcome-approved{align-items:flex-start}
+  .app-slogan-approved{min-width:260px;font-size:20px}
+}
+@media(max-width:520px){
+  .app-welcome-approved{display:block}
+  .app-welcome-copy h1{font-size:24px}
+  .app-welcome-copy p{font-size:17px}
+  .app-slogan-approved{min-width:0;margin-top:16px}
+}
