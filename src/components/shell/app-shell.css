@@ -528,3 +528,98 @@
   .app-welcome-copy p{font-size:17px}
   .app-slogan-approved{min-width:0;margin-top:16px}
 }
+
+/* CAPO — CABEÇALHO GLOBAL APROVADO CONFORME REFERÊNCIA VISUAL — CONGELADO */
+.app-header{
+  min-height:54px;
+  padding:8px 14px 7px 22px;
+}
+.app-user-name{font-size:18px;font-weight:400;line-height:1.08}
+.app-user-caption{margin-top:3px;font-size:10px;font-weight:400}
+.app-header-actions{gap:8px}
+.app-back-button,.app-notice-button,.app-profile-button{
+  position:relative;
+  display:inline-flex;
+  min-height:38px;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:8px 12px;
+  border:1px solid #d8e5f0;
+  border-radius:7px;
+  background:rgb(255 255 255 / 90%);
+  color:#17365f;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:10px;
+  font-weight:600;
+  line-height:1;
+  text-decoration:none;
+  box-shadow:0 1px 4px rgb(31 67 104 / 4%);
+}
+.app-profile-button{max-width:270px;white-space:nowrap}
+.app-notice-badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  display:grid;
+  min-width:17px;
+  height:17px;
+  place-items:center;
+  padding:0 4px;
+  border-radius:999px;
+  background:#f14899;
+  color:#fff;
+  font-size:9px;
+  line-height:1;
+}
+.app-welcome-approved{
+  position:relative;
+  min-height:68px;
+  margin:8px 0 14px;
+  padding:11px 18px;
+  overflow:hidden;
+}
+.app-welcome-copy{position:relative;z-index:2}
+.app-welcome-copy h1{
+  font-size:23px;
+  line-height:1.12;
+  letter-spacing:-.02em;
+}
+.app-welcome-copy p{
+  margin-top:3px;
+  font-size:15px;
+  line-height:1.15;
+}
+.app-welcome-heart{
+  position:absolute;
+  z-index:1;
+  right:31%;
+  top:-10px;
+  color:rgb(106 190 245 / 20%);
+  font-size:82px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-weight:300;
+  line-height:1;
+  transform:rotate(-10deg);
+  pointer-events:none;
+}
+.app-slogan-approved{
+  position:relative;
+  z-index:2;
+  min-width:255px;
+  padding-right:10px;
+  font-size:18px;
+  line-height:1.02;
+}
+@media(max-width:820px){
+  .app-welcome-heart{display:none}
+}
+@media(max-width:520px){
+  .app-header{padding:8px 10px}
+  .app-header-actions{gap:4px}
+  .app-back-button,.app-notice-button,.app-profile-button{padding:7px 8px}
+  .app-back-button>span,.app-notice-button>span:nth-child(2){display:none}
+  .app-profile-button>span:nth-child(2){display:block;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .app-welcome-copy h1{font-size:20px}
+  .app-welcome-copy p{font-size:14px}
+}
