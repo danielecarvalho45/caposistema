@@ -363,7 +363,34 @@ Objetivo: a auditoria deve avançar sempre para frente. O histórico serve para 
 
 ---
 
-# 12. METODOLOGIA DA AUDITORIA FINAL
+# 12. REGRA OPERACIONAL — ECONOMIA DE CHAT E CONTINUIDADE
+
+Esta auditoria deve, sempre que possível, ser concluída no mesmo chat.
+
+Objetivo:
+- reduzir risco de perda de contexto;
+- evitar fragmentação entre chats;
+- impedir que uma continuidade posterior refaça decisões já tomadas;
+- preservar capacidade do chat para o trabalho essencial.
+
+Durante a execução:
+- trabalhar o máximo possível internamente;
+- evitar mensagens intermediárias sem necessidade;
+- não apresentar cada microcorreção isoladamente;
+- registrar tecnicamente as correções no Documento Mestre;
+- trazer ao chat apenas blocos concluídos, conclusões relevantes ou decisões realmente necessárias.
+
+Só interromper a responsável quando:
+- houver decisão funcional que não possa ser comprovada pelos manuais vigentes;
+- houver risco real de reabrir bloco congelado;
+- existir possibilidade concreta de danificar outro processo implantado;
+- houver impedimento técnico que exija escolha humana.
+
+Se não houver necessidade de decisão, a auditoria deve continuar sem interrupção até fechar o bloco em análise.
+
+---
+
+# 13. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
@@ -404,7 +431,7 @@ Registrar:
 
 ---
 
-# 13. REGISTRO DE CORREÇÕES
+# 14. REGISTRO DE CORREÇÕES
 
 ## 7.1 Renovação de Receita
 **Data:** 25/09/2026  
@@ -474,13 +501,13 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
-# 14. PENDÊNCIAS DE DECISÃO
+# 15. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
 
 ---
 
-# 15. FLUXO DOCUMENTAL OFICIAL
+# 16. FLUXO DOCUMENTAL OFICIAL
 
 O projeto passa a trabalhar com três documentos normativos oficiais e fechados:
 
@@ -562,7 +589,7 @@ Após o encerramento da auditoria e dos testes correspondentes, este documento p
 
 ---
 
-# 16. REGRA DE CONTINUIDADE
+# 17. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
