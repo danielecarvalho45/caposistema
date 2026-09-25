@@ -94,17 +94,10 @@ export function AssistentialPage({
   > | null>(null)
   const isProfessional =
     Boolean(accessContext.professional_id) &&
-    accessContext.roles.some((role) =>
-      [
-        'profissional',
-        'medico_clinico_geral',
-        'assistencia_social',
-        'assistente_social',
-        'social',
-      ].includes(role.code),
-    )
-  const isClinicalGeneral = accessContext.roles.some(
-    (role) => role.code === 'medico_clinico_geral',
+    accessContext.roles.some((role) => role.code === 'profissional')
+  const isClinicalGeneral = (accessContext.specialties ?? []).some(
+    (specialty) => specialty.specialty_name.normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'clinica geral',
   ) || accessContext.primary_specialty_name?.normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'clinica geral'
   const pageTitle = isClinicalGeneral
