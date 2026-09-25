@@ -39,10 +39,14 @@ Deno.serve(async (request) => {
   const password = typeof payload.temporaryPassword === 'string' ? payload.temporaryPassword : ''
   const initiallyActive = payload.initiallyActive !== false
   const inactiveReason = typeof payload.inactiveReason === 'string' ? payload.inactiveReason.trim() : ''
+  const existingProfessionalId = typeof payload.existingProfessionalId === 'string' ? payload.existingProfessionalId : null
   const profile = payload.profile
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(password) || password === '123456' ||
       !profile || typeof profile !== 'object' || Array.isArray(profile)) {
     return json({ error: 'Informe e-mail, senha provisória de 6 números diferente de 123456 e os dados do profissional.' }, 400)
+  }
+  if (existingProfessionalId && !/^[0-9a-f-]{36}$/i.test(existingProfessionalId)) {
+    return json({ error: 'Profissional inválido.' }, 400)
   }
 
   const fields = profile as Record<string, unknown>
@@ -81,6 +85,14 @@ Deno.serve(async (request) => {
   if (rolesError) return json({ error: 'Serviço indisponível.' }, 503)
   if (!roles?.length) return json({ error: 'Somente o administrador pode cadastrar a equipe.' }, 403)
 
+  if (existingProfessionalId) {
+    const { data: existing, error: existingError } = await admin.from('professionals')
+      .select('status').eq('id', existingProfessionalId).maybeSingle()
+    if (existingError || !existing || initiallyActive !== (existing.status === 'ativo')) {
+      return json({ error: 'Confira a situação atual do profissional antes de criar o acesso.' }, 400)
+    }
+  }
+
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
@@ -98,9 +110,12 @@ Deno.serve(async (request) => {
     }
   }
 
-  const { data: result, error: profileError } = await requester.rpc(
-    'create_team_member_with_status_for_interface',
-    {
+  const operation = existingProfessionalId
+    ? 'link_existing_professional_account_for_interface'
+    : 'create_team_member_with_status_for_interface'
+  const args = existingProfessionalId ? {
+    p_professional_id: existingProfessionalId, p_auth_user_id: created.user.id, p_profile: fields,
+  } : {
       p_auth_user_id: created.user.id,
       p_full_name: fields.fullName,
       p_username: fields.username,
@@ -116,8 +131,8 @@ Deno.serve(async (request) => {
       p_birth_date: fields.birthDate,
       p_initially_active: initiallyActive,
       p_inactive_reason: initiallyActive ? null : inactiveReason,
-    },
-  )
+    }
+  const { data: result, error: profileError } = await requester.rpc(operation, args)
 
   if (profileError) {
     const { error: cleanupError } = await admin.auth.admin.deleteUser(created.user.id)

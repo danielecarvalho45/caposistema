@@ -1,8 +1,37 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GestorTeamPage, type TeamManagementService } from '../../src/features/gestor/GestorTeamPage'
 
 describe('GestorTeamPage', () => {
+  afterEach(cleanup)
+  it('vincula uma conta ao profissional já cadastrado sem criar outro perfil', async () => {
+    const create = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
+    const getContext = vi.fn(async () => ({ status: 'success' as const, data: {
+      team: [{ professional_id: 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0',
+        full_name: 'Profissional cadastrado', username: 'profissional.cadastrado',
+        function_title: 'Atendimento', status: 'ativo', is_professional: true,
+        specialties: [{ specialty_id: '9e3db4d4-175f-4d11-bcf7-908f599eb966', name: 'Área assistencial' }] }],
+      roles: [{ code: 'profissional', name: 'Profissional' }],
+      specialties: [{ specialty_id: '9e3db4d4-175f-4d11-bcf7-908f599eb966', name: 'Área assistencial' }],
+    } }))
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext, create, getCapabilities: success, update: success, setActive: success,
+      setPrimaryContext: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success,
+    }
+    render(<GestorTeamPage service={service} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional cadastrado/ }))
+    fireEvent.change(screen.getByLabelText('E-mail de recuperação'), { target: { value: 'pessoa@exemplo.org' } })
+    fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/), { target: { value: '247985' } })
+    fireEvent.click(screen.getByLabelText('Profissional'))
+    fireEvent.click(screen.getByRole('button', { name: 'Criar acesso e salvar perfil' }))
+    await waitFor(() => expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'profissional.cadastrado', recoveryEmail: 'pessoa@exemplo.org' }),
+      '247985', true, '', 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0',
+    ))
+  })
+
   it('mostra ativos inicialmente e permite localizar e inativar uma conta vinculada', async () => {
     const getContext = vi.fn(async (_query: string | null, status: string | null) => ({
       status: 'success' as const,
