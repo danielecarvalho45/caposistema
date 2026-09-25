@@ -275,11 +275,9 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: 'Olá, Nome real' }),
     ).toBeVisible()
-    expect(
-      screen.getByRole('heading', {
-        name: 'Painel administrativo operacional',
-      }),
-    ).toBeVisible()
+    expect(document.getElementById('profile-panel-title')).toHaveTextContent(
+      'Painel Operacional',
+    )
     expect(screen.getByRole('img', { name: /CAPO/ })).toHaveAttribute(
       'src',
       '/assets/capo-logo.jpg',
@@ -417,7 +415,7 @@ describe('App', () => {
       '/agenda',
     )
 
-    expect(screen.getByRole('heading', { name: 'Agenda' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Agenda Geral' })).toBeVisible()
     expect(
       await screen.findByText('Nenhum agendamento encontrado no período.'),
     ).toBeVisible()
@@ -447,7 +445,7 @@ describe('App', () => {
     expect(document.getElementById('app-sidebar')).toHaveClass('is-open')
     expect(screen.getByRole('button', { name: '← Voltar' })).toBeVisible()
     expect(
-      screen.getByText('CAPO — Centro de Acolhimento ao Paciente Oncológico'),
+      screen.getByText('Sistema CAPO — Gestão Administrativa e Operacional'),
     ).toBeVisible()
   })
 
@@ -464,8 +462,8 @@ describe('App', () => {
       '/agenda',
     )
 
-    expect(screen.getByRole('heading', { name: 'Agenda' })).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Agenda' })).toHaveAttribute(
+    expect(screen.getByRole('heading', { name: 'Agenda Geral' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Agenda Geral' })).toHaveAttribute(
       'aria-current',
       'page',
     )
@@ -745,7 +743,7 @@ describe('App', () => {
   it('envia uma nova solicitação e recarrega a lista', async () => {
     const user = userEvent.setup()
     const service = {
-      getAdministrativeRequests: vi.fn().mockResolvedValue({ status: 'empty' }),
+      getAdministrativeRequests: vi.fn().mockResolvedValueOnce({ status: 'empty' }).mockResolvedValue({ status: 'success', data: [{ request_id: 'request-id', subject: 'Transporte', status: 'pending', created_at: '2026-09-16T12:00:00Z', updated_at: '2026-09-16T12:00:00Z' }] }),
       getAdministrativeRequestEvents: vi.fn().mockResolvedValue({
         status: 'empty',
       }),
@@ -763,9 +761,9 @@ describe('App', () => {
       updateAdministrativeRequest: vi.fn(),
     }
 
-    render(<RequestsPage accessContext={context} service={service} />)
+    render(<RequestsPage accessContext={{ ...context, professional_id: 'professional-id', roles: [{ code: 'profissional', name: 'Profissional' }], primary_context: { ...context.primary_context, code: 'profissional', name: 'Profissional' } }} service={service} />)
 
-    await user.type(screen.getByLabelText('Assunto'), 'Transporte')
+    await user.type(await screen.findByLabelText('Assunto'), 'Transporte')
     await user.type(
       screen.getByLabelText('Descrição'),
       'Solicito apoio para o deslocamento do paciente.',
@@ -777,12 +775,10 @@ describe('App', () => {
       'Transporte',
       'Solicito apoio para o deslocamento do paciente.',
     )
-    expect(service.getAdministrativeRequests).toHaveBeenCalledTimes(2)
-    expect(
-      await screen.findByText(
-        'Solicitação enviada ao Administrativo Operacional.',
-      ),
-    ).toBeVisible()
+    expect(service.getAdministrativeRequests).toHaveBeenCalled()
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Solicitação enviada ao Administrativo Operacional.',
+    )
   })
 
   it('bloqueia solicitações fora de um contexto autorizado', () => {

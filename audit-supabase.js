@@ -24,7 +24,7 @@ async function auditarSupabase() {
   try {
     // 1. Tentar consultar functions via RPC de diagnóstico
     console.log('📋 TESTE DE CONECTIVIDADE...');
-    const { data: testData, error: testError } = await supabase
+    const { error: testError } = await supabase
       .rpc('get_my_access_context')
       .single();
     
@@ -40,13 +40,13 @@ async function auditarSupabase() {
     // 2. Verificar se capo_criar_notificacao existe
     console.log('🔍 AUDITANDO FUNÇÃO: capo_criar_notificacao');
     try {
-      const { data: fnCheck1, error: err1 } = await supabase
+      const { error: err1 } = await supabase
         .rpc('get_technical_system_status_for_interface');
       
       if (err1) {
         console.log('   ⚠️  Função de auditoria técnica não disponível');
       }
-    } catch (e) {
+    } catch {
       // Silenciar
     }
 
@@ -65,7 +65,7 @@ async function auditarSupabase() {
     
     for (const table of notificationTables) {
       try {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from(table)
           .select('1')
           .limit(1);
@@ -77,7 +77,7 @@ async function auditarSupabase() {
         } else {
           console.log(`   ✅ ${table} — EXISTE e acessível`);
         }
-      } catch (e) {
+      } catch {
         console.log(`   ⚠️  ${table} — Erro na consulta`);
       }
     }
@@ -117,7 +117,7 @@ async function auditarSupabase() {
 
     for (const fn of expectedFunctions) {
       try {
-        const result = await supabase.rpc(fn);
+        await supabase.rpc(fn);
         console.log(`   ✅ ${fn} — Encontrada (RPC chamável)`);
       } catch (e) {
         if (e.message && e.message.includes('42883')) {

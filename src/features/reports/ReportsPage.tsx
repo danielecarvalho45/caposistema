@@ -106,7 +106,7 @@ export function ReportsPage({
     accessContext.roles.some(
       (role) => role.code === 'profissional',
     )
-  const isManager = accessContext.primary_context.code === 'administrador'
+  const isManager = accessContext.roles.some((role) => ['administrador', 'coordenador'].includes(role.code))
 
   useEffect(() => {
     if (!isProfessional) return

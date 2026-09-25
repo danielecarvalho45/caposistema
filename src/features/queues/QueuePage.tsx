@@ -6,6 +6,8 @@ import {
   type PendingItem,
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
+import { Link } from 'react-router-dom'
+import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import './queue-page.css'
 
 type PendingItemsLoader = () => Promise<AsyncState<readonly PendingItem[]>>
@@ -19,6 +21,18 @@ function formatDate(value: string | null) {
   return Number.isNaN(date.getTime())
     ? value
     : new Intl.DateTimeFormat('pt-BR').format(date)
+}
+
+const pendingRoutes: Readonly<Record<string, AppRoute>> = {
+  agenda: '/agenda',
+  faltosos: '/faltosos',
+  solicitacoes: '/solicitacoes',
+  encaminhamentos: '/encaminhamentos',
+  transporte: '/transporte',
+  receita: '/receita',
+  nutricao: '/nutricao',
+  encerramentos: '/encerramentos',
+  familiares: '/familiar-cuidador',
 }
 
 export function QueuePage({
@@ -117,7 +131,9 @@ export function QueuePage({
                 <tbody>
                   {state.data.map((item) => (
                     <tr key={`${item.source_table}:${item.source_id}`}>
-                      <td>{item.title}</td>
+                      <td>{pendingRoutes[item.context_module] && canAccessAppRoute(accessContext, pendingRoutes[item.context_module])
+                        ? <Link to={pendingRoutes[item.context_module]} state={{ contextId: item.context_id, patientId: item.patient_id }}>{item.title}</Link>
+                        : item.title}</td>
                       <td>{item.patient_name ?? 'Não se aplica'}</td>
                       <td>{item.status}</td>
                       <td>{formatDate(item.due_at)}</td>

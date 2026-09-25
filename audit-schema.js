@@ -87,7 +87,7 @@ async function auditarSchema() {
 
     for (const table of notificationTableNames) {
       try {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from(table)
           .select('count(*)', { count: 'exact', head: true });
         
@@ -100,7 +100,7 @@ async function auditarSchema() {
         } else {
           console.log(`   ✅ ${table} — EXISTE`);
         }
-      } catch (e) {
+      } catch {
         console.log(`   ⚠️  ${table} — Erro na consulta`);
       }
     }
@@ -110,7 +110,7 @@ async function auditarSchema() {
     console.log('   Procurando por tabelas de admin request (deve existir):');
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('administrative_requests')
         .select('count(*)', { count: 'exact', head: true });
       
@@ -119,7 +119,7 @@ async function auditarSchema() {
       } else {
         console.log(`   ✅ administrative_requests — EXISTE`);
       }
-    } catch (e) {
+    } catch {
       console.log(`   ⚠️  administrative_requests — Erro`);
     }
 

@@ -4,6 +4,7 @@ import {
   type AssistentialOperationalReport,
   type AssistentialPatient,
   type AssistentialSpecialty,
+  type AgendaAppointment,
   type AsyncState,
   type OperationalReportSection,
 } from '../../lib/supabase/rpc'
@@ -14,6 +15,7 @@ import {
   type CAPOProfissionalAssistencialIntegration,
 } from './assistential-integration'
 import './assistential-page.css'
+import { Link } from 'react-router-dom'
 
 const defaultIntegration = createAssistentialIntegration()
 
@@ -158,6 +160,17 @@ export function AssistentialPage({
     setSearchState(await integration.searchPatients(cleanQuery))
   }
 
+  async function openConfirmedPatient(appointment: AgendaAppointment) {
+    setQuery(appointment.patient_name)
+    setSearchState(loadingState())
+    const result = await integration.searchPatients(appointment.patient_name)
+    if (result.status === 'success') {
+      const patient = result.data.find((item) => item.patient_id === appointment.patient_id)
+      setSearchState(patient ? { status: 'success', data: [patient] } : { status: 'empty' })
+      if (patient) globalThis.document.getElementById('assistential-patients')?.scrollIntoView?.({ block: 'start' })
+    } else setSearchState(result)
+  }
+
   if (!isProfessional) {
     return (
       <section
@@ -226,7 +239,20 @@ export function AssistentialPage({
         </div>
       )}
 
-      <section aria-labelledby="assistential-agenda-title">
+      <section className="assistential-card assistential-shortcuts" aria-labelledby="assistential-shortcuts-title">
+        <div>
+          <p className="eyebrow">Acessos rápidos</p>
+          <h3 id="assistential-shortcuts-title">Rotina profissional</h3>
+        </div>
+        <nav aria-label="Atalhos da rotina profissional">
+          <a href="#assistential-agenda">Minha Agenda</a>
+          <a href="#assistential-patients">Pacientes vinculados</a>
+          <a href="#assistential-summary">Resumo operacional</a>
+          {specialtiesState.status === 'success' && specialtiesState.data.some((item) => item.specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === 'nutricao') && <Link to="/nutricao">Nutrição</Link>}
+        </nav>
+      </section>
+
+      <section id="assistential-agenda" aria-labelledby="assistential-agenda-title">
         <h3
           id="assistential-agenda-title"
           className="assistential-section-title"
@@ -236,10 +262,11 @@ export function AssistentialPage({
         <AgendaPage
           accessContext={accessContext}
           loadAgenda={integration.loadAgenda}
+          onConfirmed={(appointment) => void openConfirmedPatient(appointment)}
         />
       </section>
 
-      <article className="assistential-card">
+      <article id="assistential-patients" className="assistential-card">
         <h3>Pacientes sob sua atuação</h3>
         <p className="assistential-muted">
           A busca retorna somente pacientes vinculados à sua atuação atual.
@@ -288,7 +315,7 @@ export function AssistentialPage({
       </article>
 
       {selectedSpecialty && (
-        <article className="assistential-card">
+        <article id="assistential-summary" className="assistential-card">
           <div className="assistential-heading">
             <div>
               <h3>Resumo operacional</h3>

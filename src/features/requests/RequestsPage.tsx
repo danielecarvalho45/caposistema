@@ -19,6 +19,7 @@ type Service = Pick<
 type Props = Readonly<{
   accessContext: AccessContext
   service?: Service
+  initialContextId?: string | null
 }>
 
 const statusLabels: Record<string, string> = {
@@ -47,7 +48,9 @@ function errorMessage<T>(state: AsyncState<T>) {
 
 function canAccessRequests(accessContext: AccessContext) {
   return (
-    Boolean(accessContext.professional_id) ||
+    (Boolean(accessContext.professional_id) && accessContext.roles.some((role) =>
+      ['profissional', 'medico_clinico_geral', 'nutricao', 'assistente_social', 'assistencia_social', 'social'].includes(role.code),
+    )) ||
     accessContext.roles.some((role) =>
       ['administrador', 'coordenador', 'administrativo_operacional'].includes(
         role.code,
@@ -66,11 +69,12 @@ function dateTime(value: string) {
 export function RequestsPage({
   accessContext,
   service = getRpcService(),
+  initialContextId = null,
 }: Props) {
   const [view, setView] = useState('recebidas')
   const [status, setStatus] = useState<string>('')
   const [items, setItems] = useState<readonly AdministrativeRequest[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialContextId)
   const [events, setEvents] = useState<readonly AdministrativeRequestEvent[]>(
     [],
   )
@@ -90,6 +94,9 @@ export function RequestsPage({
   )
   const canManage = roleCodes.some((role) =>
     ['administrador', 'administrativo_operacional'].includes(role),
+  )
+  const canCreateProfessionalRequest = Boolean(accessContext.professional_id) && roleCodes.some((role) =>
+    ['profissional', 'medico_clinico_geral', 'nutricao', 'assistente_social', 'assistencia_social', 'social'].includes(role),
   )
   const isRequester =
     selected?.requesting_professional_id === accessContext.professional_id
@@ -115,6 +122,7 @@ export function RequestsPage({
       setFeedback(errorMessage(result))
     }
     setLoading(false)
+    return result
   }, [service, status])
 
   const loadEvents = useCallback(
@@ -128,6 +136,7 @@ export function RequestsPage({
       setEvents(result.status === 'success' ? result.data : [])
       if (result.status === 'error') setFeedback(result.error.message)
       setHistoryLoading(false)
+      return result
     },
     [service],
   )
@@ -139,7 +148,10 @@ export function RequestsPage({
       .getAdministrativeRequests(status || null, 100, 0)
       .then((result) => {
         if (!active) return
-        if (result.status === 'success') setItems(result.data)
+        if (result.status === 'success') {
+          setItems(result.data)
+          setSelectedId((current) => current && result.data.some((item) => item.request_id === current) ? current : null)
+        }
         else if (result.status === 'empty') setItems([])
         else setFeedback(errorMessage(result))
         setLoading(false)
@@ -181,11 +193,16 @@ export function RequestsPage({
       counterReference.trim() || null,
     )
     if (result.status === 'success') {
-      setFeedback('Solicitação atualizada e registrada no histórico.')
-      setResponse('')
-      setCounterReference('')
-      await loadItems()
-      await loadEvents(selected.request_id)
+      const updatedId = selected.request_id
+      const list = await loadItems()
+      const history = await loadEvents(updatedId)
+      if (list.status === 'error' || history.status === 'error') {
+        setFeedback('A atualização foi confirmada, mas a consulta atualizada falhou.')
+      } else {
+        setResponse('')
+        setCounterReference('')
+        setFeedback('Solicitação atualizada e registrada no histórico.')
+      }
     } else {
       setFeedback(
         errorMessage(result) ?? 'Não foi possível atualizar a solicitação.',
@@ -209,12 +226,16 @@ export function RequestsPage({
       newDescription.trim(),
     )
     if (result.status === 'success') {
-      setNewSubject('')
-      setNewDescription('')
-      await loadItems()
-      setSelectedId(result.data.request_id)
-      setHistoryLoading(true)
-      setFeedback('Solicitação enviada ao Administrativo Operacional.')
+      const list = await loadItems()
+      if (list.status === 'success' && list.data.some((item) => item.request_id === result.data.request_id)) {
+        setNewSubject('')
+        setNewDescription('')
+        setSelectedId(result.data.request_id)
+        setHistoryLoading(true)
+        setFeedback('Solicitação enviada ao Administrativo Operacional.')
+      } else {
+        setFeedback(list.status === 'error' ? `Solicitação registrada, mas a recarga falhou: ${list.error.message}` : 'Solicitação registrada, mas ainda não apareceu na lista retornada pelo banco.')
+      }
     } else {
       setFeedback(
         errorMessage(result) ?? 'Não foi possível criar a solicitação.',
@@ -298,7 +319,7 @@ export function RequestsPage({
           {feedback}
         </p>
       )}
-      {accessContext.professional_id && (
+      {canCreateProfessionalRequest && (
         <article className="requests-card request-create">
           <h3>Nova solicitação geral</h3>
           <p>

@@ -69,8 +69,7 @@ export function HomePage({
         <p className="eyebrow">Início</p>
         <h1 id="home-title">Olá, {displayName}</h1>
         <p>
-          Seu acesso ao CAPO foi validado. Os módulos operacionais serão
-          incorporados progressivamente a esta área de trabalho.
+          Seu acesso ao CAPO foi validado. Escolha uma área autorizada para continuar.
         </p>
         <p className="home-slogan">Acolher, cuidar e caminhar juntos.</p>
       </section>

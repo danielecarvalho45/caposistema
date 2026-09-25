@@ -82,6 +82,7 @@ export function GestorOperationalPage() {
   const [deathSource, setDeathSource] = useState<DeathSource>('family_caregiver')
   const [deathNotes, setDeathNotes] = useState('')
   const [deliveryStatus, setDeliveryStatus] = useState('')
+  const [deliveryReason, setDeliveryReason] = useState('')
 
   async function reloadAll() {
     setFamilyQueue(loadingState())
@@ -104,7 +105,20 @@ export function GestorOperationalPage() {
   }
 
   useEffect(() => {
-    void reloadAll()
+    let active = true
+    void Promise.all([
+      rpc.getFamilyWaitingList(null, 50, 0),
+      closuresIntegration.loadClosures(null),
+      rpc.getPendingItems(50, 0),
+      rpc.getNutritionAdminDeliveries(deliveryStatus || null, 50, 0),
+    ]).then(([familyResult, closureResult, pendingResult, deliveryResult]) => {
+      if (!active) return
+      setFamilyQueue(familyResult)
+      setClosures(closureResult)
+      setPending(pendingResult)
+      setDeliveries(deliveryResult)
+    })
+    return () => { active = false }
     // A recarga é acionada novamente quando o filtro de entrega é alterado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliveryStatus])
@@ -181,7 +195,7 @@ export function GestorOperationalPage() {
           {familyQueue.status === 'error' && <p role="alert">{familyQueue.error.message}</p>}
           {familyQueue.status === 'success' && <ul className="gestor-result-list">{familyQueue.data.map((item, index) => {
             const waitingListId = id(item, 'waiting_list_id', 'id')
-            return <li key={waitingListId || index}><strong>{text(item, 'family_member_name', 'family_name', 'patient_name')}</strong><small>{text(item, 'status', 'created_at')}</small><div><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-call-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'call', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Chamar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-pause-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'pause', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Pausar</button></div></li>
+            return <li key={waitingListId || index}><strong>{text(item, 'family_member_name', 'family_name', 'patient_name')}</strong><small>{text(item, 'status', 'created_at')}</small><div><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-call-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'call', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Chamar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-pause-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'pause', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Pausar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-resume-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'resume', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Retomar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-cancel-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'cancel', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Cancelar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-remove-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'remove', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Remover</button></div></li>
           })}</ul>}
           <label>Observação administrativa<textarea value={familyNotes} onChange={(event) => setFamilyNotes(event.target.value)} /></label>
           {candidates.status === 'loading' && <p>Consultando candidatos elegíveis...</p>}
@@ -216,12 +230,17 @@ export function GestorOperationalPage() {
         <article className="gestor-panel">
           <h3>Entregas nutricionais</h3>
           <label>Situação<select value={deliveryStatus} onChange={(event) => setDeliveryStatus(event.target.value)}><option value="">Todas</option><option value="pending">Pendente</option><option value="in_progress">Em andamento</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option></select></label>
+          <label>Motivo administrativo para cancelar ou reabrir<textarea value={deliveryReason} minLength={5} maxLength={500} onChange={(event) => setDeliveryReason(event.target.value)} /></label>
           {deliveries.status === 'loading' && <p>Carregando providências administrativas...</p>}
           {deliveries.status === 'error' && <p role="alert">{deliveries.error.message}</p>}
           {deliveries.status === 'empty' && <p>Nenhuma providência nutricional encontrada.</p>}
           {deliveries.status === 'success' && <ul className="gestor-result-list">{deliveries.data.map((delivery, index) => {
             const deliveryId = id(delivery, 'delivery_id', 'id')
-            return <li key={deliveryId || index}><strong>{text(delivery, 'patient_name')}</strong><small>{text(delivery, 'status', 'document_author', 'revision')}</small><button type="button" disabled={Boolean(busy) || !deliveryId} onClick={() => void runMutation(`delivery-${deliveryId}`, () => rpc.manageNutritionAdminDelivery(deliveryId, 'confirm', null), 'Entrega nutricional confirmada e lista canônica recarregada.')}>Confirmar entrega</button></li>
+            const status = text(delivery, 'status').toLowerCase()
+            const requiresReason = ['cancel', 'reopen'] as const
+            const canUseReason = deliveryReason.trim().length >= 5
+            const actionButton = (action: typeof requiresReason[number] | 'start' | 'complete', label: string) => <button type="button" disabled={Boolean(busy) || !deliveryId || (requiresReason.includes(action as typeof requiresReason[number]) && !canUseReason)} onClick={() => void runMutation(`delivery-${action}-${deliveryId}`, () => rpc.manageNutritionAdminDelivery(deliveryId, action, requiresReason.includes(action as typeof requiresReason[number]) ? deliveryReason.trim() : null), 'Entrega nutricional atualizada e lista canônica recarregada.')}>{label}</button>
+            return <li key={deliveryId || index}><strong>{text(delivery, 'patient_name')}</strong><small>{text(delivery, 'status', 'document_author', 'revision')}</small><div>{status === 'pending' && <>{actionButton('start', 'Iniciar')}{actionButton('complete', 'Concluir')}{actionButton('cancel', 'Cancelar')}</>}{status === 'in_progress' && <>{actionButton('complete', 'Concluir')}{actionButton('cancel', 'Cancelar')}</>}{['completed', 'cancelled'].includes(status) && actionButton('reopen', 'Reabrir')}</div></li>
           })}</ul>}
         </article>
       </section>

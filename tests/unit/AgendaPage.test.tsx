@@ -107,6 +107,16 @@ describe('AgendaPage', () => {
     )
   })
 
+  it('mostra especialidades do paciente somente após a consulta autorizada', async () => {
+    const loadAgenda = vi.fn().mockResolvedValue({ status: 'success', data: [appointment] })
+    const loadPatientSpecialties = vi.fn().mockResolvedValue({
+      status: 'success', data: [{ specialty_id: 'specialty-id', specialty_name: 'Psicologia' }],
+    })
+    render(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} loadPatientSpecialties={loadPatientSpecialties} />)
+    expect(await screen.findByText('Especialidades: Psicologia')).toBeVisible()
+    expect(loadPatientSpecialties).toHaveBeenCalledWith('patient-id')
+  })
+
   it('aceita o papel de Nutrição na agenda compartilhada do profissional', async () => {
     const loadAgenda = vi.fn().mockResolvedValue({
       status: 'success',

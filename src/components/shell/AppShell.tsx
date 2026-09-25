@@ -24,7 +24,8 @@ export function AppShell({
   activePath = '/',
 }: AppShellProps) {
   const [loggingOut, setLoggingOut] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpenedAtPath, setMenuOpenedAtPath] = useState<string | null>(null)
+  const menuOpen = menuOpenedAtPath === activePath
   const [unreadNotifications, setUnreadNotifications] = useState<number | null>(
     null,
   )
@@ -48,13 +49,12 @@ export function AppShell({
 
   useEffect(() => {
     mainRef.current?.focus()
-    setMenuOpen(false)
   }, [activePath])
 
   useEffect(() => {
     if (!menuOpen) return
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMenuOpen(false)
+      if (event.key === 'Escape') setMenuOpenedAtPath(null)
     }
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
@@ -97,7 +97,7 @@ export function AppShell({
             className="app-sidebar-close"
             type="button"
             aria-label="Fechar menu"
-            onClick={() => setMenuOpen(false)}
+            onClick={() => setMenuOpenedAtPath(null)}
           >
             ×
           </button>
@@ -160,8 +160,7 @@ export function AppShell({
           <div className="app-nav-group app-nav-authorized">
             <p className="app-nav-label">Áreas autorizadas</p>
             <p className="app-nav-pending">
-              Os módulos funcionais serão incorporados nas próximas etapas,
-              conforme as permissões vigentes.
+              Consulte as áreas disponíveis conforme suas permissões vigentes.
             </p>
           </div>
         </nav>
@@ -184,7 +183,7 @@ export function AppShell({
         </p>
         <div className="app-connection" aria-label="Status de conexão">
           <span>Conexão</span>
-          <strong><i aria-hidden="true" />Disponível</strong>
+          <strong>Estado não verificado</strong>
         </div>
       </aside>
 
@@ -193,7 +192,7 @@ export function AppShell({
         type="button"
         aria-label="Fechar menu"
         tabIndex={menuOpen ? 0 : -1}
-        onClick={() => setMenuOpen(false)}
+        onClick={() => setMenuOpenedAtPath(null)}
       />
 
       <div className="app-workspace">
@@ -204,7 +203,7 @@ export function AppShell({
             aria-label="Abrir menu"
             aria-controls="app-sidebar"
             aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(true)}
+            onClick={() => setMenuOpenedAtPath(activePath)}
           >
             ☰
           </button>

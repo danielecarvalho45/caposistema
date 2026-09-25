@@ -24,7 +24,7 @@ function requestsFromContext(context: TransportRecord | null): readonly Transpor
 }
 
 export function TransportPage({ accessContext }: Props) {
-  const authorized = accessContext.capabilities.includes(
+  const authorized = accessContext.roles.some((role) => role.code === 'administrador') || accessContext.capabilities.includes(
     'preencher_solicitacao_transporte',
   )
   const [query, setQuery] = useState('')

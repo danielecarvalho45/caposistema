@@ -91,7 +91,7 @@ export function GestorShell({
         <p className="gestor-motto">Juntos<br />pela vida <span>♡</span></p>
         <div className="gestor-connection" aria-label="Status de conexão">
           <span>Conexão</span>
-          <strong><i aria-hidden="true" />Disponível</strong>
+          <strong>Estado não verificado</strong>
         </div>
       </aside>
 

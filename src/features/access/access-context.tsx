@@ -262,7 +262,7 @@ export function AccessProvider({
     }))
   }, [authApi, rpcService, setLoading])
 
-  const runPostMfaAccessGate = useCallback(async () => {
+  const runPostPasswordAccessGate = useCallback(async () => {
     setLoading('Verificando o Termo vigente…')
     const result = await rpcService.getCurrentLegalTerm()
     if (result.status !== 'success') {
@@ -308,47 +308,6 @@ export function AccessProvider({
     await loadAccessContext()
   }, [authApi, loadAccessContext, rpcService, setLoading])
 
-  const ensureMfaAal2 = useCallback(async (): Promise<boolean> => {
-    setLoading('Verificando autenticação em duas etapas…')
-    const assurance = await authApi.getMfaAssuranceLevel()
-    const currentLevel = assurance.currentLevel ?? 'aal1'
-    const nextLevel = assurance.nextLevel ?? 'aal1'
-
-    if (currentLevel === 'aal2') return true
-
-    if (nextLevel === 'aal2') {
-      const factors = (await authApi.listMfaTotpFactors()).filter(
-        (factor) => factor.id && factor.status !== 'unverified',
-      )
-      if (factors.length === 0) {
-        throw new Error('Nenhum fator TOTP verificado foi localizado.')
-      }
-      setFlow((current) => ({
-        ...current,
-        screen: 'mfa-challenge',
-        mfaEnrollment: null,
-        mfaFactors: factors,
-        feedback: null,
-        busy: false,
-      }))
-      return false
-    }
-
-    const enrollment = await authApi.enrollMfaTotp()
-    if (!enrollment.id || !enrollment.qrCode || !enrollment.secret) {
-      throw new Error('Não foi possível preparar o segundo fator.')
-    }
-    setFlow((current) => ({
-      ...current,
-      screen: 'mfa-enroll',
-      mfaEnrollment: enrollment,
-      mfaFactors: [],
-      feedback: null,
-      busy: false,
-    }))
-    return false
-  }, [authApi, setLoading])
-
   const runProtectedAccessGate = useCallback(async () => {
     setLoading('Verificando segurança da sessão…')
     try {
@@ -358,8 +317,7 @@ export function AccessProvider({
         return
       }
 
-      if (!(await ensureMfaAal2())) return
-      await runPostMfaAccessGate()
+      await runPostPasswordAccessGate()
     } catch (error) {
       setFlow({
         ...initialFlow,
@@ -367,7 +325,7 @@ export function AccessProvider({
         feedback: { type: 'error', message: friendlyAuthError(error, 'boot') },
       })
     }
-  }, [authApi, ensureMfaAal2, runPostMfaAccessGate, setLoading])
+  }, [authApi, runPostPasswordAccessGate, setLoading])
 
   useEffect(() => {
     let active = true

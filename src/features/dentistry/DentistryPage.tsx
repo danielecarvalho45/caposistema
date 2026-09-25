@@ -76,7 +76,7 @@ export function DentistryPage({ accessContext, service }: Props) {
   const backendAuthorized = Boolean(backendAccess?.can_issue)
   const canManage = Boolean(backendAccess?.can_manage)
   const authorized = backendAccess
-    ? backendAuthorized
+    ? backendAuthorized || canManage
     : loading && localCapabilityAuthorized
 
   const loadReferrals = async () => {
@@ -120,7 +120,7 @@ export function DentistryPage({ accessContext, service }: Props) {
   }, [rpcService])
 
   useEffect(() => {
-    if (!backendAccess?.can_issue) return
+    if (!backendAccess?.can_issue && !backendAccess?.can_manage) return
     let active = true
     void rpcService
       .getDentistryReferralsForInterface(
@@ -277,7 +277,7 @@ export function DentistryPage({ accessContext, service }: Props) {
       </header>
 
       <div className="dentistry-layout">
-        <div className="dentistry-panel">
+        {backendAccess?.can_issue && <div className="dentistry-panel">
           <h2>Nova emissão</h2>
           <label htmlFor="dentistry-patient-search">Buscar paciente</label>
           <div className="dentistry-search">
@@ -340,7 +340,7 @@ export function DentistryPage({ accessContext, service }: Props) {
               </button>
             </div>
           )}
-        </div>
+        </div>}
 
         <div className="dentistry-panel">
           <h2>Histórico e acompanhamento</h2>

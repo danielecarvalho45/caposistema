@@ -13,10 +13,19 @@ type BereavementRecord = Readonly<Record<string, unknown>>
 function isBereavementRecord(value: unknown): value is BereavementRecord {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
+function bereavementRows(value: unknown): readonly BereavementRecord[] {
+  const source = isBereavementRecord(value) ? value.items : value
+  return Array.isArray(source) ? source.filter(isBereavementRecord) : []
+}
+function isSocialSpecialty(value: string): boolean {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'assistencia social'
+}
+type BereavementService = Pick<ReturnType<typeof getRpcService>, 'getFamilyBereavement' | 'startFamilyBereavement' | 'closeFamilyBereavement' | 'getMyAssistentialSpecialties'>
 
 type BereavementPageProps = Readonly<{
   accessContext: AccessContext
   familyService?: FamilyCaregiverService
+  service?: BereavementService
 }>
 
 function field(record: BereavementRecord, ...keys: string[]) {
@@ -30,10 +39,12 @@ function field(record: BereavementRecord, ...keys: string[]) {
 export function BereavementPage({
   accessContext,
   familyService = createFamilyCaregiverService(),
+  service = getRpcService(),
 }: BereavementPageProps) {
   const primaryContext = accessContext.primary_context.code
   const isManager = primaryContext === 'administrador'
-  const canOperate = isManager || accessContext.roles.some((role) => role.code === 'assistente_social')
+  const [socialSpecialty, setSocialSpecialty] = useState<string | null>(null)
+  const canOperate = accessContext.is_active && (isManager || socialSpecialty === accessContext.professional_id)
 
   const [state, setState] = useState<AsyncState<readonly BereavementRecord[]>>(loadingState)
   const [familyQuery, setFamilyQuery] = useState('')
@@ -42,21 +53,38 @@ export function BereavementPage({
   const [busy, setBusy] = useState(false)
 
   async function loadBereavements() {
-    setState(loadingState())
-    const result = await getRpcService().getFamilyBereavement()
+    const result = await service.getFamilyBereavement()
     if (result.status === 'success') {
-      const records = Array.isArray(result.data)
-        ? result.data.filter(isBereavementRecord)
-        : []
+      const records = bereavementRows(result.data)
       setState(records.length > 0 ? { status: 'success', data: records } : { status: 'empty' })
     } else {
       setState(result)
     }
+    return result
   }
 
   useEffect(() => {
-    void loadBereavements()
-  }, [])
+    let active = true
+    void service.getFamilyBereavement().then((result) => {
+      if (!active) return
+      if (result.status === 'success') {
+        const records = bereavementRows(result.data)
+        setState(records.length > 0 ? { status: 'success', data: records } : { status: 'empty' })
+      } else setState(result)
+    })
+    return () => { active = false }
+  }, [service])
+
+  useEffect(() => {
+    if (!accessContext.is_active || !accessContext.professional_id || !accessContext.roles.some((role) => role.code === 'profissional')) return
+    let active = true
+    const professionalId = accessContext.professional_id
+    void service.getMyAssistentialSpecialties().then((result) => {
+      if (!active) return
+      setSocialSpecialty(result.status === 'success' && result.data.some((item) => isSocialSpecialty(item.specialty_name)) ? professionalId : null)
+    })
+    return () => { active = false }
+  }, [accessContext.is_active, accessContext.professional_id, accessContext.roles, service])
 
   async function searchFamilies() {
     if (familyQuery.trim().length < 2) return
@@ -68,10 +96,10 @@ export function BereavementPage({
   async function start(familyMemberId: string) {
     if (busy) return
     setBusy(true)
-    const result = await getRpcService().startFamilyBereavement(familyMemberId)
+    const result = await service.startFamilyBereavement(familyMemberId)
     if (result.status === 'success') {
-      setFeedback('Luto iniciado pelo banco.')
-      await loadBereavements()
+      const reloaded = await loadBereavements()
+      setFeedback(reloaded.status === 'success' || reloaded.status === 'empty' ? 'Luto iniciado e consulta atualizada.' : 'A operação foi recebida, mas a atualização da lista falhou.')
     } else setFeedback(result.status === 'error' ? result.error.message : 'Retorno sem confirmação.')
     setBusy(false)
   }
@@ -79,10 +107,10 @@ export function BereavementPage({
   async function close(familyMemberId: string) {
     if (busy) return
     setBusy(true)
-    const result = await getRpcService().closeFamilyBereavement(familyMemberId)
+    const result = await service.closeFamilyBereavement(familyMemberId)
     if (result.status === 'success') {
-      setFeedback('Luto encerrado pelo banco.')
-      await loadBereavements()
+      const reloaded = await loadBereavements()
+      setFeedback(reloaded.status === 'success' || reloaded.status === 'empty' ? 'Luto encerrado e consulta atualizada.' : 'A operação foi recebida, mas a atualização da lista falhou.')
     } else setFeedback(result.status === 'error' ? result.error.message : 'Retorno sem confirmação.')
     setBusy(false)
   }
@@ -141,8 +169,8 @@ export function BereavementPage({
           {state.status === 'success' && state.data.length > 0 && (
             <ul>
               {state.data.map((record, index) => (
-                <li key={field(record, 'bereavement_id', 'id') ?? index}>
-                  <strong>{field(record, 'family_member_name', 'full_name') ?? 'Familiar'}</strong>
+                <li key={field(record, 'bereavement_cycle_id') ?? index}>
+                  <strong>{field(record, 'family_name') ?? 'Familiar'}</strong>
                   <span>{field(record, 'status') ?? 'Situação não informada'}</span>
                 </li>
               ))}

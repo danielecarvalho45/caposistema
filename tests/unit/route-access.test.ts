@@ -95,16 +95,17 @@ describe('route access', () => {
     const nutritionProfessional = {
       ...context,
       professional_id: 'nutrition-professional-id',
-      roles: [{ code: 'nutricao', name: 'Nutrição' }],
+      roles: [{ code: 'profissional', name: 'Profissional' }],
       primary_context: {
         ...context.primary_context,
-        code: 'nutricao',
-        name: 'Nutrição',
+        code: 'profissional',
+        name: 'Profissional',
       },
     }
 
     expect(isKnownAppRoute('/nutricao')).toBe(true)
     expect(canAccessAppRoute(nutritionProfessional, '/nutricao')).toBe(true)
+    expect(canAccessAppRoute({ ...nutritionProfessional, roles: [{ code: 'nutricao', name: 'Nutrição' }] }, '/nutricao')).toBe(false)
     expect(canAccessAppRoute(context, '/nutricao')).toBe(false)
   })
 

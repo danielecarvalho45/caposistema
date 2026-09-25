@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   getRpcService,
   type AsyncState,
@@ -130,7 +130,8 @@ function errorMessage(result: AsyncState<unknown>): string | null {
   return result.status === 'error' ? result.error.message : null
 }
 
-export function GestorTeamPage({ service = createTeamManagementService() }: Readonly<{ service?: TeamManagementService }>) {
+export function GestorTeamPage({ service: providedService }: Readonly<{ service?: TeamManagementService }>) {
+  const service = useMemo(() => providedService ?? createTeamManagementService(), [providedService])
   const [context, setContext] = useState<unknown>(null)
   const [selected, setSelected] = useState<TeamMember | null>(null)
   const [profile, setProfile] = useState<TeamMemberProfileInput>(blankProfile)
@@ -166,18 +167,33 @@ export function GestorTeamPage({ service = createTeamManagementService() }: Read
     setLoading(false)
   }
 
-  useEffect(() => { void reload() }, [])
+  useEffect(() => {
+    let active = true
+    void service.getContext(null, null, 50, 0).then((result) => {
+      if (!active) return
+      if (result.status === 'success') { setContext(result.data); setFeedback(null) }
+      else if (result.status === 'empty') { setContext(null); setFeedback('Nenhum profissional retornado pelo backend.') }
+      else setFeedback(errorMessage(result))
+      setLoading(false)
+    })
+    return () => { active = false }
+  }, [service])
 
   useEffect(() => {
-    if (!selected) { setCapabilities([]); return }
+    const professionalId = selected?.professionalId
+    if (!professionalId) return
+    let active = true
     void (async () => {
-      const result = await service.getCapabilities(selected.professionalId)
+      const result = await service.getCapabilities(professionalId)
+      if (!active) return
       if (result.status === 'success') setCapabilities(records(result.data, ['effective_capabilities', 'capabilities', 'items']))
       else if (result.status === 'error') setFeedback(result.error.message)
     })()
-  }, [selected?.professionalId])
+    return () => { active = false }
+  }, [selected?.professionalId, service])
 
   function chooseMember(member: TeamMember) {
+    setCapabilities([])
     setSelected(member)
     setProfile(memberInput(member))
     setFeedback(null)

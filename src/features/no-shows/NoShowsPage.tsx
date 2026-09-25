@@ -68,9 +68,11 @@ function stateError<T>(state: AsyncState<T>) {
 export function NoShowsPage({
   accessContext,
   service = defaultService,
+  initialContextId = null,
 }: Readonly<{
   accessContext: AccessContext
   service?: NoShowsService
+  initialContextId?: string | null
 }>) {
   const [view, setView] = useState<
     'faltas' | 'contatos' | 'motivo' | 'remarcar'
@@ -78,7 +80,7 @@ export function NoShowsPage({
   const [statusFilter, setStatusFilter] = useState('')
   const [followups, setFollowups] =
     useState<AsyncState<readonly NoShowFollowup[]>>(loadingState)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(initialContextId)
   const [contacts, setContacts] = useState<
     AsyncState<readonly NoShowContact[]>
   >({ status: 'empty' })
@@ -93,6 +95,7 @@ export function NoShowsPage({
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const authorized = canManageNoShows(accessContext)
+  const canExecuteContact = accessContext.roles.some((role) => ['administrador', 'administrativo_operacional'].includes(role.code))
 
   const loadFollowups = useCallback(async () => {
     setFollowups(loadingState())
@@ -367,7 +370,7 @@ export function NoShowsPage({
                 </div>
               </dl>
 
-              <form className="no-show-form" onSubmit={submitContact}>
+              {canExecuteContact && <><form className="no-show-form" onSubmit={submitContact}>
                 <h4>Registrar contato ou providência</h4>
                 <label>
                   Meio de contato
@@ -476,6 +479,7 @@ export function NoShowsPage({
                 )}
               </div>
 
+              </>}
               {feedback && (
                 <p className="no-show-feedback" role="status">
                   {feedback}

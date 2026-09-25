@@ -116,6 +116,20 @@ describe('RequestsPage', () => {
   it('cria uma solicitação pela operação injetada e recarrega a lista', async () => {
     const user = userEvent.setup()
     const service = requestService({ status: 'empty' })
+    service.getAdministrativeRequests
+      .mockResolvedValueOnce({ status: 'empty' })
+      .mockResolvedValue({
+        status: 'success',
+        data: [{
+          request_id: 'request-id', patient_id: null, patient_name: null,
+          patient_number: null, cms: null, requesting_professional_id: 'professional-id',
+          requesting_professional_name: 'Profissional autorizado', subject: 'Apoio administrativo',
+          description: 'Providência administrativa necessária', status: 'pending',
+          administrative_response: null, counter_reference: null,
+          created_at: '2026-09-17T12:00:00Z', updated_at: '2026-09-17T12:00:00Z',
+          completed_at: null, cancelled_at: null, total_count: 1,
+        }],
+      })
     service.createAdministrativeRequest.mockResolvedValue({
       status: 'success',
       data: {
@@ -151,5 +165,20 @@ describe('RequestsPage', () => {
       ),
     ).toBeVisible()
     expect(service.getAdministrativeRequests).toHaveBeenCalledTimes(2)
+  })
+
+  it('não confirma na interface uma solicitação ausente após a recarga', async () => {
+    const user = userEvent.setup()
+    const service = requestService({ status: 'empty' })
+    service.createAdministrativeRequest.mockResolvedValue({
+      status: 'success',
+      data: { request_id: 'request-id' },
+    })
+    render(<RequestsPage accessContext={professionalContext} service={service} />)
+    await screen.findByText('Nenhuma solicitação encontrada.')
+    await user.type(screen.getByLabelText('Assunto'), 'Apoio administrativo')
+    await user.type(screen.getByLabelText('Descrição'), 'Providência administrativa necessária')
+    await user.click(screen.getByRole('button', { name: 'Enviar solicitação' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('ainda não apareceu na lista retornada pelo banco')
   })
 })

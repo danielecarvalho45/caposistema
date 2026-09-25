@@ -2040,6 +2040,26 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: parseConfirmedJson,
       }),
+    getInitialActiveSearches: (status: string | null = null, limit = 50, offset = 0) =>
+      execute({ transport, operation: 'get_initial_active_searches_for_interface', args: { p_flow_status: status, p_limit: limit, p_offset: offset }, parse: (value) => value }),
+    getCoordinatorTeamOverview: (query: string | null, specialtyId: string | null, status: string | null, startDate: string | null, endDate: string | null, limit = 50, offset = 0) =>
+      execute({ transport, operation: 'get_coordinator_team_overview_for_interface', args: { p_query: query, p_specialty_id: specialtyId, p_status: status, p_start_date: startDate, p_end_date: endDate, p_limit: limit, p_offset: offset }, parse: (value) => value }),
+    getCoordinatorAgendaOverview: (startDate: string, endDate: string, specialtyId: string | null = null, professionalId: string | null = null) =>
+      execute({ transport, operation: 'get_coordinator_agenda_overview_for_interface', args: { p_start_date: startDate, p_end_date: endDate, p_specialty_id: specialtyId, p_professional_id: professionalId }, parse: (value) => value }),
+    getAgendaChangeRequests: (status: string | null = null, professionalId: string | null = null, limit = 50) =>
+      execute({ transport, operation: 'get_agenda_change_requests_for_interface', args: { p_status: status, p_professional_id: professionalId, p_limit: limit }, parse: (value) => value }),
+    createAgendaChangeRequest: (configId: string, changes: { is_active: boolean; effective_date: string }, justification: string) =>
+      execute({ transport, operation: 'create_agenda_change_request_for_interface', args: { p_agenda_config_id: configId, p_request_type: 'status', p_requested_changes: changes, p_justification: justification }, parse: parseConfirmedJson }),
+    getPatientCareSpecialties: (patientId: string) =>
+      execute({ transport, operation: 'get_patient_care_specialties_for_professional_interface', args: { p_patient_id: patientId }, parse: (value) => value }),
+    decideAgendaChangeRequest: (requestId: string, decision: 'aprovar' | 'rejeitar', reason: string | null) =>
+      execute({ transport, operation: 'decide_agenda_change_request_for_interface', args: { p_request_id: requestId, p_decision: decision, p_reason: reason }, parse: parseConfirmedJson }),
+    applyAgendaChangeRequest: (requestId: string) =>
+      execute({ transport, operation: 'apply_agenda_change_request_for_interface', args: { p_request_id: requestId }, parse: parseConfirmedJson }),
+    registerCoordinationTeamDecision: (professionalId: string, actionType: string, startDate: string, endDate: string, reason: string, decision: 'aprovar' | 'devolver', sourceRequestId: string | null = null) =>
+      execute({ transport, operation: 'register_coordination_team_decision_for_interface', args: { p_professional_id: professionalId, p_action_type: actionType, p_start_date: startDate, p_end_date: endDate, p_reason: reason, p_decision: decision, p_source_agenda_change_request_id: sourceRequestId }, parse: parseConfirmedJson }),
+    getCoordinationTeamDecisions: (status: string | null = null, professionalId: string | null = null, limit = 50, offset = 0) =>
+      execute({ transport, operation: 'get_coordination_team_decisions_for_interface', args: { p_status: status, p_professional_id: professionalId, p_limit: limit, p_offset: offset }, parse: (value) => value }),
     getReportsDashboard: (
       startDate: string,
       endDate: string,
@@ -2841,7 +2861,7 @@ export function createRpcService(transport: RpcTransport) {
       }),
     manageNutritionAdminDelivery: (
       deliveryId: string,
-      action: 'confirm',
+      action: 'start' | 'complete' | 'cancel' | 'reopen',
       reason: string | null = null,
     ) =>
       execute({

@@ -48,8 +48,8 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
     accessContext.primary_context.code === 'administrador' ||
     accessContext.capabilities.includes('renovacao_receita')
   const roleCodes = useMemo(() => accessContext.roles.map((role) => role.code), [accessContext.roles])
-  const canCreate = Boolean(accessContext.professional_id)
-  const canManageMedical = roleCodes.some((role) => ['profissional', 'administrador'].includes(role))
+  const canCreate = Boolean(accessContext.professional_id) && accessContext.capabilities.includes('renovacao_receita')
+  const canManageMedical = Boolean(accessContext.professional_id) && roleCodes.includes('profissional') && accessContext.capabilities.includes('renovacao_receita')
   const canManageAdmin = roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
   const [status, setStatus] = useState('')
   const [items, setItems] = useState<readonly PrescriptionRenewal[]>([])

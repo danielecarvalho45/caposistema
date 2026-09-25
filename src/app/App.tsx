@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom'
 import { AppShell } from '../components/shell/AppShell'
 import { useAccessFlow } from '../features/access/access-context'
 import { AgendaPage } from '../features/agenda/AgendaPage'
+import { AgendaChangeRequestPage } from '../features/agenda/AgendaChangeRequestPage'
 import { NoShowsPage } from '../features/no-shows/NoShowsPage'
 import { HomePage } from '../features/home/HomePage'
 import { PatientsPage } from '../features/patients/PatientsPage'
@@ -19,6 +20,12 @@ import { FamilyCaregiverPage } from '../features/social/FamilyCaregiverPage'
 import { DentistryPage } from '../features/dentistry/DentistryPage'
 import { NotificationsPage } from '../features/notifications/NotificationsPage'
 import { ClosuresPage } from '../features/closures/ClosuresPage'
+import { GestorSocialOverview } from '../features/gestor/GestorSocialOverview'
+import { BereavementPage } from '../features/social/BereavementPage'
+import { OperationalTimeline } from '../features/gestor/OperationalTimeline'
+import { AuditLogPage } from '../features/gestor/AuditLogPage'
+import { ActiveSearchPage } from '../features/gestor/ActiveSearchPage'
+import { CoordinationDashboard } from '../features/coordination/CoordinationDashboard'
 import { GestorShell } from '../features/gestor/GestorShell'
 import { GestorDashboard } from '../features/gestor/GestorDashboard'
 import { GestorManagementPage } from '../features/gestor/GestorManagementPage'
@@ -84,11 +91,16 @@ export function AccessDeniedPage() {
 export function App() {
   const { accessContext, logout } = useAccessFlow()
   const location = useLocation()
+  const pendingContextId = typeof location.state?.contextId === 'string'
+    ? location.state.contextId
+    : null
   const isPatientsRoute = location.pathname === '/pacientes'
   const isAgendaRoute = location.pathname === '/agenda'
+  const isAgendaChangeRequestRoute = location.pathname === '/minha-agenda/solicitar-alteracao'
   const isAssistentialRoute = location.pathname === '/atuacao'
   const isNutritionRoute = location.pathname === '/nutricao'
   const isSocialRoute = location.pathname === '/assistencia-social'
+  const isBereavementRoute = location.pathname === '/luto'
   const isFamilyCaregiverRoute = location.pathname === '/familiar-cuidador'
   const isQueueRoute = location.pathname === '/fila'
   const isNoShowsRoute = location.pathname === '/faltosos'
@@ -150,12 +162,24 @@ export function App() {
     <AccessDeniedPage />
   ) : isGestor && location.pathname === '/' ? (
     <GestorDashboard />
+  ) : primaryContextCode === 'coordenador' && location.pathname === '/' ? (
+    <CoordinationDashboard accessContext={accessContext} />
   ) : isNutritionHome ? (
     <NutritionPage accessContext={accessContext} />
   ) : isSocialHome ? (
     <SocialPage accessContext={accessContext} />
   ) : isProfessionalHome ? (
     <AssistentialPage accessContext={accessContext} />
+  ) : location.pathname === '/gestor/social' ? (
+    <GestorSocialOverview />
+  ) : location.pathname === '/gestor/luto' ? (
+    <BereavementPage accessContext={accessContext} />
+  ) : location.pathname === '/coordenacao/timeline' ? (
+    <OperationalTimeline />
+  ) : location.pathname === '/coordenacao/auditoria' ? (
+    <AuditLogPage />
+  ) : location.pathname === '/coordenacao/busca-ativa' ? (
+    <ActiveSearchPage />
   ) : location.pathname === '/gestor/familiares' ? (
     <GestorFamilyPage />
   ) : location.pathname === '/gestor/operacional' ? (
@@ -166,20 +190,24 @@ export function App() {
     <PatientsPage accessContext={accessContext} />
   ) : isAgendaRoute ? (
     <AgendaPage accessContext={accessContext} />
+  ) : isAgendaChangeRequestRoute ? (
+    <AgendaChangeRequestPage accessContext={accessContext} />
   ) : isAssistentialRoute ? (
     <AssistentialPage accessContext={accessContext} />
   ) : isNutritionRoute ? (
     <NutritionPage accessContext={accessContext} />
   ) : isSocialRoute ? (
     <SocialPage accessContext={accessContext} />
+  ) : isBereavementRoute ? (
+    <BereavementPage accessContext={accessContext} />
   ) : isFamilyCaregiverRoute ? (
     <FamilyCaregiverPage accessContext={accessContext} />
   ) : isQueueRoute ? (
     <QueuePage accessContext={accessContext} />
   ) : isNoShowsRoute ? (
-    <NoShowsPage accessContext={accessContext} />
+    <NoShowsPage accessContext={accessContext} initialContextId={pendingContextId} />
   ) : isRequestsRoute ? (
-    <RequestsPage accessContext={accessContext} />
+    <RequestsPage accessContext={accessContext} initialContextId={pendingContextId} />
   ) : isTransportRoute ? (
     <TransportPage accessContext={accessContext} />
   ) : isRenewalRoute ? (

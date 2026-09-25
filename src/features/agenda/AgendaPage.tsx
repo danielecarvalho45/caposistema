@@ -127,18 +127,29 @@ function appointmentsForDay(
   )
 }
 
+type PatientSpecialtiesState = AsyncState<readonly { specialty_id: string; specialty_name: string }[]>
+const defaultPatientSpecialtiesLoader = (patientId: string) => getRpcService().getPatientCareSpecialties(patientId)
+function specialtyText(state: PatientSpecialtiesState) {
+  if (state.status === 'success') return `Especialidades: ${state.data.map((item) => item.specialty_name).join(', ') || 'nenhuma retornada'}`
+  if (state.status === 'loading') return 'Consultando especialidades…'
+  if (state.status === 'error') return 'Especialidades indisponíveis'
+  return 'Nenhuma especialidade retornada'
+}
+
 function AppointmentTable({
   appointments,
   includeDate = true,
   showSpecialty = true,
   onAttendance,
   busyAppointmentId,
+  patientSpecialties,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
   includeDate?: boolean
   showSpecialty?: boolean
   onAttendance?: (appointmentId: string, action: string) => void
   busyAppointmentId?: string | null
+  patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
 }>) {
   return (
     <div className="assistential-table-wrap">
@@ -148,11 +159,11 @@ function AppointmentTable({
           <tr>
             <th scope="col">{includeDate ? 'Data e hora' : 'Horário'}</th>
             <th scope="col">Paciente</th>
+            {onAttendance && <th scope="col">Ações</th>}
             <th scope="col">Profissional</th>
             {showSpecialty && <th scope="col">Especialidade</th>}
             <th scope="col">Tipo</th>
             <th scope="col">Situação</th>
-            {onAttendance && <th scope="col">Ações</th>}
           </tr>
         </thead>
         <tbody>
@@ -163,13 +174,7 @@ function AppointmentTable({
                   ? formatDateTime(appointment.appointment_date)
                   : formatTimeRange(appointment)}
               </td>
-              <td>{appointment.patient_name}</td>
-              <td>{appointment.professional_name}</td>
-              {showSpecialty && (
-                <td>{appointment.specialty_name ?? 'Não informada'}</td>
-              )}
-              <td>{appointment.appointment_type}</td>
-              <td>{appointment.attendance_status}</td>
+              <td>{appointment.patient_name}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
               {onAttendance && (
                 <td>
                   <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmar')}>Confirmar</button>
@@ -177,6 +182,12 @@ function AppointmentTable({
                   <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'retorno')}>Retorno</button>
                 </td>
               )}
+              <td>{appointment.professional_name}</td>
+              {showSpecialty && (
+                <td>{appointment.specialty_name ?? 'Não informada'}</td>
+              )}
+              <td>{appointment.appointment_type}</td>
+              <td>{appointment.attendance_status}</td>
             </tr>
           ))}
         </tbody>
@@ -193,6 +204,7 @@ function AgendaResults({
   showSpecialty,
   onAttendance,
   busyAppointmentId,
+  patientSpecialties,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
   startDate: string
@@ -201,6 +213,7 @@ function AgendaResults({
   showSpecialty: boolean
   onAttendance?: (appointmentId: string, action: string) => void
   busyAppointmentId?: string | null
+  patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
 }>) {
   if (view === 'day') {
     return (
@@ -209,6 +222,7 @@ function AgendaResults({
         showSpecialty={showSpecialty}
         onAttendance={onAttendance}
         busyAppointmentId={busyAppointmentId}
+        patientSpecialties={patientSpecialties}
       />
     )
   }
@@ -234,6 +248,7 @@ function AgendaResults({
                   showSpecialty={showSpecialty}
                   onAttendance={onAttendance}
                   busyAppointmentId={busyAppointmentId}
+                  patientSpecialties={patientSpecialties}
                 />
               ) : (
                 <p>Nenhum atendimento neste dia.</p>
@@ -278,6 +293,7 @@ function AgendaResults({
               >
                 <strong>{formatTimeRange(appointment)}</strong>
                 <span>{appointment.patient_name}</span>
+                {patientSpecialties?.[appointment.patient_id] && <small>{specialtyText(patientSpecialties[appointment.patient_id])}</small>}
                 <small>
                   {showSpecialty
                     ? appointment.specialty_name ?? appointment.appointment_type
@@ -296,16 +312,20 @@ export function AgendaPage({
   accessContext,
   loadAgenda = defaultAgendaLoader,
   showSpecialty = true,
+  onConfirmed,
+  loadPatientSpecialties = defaultPatientSpecialtiesLoader,
 }: Readonly<{
   accessContext: AccessContext
   loadAgenda?: AgendaLoader
   showSpecialty?: boolean
+  onConfirmed?: (appointment: AgendaAppointment) => void
+  loadPatientSpecialties?: (patientId: string) => Promise<AsyncState<unknown>>
 }>) {
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
   const [selectedSlotStart, setSelectedSlotStart] = useState('')
-  const [availableSlots, setAvailableSlots] = useState<readonly AvailableAppointmentSlot[]>([])
+  const [slotResult, setSlotResult] = useState<{ key: string; rows: readonly AvailableAppointmentSlot[] } | null>(null)
   const [appointmentPatientQuery, setAppointmentPatientQuery] = useState('')
   const [appointmentPatientId, setAppointmentPatientId] = useState('')
   const [appointmentPatients, setAppointmentPatients] = useState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]>([])
@@ -317,7 +337,7 @@ export function AgendaPage({
   const [attendanceReason, setAttendanceReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
   const [showRescheduleForm, setShowRescheduleForm] = useState(false)
-  const [reschedulableAppointments, setReschedulableAppointments] = useState<readonly ReschedulableAppointment[]>([])
+  const [reschedulableResult, setReschedulableResult] = useState<{ key: string; rows: readonly ReschedulableAppointment[] } | null>(null)
   const [selectedReschedulableId, setSelectedReschedulableId] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
   const [rescheduleOrigin, setRescheduleOrigin] = useState('')
@@ -325,6 +345,7 @@ export function AgendaPage({
   const [anchorDate, setAnchorDate] = useState(() => dateInputValue(new Date()))
   const [state, setState] =
     useState<AsyncState<readonly AgendaAppointment[]>>(loadingState)
+  const [specialtyResult, setSpecialtyResult] = useState<{ agenda: AsyncState<readonly AgendaAppointment[]>; byPatient: Record<string, AsyncState<readonly { specialty_id: string; specialty_name: string }[]>> } | null>(null)
   const requestSequence = useRef(0)
   const { startDate, endDate } = agendaBounds(anchorDate, view)
   const roleCodes = accessContext.roles.map((role) => role.code)
@@ -360,6 +381,43 @@ export function AgendaPage({
     ['nutricao', 'medico_clinico_geral'].includes(role),
   )
   const shouldShowSpecialty = showSpecialty && !contextHasFixedSpecialty
+  const pendingSpecialties: PatientSpecialtiesState = { status: 'loading' }
+  const slotKey = `${selectedProfessionalId}:${anchorDate}`
+  const availableSlots = !isProfessional && selectedProfessionalId && slotResult?.key === slotKey ? slotResult.rows : []
+  const reschedulableKey = `${appointmentPatientId}:${selectedProfessionalId}:${anchorDate}`
+  const reschedulableAppointments = showRescheduleForm && appointmentPatientId && selectedProfessionalId && reschedulableResult?.key === reschedulableKey ? reschedulableResult.rows : []
+  const validSlotStart = availableSlots.some((slot) => slot.slot_start === selectedSlotStart) ? selectedSlotStart : ''
+  const validReschedulableId = reschedulableAppointments.some((item) => item.appointment_id === selectedReschedulableId) ? selectedReschedulableId : ''
+  const patientSpecialties: Record<string, PatientSpecialtiesState> = state.status === 'success' && isProfessional
+    ? Object.fromEntries([...new Set(state.data.map((item) => item.patient_id))].map((id) => [id, specialtyResult?.agenda === state ? specialtyResult.byPatient[id] ?? pendingSpecialties : pendingSpecialties]))
+    : {}
+  useEffect(() => {
+    if (!isProfessional || !roleCodes.includes('profissional') || state.status !== 'success') {
+      return
+    }
+    let active = true
+    const ids = [...new Set(state.data.map((item) => item.patient_id))]
+    void (async () => {
+      for (let offset = 0; offset < ids.length && active; offset += 4) {
+        const batch = await Promise.all(ids.slice(offset, offset + 4).map(async (id) => [id, await loadPatientSpecialties(id)] as const))
+        if (!active) break
+        setSpecialtyResult((current) => {
+          const updated = current?.agenda === state ? { ...current.byPatient } : {}
+          for (const [id, result] of batch) {
+            if (result.status === 'success') {
+              const list = Array.isArray(result.data) ? result.data : []
+              updated[id] = { status: 'success', data: list.filter((item): item is { specialty_id: string; specialty_name: string } =>
+                !!item && typeof item === 'object' && typeof (item as Record<string, unknown>).specialty_id === 'string' && typeof (item as Record<string, unknown>).specialty_name === 'string') }
+            } else updated[id] = result
+          }
+          return { agenda: state, byPatient: updated }
+        })
+      }
+    })()
+    return () => { active = false }
+    // A lista de IDs muda somente depois da consulta real da agenda.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, isProfessional, loadPatientSpecialties])
   const professionalOptions =
     state.status === 'success'
       ? Array.from(
@@ -379,6 +437,7 @@ export function AgendaPage({
     setState(loadingState())
     const nextState = await loadAgenda(startDate, endDate, professionalId)
     if (requestId === requestSequence.current) setState(nextState)
+    return nextState
   }, [endDate, loadAgenda, professionalId, startDate])
 
   async function searchAppointmentPatients() {
@@ -389,7 +448,7 @@ export function AgendaPage({
   }
 
   async function createAppointment() {
-    if (!appointmentPatientId || !selectedProfessionalId || !selectedSlotStart || !appointmentType) {
+    if (!appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType) {
       setAppointmentFeedback('Selecione paciente, profissional, horário e tipo de atendimento.')
       return
     }
@@ -397,7 +456,7 @@ export function AgendaPage({
     const result = await getRpcService().createAppointment({
       patientId: appointmentPatientId,
       professionalId: selectedProfessionalId,
-      slotStart: selectedSlotStart,
+      slotStart: validSlotStart,
       appointmentType,
       generalNotes: appointmentNotes.trim() || null,
       operationalOrigin: appointmentOrigin.trim() || null,
@@ -417,15 +476,15 @@ export function AgendaPage({
   }
 
   async function rescheduleAppointment() {
-    if (!selectedReschedulableId || !selectedProfessionalId || !selectedSlotStart || rescheduleReason.trim().length < 3) {
+    if (!validReschedulableId || !selectedProfessionalId || !validSlotStart || rescheduleReason.trim().length < 3) {
       setAppointmentFeedback('Selecione agendamento, novo horário e informe o motivo da remarcação.')
       return
     }
     setAppointmentFeedback('Remarcando agendamento no banco…')
     const result = await getRpcService().rescheduleAppointment({
-      appointmentId: selectedReschedulableId,
+      appointmentId: validReschedulableId,
       newProfessionalId: selectedProfessionalId,
-      newSlotStart: selectedSlotStart,
+      newSlotStart: validSlotStart,
       reason: rescheduleReason.trim(),
       origin: rescheduleOrigin.trim(),
       newNotes: rescheduleNotes.trim(),
@@ -456,10 +515,18 @@ export function AgendaPage({
       reason: attendanceReason.trim(),
     })
     if (result.status === 'success') {
+      const confirmedAppointment = action === 'confirmar' && state.status === 'success'
+        ? state.data.find((appointment) => appointment.appointment_id === appointmentId)
+        : undefined
       setAttendanceNotes('')
       setAttendanceReason('')
-      setAppointmentFeedback('Atendimento atualizado. Agenda recarregada do banco.')
-      await load()
+      const reloaded = await load()
+      if (reloaded.status === 'error') {
+        setAppointmentFeedback('Atendimento registrado, mas a recarga da agenda falhou: ' + reloaded.error.message)
+      } else {
+        setAppointmentFeedback('Atendimento atualizado. Agenda recarregada do banco.')
+        if (confirmedAppointment) onConfirmed?.(confirmedAppointment)
+      }
     } else {
       setAppointmentFeedback(result.status === 'error' ? result.error.message : 'A atualização não retornou confirmação.')
     }
@@ -485,17 +552,13 @@ export function AgendaPage({
   ])
 
   useEffect(() => {
-    if (isProfessional || !selectedProfessionalId) {
-      setAvailableSlots([])
-      setSelectedSlotStart('')
-      return
-    }
+    if (isProfessional || !selectedProfessionalId) return
     let active = true
     void getRpcService()
       .getAvailableAppointmentSlots(selectedProfessionalId, anchorDate)
       .then((nextState) => {
         if (!active) return
-        setAvailableSlots(nextState.status === 'success' ? nextState.data : [])
+        setSlotResult({ key: `${selectedProfessionalId}:${anchorDate}`, rows: nextState.status === 'success' ? nextState.data : [] })
         setSelectedSlotStart('')
       })
     return () => {
@@ -504,17 +567,13 @@ export function AgendaPage({
   }, [anchorDate, isProfessional, selectedProfessionalId])
 
   useEffect(() => {
-    if (!showRescheduleForm || !appointmentPatientId || !selectedProfessionalId) {
-      setReschedulableAppointments([])
-      setSelectedReschedulableId('')
-      return
-    }
+    if (!showRescheduleForm || !appointmentPatientId || !selectedProfessionalId) return
     let active = true
     void getRpcService()
       .getReschedulableAppointments(appointmentPatientId, selectedProfessionalId, anchorDate, 50)
       .then((nextState) => {
         if (!active) return
-        setReschedulableAppointments(nextState.status === 'success' ? nextState.data : [])
+        setReschedulableResult({ key: `${appointmentPatientId}:${selectedProfessionalId}:${anchorDate}`, rows: nextState.status === 'success' ? nextState.data : [] })
         setSelectedReschedulableId('')
       })
     return () => {
@@ -694,7 +753,7 @@ export function AgendaPage({
                     availableSlots.map((slot) => (
                       <button
                         type="button"
-                        className={selectedSlotStart === slot.slot_start ? 'is-selected' : undefined}
+                        className={validSlotStart === slot.slot_start ? 'is-selected' : undefined}
                         key={slot.slot_start}
                         onClick={() => setSelectedSlotStart(slot.slot_start)}
                       >
@@ -724,7 +783,7 @@ export function AgendaPage({
               </label>
             </div>
             <div className="agenda-form-actions">
-              <button type="button" disabled={!appointmentPatientId || !selectedProfessionalId || !selectedSlotStart || !appointmentType} onClick={() => void createAppointment()}>
+              <button type="button" disabled={!appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType} onClick={() => void createAppointment()}>
                 Confirmar agendamento
               </button>
             </div>
@@ -745,14 +804,14 @@ export function AgendaPage({
             <div className="agenda-form-grid">
               <label>
                 Agendamento
-                <select value={selectedReschedulableId} onChange={(event) => setSelectedReschedulableId(event.target.value)} disabled={reschedulableAppointments.length === 0}>
+                <select value={validReschedulableId} onChange={(event) => setSelectedReschedulableId(event.target.value)} disabled={reschedulableAppointments.length === 0}>
                   <option value="">{reschedulableAppointments.length ? 'Selecionar agendamento' : 'Selecione paciente e profissional'}</option>
                   {reschedulableAppointments.map((item) => <option key={item.appointment_id} value={item.appointment_id}>{item.patient_name} · {new Date(item.appointment_date).toLocaleString('pt-BR')}</option>)}
                 </select>
               </label>
               <label>
                 Novo horário
-                <select value={selectedSlotStart} onChange={(event) => setSelectedSlotStart(event.target.value)} disabled={availableSlots.length === 0}>
+                <select value={validSlotStart} onChange={(event) => setSelectedSlotStart(event.target.value)} disabled={availableSlots.length === 0}>
                   <option value="">Selecionar horário</option>
                   {availableSlots.map((slot) => <option key={slot.slot_start} value={slot.slot_start}>{slot.slot_time}</option>)}
                 </select>
@@ -771,7 +830,7 @@ export function AgendaPage({
               </label>
             </div>
             <div className="agenda-form-actions">
-              <button type="button" disabled={!selectedReschedulableId || !selectedSlotStart || rescheduleReason.trim().length < 3} onClick={() => void rescheduleAppointment()}>Aplicar remarcação</button>
+              <button type="button" disabled={!validReschedulableId || !validSlotStart || rescheduleReason.trim().length < 3} onClick={() => void rescheduleAppointment()}>Aplicar remarcação</button>
             </div>
           </section>
         )}
@@ -863,6 +922,7 @@ export function AgendaPage({
               showSpecialty={shouldShowSpecialty}
               onAttendance={isProfessional ? updateAttendance : undefined}
               busyAppointmentId={busyAppointmentId}
+              patientSpecialties={isProfessional ? patientSpecialties : undefined}
             />
           )}
         </div>

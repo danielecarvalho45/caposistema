@@ -76,8 +76,8 @@ function PasswordInput({
 
 function LoginStep() {
   const { busy, feedback, login, showRecovery } = useAccessFlow()
-  const [username, setUsername] = useState(demoGestorUsername)
-  const [password, setPassword] = useState(demoGestorPassword)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
 
   function submit(event: FormEvent) {
     event.preventDefault()

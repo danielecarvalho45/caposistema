@@ -1,3 +1,5 @@
+import { ActiveSearchPage } from './ActiveSearchPage'
+import { Link } from 'react-router-dom'
 import { GestorTeamPage } from './GestorTeamPage'
 import { TechnicalSupportRequest } from '../../components/forms/TechnicalSupportRequest'
 import { OperationalTimeline } from './OperationalTimeline'
@@ -20,11 +22,12 @@ export function GestorManagementPage({ view }: Readonly<{ view: ManagementView }
   if (view === 'equipe' || view === 'administracao') return <GestorTeamPage />
   if (view === 'timeline') return <OperationalTimeline />
   if (view === 'auditoria') return <AuditLogPage />
+  if (view === 'busca-ativa') return <ActiveSearchPage />
   if (view === 'suporte') return <section className="gestor-route" aria-labelledby="support-title"><header><span>Gestão do Serviço</span><h2 id="support-title">Suporte</h2><p>Solicitação técnica registrada pelo backend CAPO.</p></header><article className="gestor-panel"><TechnicalSupportRequest affectedModule="gestor" /></article></section>
   return (
     <section className="gestor-route" aria-labelledby="gestor-route-title">
       <header><span>{page.kicker}</span><h2 id="gestor-route-title">{page.title}</h2><p>{page.description}</p></header>
-      <article className="gestor-panel gestor-empty-module"><h3>{page.title}</h3><p>{page.description}</p></article>
+      <article className="gestor-panel"><h3>Abrir módulos autorizados</h3><ul><li><Link to="/gestor/operacional">Pendências, familiares e entregas nutricionais</Link></li><li><Link to="/gestor/social">Acompanhamento Social</Link></li><li><Link to="/gestor/luto">Luto</Link></li><li><Link to="/gestor/familiares">Familiar / Cuidador</Link></li><li><Link to="/transporte">Transporte</Link></li><li><Link to="/encaminhamentos">Encaminhamentos</Link></li><li><Link to="/odontologia">Odontologia</Link></li><li><Link to="/receita">Renovação de Receita</Link></li></ul></article>
     </section>
   )
 }

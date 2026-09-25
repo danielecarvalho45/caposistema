@@ -4,9 +4,11 @@ export const KNOWN_APP_ROUTES = [
   '/',
   '/pacientes',
   '/agenda',
+  '/minha-agenda/solicitar-alteracao',
   '/atuacao',
   '/nutricao',
   '/assistencia-social',
+  '/luto',
   '/familiar-cuidador',
   '/fila',
   '/faltosos',
@@ -20,6 +22,11 @@ export const KNOWN_APP_ROUTES = [
   '/tecnica',
   '/relatorios',
   '/encerramentos',
+  '/coordenacao/busca-ativa',
+  '/gestor/social',
+  '/gestor/luto',
+  '/coordenacao/timeline',
+  '/coordenacao/auditoria',
   '/gestor/equipe',
   '/gestor/administracao',
   '/gestor/timeline',
@@ -101,6 +108,8 @@ export function canAccessAppRoute(
       return true
     case '/suporte':
       return accessContext.primary_context.code !== 'administrador_tecnico'
+    case '/gestor/social':
+    case '/gestor/luto':
     case '/gestor/equipe':
     case '/gestor/administracao':
     case '/gestor/timeline':
@@ -111,6 +120,10 @@ export function canAccessAppRoute(
     case '/gestor/familiares':
     case '/gestor/operacional':
       return accessContext.primary_context.code === 'administrador'
+    case '/coordenacao/timeline':
+    case '/coordenacao/auditoria':
+    case '/coordenacao/busca-ativa':
+      return hasRole(accessContext, ['administrador', 'coordenador'])
     case '/pacientes':
       return hasRole(accessContext, ['administrador', 'coordenador', 'administrativo_operacional'])
     case '/agenda':
@@ -123,6 +136,9 @@ export function canAccessAppRoute(
         (Boolean(accessContext.professional_id) &&
           hasProfessionalAssistentialRole(accessContext))
       )
+    case '/minha-agenda/solicitar-alteracao':
+      return accessContext.is_active && Boolean(accessContext.professional_id) &&
+        hasRole(accessContext, ['profissional'])
     case '/atuacao':
       return (
         Boolean(accessContext.professional_id) &&
@@ -130,8 +146,8 @@ export function canAccessAppRoute(
       )
     case '/nutricao':
       return (
-        Boolean(accessContext.professional_id) &&
-        hasRole(accessContext, ['nutricao'])
+        accessContext.is_active && Boolean(accessContext.professional_id) &&
+        hasRole(accessContext, ['profissional'])
       )
     case '/relatorios':
       return (
@@ -145,12 +161,15 @@ export function canAccessAppRoute(
           'assistente_social',
           'social',
         ]) &&
-        (hasRole(accessContext, ['coordenador']) ||
+        (hasRole(accessContext, ['administrador', 'coordenador']) ||
           Boolean(accessContext.professional_id))
       )
     case '/assistencia-social':
     case '/familiar-cuidador':
       return hasActiveProfessionalContext(accessContext)
+    case '/luto':
+      return accessContext.is_active && Boolean(accessContext.professional_id) &&
+        hasRole(accessContext, ['profissional'])
     case '/fila':
       return (
         accessContext.primary_context.code === 'administrativo_operacional' ||
@@ -168,7 +187,7 @@ export function canAccessAppRoute(
     case '/solicitacoes':
     case '/encaminhamentos':
       return (
-        Boolean(accessContext.professional_id) ||
+        (Boolean(accessContext.professional_id) && hasProfessionalAssistentialRole(accessContext)) ||
         hasRole(accessContext, [
           'administrador',
           'coordenador',
@@ -192,13 +211,13 @@ export function canAccessAppRoute(
           ]))
       )
     case '/transporte':
-      return accessContext.capabilities.includes(
+      return hasRole(accessContext, ['administrador']) || accessContext.capabilities.includes(
         'preencher_solicitacao_transporte',
       )
     case '/receita':
-      return accessContext.capabilities.includes('renovacao_receita')
+      return hasRole(accessContext, ['administrador']) || accessContext.capabilities.includes('renovacao_receita')
     case '/odontologia':
-      return accessContext.capabilities.includes(
+      return hasRole(accessContext, ['administrador']) || accessContext.capabilities.includes(
         'emitir_encaminhamento_odontologico_externo',
       )
     case '/tecnica':
