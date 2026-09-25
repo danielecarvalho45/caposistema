@@ -98,8 +98,8 @@ export type ClosuresIntegration = Readonly<{
     reason: string,
   ) => Promise<AsyncState<ClosureResult>>
   startSocial: (
-    cycleId: string,
-    reason: string,
+    patientId: string,
+    appointmentId: string,
   ) => Promise<AsyncState<ClosureResult>>
   loadSocial: (
     status: string | null,
@@ -177,13 +177,13 @@ export function createClosuresIntegration(): ClosuresIntegration {
           p_opening_reason: reason,
         },
       ),
-    startSocial: (cycleId, reason) =>
+    startSocial: (patientId, appointmentId) =>
       write(
         'start_social_followup_for_interface',
         'start_social_followup_for_interface',
         {
-          p_cycle_id: cycleId,
-          p_opening_reason: reason,
+          p_patient_id: patientId,
+          p_appointment_id: appointmentId,
         },
       ),
     loadSocial: (status) =>
