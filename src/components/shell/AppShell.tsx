@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import { authorizedNavigationItems } from '../navigation/navigation-config'
+import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getNotificationsService } from '../../features/notifications/notifications-integration'
 import { getRpcService } from '../../lib/supabase/rpc'
 import './app-shell.css'
@@ -48,6 +49,26 @@ export function AppShell({
   const canAccessNotifications = managementNavigation.some(
     (item) => item.path === '/notificacoes',
   )
+  const hasRole = (roleCode: string) =>
+    accessContext.roles.some((role) => role.code === roleCode)
+  const accumulatedNavigation: readonly Readonly<{
+    path: AppRoute
+    label: string
+    icon: string
+  }>[] = [
+    ...(hasRole('administrador') && accessContext.primary_context.code !== 'administrador'
+      ? [
+          { path: '/gestor/administracao' as AppRoute, label: 'Administração do Sistema', icon: '⚙' },
+          { path: '/gestor/equipe' as AppRoute, label: 'Equipe e Agendas', icon: '♟' },
+          { path: '/gestor/fluxos' as AppRoute, label: 'Fluxos e Acompanhamentos', icon: '◉' },
+          { path: '/gestor/timeline' as AppRoute, label: 'Linha do Tempo Operacional', icon: '◷' },
+          { path: '/gestor/auditoria' as AppRoute, label: 'Auditoria e Relatórios', icon: '▥' },
+        ]
+      : []),
+    ...(hasRole('coordenador') && accessContext.primary_context.code !== 'coordenador'
+      ? [{ path: '/coordenacao' as AppRoute, label: 'Coordenação', icon: '◇' }]
+      : []),
+  ].filter((item) => canAccessAppRoute(accessContext, item.path))
 
   useEffect(() => {
     mainRef.current?.focus()
@@ -189,9 +210,23 @@ export function AppShell({
 
           <div className="app-nav-group app-nav-authorized">
             <p className="app-nav-label">Áreas autorizadas</p>
-            <p className="app-nav-pending">
-              Consulte as áreas disponíveis conforme suas permissões vigentes.
-            </p>
+            {accumulatedNavigation.length > 0 ? (
+              accumulatedNavigation.map((item) => (
+                <Link
+                  className="app-nav-link"
+                  to={item.path}
+                  aria-current={currentPath === item.path ? 'page' : undefined}
+                  key={item.path}
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))
+            ) : (
+              <p className="app-nav-pending">
+                Nenhuma função acumulada adicional neste contexto.
+              </p>
+            )}
           </div>
         </nav>
 
