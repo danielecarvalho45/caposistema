@@ -308,6 +308,28 @@ function AgendaResults({
   )
 }
 
+type SchedulingCatalogRow = Readonly<{
+  specialty_id: string
+  specialty_name: string
+  professional_id: string
+  professional_name: string
+  function_title: string | null
+  professional_registration: string | null
+  is_primary: boolean
+}>
+
+function schedulingCatalogRows(value: unknown): readonly SchedulingCatalogRow[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is SchedulingCatalogRow => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+    const row = item as Record<string, unknown>
+    return typeof row.specialty_id === 'string' &&
+      typeof row.specialty_name === 'string' &&
+      typeof row.professional_id === 'string' &&
+      typeof row.professional_name === 'string'
+  })
+}
+
 export function AgendaPage({
   accessContext,
   loadAgenda = defaultAgendaLoader,
@@ -324,6 +346,8 @@ export function AgendaPage({
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
+  const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('')
+  const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
   const [selectedSlotStart, setSelectedSlotStart] = useState('')
   const [slotResult, setSlotResult] = useState<{ key: string; rows: readonly AvailableAppointmentSlot[] } | null>(null)
   const [appointmentPatientQuery, setAppointmentPatientQuery] = useState('')
@@ -418,19 +442,19 @@ export function AgendaPage({
     // A lista de IDs muda somente depois da consulta real da agenda.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, isProfessional, loadPatientSpecialties])
-  const professionalOptions =
-    state.status === 'success'
-      ? Array.from(
-          new Map(
-            state.data
-              .filter((appointment) => appointment.professional_id)
-              .map((appointment) => [
-                appointment.professional_id,
-                appointment.professional_name,
-              ]),
-          ),
-        )
-      : []
+  const catalogRows = schedulingCatalog.status === 'success'
+    ? schedulingCatalogRows(schedulingCatalog.data)
+    : []
+  const specialtyOptions = Array.from(
+    new Map(catalogRows.map((row) => [row.specialty_id, row.specialty_name])),
+  )
+  const professionalOptions = Array.from(
+    new Map(
+      catalogRows
+        .filter((row) => !selectedSpecialtyId || row.specialty_id === selectedSpecialtyId)
+        .map((row) => [row.professional_id, row.professional_name]),
+    ),
+  )
 
   const load = useCallback(async () => {
     const requestId = ++requestSequence.current
@@ -448,8 +472,8 @@ export function AgendaPage({
   }
 
   async function createAppointment() {
-    if (!appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType) {
-      setAppointmentFeedback('Selecione paciente, profissional, horário e tipo de atendimento.')
+    if (!appointmentPatientId || !selectedSpecialtyId || !selectedProfessionalId || !validSlotStart || !appointmentType) {
+      setAppointmentFeedback('Selecione paciente, especialidade, profissional, horário e tipo de atendimento.')
       return
     }
     setAppointmentFeedback('Criando agendamento no banco…')
@@ -466,6 +490,7 @@ export function AgendaPage({
       setAppointmentPatientId('')
       setAppointmentPatientQuery('')
       setAppointmentPatients([])
+      setSelectedSpecialtyId('')
       setSelectedSlotStart('')
       setAppointmentType('')
       setAppointmentNotes('')
@@ -532,6 +557,16 @@ export function AgendaPage({
     }
     setBusyAppointmentId(null)
   }
+
+  useEffect(() => {
+    if (isProfessional || !canAccess) return
+    let active = true
+    setSchedulingCatalog(loadingState())
+    void getRpcService().getSchedulingCatalog().then((result) => {
+      if (active) setSchedulingCatalog(result)
+    })
+    return () => { active = false }
+  }, [canAccess, isProfessional])
 
   useEffect(() => {
     if (!canAccess || (isProfessional && !professionalId)) return
@@ -690,6 +725,8 @@ export function AgendaPage({
                 <h3 id="schedule-title">Novo Agendamento</h3>
               </div>
             </div>
+            {schedulingCatalog.status === 'error' && <p role="alert">{schedulingCatalog.error.message}</p>}
+            {schedulingCatalog.status === 'empty' && <p>Nenhuma especialidade/profissional com agenda ativa foi encontrada.</p>}
             <div className="agenda-form-grid">
               <label>
                 Paciente *
@@ -720,7 +757,20 @@ export function AgendaPage({
               </label>
               <label>
                 Especialidade *
-                <input type="text" placeholder="Especialidade" />
+                <select
+                  value={selectedSpecialtyId}
+                  disabled={schedulingCatalog.status !== 'success' || specialtyOptions.length === 0}
+                  onChange={(event) => {
+                    setSelectedSpecialtyId(event.target.value)
+                    setSelectedProfessionalId('')
+                    setSelectedSlotStart('')
+                  }}
+                >
+                  <option value="">Selecionar especialidade</option>
+                  {specialtyOptions.map(([id, name]) => (
+                    <option key={id} value={id}>{name}</option>
+                  ))}
+                </select>
               </label>
               <label>
                 Profissional *
@@ -728,8 +778,13 @@ export function AgendaPage({
                   value={selectedProfessionalId}
                   disabled={professionalOptions.length === 0}
                   onChange={(event) => {
-                    setSelectedProfessionalId(event.target.value)
-                    setState(loadingState())
+                    const professionalId = event.target.value
+                    setSelectedProfessionalId(professionalId)
+                    if (professionalId && !selectedSpecialtyId) {
+                      const row = catalogRows.find((item) => item.professional_id === professionalId)
+                      if (row) setSelectedSpecialtyId(row.specialty_id)
+                    }
+                    setSelectedSlotStart('')
                   }}
                 >
                   <option value="">Selecionar profissional</option>
