@@ -28,6 +28,72 @@ describe('GestorTeamPage', () => {
     ))
   })
 
+  it('salva alterações de profissional sem conta sem tentar criar acesso', async () => {
+    const update = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
+    const create = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
+    const getContext = vi.fn(async () => ({ status: 'success' as const, data: {
+      team: [{ professional_id: 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0',
+        full_name: 'Profissional cadastrado', username: 'profissional.cadastrado',
+        recovery_email: 'profissional@exemplo.org', function_title: 'Atendimento',
+        status: 'ativo', is_professional: true,
+        specialties: [{ specialty_id: '9e3db4d4-175f-4d11-bcf7-908f599eb966', name: 'Área assistencial' }] }],
+      roles: [{ code: 'profissional', name: 'Profissional' }],
+      specialties: [{ specialty_id: '9e3db4d4-175f-4d11-bcf7-908f599eb966', name: 'Área assistencial' }],
+    } }))
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext, create, update, getCapabilities: success, setActive: success,
+      setPrimaryContext: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success,
+    }
+    render(<GestorTeamPage service={service} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional cadastrado/ }))
+    fireEvent.change(screen.getByLabelText('Função'), { target: { value: 'Atendimento atualizado' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+    await waitFor(() => expect(update).toHaveBeenCalledWith(
+      'c9496e0b-6735-499a-b756-ea2cdd8ba6c0',
+      expect.objectContaining({ functionTitle: 'Atendimento atualizado' }),
+    ))
+    expect(create).not.toHaveBeenCalled()
+    expect(await screen.findByRole('status')).toHaveTextContent('Cadastro do profissional atualizado.')
+  })
+
+  it('cadastra novo profissional com conta, papel e especialidade', async () => {
+    const create = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
+    const getContext = vi.fn(async () => ({ status: 'success' as const, data: {
+      team: [],
+      roles: [{ code: 'profissional', name: 'Profissional' }],
+      specialties: [{ specialty_id: '9e3db4d4-175f-4d11-bcf7-908f599eb966', name: 'Área assistencial' }],
+    } }))
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext, create, update: success, getCapabilities: success, setActive: success,
+      setPrimaryContext: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success,
+    }
+    render(<GestorTeamPage service={service} />)
+    await screen.findByRole('button', { name: 'Novo profissional' })
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Novo Profissional' } })
+    fireEvent.change(screen.getByLabelText('Função'), { target: { value: 'Atendimento' } })
+    fireEvent.change(screen.getByLabelText('Usuário'), { target: { value: 'novo.profissional' } })
+    fireEvent.change(screen.getByLabelText('E-mail de recuperação'), { target: { value: 'novo@exemplo.org' } })
+    fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/), { target: { value: 'Capo2026' } })
+    fireEvent.click(screen.getByLabelText('Profissional'))
+    fireEvent.click(screen.getByLabelText('Área assistencial'))
+    fireEvent.click(screen.getByRole('button', { name: 'Cadastrar profissional' }))
+    await waitFor(() => expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fullName: 'Novo Profissional',
+        username: 'novo.profissional',
+        recoveryEmail: 'novo@exemplo.org',
+        roleCodes: ['profissional'],
+        specialtyIds: ['9e3db4d4-175f-4d11-bcf7-908f599eb966'],
+      }),
+      'Capo2026', true, '',
+    ))
+    expect(await screen.findByRole('status')).toHaveTextContent('Profissional cadastrado com conta de acesso criada.')
+  })
+
   it('vincula uma conta ao profissional já cadastrado sem criar outro perfil', async () => {
     const create = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
     const getContext = vi.fn(async () => ({ status: 'success' as const, data: {
