@@ -456,3 +456,8 @@
     padding: 5px 0 0;
   }
 }
+
+.app-connection strong i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c6d3df}
+.app-connection[data-status='available'] strong{color:#287a49}.app-connection[data-status='available'] strong i{background:#0f9f59}
+.app-connection[data-status='unavailable'] strong{color:#9f3446}.app-connection[data-status='unavailable'] strong i{background:#d74b5f}
+.app-header-actions a.app-back-button{display:inline-flex;align-items:center;min-height:38px;padding:8px 11px;text-decoration:none}
