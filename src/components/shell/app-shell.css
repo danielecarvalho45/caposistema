@@ -1,5 +1,10 @@
+/* CAPO — BLOCO GLOBAL CONGELADO: CABEÇALHO / BOAS-VINDAS / RODAPÉ / SIDEBAR.
+   Fonte aprovada nos Index canônicos: Arial, Helvetica, sans-serif.
+   Não alterar em manutenções funcionais sem nova aprovação visual explícita. */
+
 .app-shell {
   display: grid;
+  font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
   grid-template-columns: 248px minmax(0, 1fr);
   background: transparent;
