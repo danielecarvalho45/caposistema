@@ -200,6 +200,7 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   const [specialtyForCapability, setSpecialtyForCapability] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   const team = records(context, ['team', 'team_members', 'professionals', 'members', 'items']).flatMap((item) => {
     const professionalId = text(item, 'professional_id')
@@ -275,35 +276,53 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
 
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (submitting) return
     if (!profile.fullName.trim()) { setFeedback('Informe o nome completo.'); return }
     if (!profile.functionTitle?.trim()) { setFeedback('Informe a função exercida.'); return }
     if (!profile.username?.trim()) { setFeedback('Informe o nome de usuário.'); return }
     if (!profile.recoveryEmail?.trim()) { setFeedback('Informe o e-mail.'); return }
-    if (!profile.roleCodes.length) { setFeedback('Selecione pelo menos um papel de acesso.'); return }
+    if ((!selected || selected.userAccountId) && !profile.roleCodes.length) { setFeedback('Selecione pelo menos um papel de acesso.'); return }
     if (profile.isProfessional && !profile.specialtyIds.length) { setFeedback('Selecione ou cadastre pelo menos uma especialidade.'); return }
-    if ((!selected || !selected.userAccountId) && (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword))) {
+    if (!selected && (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword))) {
       setFeedback('A senha provisória deve ter pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.')
       return
     }
-    if ((!selected && !initiallyActive || selected && !selected.userAccountId && !selected.active) && activeReason.trim().length < 5) {
+    if (!selected && !initiallyActive && activeReason.trim().length < 5) {
       setFeedback('Informe o motivo da inativação com pelo menos 5 caracteres.'); return
     }
-    const result = selected?.userAccountId
-      ? await service.update(selected.professionalId, profile)
-      : selected ? await service.create(profile, temporaryPassword, selected.active, activeReason, selected.professionalId)
+
+    setSubmitting(true)
+    try {
+      const result = selected
+        ? await service.update(selected.professionalId, profile)
         : await service.create(profile, temporaryPassword, initiallyActive, activeReason)
-    if (result.status !== 'success') { setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.'); return }
-    setFeedback(selected?.userAccountId ? 'Profissional atualizado.' : selected ? 'Conta vinculada ao profissional.' : 'Profissional cadastrado.')
-    setSelected(null)
-    setProfile(blankProfile())
-    setTemporaryPassword('')
-    setInitiallyActive(true)
-    setActiveReason('')
-    await reload()
+      if (result.status !== 'success') {
+        setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.')
+        return
+      }
+
+      if (selected) {
+        await reload()
+        setFeedback(selected.userAccountId
+          ? 'Profissional atualizado.'
+          : 'Cadastro do profissional atualizado. Para liberar o acesso, informe papéis e senha provisória e clique em Criar acesso.')
+        return
+      }
+
+      setSelected(null)
+      setProfile(blankProfile())
+      setTemporaryPassword('')
+      setInitiallyActive(true)
+      setActiveReason('')
+      await reload()
+      setFeedback('Profissional cadastrado com conta de acesso criada.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function createAccessForSelected() {
-    if (!selected || selected.userAccountId) return
+    if (!selected || selected.userAccountId || submitting) return
     if (!profile.fullName.trim()) { setFeedback('Informe o nome completo.'); return }
     if (!profile.functionTitle?.trim()) { setFeedback('Informe a função exercida.'); return }
     if (!profile.username?.trim()) { setFeedback('Informe o nome de usuário.'); return }
@@ -317,13 +336,23 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
     if (!selected.active && activeReason.trim().length < 5) {
       setFeedback('Informe o motivo da inativação com pelo menos 5 caracteres.'); return
     }
-    const result = await service.create(
-      profile, temporaryPassword, selected.active, activeReason, selected.professionalId,
-    )
-    if (result.status !== 'success') { setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.'); return }
-    setFeedback('Conta vinculada ao profissional sem duplicar o cadastro.')
-    setTemporaryPassword('')
-    await reload()
+    setSubmitting(true)
+    try {
+      const result = await service.create(
+        profile, temporaryPassword, selected.active, activeReason, selected.professionalId,
+      )
+      if (result.status !== 'success') {
+        setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.')
+        return
+      }
+      setSelected(null)
+      setProfile(blankProfile())
+      setTemporaryPassword('')
+      await reload()
+      setFeedback('Conta de acesso criada e vinculada ao profissional sem duplicar o cadastro.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function mutate(action: () => Promise<AsyncState<unknown>>, message: string) {
@@ -369,8 +398,8 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
         <fieldset><legend>Papéis</legend>{roles.map((role) => <label className="gestor-check" key={role.id}><input type="checkbox" checked={profile.roleCodes.includes(role.id)} onChange={(event) => toggleCodes('roleCodes', role.id, event.target.checked)} />{role.label}</label>)}</fieldset>
         <fieldset><legend>Especialidades</legend>{specialties.map((specialty) => <label className="gestor-check" key={specialty.id}><input type="checkbox" checked={profile.specialtyIds.includes(specialty.id)} onChange={(event) => toggleCodes('specialtyIds', specialty.id, event.target.checked)} />{specialty.label}</label>)}</fieldset>
         {service.createSpecialty && <div className="gestor-search-row"><label>Nova especialidade<input value={newSpecialty} onChange={(event) => setNewSpecialty(event.target.value)} placeholder="Digite uma especialidade ainda não cadastrada" /></label><button type="button" onClick={() => void addSpecialty()} disabled={!newSpecialty.trim()}>Cadastrar especialidade</button></div>}
-        <button className="gestor-primary-action" type="submit">{selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
-        {selected && !selected.userAccountId && <button type="button" onClick={() => void createAccessForSelected()}>Criar acesso</button>}
+        <button className="gestor-primary-action" type="submit" disabled={submitting}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
+        {selected && !selected.userAccountId && <button type="button" disabled={submitting} onClick={() => void createAccessForSelected()}>{submitting ? 'Processando…' : 'Criar acesso'}</button>}
       </form>
     </div>
     {selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3>{selected.userAccountId && <select aria-label="Contexto principal" defaultValue="" onChange={(event) => { if (event.target.value) void mutate(() => service.setPrimaryContext(selected.userAccountId!, event.target.value), 'Contexto principal atualizado.') }}><option value="">Definir contexto principal</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3>{capabilities.length === 0 ? <p>Nenhuma permissão específica encontrada para este profissional.</p> : <ul className="gestor-capability-list">{capabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); return code ? <li key={code}><label className="gestor-check"><input type="checkbox" checked={enabled(capability)} onChange={(event) => void mutate(() => service.setCapability(selected.professionalId, code, event.target.checked), 'Permissão atualizada.')} />{code}</label><button type="button" onClick={() => void mutate(() => service.removeCapability(selected.professionalId, code), 'Permissão individual removida.')}>Remover permissão individual</button></li> : null })}</ul>}<p>As permissões individuais complementam os papéis e as especialidades. Alterar uma permissão da especialidade afeta todos os profissionais vinculados a ela.</p><label>Alterar permissão da especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && capabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); return code ? <button key={code} type="button" onClick={() => void mutate(() => service.setSpecialtyCapability(specialtyForCapability, code, !enabled(capability)), 'Permissão da especialidade atualizada.')}>{enabled(capability) ? `Desativar ${code}` : `Ativar ${code}`}</button> : null })}</article></section>}
