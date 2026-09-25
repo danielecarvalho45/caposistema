@@ -54,6 +54,19 @@ function hasRole(accessContext: AccessContext, roles: readonly string[]) {
   return accessContext.roles.some((role) => roles.includes(role.code))
 }
 
+function normalizedSpecialty(value: string | null | undefined) {
+  return value?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() ?? ''
+}
+
+function hasSpecialty(accessContext: AccessContext, specialtyName: string) {
+  const expected = normalizedSpecialty(specialtyName)
+  const specialties = accessContext.specialties ?? []
+  return specialties.some((specialty) =>
+    normalizedSpecialty(specialty.specialty_name) === expected,
+  ) || normalizedSpecialty(accessContext.primary_specialty_name) === expected
+}
+
+
 function hasProfessionalAssistentialRole(accessContext: AccessContext) {
   return hasRole(accessContext, ['profissional'])
 }
@@ -128,7 +141,8 @@ export function canAccessAppRoute(
     case '/nutricao':
       return (
         accessContext.is_active && Boolean(accessContext.professional_id) &&
-        hasRole(accessContext, ['profissional'])
+        hasRole(accessContext, ['profissional']) &&
+        hasSpecialty(accessContext, 'Nutrição')
       )
     case '/relatorios':
       return (
@@ -142,10 +156,9 @@ export function canAccessAppRoute(
       )
     case '/assistencia-social':
     case '/familiar-cuidador':
-      return hasActiveProfessionalContext(accessContext)
     case '/luto':
-      return accessContext.is_active && Boolean(accessContext.professional_id) &&
-        hasRole(accessContext, ['profissional'])
+      return hasActiveProfessionalContext(accessContext) &&
+        hasSpecialty(accessContext, 'Assistência Social')
     case '/fila':
       return (
         hasRole(accessContext, [
