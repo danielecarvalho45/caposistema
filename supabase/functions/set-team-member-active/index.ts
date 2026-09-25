@@ -42,7 +42,13 @@ Deno.serve(async (request) => {
   if (rolesError || !roles?.length) return reply({ error: 'Somente o administrador pode alterar a equipe.' }, 403)
   const { data: target, error: targetError } = await admin.from('user_accounts')
     .select('auth_user_id,is_active').eq('professional_id', professionalId).maybeSingle()
-  if (targetError || !target?.auth_user_id) return reply({ error: 'Conta de acesso não vinculada ao profissional.' }, 404)
+  if (targetError) return reply({ error: 'Serviço indisponível.' }, 503)
+  if (!target?.auth_user_id) {
+    const { data, error } = await requester.rpc('set_unlinked_professional_active_for_interface', {
+      p_professional_id: professionalId, p_active: active, p_reason: reason.trim() || null,
+    })
+    return error ? reply({ error: error.message }, 400) : reply(data)
+  }
   if (!active && target.auth_user_id === identity.user.id) return reply({ error: 'O administrador não pode inativar a própria conta.' }, 400)
   if (target.is_active === active) return reply({ success: true, active })
   // A RPC é a autoridade para as regras de último administrador e auditoria;

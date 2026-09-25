@@ -4,6 +4,30 @@ import { GestorTeamPage, type TeamManagementService } from '../../src/features/g
 
 describe('GestorTeamPage', () => {
   afterEach(cleanup)
+  it('permite inativar o cadastro antigo mesmo sem conta de acesso', async () => {
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const setActive = vi.fn(success)
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success', data: { team: [{
+        professional_id: 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0',
+        full_name: 'Profissional cadastrado', username: 'profissional.cadastrado',
+        function_title: 'Atendimento', status: 'ativo',
+      }], roles: [], specialties: [] } }),
+      create: success, update: success, getCapabilities: success, setActive,
+      setPrimaryContext: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success,
+    }
+    render(<GestorTeamPage service={service} />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional cadastrado/ }))
+    fireEvent.change(screen.getByPlaceholderText('Informe pelo menos 5 caracteres para inativar'), {
+      target: { value: 'Fim do vínculo' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Inativar cadastro' }))
+    await waitFor(() => expect(setActive).toHaveBeenCalledWith(
+      'c9496e0b-6735-499a-b756-ea2cdd8ba6c0', false, 'Fim do vínculo',
+    ))
+  })
+
   it('vincula uma conta ao profissional já cadastrado sem criar outro perfil', async () => {
     const create = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
     const getContext = vi.fn(async () => ({ status: 'success' as const, data: {
