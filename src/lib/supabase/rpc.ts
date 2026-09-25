@@ -2047,6 +2047,67 @@ export function createRpcService(transport: RpcTransport) {
       }),
     getInitialActiveSearches: (status: string | null = null, limit = 50, offset = 0) =>
       execute({ transport, operation: 'get_initial_active_searches_for_interface', args: { p_flow_status: status, p_limit: limit, p_offset: offset }, parse: (value) => value }),
+    registerInitialActiveSearchAttempt: (input: {
+      patientId: string
+      contactMethod: string
+      contactResult: string
+      acceptedService: boolean | null
+      nextAction: string | null
+      notes: string | null
+      nextContactAt: string | null
+      closeFlow: boolean
+      closureReason: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'register_initial_active_search_attempt_for_interface',
+        args: {
+          p_patient_id: input.patientId,
+          p_contact_method: input.contactMethod,
+          p_contact_result: input.contactResult,
+          p_accepted_service: input.acceptedService,
+          p_next_action: input.nextAction,
+          p_notes: input.notes,
+          p_next_contact_at: input.nextContactAt,
+          p_close_flow: input.closeFlow,
+          p_closure_reason: input.closureReason,
+        },
+        parse: parseConfirmedJson,
+      }),
+    getActiveSearches: (status: string | null = null, limit = 50, offset = 0) =>
+      execute({ transport, operation: 'get_active_searches_for_interface', args: { p_flow_status: status, p_limit: limit, p_offset: offset }, parse: (value) => value }),
+    registerActiveSearchAttempt: (input: {
+      patientId: string
+      contactMethod: string
+      contactResult: string
+      nextAction: string | null
+      notes: string | null
+      nextContactAt: string | null
+      closeFlow: boolean
+      closureReason: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'register_active_search_attempt_for_interface',
+        args: {
+          p_patient_id: input.patientId,
+          p_contact_method: input.contactMethod,
+          p_contact_result: input.contactResult,
+          p_next_action: input.nextAction,
+          p_notes: input.notes,
+          p_next_contact_at: input.nextContactAt,
+          p_close_flow: input.closeFlow,
+          p_closure_reason: input.closureReason,
+        },
+        parse: parseConfirmedJson,
+      }),
+    closeActiveSearch: (patientId: string, closureReason: string) =>
+      execute({
+        transport,
+        operation: 'close_active_search_for_interface',
+        args: { p_patient_id: patientId, p_closure_reason: closureReason },
+        parse: parseConfirmedJson,
+      }),
     getCoordinatorTeamOverview: (query: string | null, specialtyId: string | null, status: string | null, startDate: string | null, endDate: string | null, limit = 50, offset = 0) =>
       execute({ transport, operation: 'get_coordinator_team_overview_for_interface', args: { p_query: query, p_specialty_id: specialtyId, p_status: status, p_start_date: startDate, p_end_date: endDate, p_limit: limit, p_offset: offset }, parse: (value) => value }),
     getCoordinatorAgendaOverview: (startDate: string, endDate: string, specialtyId: string | null = null, professionalId: string | null = null) =>
@@ -3041,6 +3102,12 @@ function createSupabaseTransport(
       case 'create_family_psychology_appointment_for_interface':
       case 'update_family_waiting_list_status_for_interface':
       case 'register_patient_death_for_interface':
+      case 'get_initial_active_searches_for_interface':
+      case 'register_initial_active_search_attempt_for_interface':
+      case 'close_initial_active_search_for_interface':
+      case 'get_active_searches_for_interface':
+      case 'register_active_search_attempt_for_interface':
+      case 'close_active_search_for_interface':
         return confirmedRpc(operation, args)
       case 'accept_legal_term':
         return client.rpc(operation, {
