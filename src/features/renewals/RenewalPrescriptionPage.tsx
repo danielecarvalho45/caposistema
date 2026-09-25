@@ -44,11 +44,14 @@ function dateTime(value: string) {
 }
 
 export function RenewalPrescriptionPage({ accessContext, service = getRpcService() }: Props) {
-  const authorized =
-    accessContext.primary_context.code === 'administrador' ||
-    accessContext.capabilities.includes('renovacao_receita')
   const roleCodes = useMemo(() => accessContext.roles.map((role) => role.code), [accessContext.roles])
-  const canCreate = roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
+  const isAdministrative = roleCodes.some((role) =>
+    ['administrador', 'administrativo_operacional'].includes(role),
+  )
+  const authorized =
+    isAdministrative ||
+    accessContext.capabilities.includes('renovacao_receita')
+  const canCreate = isAdministrative
   const canManageMedical = Boolean(accessContext.professional_id) && roleCodes.includes('profissional') && accessContext.capabilities.includes('renovacao_receita')
   const canManageAdmin = roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
   const [status, setStatus] = useState('')
