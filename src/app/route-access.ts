@@ -155,10 +155,13 @@ export function canAccessAppRoute(
           Boolean(accessContext.professional_id))
       )
     case '/assistencia-social':
-    case '/familiar-cuidador':
     case '/luto':
       return hasActiveProfessionalContext(accessContext) &&
         hasSpecialty(accessContext, 'Assistência Social')
+    case '/familiar-cuidador':
+      return hasRole(accessContext, ['administrador', 'administrativo_operacional']) ||
+        (hasActiveProfessionalContext(accessContext) &&
+          hasSpecialty(accessContext, 'Assistência Social'))
     case '/fila':
       return (
         hasRole(accessContext, [
