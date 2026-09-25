@@ -37,8 +37,6 @@ export function HomePage({
 }: HomePageProps) {
   const [birthdays, setBirthdays] =
     useState<AsyncState<BirthdayOverview>>(loadingState())
-  const displayName =
-    normalized(accessContext.full_name) ?? accessContext.username
   const contextName =
     normalized(accessContext.primary_context.name) ?? 'Contexto autorizado'
   const functionTitle = normalized(accessContext.function_title)
@@ -65,15 +63,6 @@ export function HomePage({
 
   return (
     <div className="home-page">
-      <section className="home-welcome" aria-labelledby="home-title">
-        <p className="eyebrow">Início</p>
-        <h1 id="home-title">Olá, {displayName}</h1>
-        <p>
-          Seu acesso ao CAPO foi validado. Escolha uma área autorizada para continuar.
-        </p>
-        <p className="home-slogan">Acolher, cuidar e caminhar juntos.</p>
-      </section>
-
       <ProfileDashboard accessContext={accessContext} />
 
       {canViewBirthdays && (
