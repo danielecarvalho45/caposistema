@@ -378,12 +378,11 @@ function NewPasswordStep() {
       <form onSubmit={submit} noValidate>
         <PasswordInput
           id="newPassword1"
-          label="Nova senha de 6 números"
+          label="Nova senha"
           value={password}
           onChange={setPassword}
           autoComplete="new-password"
-          placeholder="6 números"
-          numeric
+          placeholder="Mínimo 8 caracteres"
           autoFocus
         />
         <PasswordInput
@@ -393,10 +392,9 @@ function NewPasswordStep() {
           onChange={setConfirmation}
           autoComplete="new-password"
           placeholder="Digite novamente"
-          numeric
         />
         <p className="auth-subtitle">
-          A senha deve conter exatamente 6 números e não pode ser 123456.
+          Use pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.
         </p>
         <Feedback feedback={feedback} />
         <button
@@ -477,7 +475,7 @@ function FirstAccessStep() {
     <section className="auth-step" aria-labelledby="auth-first-access-title">
       <h1 id="auth-first-access-title">Alterar senha do primeiro acesso</h1>
       <p className="auth-subtitle">
-        Confirme a senha temporária e escolha sua senha pessoal de 6 números.
+        Confirme a senha temporária e escolha uma nova senha conforme a política de segurança.
       </p>
       <form onSubmit={submit} noValidate>
         <PasswordInput
@@ -487,17 +485,15 @@ function FirstAccessStep() {
           onChange={setCurrentPassword}
           autoComplete="current-password"
           placeholder="Senha temporária"
-          numeric
           autoFocus
         />
         <PasswordInput
           id="firstAccessPassword1"
-          label="Nova senha de 6 números"
+          label="Nova senha"
           value={newPassword}
           onChange={setNewPassword}
           autoComplete="new-password"
-          placeholder="6 números"
-          numeric
+          placeholder="Mínimo 8 caracteres"
         />
         <Feedback feedback={feedback} />
         <button
