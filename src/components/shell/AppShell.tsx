@@ -278,6 +278,18 @@ export function AppShell({
           tabIndex={-1}
           aria-label="Área de trabalho CAPO"
         >
+          {currentPath === '/' && (
+            <section className="app-welcome-approved" aria-label="Boas-vindas">
+              <div className="app-welcome-copy">
+                <h1>Olá, seja bem-vinda ao CAPO.</h1>
+                <p>Tenha um ótimo dia de trabalho.</p>
+              </div>
+              <div className="app-slogan-approved" aria-label="Mensagem institucional">
+                <span>Cuidar hoje.</span>
+                <strong>Mais possibilidades amanhã.</strong>
+              </div>
+            </section>
+          )}
           {children}
         </main>
         <footer className="app-footer">
