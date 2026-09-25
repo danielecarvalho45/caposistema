@@ -15,7 +15,7 @@ import {
   type MfaTotpEnrollment,
   type MfaTotpFactor,
 } from './auth-api'
-import { validateAccessContext, validateSixDigitPassword } from './access-rules'
+import { validateAccessContext, validateSupabasePassword } from './access-rules'
 
 export type AccessScreen =
   | 'loading'
@@ -638,7 +638,7 @@ export function AccessProvider({
         }
       },
       async updateRecoveredPassword(password, confirmation) {
-        const passwordError = validateSixDigitPassword(password)
+        const passwordError = validateSupabasePassword(password)
         const message =
           passwordError ??
           (password !== confirmation ? 'As senhas não coincidem.' : null)
@@ -722,17 +722,17 @@ export function AccessProvider({
         await loadAccessContext()
       },
       async completeFirstAccess(currentPassword, newPassword) {
-        if (!/^\d{6}$/.test(currentPassword)) {
+        if (!currentPassword) {
           setFlow((current) => ({
             ...current,
             feedback: {
               type: 'error',
-              message: 'Informe a senha atual de 6 números.',
+              message: 'Informe a senha atual.',
             },
           }))
           return
         }
-        const passwordError = validateSixDigitPassword(newPassword)
+        const passwordError = validateSupabasePassword(newPassword)
         const message =
           passwordError ??
           (newPassword === currentPassword
