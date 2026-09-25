@@ -242,22 +242,29 @@ export function AppShell({
             <p className="app-user-caption">{userCaption}</p>
           </div>
           <div className="app-header-actions">
-            {currentPath !== '/' && (
-              <button
-                className="app-back-button"
-                type="button"
-                onClick={() => window.location.assign('/')}
-              >
-                ← Voltar
-              </button>
-            )}
+            <button
+              className="app-back-button"
+              type="button"
+              onClick={() => window.location.assign('/')}
+            >
+              ← <span>Voltar</span>
+            </button>
             {canAccessNotifications && (
-              <Link className="app-back-button" to="/notificacoes">Avisos</Link>
+              <Link className="app-notice-button" to="/notificacoes">
+                <span aria-hidden="true">🔔</span>
+                <span>Avisos</span>
+                {unreadNotifications !== null && unreadNotifications > 0 && (
+                  <b className="app-notice-badge" aria-label={`${unreadNotifications} avisos não lidos`}>
+                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  </b>
+                )}
+              </Link>
             )}
-            <p className="app-context-label" title={contextName}>
-              {contextName}
-            </p>
-            <span className="app-session-indicator">Sessão individual</span>
+            <Link className="app-profile-button" to="/perfil" title={contextName}>
+              <span aria-hidden="true">👤</span>
+              <span>Perfil: {contextName}</span>
+              <span aria-hidden="true">⌄</span>
+            </Link>
           </div>
         </header>
 
@@ -278,18 +285,17 @@ export function AppShell({
           tabIndex={-1}
           aria-label="Área de trabalho CAPO"
         >
-          {currentPath === '/' && (
-            <section className="app-welcome-approved" aria-label="Boas-vindas">
-              <div className="app-welcome-copy">
-                <h1>Olá, seja bem-vinda ao CAPO.</h1>
-                <p>Tenha um ótimo dia de trabalho.</p>
-              </div>
-              <div className="app-slogan-approved" aria-label="Mensagem institucional">
-                <span>Cuidar hoje.</span>
-                <strong>Mais possibilidades amanhã.</strong>
-              </div>
-            </section>
-          )}
+          <section className="app-welcome-approved" aria-label="Boas-vindas">
+            <div className="app-welcome-copy">
+              <h1>Olá, seja bem-vinda ao CAPO.</h1>
+              <p>Tenha um ótimo dia de trabalho.</p>
+            </div>
+            <span className="app-welcome-heart" aria-hidden="true">♡</span>
+            <div className="app-slogan-approved" aria-label="Mensagem institucional">
+              <span>Cuidar hoje.</span>
+              <strong>Mais possibilidades amanhã.</strong>
+            </div>
+          </section>
           {children}
         </main>
         <footer className="app-footer">
