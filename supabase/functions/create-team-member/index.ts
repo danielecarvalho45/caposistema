@@ -41,9 +41,10 @@ Deno.serve(async (request) => {
   const inactiveReason = typeof payload.inactiveReason === 'string' ? payload.inactiveReason.trim() : ''
   const existingProfessionalId = typeof payload.existingProfessionalId === 'string' ? payload.existingProfessionalId : null
   const profile = payload.profile
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(password) || password === '123456' ||
+  const passwordIsValid = password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password)
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !passwordIsValid ||
       !profile || typeof profile !== 'object' || Array.isArray(profile)) {
-    return json({ error: 'Informe e-mail, senha provisória de 6 números diferente de 123456 e os dados do profissional.' }, 400)
+    return json({ error: 'Informe e-mail, senha com pelo menos 8 caracteres, uma letra maiúscula, uma minúscula e um número, e os dados do profissional.' }, 400)
   }
   if (existingProfessionalId && !/^[0-9a-f-]{36}$/i.test(existingProfessionalId)) {
     return json({ error: 'Profissional inválido.' }, 400)
