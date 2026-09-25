@@ -11,6 +11,49 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      get_initial_active_searches_for_interface: {
+        Args: { p_flow_status?: string | null; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      register_initial_active_search_attempt_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_contact_method: string
+          p_contact_result: string
+          p_accepted_service?: boolean | null
+          p_next_action?: string | null
+          p_notes?: string | null
+          p_next_contact_at?: string | null
+          p_close_flow?: boolean
+          p_closure_reason?: string | null
+        }
+        Returns: Json
+      }
+      close_initial_active_search_for_interface: {
+        Args: { p_patient_id: string; p_closure_reason: string }
+        Returns: Json
+      }
+      get_active_searches_for_interface: {
+        Args: { p_flow_status?: string | null; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      register_active_search_attempt_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_contact_method: string
+          p_contact_result: string
+          p_next_action?: string | null
+          p_notes?: string | null
+          p_next_contact_at?: string | null
+          p_close_flow?: boolean
+          p_closure_reason?: string | null
+        }
+        Returns: Json
+      }
+      close_active_search_for_interface: {
+        Args: { p_patient_id: string; p_closure_reason: string }
+        Returns: Json
+      }
       create_technical_support_request_for_interface: {
         Args: {
           p_subject: string
