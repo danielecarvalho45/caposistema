@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   PRIMARY_CONTEXT_BLOCK_MESSAGE,
   validateAccessContext,
-  validateSixDigitPassword,
+  validateSupabasePassword,
 } from '../../src/features/access/access-rules'
 
 const validContext = {
@@ -57,13 +57,13 @@ describe('regras de acesso', () => {
     )
   })
 
-  it('preserva a regra existente de senha numérica', () => {
-    expect(validateSixDigitPassword('654321')).toBeNull()
-    expect(validateSixDigitPassword('123456')).toBe(
-      'Escolha uma senha pessoal diferente de 123456.',
+  it('valida a política de senha exigida pelo Supabase', () => {
+    expect(validateSupabasePassword('Capo2026')).toBeNull()
+    expect(validateSupabasePassword('Capo26')).toBe(
+      'A senha deve ter pelo menos 8 caracteres.',
     )
-    expect(validateSixDigitPassword('abcdef')).toBe(
-      'A nova senha deve conter exatamente 6 números.',
+    expect(validateSupabasePassword('capo2026')).toBe(
+      'A senha deve conter pelo menos uma letra minúscula, uma letra maiúscula e um número.',
     )
   })
 })
