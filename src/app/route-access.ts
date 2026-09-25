@@ -22,6 +22,7 @@ export const KNOWN_APP_ROUTES = [
   '/tecnica',
   '/relatorios',
   '/encerramentos',
+  '/coordenacao',
   '/coordenacao/busca-ativa',
   '/gestor/social',
   '/gestor/luto',
@@ -119,7 +120,8 @@ export function canAccessAppRoute(
     case '/gestor/busca-ativa':
     case '/gestor/familiares':
     case '/gestor/operacional':
-      return accessContext.primary_context.code === 'administrador'
+      return hasRole(accessContext, ['administrador'])
+    case '/coordenacao':
     case '/coordenacao/timeline':
     case '/coordenacao/auditoria':
     case '/coordenacao/busca-ativa':
