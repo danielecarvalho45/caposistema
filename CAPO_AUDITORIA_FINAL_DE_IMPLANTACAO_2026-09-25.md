@@ -409,7 +409,27 @@ Ao término de toda a auditoria:
 
 ---
 
-# 14. METODOLOGIA DA AUDITORIA FINAL
+# 14. REGRA OPERACIONAL — EXECUÇÃO CENTRALIZADA NESTE CHAT
+
+A auditoria, as correções e a continuidade principal do projeto devem permanecer centralizadas neste único chat.
+
+Motivo:
+- evitar fragmentação de contexto;
+- evitar transferência incompleta entre Chat, Codex e Work;
+- impedir que uma execução iniciada em outro ambiente precise ser retomada parcialmente aqui;
+- reduzir risco de divergência, retrabalho e perda de decisões já consolidadas.
+
+Portanto:
+- NÃO encaminhar automaticamente partes da auditoria ou construção para Codex ou Work;
+- NÃO dividir a execução entre ambientes por conveniência;
+- manter neste chat a leitura, auditoria, correção, conferência, registro e congelamento;
+- utilizar outro ambiente somente por ordem expressa da responsável pelo projeto.
+
+A limitação de créditos do Codex reforça a necessidade de evitar dependência operacional desse ambiente durante esta auditoria.
+
+---
+
+# 15. METODOLOGIA DA AUDITORIA FINAL
 
 Para cada módulo/bloco:
 
@@ -450,7 +470,7 @@ Registrar:
 
 ---
 
-# 15. REGISTRO DE CORREÇÕES
+# 16. REGISTRO DE CORREÇÕES
 
 ## 7.1 Renovação de Receita
 **Data:** 25/09/2026  
@@ -520,13 +540,13 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
-# 16. PENDÊNCIAS DE DECISÃO
+# 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
 
 ---
 
-# 17. FLUXO DOCUMENTAL OFICIAL
+# 18. FLUXO DOCUMENTAL OFICIAL
 
 O projeto passa a trabalhar com três documentos normativos oficiais e fechados:
 
@@ -608,7 +628,7 @@ Após o encerramento da auditoria e dos testes correspondentes, este documento p
 
 ---
 
-# 18. REGRA DE CONTINUIDADE
+# 19. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
