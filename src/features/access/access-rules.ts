@@ -24,12 +24,12 @@ export function validateAccessContext(
   return null
 }
 
-export function validateSixDigitPassword(password: string): string | null {
-  if (!/^\d{6}$/.test(password)) {
-    return 'A nova senha deve conter exatamente 6 números.'
+export function validateSupabasePassword(password: string): string | null {
+  if (password.length < 8) {
+    return 'A senha deve ter pelo menos 8 caracteres.'
   }
-  if (password === '123456') {
-    return 'Escolha uma senha pessoal diferente de 123456.'
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+    return 'A senha deve conter pelo menos uma letra minúscula, uma letra maiúscula e um número.'
   }
   return null
 }
