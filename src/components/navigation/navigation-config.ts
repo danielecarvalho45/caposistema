@@ -14,6 +14,7 @@ export const navigationItems: readonly NavigationItem[] = [
   { path: '/agenda', label: 'Agenda Geral', icon: '🗓', group: 'principal' },
   { path: '/minha-agenda/solicitar-alteracao', label: 'Solicitar ao Coordenador', icon: '▤', group: 'principal' },
   { path: '/atuacao', label: 'Minha atuação', icon: '+', group: 'principal' },
+  { path: '/nutricao', label: 'Nutrição', icon: '◉', group: 'principal' },
   { path: '/assistencia-social', label: 'Assistência Social', icon: '♡', group: 'principal' },
   { path: '/familiar-cuidador', label: 'Familiar / Cuidador', icon: '♧', group: 'principal' },
   { path: '/fila', label: 'Fila', icon: '📋', group: 'principal' },
@@ -34,9 +35,20 @@ export function authorizedNavigationItems(
   accessContext: AccessContext,
   group?: NavigationItem['group'],
 ) {
+  const specialtyNames = (accessContext.specialties ?? [])
+    .map((specialty) => specialty.specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase())
+  if (accessContext.primary_specialty_name) {
+    specialtyNames.push(accessContext.primary_specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase())
+  }
+  const hasNutrition = specialtyNames.includes('nutricao')
+  const hasSocial = specialtyNames.includes('assistencia social')
+
   return navigationItems.filter(
-    (item) =>
-      (group === undefined || item.group === group) &&
-      canAccessAppRoute(accessContext, item.path),
+    (item) => {
+      if (group !== undefined && item.group !== group) return false
+      if (!canAccessAppRoute(accessContext, item.path)) return false
+      if (item.path === '/atuacao' && (hasNutrition || hasSocial)) return false
+      return true
+    },
   )
 }
