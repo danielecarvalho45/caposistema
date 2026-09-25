@@ -328,7 +328,58 @@ Nenhuma registrada até o momento.
 
 ---
 
-# 12. REGRA DE CONTINUIDADE
+# 12. FLUXO DOCUMENTAL OFICIAL
+
+O projeto passa a trabalhar com três documentos normativos oficiais e fechados:
+
+1. **Manual Estrutural**
+   - define o organograma funcional do CAPO;
+   - define fluxos, automações, responsabilidades e ligações entre interface e banco;
+   - é a referência principal quando o problema for estrutural ou de integração.
+
+2. **Manual Técnico**
+   - define implementação técnica, banco, contratos, integrações e infraestrutura;
+   - deve ser usado para validar a execução técnica da regra estrutural.
+
+3. **Manual da Interface**
+   - define layout, navegação, botões, cores, disposição e comportamento visual;
+   - deve ser usado para validar a apresentação e o comportamento da interface.
+
+## Regra de imutabilidade normativa
+
+As manutenções NÃO devem alterar as regras do sistema.
+
+Portanto:
+- não reescrever os manuais para justificar código;
+- não adaptar regra documental a uma implementação incorreta;
+- não criar nova regra funcional durante manutenção;
+- não alterar organograma, fluxo ou responsabilidade por conveniência técnica;
+- fazer o código, a interface e a integração obedecerem aos manuais vigentes.
+
+O banco de dados já contém a estrutura necessária para integralização do sistema. O foco principal desta auditoria é corrigir:
+- estrutura da aplicação;
+- ligações interface ↔ banco;
+- contratos e chamadas entre frontend e backend;
+- ligação de botões com funções reais do banco;
+- navegação;
+- layout;
+- divergências de interface;
+- falhas de integração.
+
+## Papel do Documento Mestre da Auditoria Final
+
+Este documento está em construção durante a auditoria atual.
+
+Por isso:
+- NÃO é fonte normativa para decidir como o sistema deve funcionar durante esta auditoria;
+- NÃO substitui Manual Estrutural, Manual Técnico ou Manual da Interface;
+- serve somente para registrar o que foi verificado, corrigido e pendenciado nesta auditoria.
+
+Após o encerramento da auditoria e dos testes correspondentes, este documento passará a ser a referência de continuidade para **futuras manutenções**, evitando retorno a auditorias antigas e repetição de correções já concluídas.
+
+---
+
+# 13. REGRA DE CONTINUIDADE
 
 Toda nova auditoria/correção da implantação deve:
 1. consultar primeiro este documento para saber o que já foi tratado;
