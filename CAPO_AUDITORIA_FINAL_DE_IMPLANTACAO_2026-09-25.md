@@ -356,6 +356,37 @@ Portanto:
 - não alterar organograma, fluxo ou responsabilidade por conveniência técnica;
 - fazer o código, a interface e a integração obedecerem aos manuais vigentes.
 
+### Exceção controlada — somente layout
+
+A única exceção possível é de apresentação visual.
+
+Se, durante a auditoria, surgir uma situação em que uma disposição diferente possa ser necessária ou mais adequada por motivo de:
+- usabilidade;
+- responsividade;
+- organização visual;
+- melhor distribuição de elementos;
+
+a mudança NÃO deve ser aplicada automaticamente.
+
+Procedimento:
+1. registrar como 🟡 PENDÊNCIA DE LAYOUT;
+2. explicar a divergência;
+3. justificar por que outra disposição poderia ser melhor;
+4. preservar a funcionalidade existente;
+5. aguardar decisão da responsável.
+
+Essa exceção NÃO se aplica à estrutura funcional.
+
+Na parte estrutural:
+- o que cada botão executa;
+- qual função/RPC ele chama;
+- qual fluxo deve acontecer;
+- quais dados devem ser lidos ou gravados;
+- quais automações devem ocorrer;
+- como interface e banco se comunicam;
+
+deve obedecer integralmente ao Manual Estrutural vigente.
+
 O banco de dados já contém a estrutura necessária para integralização do sistema. O foco principal desta auditoria é corrigir:
 - estrutura da aplicação;
 - ligações interface ↔ banco;
