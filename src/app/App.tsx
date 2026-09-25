@@ -114,6 +114,7 @@ export function App() {
   const isTechnicalRoute = location.pathname === '/tecnica'
   const isReportsRoute = location.pathname === '/relatorios'
   const isClosuresRoute = location.pathname === '/encerramentos'
+  const isCoordinationRoute = location.pathname === '/coordenacao'
   const gestorView = {
     '/gestor/equipe': 'equipe',
     '/gestor/administracao': 'administracao',
@@ -167,6 +168,8 @@ export function App() {
   ) : isGestor && location.pathname === '/' ? (
     <GestorDashboard />
   ) : primaryContextCode === 'coordenador' && location.pathname === '/' ? (
+    <CoordinationDashboard accessContext={accessContext} />
+  ) : isCoordinationRoute ? (
     <CoordinationDashboard accessContext={accessContext} />
   ) : isNutritionHome ? (
     <NutritionPage accessContext={accessContext} />
