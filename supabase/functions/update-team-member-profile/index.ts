@@ -48,7 +48,14 @@ Deno.serve(async (request) => {
   if (!isAdministrator) return reply({ error: 'Somente o administrador pode editar a equipe.' }, 403)
   const { data: target, error: accountError } = await admin.from('user_accounts')
     .select('auth_user_id').eq('professional_id', professionalId).maybeSingle()
-  if (accountError || !target?.auth_user_id) return reply({ error: 'Conta não vinculada ao profissional.' }, 404)
+  if (accountError) return reply({ error: 'Serviço indisponível.' }, 503)
+  if (!target?.auth_user_id) {
+    const { data, error } = await requester.rpc('update_unlinked_professional_profile_for_interface', {
+      p_professional_id: professionalId,
+      p_profile: fields,
+    })
+    return error ? reply({ error: error.message }, 400) : reply(data)
+  }
   const { data: identity, error: getError } = await admin.auth.admin.getUserById(target.auth_user_id)
   if (getError || !identity.user?.email) return reply({ error: 'Identidade de acesso indisponível.' }, 503)
   const previousEmail = identity.user.email.toLowerCase()
