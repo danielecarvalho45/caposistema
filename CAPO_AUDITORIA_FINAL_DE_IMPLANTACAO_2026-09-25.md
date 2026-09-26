@@ -1345,3 +1345,49 @@ Qualquer necessidade futura que possa afetar item pertencente à Tarefa 1 deve:
 3. somente reabrir a Tarefa 1 mediante autorização explícita da responsável.
 
 Pendências já registradas que pertençam a etapas posteriores permanecem separadas e não alteram o estado de conclusão da Tarefa 1.
+
+
+# 21. TAREFA 2 — FILA OPERACIONAL DO ADMINISTRATIVO (26/09/2026)
+
+## 21.1 Início controlado e confronto físico
+
+**Estado:** **INICIADA — IMPLEMENTAÇÃO TÉCNICA CONFORME — AGUARDANDO HOMOLOGAÇÃO OPERACIONAL FINAL.**
+
+A Tarefa 2 foi retomada somente após o fechamento da Tarefa 1, sem reabrir qualquer bloco congelado.
+
+### Base documental e física confrontada
+
+- `TAREFA_02_FILA_OPERACIONAL_ADMINISTRATIVO.md`;
+- `CAPO_Manual_Tecnico_Integrado_Banco_Interface_ATUALIZADO_2026-09-15_v5(1).md`;
+- código atual do `main`;
+- contrato físico atual da RPC `public.get_pending_items_for_interface(p_limit integer, p_offset integer)` no projeto oficial Supabase `fftebavlhbfcrvrtnrld`.
+
+### Resultado da verificação
+
+1. A RPC `get_pending_items_for_interface` existe fisicamente com o contrato tipado esperado.
+2. A função exige sessão autenticada, aceite do termo vigente e conta ativa.
+3. O papel `administrativo_operacional` é reconhecido fisicamente pela função.
+4. O ramo `waiting_list` contém autorização explícita para AO (`v_is_ao`), preservando a correção registrada para o Bloco 1D-B.
+5. A função permanece `SECURITY DEFINER`, com `search_path` explícito, execução permitida a `authenticated` e negada a `anon`; a autorização funcional é repetida no corpo.
+6. O frontend atual possui contrato tipado, transporte RPC e renderização da fila real.
+7. A rota `/fila` mantém o fluxo do Administrativo Operacional e também contempla evoluções posteriores já presentes no projeto para Administração, Coordenação e profissionais em contexto autorizado. Essa ampliação não invalida o fluxo AO da Tarefa 2 e não foi revertida.
+8. Não foi encontrada divergência objetiva que exija correção nesta etapa.
+9. Nenhum dado fictício foi criado, nenhuma migration foi aplicada e nenhum bloco congelado foi reaberto.
+
+### Teste operacional
+
+Por decisão da responsável, a homologação física/operacional será realizada ao final dos trabalhos. Portanto, não criar pendência artificial apenas pela ausência desse teste neste momento.
+
+Roteiro final já previsto:
+- conta AO real/autorizada;
+- retorno com itens;
+- retorno sem itens;
+- negação para contexto não autorizado quando aplicável;
+- sessão inválida/expirada;
+- conferência do ambiente publicado `https://caposistema.pages.dev/`.
+
+### Estado desta etapa
+
+**IMPLEMENTAÇÃO TÉCNICA CONFORME — AGUARDANDO TESTE OPERACIONAL FINAL.**
+
+Não reabrir Tarefa 1 nem blocos congelados por causa da Tarefa 2 sem autorização expressa da responsável.
