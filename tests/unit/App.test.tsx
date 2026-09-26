@@ -148,6 +148,8 @@ function renderShell(
           getAdministrativeRequestEvents: vi.fn(),
           createAdministrativeRequest: vi.fn(),
           updateAdministrativeRequest: vi.fn(),
+          getFamilyPsychologyRequestContext: vi.fn(),
+          addFamilyToWaitingList: vi.fn(),
         }}
       />
     ) : activePath === '/encaminhamentos' ? (
@@ -227,6 +229,7 @@ function renderShell(
             data: [],
           }),
           loadSupportHistory: vi.fn(),
+          processSupportRequest: vi.fn().mockResolvedValue({ status: 'empty' }),
         }}
       />
     ) : activePath === '/em-construcao' ||
@@ -277,7 +280,7 @@ describe('App', () => {
     renderShell()
 
     expect(
-      screen.getByRole('heading', { name: 'Olá, Nome real' }),
+      screen.getByRole('heading', { name: 'Olá, seja bem-vinda ao CAPO.' }),
     ).toBeVisible()
     expect(document.getElementById('profile-panel-title')).toHaveTextContent(
       'Painel Operacional',
@@ -789,9 +792,11 @@ describe('App', () => {
         },
       }),
       updateAdministrativeRequest: vi.fn(),
+      getFamilyPsychologyRequestContext: vi.fn().mockResolvedValue({ status: 'empty' }),
+      addFamilyToWaitingList: vi.fn().mockResolvedValue({ status: 'empty' }),
     }
 
-    render(<RequestsPage accessContext={{ ...context, professional_id: 'professional-id', roles: [{ code: 'profissional', name: 'Profissional' }], primary_context: { ...context.primary_context, code: 'profissional', name: 'Profissional' } }} service={service} />)
+    render(<MemoryRouter><RequestsPage accessContext={{ ...context, professional_id: 'professional-id', roles: [{ code: 'profissional', name: 'Profissional' }], primary_context: { ...context.primary_context, code: 'profissional', name: 'Profissional' } }} service={service} /></MemoryRouter>)
 
     await user.type(await screen.findByLabelText('Assunto'), 'Transporte')
     await user.type(
@@ -813,24 +818,28 @@ describe('App', () => {
 
   it('bloqueia solicitações fora de um contexto autorizado', () => {
     render(
-      <RequestsPage
-        accessContext={{
-          ...context,
-          professional_id: null,
-          roles: [{ code: 'profissional', name: 'Profissional' }],
-          primary_context: {
-            ...context.primary_context,
-            code: 'profissional',
-            name: 'Profissional',
-          },
-        }}
-        service={{
-          getAdministrativeRequests: vi.fn(),
-          getAdministrativeRequestEvents: vi.fn(),
-          createAdministrativeRequest: vi.fn(),
-          updateAdministrativeRequest: vi.fn(),
-        }}
-      />,
+      <MemoryRouter>
+        <RequestsPage
+          accessContext={{
+            ...context,
+            professional_id: null,
+            roles: [{ code: 'profissional', name: 'Profissional' }],
+            primary_context: {
+              ...context.primary_context,
+              code: 'profissional',
+              name: 'Profissional',
+            },
+          }}
+          service={{
+            getAdministrativeRequests: vi.fn(),
+            getAdministrativeRequestEvents: vi.fn(),
+            createAdministrativeRequest: vi.fn(),
+            updateAdministrativeRequest: vi.fn(),
+            getFamilyPsychologyRequestContext: vi.fn(),
+            addFamilyToWaitingList: vi.fn(),
+          }}
+        />
+      </MemoryRouter>,
     )
 
     expect(
