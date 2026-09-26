@@ -581,7 +581,7 @@ describe('camada de RPCs CAPO', () => {
       medicalTransport,
     ).managePrescriptionRenewalMedical(
       'renewal-id',
-      'complete',
+      'renewed',
       'Receita renovada e disponível para orientação administrativa.',
     )
 
@@ -589,7 +589,7 @@ describe('camada de RPCs CAPO', () => {
       'manage_prescription_renewal_medical_for_interface',
       {
         p_request_id: 'renewal-id',
-        p_action: 'complete',
+        p_action: 'renewed',
         p_operational_return: 'Receita renovada e disponível para orientação administrativa.',
       },
     )
