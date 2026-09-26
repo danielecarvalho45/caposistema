@@ -89,7 +89,7 @@ describe('SocialPage', () => {
       getFamilyBereavement: vi.fn().mockResolvedValue({ status: 'success', data: { items: [{ bereavement_cycle_id: 'cycle-id', family_member_id: 'family-id', family_name: 'Familiar vinculado', status: 'active' }], total_count: 1 } }),
       getMyAssistentialSpecialties: vi.fn().mockResolvedValue({ status: 'success', data: [{ specialty_id: 'specialty-id', specialty_name: 'Assistência Social', is_current_context: true }] }),
       startFamilyBereavement: vi.fn(),
-      closeFamilyBereavement: vi.fn(),
+      closeFamilyBereavement: vi.fn(), searchBereavementFamilyMembers: vi.fn().mockResolvedValue({ status: 'empty' }),
     }
     render(<MemoryRouter><BereavementPage accessContext={accessContext} service={service} /></MemoryRouter>)
     expect(await screen.findByText('Familiar vinculado')).toBeVisible()
@@ -101,7 +101,7 @@ describe('SocialPage', () => {
     const service = {
       getFamilyBereavement: vi.fn().mockResolvedValue({ status: 'success', data: { items: [], total_count: 0 } }),
       getMyAssistentialSpecialties: vi.fn().mockResolvedValue({ status: 'success', data: [{ specialty_id: 'other-id', specialty_name: 'Psicologia', is_current_context: true }] }),
-      startFamilyBereavement: vi.fn(), closeFamilyBereavement: vi.fn(),
+      startFamilyBereavement: vi.fn(), closeFamilyBereavement: vi.fn(), searchBereavementFamilyMembers: vi.fn().mockResolvedValue({ status: 'empty' }),
     }
     render(<MemoryRouter><BereavementPage accessContext={accessContext} service={service} /></MemoryRouter>)
     expect(await screen.findByText('Nenhum acompanhamento de luto real encontrado.')).toBeVisible()
