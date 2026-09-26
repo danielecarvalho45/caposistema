@@ -19,6 +19,8 @@ const accessContext: AccessContext = {
   must_change_password: false,
   roles: [{ code: 'profissional', name: 'Profissional' }],
   capabilities: [],
+  specialties: [{ specialty_id: 'social-id', specialty_name: 'Assistência Social', is_primary: true }],
+  primary_specialty_name: 'Assistência Social',
   primary_context: {
     role_id: 'role-id',
     code: 'profissional',
