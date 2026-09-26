@@ -1217,7 +1217,7 @@ Toda nova auditoria/correção da implantação deve:
 - **Arquivos/RPCs:** `src/features/gestor/GestorTeamPage.tsx`, `src/features/gestor/GestorShell.tsx`; RPCs existentes `get_capability_catalog_for_interface`, `set_professional_capability_for_interface`, `set_specialty_capability_status_for_interface`; nenhuma RPC alterada.
 - **Teste final:** cadastro, inativação/reativação e capacidades com conta real do Gestor; homologação do acesso aos módulos administrativos autorizados, preservando o Bloco 10 congelado.
 
-**Estado da TAREFA 1:** **CONCLUÍDA NO FECHAMENTO ESTRUTURAL POR PERFIL**: os seis perfis foram percorridos e os pontos estruturais identificados estão classificados. A conclusão não equivale a homologação operacional: testes com contas reais permanecem indicados acima para a etapa final apropriada. Build de produção executado com sucesso; verificação tipada e lint apontaram falhas em testes e módulos fora das correções desta tarefa, registradas como pendências técnicas, sem iniciar Tarefa 2 ou Tarefa 3. Nenhuma conta real ou dado clínico fictício foi criado. **Retificação em 26/09/2026:** a suposta pendência de parâmetros gerais foi retirada por falta de regressão física comprovada; Bloco 10 permanece verde/congelado.
+**Estado da TAREFA 1:** **CONCLUÍDA E CONGELADA — FECHAMENTO ESTRUTURAL POR PERFIL**: os seis perfis foram percorridos e os pontos estruturais identificados estão classificados. A conclusão não equivale a homologação operacional: testes com contas reais permanecem indicados acima para a etapa final apropriada. Build de produção executado com sucesso; verificação tipada e lint apontaram falhas em testes e módulos fora das correções desta tarefa, registradas como pendências técnicas, sem iniciar Tarefa 2 ou Tarefa 3. Nenhuma conta real ou dado clínico fictício foi criado. **Retificação em 26/09/2026:** a suposta pendência de parâmetros gerais foi retirada por falta de regressão física comprovada; Bloco 10 permanece verde/congelado.
 
 ## 20.7 Testes internos direcionados — execução posterior autorizada em 26/09/2026
 
@@ -1331,3 +1331,17 @@ Esta URL passa a ser a referência oficial do sistema CAPO publicado para verifi
 - antes de declarar uma correção como validada no ar, confirmar que o deploy correspondente está disponível neste endereço.
 
 **Estado:** **CONCLUÍDO E CONGELADO.** Referência de ambiente registrada para impedir uso futuro de URL obsoleta.
+
+
+### Decisão final da responsável — Tarefa 1 (26/09/2026)
+
+**TAREFA 1: CONCLUÍDA E CONGELADA.**
+
+A Tarefa 1 não deve ser reaberta por teste antigo, dúvida genérica, reinterpretação documental ou achado fora de seu escopo.
+
+Qualquer necessidade futura que possa afetar item pertencente à Tarefa 1 deve:
+1. ser confrontada primeiro com o Manual Estrutural vigente e com a evidência física atual;
+2. ser apresentada à responsável;
+3. somente reabrir a Tarefa 1 mediante autorização explícita da responsável.
+
+Pendências já registradas que pertençam a etapas posteriores permanecem separadas e não alteram o estado de conclusão da Tarefa 1.
