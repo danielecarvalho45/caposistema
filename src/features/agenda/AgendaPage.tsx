@@ -365,6 +365,7 @@ export function AgendaPage({
     professionalName: string
     slotStart: string
   }> | null>(null)
+  const [prefillWaitingListId, setPrefillWaitingListId] = useState('')
   const [attendanceNotes, setAttendanceNotes] = useState('')
   const [attendanceReason, setAttendanceReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
@@ -486,6 +487,29 @@ export function AgendaPage({
       operationalOrigin: appointmentOrigin.trim() || null,
     })
     if (result.status === 'success') {
+      const resultRecord =
+        result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+          ? result.data as Record<string, unknown>
+          : null
+      const appointmentId =
+        typeof resultRecord?.appointment_id === 'string'
+          ? resultRecord.appointment_id
+          : ''
+      if (prefillWaitingListId && appointmentId) {
+        const completed = await getRpcService().completeWaitingListScheduling(
+          prefillWaitingListId,
+          appointmentId,
+        )
+        if (completed.status === 'error') {
+          setAppointmentFeedback(
+            'Agendamento criado, mas a baixa da fila não foi confirmada: ' +
+              completed.error.message,
+          )
+          await load()
+          return
+        }
+        setPrefillWaitingListId('')
+      }
       const professionalName =
         professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
         'Profissional CAPO'
@@ -604,11 +628,14 @@ export function AgendaPage({
     const patientId = typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
     const patientName = typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
     const specialtyId = typeof stateValue?.specialtyId === 'string' ? stateValue.specialtyId : ''
+    const waitingListId =
+      typeof stateValue?.waitingListId === 'string' ? stateValue.waitingListId : ''
     if (!patientId || !specialtyId) return
     setShowNewAppointment(true)
     setAppointmentPatientId(patientId)
     setAppointmentPatientQuery(patientName)
     setSelectedSpecialtyId(specialtyId)
+    setPrefillWaitingListId(waitingListId)
     setAppointmentOrigin(
       stateValue?.origin === 'waiting_list' ? 'fila_de_espera' : '',
     )
