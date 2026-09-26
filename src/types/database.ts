@@ -31,6 +31,10 @@ export type Database = {
         Args: { p_referral_id: string }
         Returns: Json
       }
+      get_nutrition_documents_for_management: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
       get_transport_context_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
