@@ -77,14 +77,13 @@ export function QueuePage({
   const [familyFeedback, setFamilyFeedback] = useState<string | null>(null)
   const [familyBusy, setFamilyBusy] = useState(false)
 
-  const isAdministrativeOperational = accessContext.roles.some(
-    (role) =>
-      role.code === 'administrador' ||
-      role.code === 'administrativo_operacional' ||
-      role.code === 'coordenador',
-  )
+  const isAdministrativeOperational = [
+    'administrador',
+    'administrativo_operacional',
+    'coordenador',
+  ].includes(accessContext.primary_context.code ?? '')
   const isProfessionalQueue =
-    !isAdministrativeOperational &&
+    accessContext.primary_context.code === 'profissional' &&
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some((role) => role.code === 'profissional')
   const canScheduleFamily = accessContext.roles.some(
