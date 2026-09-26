@@ -674,6 +674,43 @@ A auditoria física confirmou que o fluxo de Transporte possui contratos separad
 
 ---
 
+## 7.12 Odontologia — autoria profissional, PDF e etapa administrativa
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A documentação estrutural confirma que o PDF odontológico é de autoria exclusiva do profissional competente; Gestão e Administrativo apenas recebem, visualizam, baixam e conduzem a providência administrativa. O fluxo aprovado também determina que o PDF acompanhe o encaminhamento recebido pelo Administrativo.
+
+### Divergências encontradas
+- a interface integrada não possuía integração com register_dentistry_pdf_for_interface nem get_dentistry_referral_document_for_interface;
+- o Administrativo podia tentar iniciar/concluir um encaminhamento ainda sem PDF vinculado;
+- a ação de concluir enviava resposta nula, embora o backend exija informação administrativa com pelo menos cinco caracteres para concluir/cancelar;
+- os botões administrativos usavam selectedReferral global e podiam atuar sobre registro diferente da linha clicada;
+- o emissor profissional tinha emissão do encaminhamento, mas não a etapa de geração/vinculação do PDF oficial existente no Index aprovado.
+
+### Correções realizadas
+- geração do PDF oficial restaurada exclusivamente para o profissional emissor autorizado;
+- PDF usa os dados reais do encaminhamento: paciente, CMS, Nº CAPO, destino, conteúdo operacional, Médico Clínico, CRM e data de emissão;
+- arquivo é gravado no bucket privado capo-documents em dentistry/<referral_id>/...pdf e registrado pela RPC oficial;
+- visualização e download utilizam URL temporária do armazenamento privado;
+- Administrativo/Gestão não recebem ação de geração do PDF;
+- retorno administrativo obrigatório passou a ser coletado e enviado nas ações complete/cancel;
+- ações administrativas passaram a receber explicitamente a linha/referral clicada;
+- backend agora bloqueia start/complete enquanto o PDF oficial não estiver vinculado.
+
+### Caminhos alterados
+- Supabase: manage_dentistry_referral_for_interface
+- supabase/migrations/20260926220000_require_dentistry_pdf_before_admin_processing.sql
+- src/lib/supabase/rpc.ts
+- src/types/database.ts
+- src/features/dentistry/DentistryPage.tsx
+
+### Conferência interna
+A função física do Supabase foi relida após a migração e o bloqueio de PDF foi confirmado. Também foi confirmada no código atual a presença das integrações de registro/consulta do documento, geração profissional e informação administrativa obrigatória. A suíte automatizada ainda não foi executada após esta correção.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO/BANCO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
