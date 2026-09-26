@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState } from '../../lib/supabase/rpc'
 import { canAccessAppRoute } from '../../app/route-access'
 import type { AccessContext } from '../../types/access'
+import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 
 type Row = Record<string, unknown>
 function rows(value: unknown): readonly Row[] {
@@ -79,6 +80,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     <section className="home-profile"><h2>Acessos rápidos</h2><div className="home-profile-grid">{links.filter(([path]) => canAccessAppRoute(accessContext, path)).map(([path, title]) => <Link className="home-profile-card" to={path} key={path}><strong>{title}</strong></Link>)}</div></section>
     <Panel title="Equipe e Profissionais" state={team} fields={['full_name', 'function_title', 'work_status', 'activity_count']} />
     <Panel title="Agendas da Equipe" state={agenda} fields={['agenda_date', 'professional_name', 'specialty_name', 'occupied_count', 'configured_capacity', 'agenda_status']} />
+    <BirthdayPanel title="Aniversariantes de hoje" />
     <section className="home-profile"><h2>Registrar decisão da equipe</h2>
       <label>Profissional<select value={professionalId} onChange={(event) => setProfessionalId(event.target.value)}><option value="">Selecione da equipe</option>{team.status === 'success' && rows(team.data).map((row) => <option key={value(row, 'professional_id')} value={value(row, 'professional_id')}>{value(row, 'full_name')}</option>)}</select></label>
       <label>Tipo<select value={actionType} onChange={(event) => setActionType(event.target.value)}>{['mudanca_horario', 'ferias', 'afastamento', 'mudanca_turno', 'carga', 'bloqueio', 'substituicao', 'outra'].map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}</select></label>
