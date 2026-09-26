@@ -1422,3 +1422,40 @@ A homologação real 1E permanece reservada para o encerramento geral dos trabal
 **Importante:** essa homologação final não impede considerar a implementação técnica da Tarefa 2 encerrada. O **Bloco 1**, porém, só poderá ser declarado congelado depois da 1E, conforme o Manual v5.
 
 **Estado:** **TAREFA 2 — CONCLUÍDA TECNICAMENTE.**
+
+
+# 22. TAREFA 3 — FALTOSOS (26/09/2026)
+
+## 22.1 Confronto físico e fechamento técnico automático
+
+**Resultado:** **TAREFA 3 CONCLUÍDA NA IMPLEMENTAÇÃO TÉCNICA — AGUARDANDO SOMENTE HOMOLOGAÇÃO OPERACIONAL FINAL.**
+
+### Base confrontada
+
+- `TAREFA_03_AUDITORIA_FALTOSOS.md`;
+- Manual Técnico Integrado v5 vigente no `main`;
+- código físico atual da SPA;
+- contratos, triggers e estado físico atual do Supabase oficial `fftebavlhbfcrvrtnrld`.
+
+### Conclusões
+
+- A separação funcional entre **Faltosos** e **Busca Ativa** permanece implementada.
+- O histórico de contatos usa `patient_no_show_contacts`, sem reaproveitar `patient_active_searches`.
+- As RPCs canônicas de Faltosos continuam implantadas.
+- A autorização da rota e da operação permanece restrita aos papéis administrativos definidos no fluxo; profissional não recebe operação de acompanhamento.
+- A falta registrada na agenda continua alimentando automaticamente o acompanhamento.
+- Notificação, auditoria e timeline do fluxo permanecem implantadas.
+- A remarcação de origem `faltoso` possui fechamento/vínculo automático do acompanhamento.
+- A SPA consome os contratos reais e não fabrica dados ou sucesso local.
+- O banco possui atualmente 0 acompanhamentos de faltosos, 0 contatos de faltosos e 0 registros legados `no_show` em Busca Ativa; por isso não foi criado dado artificial para teste.
+- Nenhuma divergência objetiva exigiu correção nesta retomada.
+- Nenhuma nova pendência foi criada.
+- Nenhum bloco congelado foi reaberto.
+
+### Validação restante
+
+A homologação operacional real será executada ao final dos trabalhos, conforme decisão da responsável, cobrindo o ciclo completo falta → acompanhamento → contato → remarcação/encerramento → histórico/notificação/auditoria, além de autorização e sessão.
+
+A ausência atual de dados reais não é tratada como nova pendência técnica.
+
+**Estado:** **TAREFA 3 — CONCLUÍDA TECNICAMENTE.**
