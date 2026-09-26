@@ -66,6 +66,7 @@ function renewalService(result: object) {
     managePrescriptionRenewalAdmin: vi
       .fn()
       .mockResolvedValue({ status: 'empty' }),
+    getPrescriptionRenewalOperationalContext: vi.fn().mockResolvedValue({ status: 'empty' }),
     searchReferralPatients: vi.fn().mockResolvedValue({ status: 'empty' }),
   }
 }
