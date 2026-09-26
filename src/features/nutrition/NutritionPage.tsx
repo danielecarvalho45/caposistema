@@ -4,6 +4,7 @@ import type { AccessContext } from '../../types/access'
 import { AgendaPage } from '../agenda/AgendaPage'
 import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 
 type NutritionRecord = Readonly<Record<string, unknown>>
 type NutritionDeliveryAction = 'start' | 'complete' | 'cancel' | 'reopen'
@@ -475,7 +476,15 @@ export function NutritionPage({
             {birthdays.status === 'loading' && <p>Carregando aniversariantes autorizados…</p>}
             {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
             {birthdays.status === 'empty' && <p>Nenhum aniversariante retornado.</p>}
-            {birthdays.status === 'success' && <><h3>Pacientes vinculados</h3>{birthdays.data.patients.length ? <ul>{birthdays.data.patients.map((patient) => <li key={patient.patient_id}>{patient.full_name}</li>)}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<h3>Equipe CAPO</h3>{birthdays.data.team.length ? <ul>{birthdays.data.team.map((member) => <li key={member.professional_id}>{member.full_name}</li>)}</ul> : <p>Nenhum integrante da equipe faz aniversário hoje.</p>}</>}
+            {birthdays.status === 'success' && <><h3>Pacientes vinculados</h3>{birthdays.data.patients.length ? <ul>{birthdays.data.patients.map((patient) => (
+  <li key={patient.patient_id}>
+    {patient.full_name}
+    <PatientWhatsAppButton
+      patientId={patient.patient_id}
+      message={`Olá, ${patient.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`}
+    />
+  </li>
+))}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<h3>Equipe CAPO</h3>{birthdays.data.team.length ? <ul>{birthdays.data.team.map((member) => <li key={member.professional_id}>{member.full_name}</li>)}</ul> : <p>Nenhum integrante da equipe faz aniversário hoje.</p>}</>}
           </section>
 
           <nav className="home-profile" aria-label="Acessos rápidos da Nutrição">
