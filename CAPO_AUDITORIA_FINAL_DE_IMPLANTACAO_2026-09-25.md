@@ -2063,3 +2063,36 @@ A continuidade da Tarefa 3 passa agora ao **Work**, conforme divisão definida p
 - consolidação de eventuais pendências reais;
 - fechamento final do Documento Mestre;
 - PDF final de continuidade.
+
+
+## 28. TAREFA 3 WORK — auditoria visual publicada, registro incremental (26/09/2026)
+
+**Ambiente observado:** somente `https://caposistema.pages.dev/`, no navegador real, com a conta autorizada já existente da titular (contexto principal Administrador). Este registro não refaz a parte técnica concluída da seção 27 e não conclui a Tarefa 3. Navegação feita pelos links internos do próprio sistema. Recarregar ou abrir uma rota diretamente voltou ao login, coerente com a sessão sem persistência ao fechar/recarregar; por isso, navegações diretas após a autenticação **não** foram consideradas teste das páginas internas. Nenhum dado, conta ou ação operacional foi criado ou alterado.
+
+### 28.1 Telas percorridas sob o contexto Gestor/Titular
+
+| Perfil / telas publicadas | Evidência física e resultado limitado |
+|---|---|
+| Entrada/login | **PASS visual desktop e autenticação da conta real:** logo, título, campos Usuário/Senha e botão Entrar exibidos; a conta existente abriu o painel do Gestor. |
+| Painel Geral (`/`) | **PASS de abertura e estrutura desktop:** boas-vindas, sidebar, cabeçalho, rodapé, Conexão — Disponível, acessos rápidos, agenda do dia, aniversariantes e cartões gerenciais renderizados. |
+| Pacientes (`/pacientes`) | **PASS de abertura e campos observáveis:** abas Cadastrar/Consultar; consulta com campo “Nome, Nº CAPO ou CMS”; estados vazios sem pacientes inventados. Cadastro não foi enviado. |
+| Agenda Geral (`/agenda`), Filas (`/fila`), Solicitações (`/solicitacoes`), Transporte (`/transporte`) | **PASS de abertura/navegação desktop:** cada rota exibiu o título próprio, sem alerta visível, imagem quebrada ou overflow horizontal de página no viewport inspecionado. Criação, envio e atualização não foram homologados. |
+| Fluxos (`/gestor/fluxos`), Faltosos (`/faltosos`), Busca Ativa (`/gestor/busca-ativa`), Encerramentos (`/encerramentos`), Familiares (`/gestor/familiares`), Encaminhamentos (`/encaminhamentos`) | **PASS de abertura/navegação desktop** no contexto real da titular, sem alerta visível, imagem quebrada ou overflow horizontal. Ações transacionais não testadas. |
+| Odontologia (`/odontologia`), Renovação de Receita (`/receita`), Pendências (`/gestor/operacional`), Equipe (`/gestor/equipe`) | **PASS de abertura/navegação desktop**; formulários de equipe e especialidades reais apareceram. Cadastro e decisões clínicas não foram executados. |
+| Linha do Tempo (`/gestor/timeline`), Auditoria (`/gestor/auditoria`), Notificações (`/notificacoes`), Suporte (`/gestor/suporte`), Usuários e Contas (`/gestor/administracao`), Área Técnica (`/tecnica`) | **PASS de abertura/navegação desktop**, sem alerta visível, imagem quebrada ou overflow horizontal na tela. Dados operacionais e permissões específicas ainda não homologados. |
+| Relatórios (`/relatorios`) | **PASS de abertura e carregamento do dashboard oficial; FAIL visual de rótulos**, descrito na pendência P2. |
+| Botão Voltar | **PASS observado:** a partir de Área Técnica retornou ao Painel Geral `/`. |
+
+**Limite dos PASS acima:** provam abertura, renderização básica e navegação no contexto autorizado da titular no viewport desktop observado; não equivalem à aprovação visual profunda de cada subestado, responsividade móvel, acessibilidade integral, persistência de ações, autorização de outros perfis nem correção dos números institucionais.
+
+### 28.2 Divergências físicas reproduzíveis — correção aguardando autorização de bloco concluído
+
+- **P1 — Perfil da titular:** no painel publicado, clicar “Perfil: Administrador” navega para `/perfil` e exibe “Em construção / Rota em desenvolvimento / Este módulo ainda não está disponível nesta etapa”. O código atual do `GestorShell.tsx` aponta para `/perfil`; a rota não está em `KNOWN_APP_ROUTES` e cai em `ConstructionPage`. **FAIL de navegação no controle de Perfil**, sem presumir como esse destino deve ser implementado. A regra específica para a função de Perfil não está comprovada no Documento Mestre: pedir decisão da responsável antes de definir destino/ação ou alterar o perfil congelado.
+- **P2 — Relatórios Gerenciais:** em `/relatorios`, o dashboard oficial carregou seções visíveis com rótulos como `closures`, `patients`, `no show followup` e métricas como `total period` em inglês. O `DashboardPanel` em `src/features/reports/ReportsPage.tsx` renderiza as chaves das RPCs diretamente em `h4`/`dt`. **FAIL de apresentação/rótulos no ambiente em português**, sem indício de que as contagens venham de listas parciais. Este módulo já consta como conforme na seção 25; preservar o bloco concluído e obter autorização expressa antes de corrigir o componente.
+
+### 28.3 Homologações e encerramento ainda pendentes
+
+- **HOMOLOGAÇÃO REAL PENDENTE:** contas autorizadas dos perfis Coordenador, Auxiliar Administrativo/Operacional, Médico Clínico Geral, Profissional Assistencial Padrão, Nutrição, Assistência Social e TI/Manutenção não estavam autenticadas nesta sessão. Não inferir inexistência global dessas contas; falta acesso individual autorizado a cada contexto para confirmar permissões, telas específicas e funções acumuladas. A conta da titular não substitui esse teste.
+- **HOMOLOGAÇÃO OPERACIONAL PENDENTE:** não houve criação/edição de dados clínicos ou administrativos; resultados de agenda, fila, faltosos, solicitações, relatórios, encaminhamentos, encerramentos, notificações e TI foram observados somente por leitura. É preciso ocorrência e autorização real para verificar transições, atualização depois da ação e acesso negado por papel.
+- **VISUAL MOBILE PENDENTE:** o navegador desta execução ofereceu somente viewport desktop para inspeção física; não declarar PASS/FAIL do sistema publicado em celular. A frente responsiva já congelada na seção anterior não foi reaberta.
+- **CONGELAMENTO FINAL E PDF:** não executados porque a auditoria visual por perfil e a homologação real não terminaram e P1/P2 aguardam decisão. Nenhum bloco congelado foi modificado. Nenhum arquivo de produção, teste ou Supabase foi alterado nesta execução.
