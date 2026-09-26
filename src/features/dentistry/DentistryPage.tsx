@@ -7,6 +7,7 @@ import {
   type DentistryReferral,
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
+import { getSupabaseClient } from '../../lib/supabase/client'
 import './dentistry-page.css'
 
 const DENTISTRY_CAPABILITY = 'emitir_encaminhamento_odontologico_externo'
@@ -31,7 +32,14 @@ export type DentistryService = Pick<
   | 'createDentistryReferralForInterface'
   | 'getDentistryReferralsForInterface'
   | 'manageDentistryReferralForInterface'
->
+> &
+  Partial<
+    Pick<
+      ReturnType<typeof getRpcService>,
+      | 'registerDentistryPdfForInterface'
+      | 'getDentistryReferralDocumentForInterface'
+    >
+  >
 
 type Props = Readonly<{
   accessContext: AccessContext
@@ -40,6 +48,129 @@ type Props = Readonly<{
 
 function errorMessage<T>(state: AsyncState<T>) {
   return state.status === 'error' ? state.error.message : null
+}
+
+type DentistryDocumentState = Readonly<Record<string, unknown>>
+
+function documentField(record: DentistryDocumentState | null, key: string) {
+  const value = record?.[key]
+  return typeof value === 'string' && value.trim() ? value : null
+}
+
+function dentistryPdfSafe(value: string) {
+  return Array.from(value).map((character) => {
+    const code = character.charCodeAt(0)
+    if (code <= 255) return character
+    return ({ '–': '-', '—': '-', '“': '"', '”': '"', '‘': "'", '’': "'", '•': '*' } as Record<string, string>)[character] ?? '?'
+  }).join('')
+}
+
+function dentistryPdfEscape(value: string) {
+  return dentistryPdfSafe(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+}
+
+function dentistryPdfBytes(value: string) {
+  return Uint8Array.from(Array.from(value).map((character) => character.charCodeAt(0) & 255))
+}
+
+function dentistryPdfWrap(value: string, width = 88) {
+  const output: string[] = []
+  for (const paragraph of value.replace(/\r/g, '').split('\n')) {
+    const words = paragraph.trim().split(/\s+/).filter(Boolean)
+    if (!words.length) {
+      output.push('')
+      continue
+    }
+    let line = ''
+    for (const word of words) {
+      const next = line ? `${line} ${word}` : word
+      if (next.length > width) {
+        if (line) output.push(line)
+        line = word
+      } else {
+        line = next
+      }
+    }
+    if (line) output.push(line)
+  }
+  return output
+}
+
+function buildDentistryOfficialPdf(
+  referral: DentistryReferral,
+  professionalRegistration: string | null,
+) {
+  const generatedAt = new Date()
+  const lines = [
+    'CAPO - Centro de Acolhimento ao Paciente Oncológico',
+    'Pouso Alegre - MG',
+    '',
+    'ENCAMINHAMENTO ODONTOLÓGICO',
+    '',
+    `Paciente: ${referral.patient_name}`,
+    `CMS: ${referral.cms ?? '—'}`,
+    `Nº CAPO: ${referral.patient_number ?? '—'}`,
+    `Destino: ${referral.destination ?? 'Odontologia - Secretaria Municipal de Saúde'}`,
+    '',
+    'Encaminhamento / informações relevantes:',
+    referral.operational_reason,
+    '',
+    `Médico Clínico: ${referral.requesting_professional_name}`,
+    `CRM: ${professionalRegistration ?? 'Não informado'}`,
+    `Data da emissão: ${generatedAt.toLocaleString('pt-BR')}`,
+  ].flatMap((line) => dentistryPdfWrap(line)).slice(0, 48)
+
+  const stream =
+    'BT\n/F1 10 Tf\n50 792 Td\n14 TL\n' +
+    lines.map((line) => `(${dentistryPdfEscape(line)}) Tj\nT*\n`).join('') +
+    'ET\n'
+  const streamBytes = dentistryPdfBytes(stream)
+  const objects = [
+    dentistryPdfBytes('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
+    dentistryPdfBytes('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'),
+    dentistryPdfBytes('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n'),
+    dentistryPdfBytes('4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n'),
+  ]
+  const contentObject = [
+    dentistryPdfBytes(`5 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`),
+    streamBytes,
+    dentistryPdfBytes('endstream\nendobj\n'),
+  ]
+  const contentLength = contentObject.reduce((total, part) => total + part.length, 0)
+  const content = new Uint8Array(contentLength)
+  let contentOffset = 0
+  for (const part of contentObject) {
+    content.set(part, contentOffset)
+    contentOffset += part.length
+  }
+  objects.push(content)
+
+  const header = dentistryPdfBytes('%PDF-1.4\n')
+  const parts: Uint8Array[] = [header]
+  const offsets = [0]
+  let offset = header.length
+  for (const object of objects) {
+    offsets.push(offset)
+    parts.push(object)
+    offset += object.length
+  }
+  const xrefOffset = offset
+  const xref =
+    'xref\n0 6\n0000000000 65535 f \n' +
+    offsets.slice(1).map((value) => `${String(value).padStart(10, '0')} 00000 n \n`).join('') +
+    `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
+  parts.push(dentistryPdfBytes(xref))
+  const total = parts.reduce((sum, part) => sum + part.length, 0)
+  const bytes = new Uint8Array(total)
+  let at = 0
+  for (const part of parts) {
+    bytes.set(part, at)
+    at += part.length
+  }
+  return new Blob([bytes], { type: 'application/pdf' })
 }
 
 export function DentistryPage({ accessContext, service }: Props) {
@@ -62,6 +193,9 @@ export function DentistryPage({ accessContext, service }: Props) {
   const [selectedReferralId, setSelectedReferralId] = useState<string | null>(
     null,
   )
+  const [administrativeResponse, setAdministrativeResponse] = useState('')
+  const [documentState, setDocumentState] = useState<DentistryDocumentState | null>(null)
+  const [documentLoading, setDocumentLoading] = useState(false)
 
   const selectedPatient = patients.find(
     (patient) => patient.patient_id === selectedPatientId,
@@ -149,6 +283,26 @@ export function DentistryPage({ accessContext, service }: Props) {
     }
   }, [backendAccess, rpcService, statusFilter])
 
+  useEffect(() => {
+    if (!selectedReferral || !rpcService.getDentistryReferralDocumentForInterface) {
+      setDocumentState(null)
+      return
+    }
+    let active = true
+    setDocumentLoading(true)
+    void rpcService
+      .getDentistryReferralDocumentForInterface(selectedReferral.referral_id)
+      .then((result) => {
+        if (!active) return
+        setDocumentState(result.status === 'success' ? result.data as DentistryDocumentState : null)
+        if (result.status === 'error') setFeedback(result.error.message)
+        setDocumentLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [rpcService, selectedReferral])
+
   async function searchPatients() {
     if (patientQuery.trim().length < 2) {
       setFeedback('Informe ao menos 2 caracteres para buscar o paciente.')
@@ -192,7 +346,7 @@ export function DentistryPage({ accessContext, service }: Props) {
       setPatientQuery('')
       setReason('')
       setFeedback(
-        'Encaminhamento odontológico enviado para a etapa administrativa.',
+        'Encaminhamento odontológico registrado. Gere o PDF oficial antes da etapa administrativa.',
       )
       await loadReferrals()
     } else {
@@ -203,25 +357,106 @@ export function DentistryPage({ accessContext, service }: Props) {
     setSubmitting(false)
   }
 
-  async function act(action: string) {
-    if (!selectedReferral || busy) return
-    const payload =
-      action === 'cancel' ? 'Cancelamento solicitado pela administração.' : null
+  async function act(referral: DentistryReferral, action: string) {
+    if (busy) return
+    const response = administrativeResponse.trim()
+    if ((action === 'complete' || action === 'cancel') && response.length < 5) {
+      setFeedback('Conclusão ou cancelamento exige informação administrativa com pelo menos 5 caracteres.')
+      return
+    }
     setBusy(true)
     setFeedback(null)
     const result = await rpcService.manageDentistryReferralForInterface(
-      selectedReferral.referral_id,
+      referral.referral_id,
       action,
-      payload,
+      response || null,
     )
     if (result.status === 'success') {
       setFeedback('Atualização do encaminhamento registrada com sucesso.')
+      setAdministrativeResponse('')
       await loadReferrals()
     } else {
       setFeedback(
         errorMessage(result) ?? 'Não foi possível atualizar o encaminhamento.',
       )
     }
+    setBusy(false)
+  }
+
+  async function generatePdf(referral: DentistryReferral) {
+    if (
+      !backendAccess?.can_issue ||
+      backendAccess.professional_id !== referral.requesting_professional_id ||
+      !rpcService.registerDentistryPdfForInterface ||
+      busy
+    ) return
+
+    const blob = buildDentistryOfficialPdf(
+      referral,
+      accessContext.professional_registration,
+    )
+    const storagePath =
+      `dentistry/${referral.referral_id}/encaminhamento-odontologico-${Date.now()}.pdf`
+
+    setBusy(true)
+    setFeedback('Gerando e registrando PDF odontológico oficial…')
+    const { error: uploadError } = await getSupabaseClient()
+      .storage.from('capo-documents')
+      .upload(storagePath, blob, { contentType: 'application/pdf', upsert: false })
+
+    if (uploadError) {
+      setFeedback(uploadError.message)
+      setBusy(false)
+      return
+    }
+
+    const result = await rpcService.registerDentistryPdfForInterface(
+      referral.referral_id,
+      storagePath,
+    )
+    if (result.status === 'success') {
+      setFeedback('PDF odontológico oficial gerado e vinculado ao encaminhamento.')
+      setDocumentState(result.data as DentistryDocumentState)
+      await loadReferrals()
+    } else {
+      setFeedback(
+        result.status === 'error'
+          ? result.error.message
+          : 'O banco não confirmou o documento odontológico.',
+      )
+    }
+    setBusy(false)
+  }
+
+  async function openPdf(referral: DentistryReferral, download: boolean) {
+    if (!rpcService.getDentistryReferralDocumentForInterface || busy) return
+    setBusy(true)
+    const result =
+      await rpcService.getDentistryReferralDocumentForInterface(referral.referral_id)
+    if (result.status !== 'success') {
+      setFeedback(
+        result.status === 'error'
+          ? result.error.message
+          : 'Documento odontológico não localizado.',
+      )
+      setBusy(false)
+      return
+    }
+    const path = documentField(result.data as DentistryDocumentState, 'document_pdf_path')
+    if (!path) {
+      setFeedback('O PDF odontológico oficial ainda não foi gerado.')
+      setBusy(false)
+      return
+    }
+    const { data, error } = await getSupabaseClient()
+      .storage.from('capo-documents')
+      .createSignedUrl(path, 120, download ? { download: true } : undefined)
+    if (error || !data?.signedUrl) {
+      setFeedback(error?.message ?? 'Não foi possível abrir o PDF odontológico.')
+      setBusy(false)
+      return
+    }
+    globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
     setBusy(false)
   }
 
@@ -357,6 +592,20 @@ export function DentistryPage({ accessContext, service }: Props) {
             <option value="cancelled">Cancelado</option>
           </select>
 
+          {canManage && (
+            <label htmlFor="dentistry-admin-response">
+              Providência / informação administrativa
+              <textarea
+                id="dentistry-admin-response"
+                value={administrativeResponse}
+                onChange={(event) => setAdministrativeResponse(event.target.value)}
+                rows={3}
+                maxLength={1000}
+                placeholder="Obrigatória para concluir ou cancelar."
+              />
+            </label>
+          )}
+
           {visibleReferrals.length === 0 ? (
             <p>Nenhum encaminhamento odontológico externo foi encontrado.</p>
           ) : (
@@ -387,14 +636,14 @@ export function DentistryPage({ accessContext, service }: Props) {
                   {canManage && (
                     <div className="dentistry-actions">
                       {referral.status === 'pending_approval' && (
-                        <button type="button" onClick={() => void act('start')}>
+                        <button type="button" onClick={() => void act(referral, 'start')}>
                           {actionLabels.start}
                         </button>
                       )}
                       {referral.status === 'in_progress' && (
                         <button
                           type="button"
-                          onClick={() => void act('complete')}
+                          onClick={() => void act(referral, 'complete')}
                         >
                           {actionLabels.complete}
                         </button>
@@ -404,7 +653,7 @@ export function DentistryPage({ accessContext, service }: Props) {
                       ) && (
                         <button
                           type="button"
-                          onClick={() => void act('cancel')}
+                          onClick={() => void act(referral, 'cancel')}
                         >
                           {actionLabels.cancel}
                         </button>
@@ -419,6 +668,27 @@ export function DentistryPage({ accessContext, service }: Props) {
 
         {selectedReferral && (
           <div className="dentistry-panel dentistry-history-panel">
+            <h3>Documento odontológico oficial</h3>
+            {documentLoading ? (
+              <p>Consultando documento…</p>
+            ) : documentState?.pdf_available === true ? (
+              <div className="dentistry-actions">
+                <button type="button" disabled={busy} onClick={() => void openPdf(selectedReferral, false)}>
+                  Visualizar PDF
+                </button>
+                <button type="button" disabled={busy} onClick={() => void openPdf(selectedReferral, true)}>
+                  Baixar PDF
+                </button>
+              </div>
+            ) : backendAccess?.can_issue &&
+              backendAccess.professional_id === selectedReferral.requesting_professional_id &&
+              ['pending_approval', 'in_progress'].includes(selectedReferral.status) ? (
+              <button type="button" disabled={busy} onClick={() => void generatePdf(selectedReferral)}>
+                Gerar PDF oficial
+              </button>
+            ) : (
+              <p>PDF oficial ainda não disponível para este encaminhamento.</p>
+            )}
             <h3>Histórico do encaminhamento</h3>
             {selectedReferral.history.length === 0 ? (
               <p>Nenhum evento registrado.</p>
