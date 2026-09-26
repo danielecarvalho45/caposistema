@@ -2580,6 +2580,13 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_referral_id: referralId },
         parse: parseConfirmedJson,
       }),
+    getPatientContact: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'get_patient_contact_for_interface',
+        args: { p_patient_id: patientId },
+        parse: parseConfirmedJson,
+      }),
     getBirthdays: () =>
       execute({
         transport,
@@ -3617,6 +3624,7 @@ function createSupabaseTransport(
             typeof args?.p_reason === 'string' ? args.p_reason : null,
         })
       case 'complete_first_access':
+      case 'get_patient_contact_for_interface':
       case 'get_birthdays_for_interface':
       case 'get_interprofessional_referral_specialties_for_interface':
       case 'get_my_assistential_specialties_for_interface':
