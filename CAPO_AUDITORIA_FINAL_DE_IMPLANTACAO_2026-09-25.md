@@ -1279,3 +1279,40 @@ Toda nova auditoria/correção da implantação deve:
 - **Arquivos:** `src/features/reports/AdministrativeOperationalReport.tsx`; `tests/unit/administrative-operational-report.test.tsx` (verificação dos destinos reais e ausência da contagem limitada); este Documento Mestre.
 - **Verificações:** 13/13 testes direcionados passaram (`administrative-operational-report` e `route-access`); `npm run build` passou. `npm run typecheck` falhou em **23 erros preexistentes de contratos de testes** em sete arquivos de `tests/unit/` (App, gestor-dashboard, gestor-team-page, renewal-prescription-page, requests-page, social-page e supabase-rpc), sem erros apontados nos arquivos alterados. Typecheck global permanece pendente; não se declarou aprovação geral.
 - **Etapa dos oito testes:** os dois documentos funcionais exigidos não existem na árvore física do `main` consultado nesta execução. Por ordem expressa de usar **somente documentação vigente existente no próprio GitHub** e **não usar Library**, a classificação definitiva é bloqueada; nenhum dos oito foi reclassificado, alterado ou reexecutado nesta etapa. Necessário incorporar os documentos vigentes ao repositório antes de avançar às etapas 2–4, sem presumir seu teor nem substituir por documentação histórica.
+
+
+## 20.10 Disposição mobile da interface — correção controlada de 26/09/2026
+
+**Escopo:** somente disposição visual/responsiva em tela de celular. Nenhuma regra funcional, permissão, contrato Supabase, RPC, RLS, migration ou dado operacional foi alterado.
+
+**Fonte de interface aplicada:** regra vigente do próprio Documento Mestre para problemas de Interface — preservar layout, disposição, navegação e padrões já aprovados — confrontada com a implementação física atual e com as referências responsivas aprovadas ainda presentes no GitHub. O arquivo independente denominado “Manual da Interface” não foi localizado fisicamente na árvore `main`; por isso nenhuma regra ausente foi inventada e nenhuma documentação histórica foi usada para criar comportamento novo.
+
+### Divergências físicas encontradas e corrigidas
+
+1. **Home em tela estreita**
+   - A grade principal de acessos podia permanecer em múltiplas colunas no celular.
+   - Correção: em viewport até 620 px, acessos rápidos, aniversariantes, resumo operacional e resumo de acesso passam a uma única coluna.
+   - Os cards da Home foram compactados para evitar blocos excessivamente altos.
+   - Nos contextos profissionais cuja primeira entrada é a agenda, a ordem física da Home permanece com a entrada de agenda acima do bloco de aniversariantes.
+
+2. **Shell específico do Gestor/Titular**
+   - O shell geral já utilizava sidebar recolhível no celular, mas o shell do Gestor convertia a sidebar em bloco estático, ocupando a tela antes do conteúdo.
+   - Correção: o Gestor passa a usar menu lateral em gaveta, com botão de abrir, botão de fechar e backdrop.
+   - Em até 600 px, atalhos, campos de busca, formulários e layouts de equipe do Gestor passam para uma coluna quando necessário.
+   - Cabeçalho, boas-vindas, identidade CAPO, navegação, conteúdo funcional e permissões foram preservados.
+
+### Arquivos alterados
+
+- `src/features/home/home-page.css`
+- `src/features/gestor/GestorShell.tsx`
+- `src/features/gestor/gestor.css`
+
+### Estado
+
+**CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE OPERACIONAL FINAL EM CELULAR.**
+
+Por determinação da responsável, a homologação visual/operacional em aparelho ou viewport móvel será executada ao final dos trabalhos, e não nesta etapa.
+
+### Regra anti-loop desta frente
+
+Não reabrir a disposição mobile já corrigida por dúvida genérica ou por teste antigo. Reabrir somente se o teste operacional final apresentar divergência física reproduzível, ou se uma documentação normativa vigente do GitHub trouxer regra diferente e comprovável.
