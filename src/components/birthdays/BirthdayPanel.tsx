@@ -10,7 +10,14 @@ type BirthdayPanelProps = Readonly<{
   title?: string
   className?: string
   loadBirthdays?: () => Promise<AsyncState<BirthdayOverview>>
+  allowPatientWhatsApp?: boolean
 }>
+
+async function greetBirthday(fullName: string) {
+  const message = `Olá, ${fullName}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`
+  await globalThis.navigator?.clipboard?.writeText(message)
+  globalThis.open('https://web.whatsapp.com/', '_blank', 'noopener,noreferrer')
+}
 
 function formatReferenceDate(value: string) {
   const [year, month, day] = value.split('-').map(Number)
@@ -22,6 +29,7 @@ export function BirthdayPanel({
   title = 'Aniversariantes de hoje',
   className = '',
   loadBirthdays = getRpcService().getBirthdays,
+  allowPatientWhatsApp = false,
 }: BirthdayPanelProps) {
   const [state, setState] =
     useState<AsyncState<BirthdayOverview>>(loadingState())
@@ -76,6 +84,14 @@ export function BirthdayPanel({
                         {patient.patient_number && patient.cms ? ' · ' : ''}
                         {patient.cms ? `CMS ${patient.cms}` : ''}
                       </small>
+                    )}
+                    {allowPatientWhatsApp && patient.phone && (
+                      <button
+                        type="button"
+                        onClick={() => void greetBirthday(patient.full_name)}
+                      >
+                        WhatsApp
+                      </button>
                     )}
                   </li>
                 ))}
