@@ -15,7 +15,7 @@ describe('GestorTeamPage', () => {
       }], roles: [], specialties: [] } }),
       create: success, update: success, getCapabilities: success, setActive,
       setPrimaryContext: success, setCapability: success, removeCapability: success,
-      setSpecialtyCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
     }
     render(<GestorTeamPage service={service} />)
     fireEvent.click(await screen.findByRole('button', { name: /Profissional cadastrado/ }))
@@ -44,7 +44,7 @@ describe('GestorTeamPage', () => {
     const service: TeamManagementService = {
       getContext, create, update, getCapabilities: success, setActive: success,
       setPrimaryContext: success, setCapability: success, removeCapability: success,
-      setSpecialtyCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
     }
     render(<GestorTeamPage service={service} />)
     fireEvent.click(await screen.findByRole('button', { name: /Profissional cadastrado/ }))
@@ -69,7 +69,7 @@ describe('GestorTeamPage', () => {
     const service: TeamManagementService = {
       getContext, create, update: success, getCapabilities: success, setActive: success,
       setPrimaryContext: success, setCapability: success, removeCapability: success,
-      setSpecialtyCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
     }
     render(<GestorTeamPage service={service} />)
     await screen.findByRole('button', { name: 'Novo profissional' })
@@ -108,7 +108,7 @@ describe('GestorTeamPage', () => {
     const service: TeamManagementService = {
       getContext, create, getCapabilities: success, update: success, setActive: success,
       setPrimaryContext: success, setCapability: success, removeCapability: success,
-      setSpecialtyCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
     }
     render(<GestorTeamPage service={service} />)
     fireEvent.click(await screen.findByRole('button', { name: /Profissional cadastrado/ }))
@@ -147,7 +147,7 @@ describe('GestorTeamPage', () => {
     const service: TeamManagementService = {
       getContext, setActive, getCapabilities: success,
       create: success, update: success, setPrimaryContext: success,
-      setCapability: success, removeCapability: success, setSpecialtyCapability: success,
+      setCapability: success, removeCapability: success, setSpecialtyCapability: success, getCapabilityCatalog: success,
     }
     render(<GestorTeamPage service={service} />)
     expect(await screen.findByText('Profissional cadastrado')).toBeInTheDocument()
