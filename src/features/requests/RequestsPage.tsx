@@ -93,7 +93,7 @@ export function RequestsPage({
     [accessContext.roles],
   )
   const canManage = roleCodes.some((role) =>
-    ['administrador', 'administrativo_operacional'].includes(role),
+    ['administrador', 'administrativo_operacional', 'coordenador'].includes(role),
   )
   const canCreateProfessionalRequest =
     Boolean(accessContext.professional_id) && roleCodes.includes('profissional')
