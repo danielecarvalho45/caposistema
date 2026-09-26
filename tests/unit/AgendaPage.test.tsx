@@ -1,5 +1,7 @@
+import type { ReactElement } from 'react'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AgendaPage } from '../../src/features/agenda/AgendaPage'
 import type { AccessContext } from '../../src/types/access'
@@ -63,6 +65,10 @@ const appointment: AgendaAppointment = {
   reschedule_origin: null,
 }
 
+function renderWithRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
 describe('AgendaPage', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -78,7 +84,7 @@ describe('AgendaPage', () => {
     const loadAgenda = vi.fn().mockResolvedValue({ status: 'empty' })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 
-    render(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} />)
+    renderWithRouter(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} />)
 
     await waitFor(() =>
       expect(loadAgenda).toHaveBeenLastCalledWith(
@@ -112,7 +118,7 @@ describe('AgendaPage', () => {
     const loadPatientSpecialties = vi.fn().mockResolvedValue({
       status: 'success', data: [{ specialty_id: 'specialty-id', specialty_name: 'Psicologia' }],
     })
-    render(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} loadPatientSpecialties={loadPatientSpecialties} />)
+    renderWithRouter(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} loadPatientSpecialties={loadPatientSpecialties} />)
     expect(await screen.findByText('Especialidades: Psicologia')).toBeVisible()
     expect(loadPatientSpecialties).toHaveBeenCalledWith('patient-id')
   })
@@ -149,7 +155,7 @@ describe('AgendaPage', () => {
       },
     }
 
-    render(<AgendaPage accessContext={nutritionContext} loadAgenda={loadAgenda} />)
+    renderWithRouter(<AgendaPage accessContext={nutritionContext} loadAgenda={loadAgenda} />)
 
     expect(await screen.findByRole('heading', { name: 'Agenda' })).toBeVisible()
     expect(screen.getByRole('tab', { name: 'Dia' })).toBeVisible()
@@ -182,7 +188,7 @@ describe('AgendaPage', () => {
       },
     }
 
-    render(<AgendaPage accessContext={accumulatedContext} loadAgenda={loadAgenda} />)
+    renderWithRouter(<AgendaPage accessContext={accumulatedContext} loadAgenda={loadAgenda} />)
 
     expect(await screen.findByRole('heading', { name: 'Agenda Geral' })).toBeVisible()
     await waitFor(() =>
@@ -221,7 +227,7 @@ describe('AgendaPage', () => {
       },
     }
 
-    render(<AgendaPage accessContext={gestorContext} loadAgenda={loadAgenda} />)
+    renderWithRouter(<AgendaPage accessContext={gestorContext} loadAgenda={loadAgenda} />)
 
     expect(await screen.findByRole('heading', { name: 'Agenda Geral' })).toBeVisible()
     expect(
@@ -246,7 +252,7 @@ describe('AgendaPage', () => {
     })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 
-    render(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} />)
+    renderWithRouter(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} />)
 
     expect(await screen.findByText('Paciente autorizado')).toBeVisible()
     expect(screen.getByRole('table')).toBeVisible()
@@ -273,7 +279,7 @@ describe('AgendaPage', () => {
       .mockResolvedValueOnce({ status: 'success', data: [appointment] })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 
-    render(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} />)
+    renderWithRouter(<AgendaPage accessContext={accessContext} loadAgenda={loadAgenda} />)
     await waitFor(() => expect(loadAgenda).toHaveBeenCalledOnce())
 
     await user.click(screen.getByRole('tab', { name: 'Semana' }))
