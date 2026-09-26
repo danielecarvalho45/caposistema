@@ -363,6 +363,21 @@ export function NutritionPage({
     setBusy(false)
   }
 
+  async function openNutritionStoragePath(path: string, download: boolean) {
+    if (!path || busy) return
+    setBusy(true)
+    const { data, error } = await getSupabaseClient()
+      .storage.from('capo-documents')
+      .createSignedUrl(path, 120, download ? { download: true } : undefined)
+    if (error || !data?.signedUrl) {
+      setManagementFeedback(error?.message ?? 'Não foi possível abrir o PDF nutricional.')
+      setBusy(false)
+      return
+    }
+    globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+    setBusy(false)
+  }
+
   async function openNutritionDocument(documentId: string, download: boolean) {
     if (!documentId || busy) return
     setBusy(true)
@@ -387,6 +402,19 @@ export function NutritionPage({
       return
     }
     globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+    setBusy(false)
+  }
+
+  async function requestAdministrativeDelivery() {
+    const documentId = field(document, 'document_id', 'id')
+    if (!documentId || busy) return
+    setBusy(true)
+    const result = await getRpcService().registerNutritionDelivery(documentId, 'administrativo')
+    if (result.status === 'success') {
+      setFeedback('Entrega administrativa do PDF Nutricional Oficial solicitada.')
+    } else {
+      setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a solicitação de entrega.')
+    }
     setBusy(false)
   }
 
@@ -474,7 +502,16 @@ export function NutritionPage({
             <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void generateDocument()}>Gerar documento nutricional oficial</button>
             {feedback && <p role="status">{feedback}</p>}
             {document && (
-              <p>Documento gerado: {field(document, 'document_id', 'id') ?? 'confirmado pelo banco'}</p>
+              <div>
+                <p>Documento gerado: {field(document, 'document_id', 'id') ?? 'confirmado pelo banco'}</p>
+                {field(document, 'pdf_path') && (
+                  <>
+                    <button type="button" disabled={busy} onClick={() => void openNutritionStoragePath(field(document, 'pdf_path') ?? '', false)}>Visualizar PDF</button>
+                    <button type="button" disabled={busy} onClick={() => void openNutritionStoragePath(field(document, 'pdf_path') ?? '', true)}>Baixar PDF</button>
+                    <button type="button" disabled={busy} onClick={() => void requestAdministrativeDelivery()}>Enviar ao Administrativo</button>
+                  </>
+                )}
+              </div>
             )}
           </section>
         </>
