@@ -1,5 +1,7 @@
+import type { ReactElement } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ReferralsPage } from '../../src/features/referrals/ReferralsPage'
 import { SupabaseOperationError } from '../../src/lib/supabase/errors'
@@ -66,11 +68,15 @@ function referralService(result: object) {
 
 afterEach(cleanup)
 
+function renderWithRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
 describe('ReferralsPage', () => {
   it('preserva os rótulos e visões do index administrativo', async () => {
     const service = referralService({ status: 'empty' })
 
-    render(
+    renderWithRouter(
       <ReferralsPage accessContext={professionalContext} service={service} />,
     )
 
@@ -91,7 +97,7 @@ describe('ReferralsPage', () => {
   it('exibe o estado vazio retornado pelo contrato', async () => {
     const service = referralService({ status: 'empty' })
 
-    render(
+    renderWithRouter(
       <ReferralsPage accessContext={professionalContext} service={service} />,
     )
 
@@ -110,7 +116,7 @@ describe('ReferralsPage', () => {
       }),
     })
 
-    render(
+    renderWithRouter(
       <ReferralsPage accessContext={professionalContext} service={service} />,
     )
 
@@ -143,7 +149,7 @@ describe('ReferralsPage', () => {
       },
     })
 
-    render(
+    renderWithRouter(
       <ReferralsPage accessContext={professionalContext} service={service} />,
     )
 
