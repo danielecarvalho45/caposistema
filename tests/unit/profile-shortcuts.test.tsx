@@ -1,8 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ProfileShortcuts } from '../../src/components/shell/ProfileShortcuts'
+import { getProfileShortcuts } from '../../src/components/shell/profile-shortcuts'
 import type { AccessContext } from '../../src/types/access'
 
 const context: AccessContext = {
@@ -43,6 +44,8 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
     await userEvent.click(screen.getByRole('button', { name: /Perfil: Administrador/ }))
     expect(screen.getByRole('link', { name: 'Minha atuação' })).toHaveAttribute('href', '/atuacao')
     expect(screen.queryByRole('link', { name: 'Coordenação' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Nutrição' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Assistência Social' })).not.toBeInTheDocument()
   })
 
   it('mostra o perfil sem link morto quando não existem funções secundárias', () => {
@@ -50,5 +53,57 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
     expect(screen.getByText('Perfil: Profissional')).toBeVisible()
     expect(screen.queryByRole('button', { name: /Perfil:/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Perfil:/ })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['administrador', '/gestor/administracao', 'Administração do Sistema'],
+    ['coordenador', '/coordenacao', 'Coordenação'],
+    ['administrativo_operacional', '/fila', 'Administrativo Operacional'],
+    ['administrador_tecnico', '/tecnica', 'Área Técnica'],
+  ])('oferece a função secundária %s somente quando seu papel está vinculado', (secondaryRole, path, label) => {
+    const base: AccessContext = { ...context, roles: [{ code: 'profissional', name: 'Profissional' }] }
+    const withRole: AccessContext = { ...base, roles: [...base.roles, { code: secondaryRole, name: label }] }
+    expect(getProfileShortcuts(base)).not.toContainEqual({ path, label })
+    expect(getProfileShortcuts(withRole)).toContainEqual({ path, label })
+  })
+
+  it.each([
+    ['Clínica Geral', '/atuacao', 'Minha atuação'],
+    ['Psicologia', '/atuacao', 'Minha atuação'],
+    ['Fonoaudiologia', '/atuacao', 'Minha atuação'],
+    ['Nutrição', '/nutricao', 'Nutrição'],
+    ['Assistência Social', '/assistencia-social', 'Assistência Social'],
+  ])('respeita a especialidade profissional secundária %s', (specialty, path, label) => {
+    const combined: AccessContext = {
+      ...context,
+      primary_context: { ...context.primary_context, code: 'coordenador', name: 'Coordenação' },
+      primary_specialty_name: specialty,
+    }
+    expect(getProfileShortcuts(combined)).toContainEqual({ path, label })
+    const noProfessional: AccessContext = { ...combined, roles: [{ code: 'coordenador', name: 'Coordenador' }] }
+    expect(getProfileShortcuts(noProfessional)).not.toContainEqual({ path, label })
+  })
+
+  it('não concede atuação profissional sem vínculo profissional ativo no contexto', () => {
+    const withoutProfessional: AccessContext = {
+      ...context,
+      professional_id: null,
+      primary_context: { ...context.primary_context, code: 'administrador', name: 'Administrador' },
+      roles: [{ code: 'administrador', name: 'Administrador' }, { code: 'profissional', name: 'Profissional' }],
+    }
+    expect(getProfileShortcuts(withoutProfessional)).toEqual([])
+  })
+
+  it('navega para a função e fecha o menu mantendo o contexto principal', async () => {
+    function Path() { return <output data-testid="path">{useLocation().pathname}</output> }
+    render(<MemoryRouter initialEntries={['/agenda']}>
+      <ProfileShortcuts accessContext={context} activePath="/agenda" className="app-profile-button" profileLabel="Profissional" />
+      <Path />
+    </MemoryRouter>)
+    await userEvent.click(screen.getByRole('button', { name: /Perfil: Profissional/ }))
+    expect(screen.getByRole('button', { name: /Perfil: Profissional/ })).toHaveAttribute('aria-expanded', 'true')
+    await userEvent.click(screen.getByRole('link', { name: 'Coordenação' }))
+    expect(screen.getByTestId('path')).toHaveTextContent('/coordenacao')
+    expect(screen.queryByRole('link', { name: 'Coordenação' })).not.toBeInTheDocument()
   })
 })
