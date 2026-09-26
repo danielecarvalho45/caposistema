@@ -1,5 +1,7 @@
+import type { ReactElement } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ClosuresPage } from '../../src/features/closures/ClosuresPage'
 import type { AccessContext } from '../../src/types/access'
@@ -64,9 +66,13 @@ function service(overrides = {}) {
 
 afterEach(cleanup)
 
+function renderWithRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
 describe('ClosuresPage', () => {
   it('carrega estado vazio e não expõe fluxos bloqueados', async () => {
-    render(<ClosuresPage accessContext={context} integration={service()} />)
+    renderWithRouter(<ClosuresPage accessContext={context} integration={service()} />)
     expect(
       await screen.findByText('Nenhum encerramento encontrado.'),
     ).toBeVisible()
@@ -75,50 +81,30 @@ describe('ClosuresPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('solicita encerramento e recarrega após sucesso', async () => {
-    const user = userEvent.setup()
-    const integration = service()
-    render(<ClosuresPage accessContext={context} integration={integration} />)
-    await user.type(screen.getByLabelText('ID do paciente'), 'patient-id')
-    await user.type(
-      screen.getByLabelText('ID da especialidade'),
-      'specialty-id',
+  it('usa busca real de paciente e especialidade em vez de UUID manual', async () => {
+    renderWithRouter(<ClosuresPage accessContext={context} integration={service()} />)
+
+    expect(screen.getByLabelText('Paciente')).toHaveAttribute(
+      'placeholder',
+      'Nome, Nº CAPO ou CMS',
     )
-    await user.type(
-      screen.getByLabelText('Motivo'),
-      'Encerramento assistencial',
-    )
-    await user.click(
-      screen.getByRole('button', { name: 'Solicitar encerramento' }),
-    )
-    expect(integration.requestOwnClosure).toHaveBeenCalledWith(
-      'patient-id',
-      'specialty-id',
-      'Encerramento assistencial',
-    )
-    expect(integration.loadClosures).toHaveBeenCalledTimes(2)
+    expect(screen.getByLabelText('Minha especialidade')).toBeVisible()
+    expect(screen.getByLabelText('Motivo / observação')).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Solicitar encerramento da própria atuação' }),
+    ).toBeDisabled()
+    expect(screen.queryByLabelText('ID do paciente')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('ID da especialidade')).not.toBeInTheDocument()
   })
 
-  it('carrega acompanhamentos sociais', async () => {
-    const user = userEvent.setup()
-    const integration = service({
-      loadSocial: vi.fn().mockResolvedValue({
-        status: 'success',
-        data: [
-          {
-            cycle_id: 'cycle-id',
-            patient_name: 'Paciente real',
-            status: 'ativo',
-          },
-        ],
-      }),
-    })
-    render(<ClosuresPage accessContext={context} integration={integration} />)
-    await user.click(
-      screen.getByRole('button', { name: 'Acompanhamento social' }),
-    )
-    expect(await screen.findByText('Paciente real')).toBeVisible()
-    expect(integration.loadSocial).toHaveBeenCalled()
+  it('mantém acompanhamento social fora da tela de encerramentos', () => {
+    const integration = service()
+    renderWithRouter(<ClosuresPage accessContext={context} integration={integration} />)
+
+    expect(
+      screen.queryByRole('button', { name: 'Acompanhamento social' }),
+    ).not.toBeInTheDocument()
+    expect(integration.loadSocial).not.toHaveBeenCalled()
   })
 
   it('não expõe conclusão, atribuição ou reabertura para perfil sem gestão', async () => {
@@ -134,7 +120,7 @@ describe('ClosuresPage', () => {
         ],
       }),
     })
-    render(<ClosuresPage accessContext={context} integration={integration} />)
+    renderWithRouter(<ClosuresPage accessContext={context} integration={integration} />)
     await screen.findByText('Paciente real')
     expect(
       screen.queryByRole('button', { name: 'Concluir encerramento' }),
