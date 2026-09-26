@@ -1459,3 +1459,121 @@ A homologação operacional real será executada ao final dos trabalhos, conform
 A ausência atual de dados reais não é tratada como nova pendência técnica.
 
 **Estado:** **TAREFA 3 — CONCLUÍDA TECNICAMENTE.**
+
+
+# 23. TAREFA 2 OFICIAL — FECHAMENTO TRANSVERSAL DO SISTEMA
+## BLOCO 2A — Estrutura transversal e contexto (26/09/2026)
+
+**Escopo deste bloco:**
+- Modelo Geral da Interface;
+- padrão transversal das agendas;
+- modelo geral dos profissionais assistenciais;
+- contas, funções, especialidades e permissões;
+- contexto principal;
+- funções acumuladas;
+- roteamento por contexto.
+
+**Regra de continuidade:** as seções antigas denominadas Tarefa 2/Fila e Tarefa 3/Faltosos pertencem à numeração histórica dos documentos técnicos do repositório. A sequência oficial desta auditoria final é Tarefa 1 → Tarefa 2 transversal → Tarefa 3 final.
+
+### 23.1 Levantamento prévio
+
+Antes de qualquer correção, foram preservados os pontos já auditados na Tarefa 1 e nas seções 7.x deste Documento Mestre. Não foram reabertos perfis congelados nem repetidas correções já registradas.
+
+O arquivo separado denominado Manual Estrutural não está presente como documento textual independente na árvore atual do `main`. As regras estruturais fisicamente acessíveis e já consolidadas neste Documento Mestre e no Manual Técnico Integrado v5 foram usadas para o confronto. A ausência do arquivo separado não foi transformada em pendência artificial.
+
+### 23.2 Estado físico confirmado
+
+- `get_my_access_context()` continua devolvendo papéis, capacidades, especialidades efetivas e `primary_context`.
+- `resolve_user_primary_context()` continua priorizando papel marcado como principal; conta com múltiplos papéis sem principal exige configuração em vez de escolher prioridade em JavaScript.
+- `set_team_member_primary_context_for_interface()` continua restrita ao Administrador/Controlador e aceita somente papel ativo já atribuído à conta.
+- capacidades efetivas continuam sendo compostas por especialidade + exceção individual, somente para profissional ativo.
+- não foram encontradas contas ativas com mais de um papel principal ou múltiplos papéis sem principal configurado.
+- não foram encontradas especialidades principais ambíguas entre profissionais ativos.
+- não existem contas ativas vinculadas a profissional inexistente ou inativo.
+- as especialidades físicas ativas permanecem dinâmicas no banco; não foi introduzida lista fixa de especialidades no frontend.
+
+### 23.3 Lacuna transversal nova comprovada — rotas compartilhadas e contexto principal
+
+Foi comprovado que três rotas compartilhadas podiam escolher a visão pela mera existência de papel acumulado, ignorando o `primary_context`:
+
+1. **Agenda**
+   - conta com papel `profissional` acumulado era tratada como agenda própria mesmo quando o contexto principal era Administração/Coordenação/AO;
+   - correção: a visão profissional da Agenda exige agora `primary_context.code = 'profissional'`;
+   - papéis acumulados continuam autorizados e não foram removidos.
+
+2. **Fila**
+   - qualquer papel administrativo acumulado forçava a visão administrativa da fila, mesmo quando o contexto principal era profissional;
+   - correção: a visão administrativa passa a seguir contexto principal Administrador/AO/Coordenador; a fila da própria especialidade segue contexto principal Profissional.
+
+3. **Relatórios**
+   - uma conta AO com papel profissional acumulado podia cair no relatório assistencial, porque a tela só reconhecia AO quando ele fosse o único papel;
+   - correção: o relatório operacional do AO passa a ser escolhido por `primary_context.code = 'administrativo_operacional'`.
+
+**Fundamento:** a correção já registrada em 7.2 estabelece que o contexto principal deve ser respeitado sem apagar funções acumuladas. Funções acumuladas dão acesso adicional, mas não devem substituir silenciosamente a visão principal em uma rota compartilhada.
+
+### 23.4 Arquivos alterados
+
+- `src/features/agenda/AgendaPage.tsx`
+- `src/features/queues/QueuePage.tsx`
+- `src/features/reports/ReportsPage.tsx`
+- `tests/unit/AgendaPage.test.tsx`
+- `tests/unit/App.test.tsx`
+- `tests/unit/administrative-operational-report.test.tsx`
+
+### 23.5 Alinhamentos de testes diretamente ligados ao Bloco 2A
+
+- adicionado cenário de Agenda com papel profissional acumulado e contexto principal Administrador, exigindo visão geral;
+- fila administrativa atualizada para o título vigente;
+- montagem do cenário de pendência da fila passou a incluir roteador;
+- expectativa antiga de que profissional não tivesse Fila foi substituída pelo comportamento vigente: profissional possui fila da própria especialidade;
+- adicionado cenário em que profissional mantém sua fila mesmo acumulando papel administrativo fora do contexto principal;
+- adicionado cenário em que AO mantém Relatórios Operacionais mesmo acumulando papel profissional;
+- teste antigo de Nutrição deixou de tratar `nutricao` como código de papel e passou a usar o modelo vigente `profissional + especialidade Nutrição`.
+
+Esses ajustes não ampliam autorização e não alteram contratos do Supabase.
+
+### 23.6 Consistência do Modelo Geral da Interface e roteamento
+
+Confronto automático da malha atual:
+- 38 rotas registradas em `KNOWN_APP_ROUTES`;
+- 21 itens da navegação transversal;
+- 0 itens de navegação apontando para rota desconhecida;
+- 0 duplicidades no registro transversal de navegação;
+- 0 destinos usados pelo `App` fora do registro de rotas;
+- 0 rotas conhecidas sem tratamento no `App`.
+
+Repetições de destinos nos mapas de atalhos de `ProfileDashboard` pertencem a painéis de perfis distintos e não constituem duplicação de navegação.
+
+### 23.7 Blocos preservados
+
+Nenhuma mudança foi feita em:
+- Tarefa 1 concluída/congelada;
+- Bloco 10 verde/congelado;
+- regras específicas já aprovadas de Nutrição, Assistência Social, Clínico, Coordenador, Auxiliar, Gestor ou Profissional Assistencial;
+- schema, RLS, policies, triggers ou migrations do Supabase.
+
+### 23.8 Relação com as oito falhas anteriormente registradas
+
+Dentro do escopo deste bloco, três falhas de Fila receberam confronto documental suficiente e tiveram seus cenários de teste alinhados:
+- Fila no contexto administrativo;
+- Pendências da fila;
+- Fila fora do contexto administrativo.
+
+Elas permanecem **aguardando reexecução na Tarefa 3** antes de serem declaradas PASS. As demais falhas da suíte ampliada não foram alteradas por este bloco.
+
+### 23.9 Estado do Bloco 2A
+
+**BLOCO 2A — CONCLUÍDO TECNICAMENTE.**
+
+Resultado:
+- estrutura transversal e contexto confrontados;
+- 3 lacunas reais de seleção de visão por contexto corrigidas;
+- modelo de papéis/especialidades confirmado;
+- integridade dos vínculos estruturais confirmada;
+- roteamento transversal consistente;
+- nenhuma nova pendência criada;
+- nenhum bloco congelado reaberto.
+
+A suíte completa, typecheck, build global e homologação operacional permanecem para a **Tarefa 3**, conforme divisão oficial do trabalho.
+
+**Não iniciar o Bloco 2B sem nova ordem da responsável.**
