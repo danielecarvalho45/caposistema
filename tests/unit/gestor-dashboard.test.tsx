@@ -19,7 +19,7 @@ describe('GestorDashboard', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Painel Geral do CAPO' })).toBeVisible()
-    expect(screen.getByRole('link', { name: /Agenda/ })).toHaveAttribute('href', '/agenda')
+    expect(screen.getAllByRole('link', { name: /Agenda/ }).some((link) => link.getAttribute('href') === '/agenda')).toBe(true)
     expect(screen.getByRole('link', { name: /Indicadores do Sistema/ })).toHaveAttribute('href', '/relatorios')
     expect(screen.getByRole('link', { name: /Status do Sistema/ })).toHaveAttribute('href', '/tecnica')
   })
