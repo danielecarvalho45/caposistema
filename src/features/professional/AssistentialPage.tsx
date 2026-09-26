@@ -261,7 +261,7 @@ export function AssistentialPage({
         />
       </section>
 
-      <BirthdayPanel title="Aniversariantes de hoje" />
+      <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp />
 
       <article id="assistential-patients" className="assistential-card">
         <h3>Pacientes sob sua atuação</h3>
