@@ -53,6 +53,8 @@ function requestService(result: object) {
       .mockResolvedValue({ status: 'empty' }),
     createAdministrativeRequest: vi.fn().mockResolvedValue({ status: 'empty' }),
     updateAdministrativeRequest: vi.fn().mockResolvedValue({ status: 'empty' }),
+    getFamilyPsychologyRequestContext: vi.fn().mockResolvedValue({ status: 'empty' }),
+    addFamilyToWaitingList: vi.fn().mockResolvedValue({ status: 'empty' }),
   }
 }
 
