@@ -52,7 +52,7 @@ describe('GestorDashboard', () => {
       getCapabilities: vi.fn().mockResolvedValue({ status: 'success', data: { capabilities: [] } }),
       setCapability: vi.fn(),
       removeCapability: vi.fn(),
-      setSpecialtyCapability: vi.fn(),
+      setSpecialtyCapability: vi.fn(), getCapabilityCatalog: vi.fn().mockResolvedValue({ status: 'success', data: { capabilities: [], specialty_capabilities: [] } }),
     }
 
     render(<GestorTeamPage service={service} />)
@@ -80,7 +80,7 @@ describe('GestorDashboard', () => {
       create: vi.fn().mockResolvedValue({ status: 'success', data: {} }),
       update: vi.fn(), setActive: vi.fn(), setPrimaryContext: vi.fn(),
       getCapabilities: vi.fn(), setCapability: vi.fn(),
-      removeCapability: vi.fn(), setSpecialtyCapability: vi.fn(),
+      removeCapability: vi.fn(), setSpecialtyCapability: vi.fn(), getCapabilityCatalog: vi.fn().mockResolvedValue({ status: 'success', data: { capabilities: [], specialty_capabilities: [] } }),
     }
 
     render(<GestorTeamPage service={service} />)
@@ -108,7 +108,7 @@ describe('GestorDashboard', () => {
       create: vi.fn().mockResolvedValue({ status: 'success', data: {} }),
       update: vi.fn(), setActive: vi.fn(), setPrimaryContext: vi.fn(),
       getCapabilities: vi.fn(), setCapability: vi.fn(),
-      removeCapability: vi.fn(), setSpecialtyCapability: vi.fn(),
+      removeCapability: vi.fn(), setSpecialtyCapability: vi.fn(), getCapabilityCatalog: vi.fn().mockResolvedValue({ status: 'success', data: { capabilities: [], specialty_capabilities: [] } }),
     }
     render(<GestorTeamPage service={service} />)
     await user.type(screen.getByLabelText('Nome completo'), 'Profissional Teste')
