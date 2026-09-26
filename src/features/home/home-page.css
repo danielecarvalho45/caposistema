@@ -539,10 +539,22 @@
 }
 
 @media (max-width: 620px) {
+  .home-profile-grid,
+  .home-profile-gestor .home-profile-grid,
   .home-ops-grid,
   .home-birthday-grid,
   .home-access-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-profile-card {
+    min-height: 88px;
+    padding-inline: 12px;
+  }
+
+  .home-birthdays-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .gestor-dashboard-grid,
