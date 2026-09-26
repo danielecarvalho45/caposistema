@@ -2182,3 +2182,90 @@ Mantida a fila 28.9 sem reabrir os blocos Social e Relatórios. Foram ampliados 
 | Coordenação | **PASS interno:** seções Equipe e Profissionais, Agendas da Equipe e Aniversariantes de hoje na ordem do DOM. |
 
 **Verificação desta microetapa:** arquivo ampliado 50/50 testes PASS; suíte completa 27/27 arquivos e **209/209 testes PASS**; `npm run typecheck` PASS; `npm run build` PASS (aviso preexistente de tamanho do bundle). A análise mede existência e ordem de elementos no DOM sob contextos isolados: **não mede pixels, mobile, respostas reais, autenticação de cada perfil, fluxo transacional, autorização negativa nem funcionamento da RPC**. As homologações pendentes da seção 28.3 e P2/P3 da fila 28.9 permanecem, sem declaração de congelamento final ou PDF conclusivo.
+
+
+### 28.11 Auditoria estrutural das pendências de correção P2 e P3 — base oficial para continuidade (26/09/2026)
+
+Esta seção consolida, para os agentes seguintes, o confronto das pendências abertas de correção com a documentação estrutural obrigatória localizada fisicamente na Library:
+
+- `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`;
+- `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12.docx`;
+- `CAPO_ESPECIFICACAO_ESTRUTURAL_DA_INTERFACE_2026-09-12.docx`.
+
+A fila de reabertura registrada em 28.9 permanece correta: **somente P2 e P3 estão abertas como pendências de correção comprovadas**. P1 — Perfil — já teve decisão, correção, testes e verificação publicada e não pertence mais à fila de correção.
+
+#### P2 — Relatórios Gerenciais — regra estrutural confirmada
+
+**Problema físico registrado:** a rota `/relatorios` exibe chaves técnicas em inglês, como `closures`, `patients`, `no show followup` e `total period`, porque `ReportsPage.tsx` apresenta diretamente nomes de chaves retornadas pelo backend.
+
+**Regra estrutural confrontada:**
+- relatórios devem usar exclusivamente dados que o CAPO realmente registra e consegue calcular de forma confiável;
+- é proibido inventar indicadores sem fonte real;
+- Administrador e Coordenador podem acessar visão geral e recortes por especialidade, profissional quando pertinente, período, produção, fluxos, agendas, faltas e demais recortes sustentados pelos dados existentes;
+- relatórios são administrativos/operacionais e devem priorizar apresentação adequada, sem conteúdo profissional/confidencial;
+- a identidade visual e a interface final devem seguir os padrões oficiais do CAPO.
+
+**Conclusão normativa:** P2 é **correção de apresentação/interface**, não correção de cálculo ou de backend.
+
+**Comportamento correto para manutenção:**
+- manter as RPCs atuais;
+- manter números, agrupamentos, filtros, escopo e autorização;
+- criar mapeamento de rótulos claros em português para as chaves técnicas exibidas ao usuário;
+- não criar métricas novas;
+- não recalcular indicadores no frontend a partir de arrays/paginação;
+- não alterar o Supabase sem nova evidência física independente.
+
+Exemplos de apresentação esperada:
+- `closures` → **Encerramentos**;
+- `patients` → **Pacientes**;
+- `no show followup` → **Acompanhamento de Faltosos**;
+- `total period` → **Total no período**.
+
+Outras chaves técnicas eventualmente expostas devem receber nomenclatura clara em português, preservando integralmente o dado de origem.
+
+**Estado:** 🟡 **PENDÊNCIA DE CORREÇÃO AUTORIZÁVEL — REABERTURA PONTUAL DE RELATÓRIOS.**
+
+---
+
+#### P3 — Acompanhamento Social — regra estrutural confirmada
+
+**Problema físico registrado:** a rota `/gestor/social` publicou a mensagem **“Situação inválida.”**. A causa já comprovada é o envio de `p_status: null` por `loadSocial(null)` para `get_social_followups_for_interface`, cujo contrato trabalha com os estados válidos `ativo` e `encerrado`.
+
+**Regra estrutural confrontada:**
+- o módulo **Acompanhamento Social no Serviço CAPO** deve apresentar lista operacional de acompanhamentos **Ativos e Encerrados**;
+- deve exibir identificação mínima, situação do acompanhamento e pendências;
+- Estudo Social, relato profissional, evolução e conteúdo confidencial permanecem no VIVVER;
+- Assistência Social pode acompanhar familiar/cuidador, luto, óbito autorizado, solicitações e encerramento do próprio acompanhamento;
+- Faltosos não pertence à Assistência Social.
+
+**Conclusão normativa:** não é correto resolver P3 trocando silenciosamente `null` por `ativo`, porque isso eliminaria a visualização dos acompanhamentos encerrados e contrariaria a estrutura aprovada.
+
+**Comportamento correto para manutenção:**
+- a visão geral deve contemplar **ativos e encerrados**;
+- nunca enviar estado inválido à RPC;
+- preservar identificação mínima, situação e pendências;
+- não expor conteúdo confidencial;
+- não misturar Faltosos ao fluxo Social;
+- preferir correção na camada de integração reutilizando contratos existentes;
+- antes de qualquer migration ou alteração de RPC, verificar se a integração pode consultar os estados válidos separadamente e compor a visão geral;
+- se consultas separadas forem usadas, preservar autorização, ordenação coerente e ausência de duplicação;
+- nenhuma resposta ou sucesso pode ser fabricado localmente.
+
+A correção futura deve abranger a visão Gestor/Titular e o consumo profissional compartilhado por `SocialPage.tsx`, mas PASS/FAIL visual publicado do perfil profissional só pode ser declarado quando houver evidência física correspondente.
+
+**Estado:** 🟡 **PENDÊNCIA DE CORREÇÃO COM REGRESSÃO REAL COMPROVADA — REABERTURA PONTUAL DO BLOCO SOCIAL.**
+
+---
+
+#### Limites desta auditoria
+
+Esta atualização é exclusivamente documental e **não altera código, teste ou Supabase**.
+
+A partir desta seção, os agentes seguintes devem considerar como base oficial:
+
+1. P2 e P3 são as únicas pendências de correção comprovadas ainda abertas até este registro;
+2. P1 está resolvida e não deve ser reaberta;
+3. pendências de contas reais, mobile e operações transacionais são pendências de homologação/encerramento, não novas correções técnicas comprovadas;
+4. qualquer nova pendência de correção deve ser sustentada por evidência física nova e registrada neste mesmo Documento Mestre;
+5. a manutenção de P2 e P3 deve ser cirúrgica e não autoriza reabertura de outros blocos concluídos.
+
