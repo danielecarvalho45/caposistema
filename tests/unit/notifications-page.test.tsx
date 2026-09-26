@@ -13,7 +13,7 @@ const notification: Notification = {
   notification_type: 'administrative_request_completed',
   title: 'Solicitação concluída',
   message: 'Sua solicitação foi concluída.',
-  priority: 1,
+  priority: 'normal',
   status: 'unread',
   patient_id: null,
   entity_type: 'administrative_request',
@@ -58,6 +58,32 @@ describe('notifications integration', () => {
         p_offset: 40,
       },
     )
+  })
+
+  it('aceita o retorno JSON físico da atualização sem campo success', async () => {
+    const transport = vi.fn().mockResolvedValue({
+      data: {
+        notification_id: 'notification-id',
+        action: 'lida',
+        read_at: '2026-09-17T12:05:00Z',
+        resolved_at: null,
+        resolved_by: null,
+      },
+      error: null,
+    })
+    const service = createNotificationsService(transport)
+
+    const result = await service.updateNotification(
+      'notification-id',
+      'lida',
+      '',
+    )
+
+    expect(result.status).toBe('success')
+    if (result.status === 'success') {
+      expect(result.data.success).toBe(true)
+      expect(result.data.action).toBe('lida')
+    }
   })
 
   it('normaliza erro do backend sem simular sucesso', async () => {
