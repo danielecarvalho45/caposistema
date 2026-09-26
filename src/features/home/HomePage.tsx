@@ -25,6 +25,12 @@ type HomePageProps = Readonly<{
   loadBirthdays?: () => Promise<AsyncState<BirthdayOverview>>
 }>
 
+async function greetBirthday(fullName: string) {
+  const message = `Olá, ${fullName}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`
+  await globalThis.navigator?.clipboard?.writeText(message)
+  globalThis.open('https://web.whatsapp.com/', '_blank', 'noopener,noreferrer')
+}
+
 function formatDateOnly(value: string) {
   const [year, month, day] = value.split('-').map(Number)
   if (!year || !month || !day) return value
@@ -108,6 +114,14 @@ export function HomePage({
                             {patient.cms ? `CMS ${patient.cms}` : ''}
                           </small>
                         )}
+                        {isAdministrativeOperational && patient.phone && (
+                          <button
+                            type="button"
+                            onClick={() => void greetBirthday(patient.full_name)}
+                          >
+                            WhatsApp
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -131,8 +145,8 @@ export function HomePage({
             </div>
           )}
           <p className="home-birthdays-note">
-            A lista respeita o contexto de acesso. Contato de aniversário não é
-            liberado sem autorização registrada no backend.
+            A lista e eventual ação de saudação respeitam o contexto autorizado
+            retornado pelo backend. Dados pessoais da Equipe CAPO não são exibidos.
           </p>
         </section>
       )}
