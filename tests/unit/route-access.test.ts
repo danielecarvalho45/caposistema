@@ -96,6 +96,9 @@ describe('route access', () => {
       ...context,
       professional_id: 'nutrition-professional-id',
       roles: [{ code: 'profissional', name: 'Profissional' }],
+      specialties: [
+        { specialty_id: 'nutrition-id', specialty_name: 'Nutrição', is_primary: true },
+      ],
       primary_context: {
         ...context.primary_context,
         code: 'profissional',
@@ -114,6 +117,9 @@ describe('route access', () => {
       ...context,
       professional_id: 'professional-id',
       roles: [{ code: 'profissional', name: 'Profissional' }],
+      specialties: [
+        { specialty_id: 'social-id', specialty_name: 'Assistência Social', is_primary: true },
+      ],
       primary_context: {
         ...context.primary_context,
         code: 'profissional',
@@ -154,8 +160,24 @@ describe('route access', () => {
     expect(canAccessAppRoute(medicalClinician, '/agenda')).toBe(true)
     expect(canAccessAppRoute(medicalClinician, '/atuacao')).toBe(true)
     expect(canAccessAppRoute(medicalClinician, '/relatorios')).toBe(true)
-    expect(canAccessAppRoute(medicalClinician, '/fila')).toBe(false)
+    expect(canAccessAppRoute(medicalClinician, '/fila')).toBe(true)
     expect(canAccessAppRoute(medicalClinician, '/faltosos')).toBe(false)
+  })
+
+  it('permite ao profissional destinatário abrir encaminhamentos sem conceder capacidade de emissão', () => {
+    const recipient = {
+      ...context,
+      professional_id: 'recipient-id',
+      roles: [{ code: 'profissional', name: 'Profissional' }],
+      capabilities: [],
+      primary_context: {
+        ...context.primary_context,
+        code: 'profissional',
+        name: 'Profissional',
+      },
+    }
+
+    expect(canAccessAppRoute(recipient, '/encaminhamentos')).toBe(true)
   })
 
   it('permite o papel principal de coordenação acessar gestão e relatórios sem virar profissional assistencial', () => {
