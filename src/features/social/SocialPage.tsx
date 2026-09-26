@@ -35,6 +35,9 @@ export function SocialPage({
     useState<AsyncState<readonly SocialFollowup[]>>(loadingState)
   const [selectedAppointment, setSelectedAppointment] = useState<AgendaAppointment | null>(null)
   const [reason, setReason] = useState('')
+  const [vulnerabilityLevel, setVulnerabilityLevel] =
+    useState<'verde' | 'amarelo' | 'vermelho'>('verde')
+  const [vulnerabilityFeedback, setVulnerabilityFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const eligibleForSocial = accessContext.is_active && Boolean(accessContext.professional_id) && accessContext.roles.some((role) => role.code === 'profissional')
@@ -85,7 +88,37 @@ export function SocialPage({
   function openConfirmedPatient(appointment: AgendaAppointment) {
     setSelectedAppointment(appointment)
     setFeedback(null)
+    setVulnerabilityFeedback(null)
+    void getRpcService()
+      .getSocialVulnerabilityIndicator(appointment.patient_id)
+      .then((result) => {
+        if (result.status !== 'success') return
+        const value = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+          ? (result.data as Record<string, unknown>).level
+          : null
+        if (value === 'verde' || value === 'amarelo' || value === 'vermelho') {
+          setVulnerabilityLevel(value)
+        }
+      })
     globalThis.document.getElementById('acompanhamento-social')?.scrollIntoView?.({ block: 'start' })
+  }
+
+  async function saveVulnerability() {
+    if (!selectedAppointment || busy) return
+    setBusy(true)
+    setVulnerabilityFeedback(null)
+    const result = await getRpcService().setSocialVulnerabilityIndicator(
+      selectedAppointment.patient_id,
+      vulnerabilityLevel,
+    )
+    if (result.status === 'success') {
+      setVulnerabilityFeedback(
+        'Indicador de vulnerabilidade atualizado. A Nutrição receberá somente o alerta mínimo autorizado quando aplicável.',
+      )
+    } else if (result.status === 'error') {
+      setVulnerabilityFeedback(result.error.message)
+    }
+    setBusy(false)
   }
 
   async function startSocial() {
@@ -172,6 +205,28 @@ export function SocialPage({
             <button type="button" disabled={busy} onClick={() => void startSocial()}>
               Iniciar acompanhamento social
             </button>
+            <fieldset>
+              <legend>Vulnerabilidade — indicador operacional</legend>
+              <label>
+                Nível
+                <select
+                  value={vulnerabilityLevel}
+                  onChange={(event) =>
+                    setVulnerabilityLevel(
+                      event.target.value as 'verde' | 'amarelo' | 'vermelho',
+                    )
+                  }
+                >
+                  <option value="verde">Verde</option>
+                  <option value="amarelo">Amarelo</option>
+                  <option value="vermelho">Vermelho</option>
+                </select>
+              </label>
+              <button type="button" disabled={busy} onClick={() => void saveVulnerability()}>
+                Salvar indicador
+              </button>
+              {vulnerabilityFeedback && <p role="status">{vulnerabilityFeedback}</p>}
+            </fieldset>
           </div>
         )}
         {social.status === 'loading' && <p>Carregando acompanhamentos sociais...</p>}
