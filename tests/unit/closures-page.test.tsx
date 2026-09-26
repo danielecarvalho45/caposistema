@@ -1,5 +1,7 @@
+import type { ReactElement } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ClosuresPage } from '../../src/features/closures/ClosuresPage'
 import type { AccessContext } from '../../src/types/access'
@@ -64,9 +66,13 @@ function service(overrides = {}) {
 
 afterEach(cleanup)
 
+function renderWithRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
 describe('ClosuresPage', () => {
   it('carrega estado vazio e não expõe fluxos bloqueados', async () => {
-    render(<ClosuresPage accessContext={context} integration={service()} />)
+    renderWithRouter(<ClosuresPage accessContext={context} integration={service()} />)
     expect(
       await screen.findByText('Nenhum encerramento encontrado.'),
     ).toBeVisible()
@@ -78,7 +84,7 @@ describe('ClosuresPage', () => {
   it('solicita encerramento e recarrega após sucesso', async () => {
     const user = userEvent.setup()
     const integration = service()
-    render(<ClosuresPage accessContext={context} integration={integration} />)
+    renderWithRouter(<ClosuresPage accessContext={context} integration={integration} />)
     await user.type(screen.getByLabelText('ID do paciente'), 'patient-id')
     await user.type(
       screen.getByLabelText('ID da especialidade'),
@@ -113,7 +119,7 @@ describe('ClosuresPage', () => {
         ],
       }),
     })
-    render(<ClosuresPage accessContext={context} integration={integration} />)
+    renderWithRouter(<ClosuresPage accessContext={context} integration={integration} />)
     await user.click(
       screen.getByRole('button', { name: 'Acompanhamento social' }),
     )
@@ -134,7 +140,7 @@ describe('ClosuresPage', () => {
         ],
       }),
     })
-    render(<ClosuresPage accessContext={context} integration={integration} />)
+    renderWithRouter(<ClosuresPage accessContext={context} integration={integration} />)
     await screen.findByText('Paciente real')
     expect(
       screen.queryByRole('button', { name: 'Concluir encerramento' }),
