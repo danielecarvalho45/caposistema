@@ -110,6 +110,27 @@ export type Database = {
         Args: { p_family_member_id: string; p_notes?: string | null }
         Returns: Json
       }
+      get_family_waiting_list_for_interface: {
+        Args: { p_status?: string | null; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      update_family_waiting_list_status_for_interface: {
+        Args: { p_waiting_list_id: string; p_action: string; p_notes?: string | null }
+        Returns: Json
+      }
+      get_family_queue_candidates_for_slot: {
+        Args: { p_professional_id: string; p_slot_start: string; p_limit?: number }
+        Returns: Json
+      }
+      create_family_psychology_appointment_for_interface: {
+        Args: {
+          p_waiting_list_id: string
+          p_professional_id: string
+          p_slot_start: string
+          p_general_notes?: string | null
+        }
+        Returns: Json
+      }
       get_waiting_list_for_interface: {
         Args: {
           p_specialty_id?: string | null
