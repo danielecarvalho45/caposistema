@@ -49,7 +49,7 @@ function errorMessage<T>(state: AsyncState<T>) {
 function canAccessRequests(accessContext: AccessContext) {
   return (
     (Boolean(accessContext.professional_id) && accessContext.roles.some((role) =>
-      ['profissional', 'medico_clinico_geral', 'nutricao', 'assistente_social', 'assistencia_social', 'social'].includes(role.code),
+      role.code === 'profissional',
     )) ||
     accessContext.roles.some((role) =>
       ['administrador', 'coordenador', 'administrativo_operacional'].includes(
@@ -95,9 +95,8 @@ export function RequestsPage({
   const canManage = roleCodes.some((role) =>
     ['administrador', 'administrativo_operacional'].includes(role),
   )
-  const canCreateProfessionalRequest = Boolean(accessContext.professional_id) && roleCodes.some((role) =>
-    ['profissional', 'medico_clinico_geral', 'nutricao', 'assistente_social', 'assistencia_social', 'social'].includes(role),
-  )
+  const canCreateProfessionalRequest =
+    Boolean(accessContext.professional_id) && roleCodes.includes('profissional')
   const isRequester =
     selected?.requesting_professional_id === accessContext.professional_id
 
