@@ -209,6 +209,26 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   })
   const roles = optionList(context, ['roles', 'available_roles', 'role_options'], ['role_code', 'code'], ['role_name', 'name', 'role_code'])
   const specialties = optionList(context, ['specialties', 'available_specialties', 'specialty_options'], ['specialty_id', 'id'], ['specialty_name', 'name'])
+  const capabilityOptions = records(capabilityCatalog, ['capabilities'])
+    .flatMap((item) => {
+      const code = text(item, 'capability_code', 'code')
+      return code
+        ? [{ code, individualAssignable: item.individual_assignable === true }]
+        : []
+    })
+  const specialtyCapabilityRows = records(
+    capabilityCatalog,
+    ['specialty_capabilities'],
+  )
+  const effectiveCapabilityCodes = new Set(
+    capabilities.flatMap((item) => {
+      const code = text(item, 'capability_code', 'code')
+      return code ? [code] : []
+    }),
+  )
+  const selectedSpecialtyCapabilities = specialtyCapabilityRows.filter(
+    (item) => text(item, 'specialty_id') === specialtyForCapability,
+  )
 
   async function reload(search = query, filter = status) {
     setLoading(true)
@@ -224,6 +244,16 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
     }
     setLoading(false)
   }
+
+  useEffect(() => {
+    let active = true
+    void service.getCapabilityCatalog().then((result) => {
+      if (!active) return
+      if (result.status === 'success') setCapabilityCatalog(result.data)
+      else if (result.status === 'error') setFeedback(result.error.message)
+    })
+    return () => { active = false }
+  }, [service])
 
   useEffect(() => {
     let active = true
@@ -402,7 +432,7 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
         {selected && !selected.userAccountId && <button type="button" disabled={submitting} onClick={() => void createAccessForSelected()}>{submitting ? 'Processando…' : 'Criar acesso'}</button>}
       </form>
     </div>
-    {selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3>{selected.userAccountId && <select aria-label="Contexto principal" defaultValue="" onChange={(event) => { if (event.target.value) void mutate(() => service.setPrimaryContext(selected.userAccountId!, event.target.value), 'Contexto principal atualizado.') }}><option value="">Definir contexto principal</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3>{capabilities.length === 0 ? <p>Nenhuma permissão específica encontrada para este profissional.</p> : <ul className="gestor-capability-list">{capabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); return code ? <li key={code}><label className="gestor-check"><input type="checkbox" checked={enabled(capability)} onChange={(event) => void mutate(() => service.setCapability(selected.professionalId, code, event.target.checked), 'Permissão atualizada.')} />{code}</label><button type="button" onClick={() => void mutate(() => service.removeCapability(selected.professionalId, code), 'Permissão individual removida.')}>Remover permissão individual</button></li> : null })}</ul>}<p>As permissões individuais complementam os papéis e as especialidades. Alterar uma permissão da especialidade afeta todos os profissionais vinculados a ela.</p><label>Alterar permissão da especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && capabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); return code ? <button key={code} type="button" onClick={() => void mutate(() => service.setSpecialtyCapability(specialtyForCapability, code, !enabled(capability)), 'Permissão da especialidade atualizada.')}>{enabled(capability) ? `Desativar ${code}` : `Ativar ${code}`}</button> : null })}</article></section>}
+    {selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3>{selected.userAccountId && <select aria-label="Contexto principal" defaultValue="" onChange={(event) => { if (event.target.value) void mutate(() => service.setPrimaryContext(selected.userAccountId!, event.target.value), 'Contexto principal atualizado.') }}><option value="">Definir contexto principal</option>{roles.filter((role) => profile.roleCodes.includes(role.id)).map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3><p>As capacidades são lidas do catálogo atual do banco. Nenhuma especialidade concede automaticamente Encaminhamento Interprofissional.</p>{capabilityOptions.filter((item) => item.individualAssignable).length === 0 ? <p>Nenhuma capacidade individual atribuível foi retornada pelo banco.</p> : <ul className="gestor-capability-list">{capabilityOptions.filter((item) => item.individualAssignable).map((item) => <li key={item.code}><label className="gestor-check"><input type="checkbox" checked={effectiveCapabilityCodes.has(item.code)} onChange={(event) => void mutateProfessionalCapability(item.code, event.target.checked)} />{item.code}</label>{effectiveCapabilityCodes.has(item.code) && <button type="button" onClick={() => void mutate(() => service.removeCapability(selected.professionalId, item.code), 'Permissão individual removida.')}>Remover permissão individual</button>}</li>)}</ul>}<p>Capacidades próprias de especialidade são administradas somente nos vínculos que já existem no catálogo canônico.</p><label>Especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && (selectedSpecialtyCapabilities.length === 0 ? <p>Nenhuma capacidade específica cadastrada para esta especialidade.</p> : <ul className="gestor-capability-list">{selectedSpecialtyCapabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); const isEnabled = capability.is_enabled === true; return code ? <li key={code}><label className="gestor-check"><input type="checkbox" checked={isEnabled} disabled={code === 'encaminhamento_interprofissional'} onChange={(event) => void mutateSpecialtyCapability(specialtyForCapability, code, event.target.checked)} />{code}</label>{code === 'encaminhamento_interprofissional' && <small>Concessão individual; não automática por especialidade.</small>}</li> : null })}</ul>)}</article></section>}
     {feedback && <p className="gestor-feedback" role="status">{feedback}</p>}
   </section>
 }
