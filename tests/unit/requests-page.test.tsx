@@ -1,5 +1,7 @@
+import type { ReactElement } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { RequestsPage } from '../../src/features/requests/RequestsPage'
 import { SupabaseOperationError } from '../../src/lib/supabase/errors'
@@ -60,11 +62,15 @@ function requestService(result: object) {
 
 afterEach(cleanup)
 
+function renderWithRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>)
+}
+
 describe('RequestsPage', () => {
   it('preserva os rótulos e visões do index administrativo', async () => {
     const service = requestService({ status: 'empty' })
 
-    render(
+    renderWithRouter(
       <RequestsPage accessContext={professionalContext} service={service} />,
     )
 
@@ -87,7 +93,7 @@ describe('RequestsPage', () => {
   it('exibe o estado vazio retornado pelo contrato', async () => {
     const service = requestService({ status: 'empty' })
 
-    render(
+    renderWithRouter(
       <RequestsPage accessContext={professionalContext} service={service} />,
     )
 
@@ -106,7 +112,7 @@ describe('RequestsPage', () => {
       }),
     })
 
-    render(
+    renderWithRouter(
       <RequestsPage accessContext={professionalContext} service={service} />,
     )
 
@@ -144,7 +150,7 @@ describe('RequestsPage', () => {
       },
     })
 
-    render(
+    renderWithRouter(
       <RequestsPage accessContext={professionalContext} service={service} />,
     )
 
@@ -176,7 +182,7 @@ describe('RequestsPage', () => {
       status: 'success',
       data: { request_id: 'request-id' },
     })
-    render(<RequestsPage accessContext={professionalContext} service={service} />)
+    renderWithRouter(<RequestsPage accessContext={professionalContext} service={service} />)
     await screen.findByText('Nenhuma solicitação encontrada.')
     await user.type(screen.getByLabelText('Assunto'), 'Apoio administrativo')
     await user.type(screen.getByLabelText('Descrição'), 'Providência administrativa necessária')
