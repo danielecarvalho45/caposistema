@@ -32,24 +32,37 @@ import { GestorManagementPage } from '../features/gestor/GestorManagementPage'
 import { GestorFamilyPage } from '../features/gestor/GestorFamilyPage'
 import { GestorOperationalPage } from '../features/gestor/GestorOperationalPage'
 import { TechnicalSupportRequest } from '../components/forms/TechnicalSupportRequest'
-import { canAccessAppRoute, isKnownAppRoute } from './route-access'
+import { canAccessAppRoute, isKnownAppRoute, type AppRoute } from './route-access'
 import type { Notification } from '../features/notifications/notifications-integration'
 
 function notificationContextHref(
   notification: Notification,
   accessContext: NonNullable<ReturnType<typeof useAccessFlow>['accessContext']>,
 ) {
-  const routeByEntityType: Record<string, '/solicitacoes' | '/encaminhamentos' | '/faltosos'> = {
+  const routeByEntityType: Record<string, AppRoute> = {
     administrative_request: '/solicitacoes',
     administrative_requests: '/solicitacoes',
     interprofessional_referral: '/encaminhamentos',
     interprofessional_referrals: '/encaminhamentos',
+    referrals: '/encaminhamentos',
     no_show_followup: '/faltosos',
     no_show_followups: '/faltosos',
+    patient_no_show_followup: '/faltosos',
+    waiting_list: '/fila',
+    patient_care_closures: '/encerramentos',
+    transport_requests: '/transporte',
+    prescription_renewal_requests: '/receita',
+    nutrition_document_deliveries: '/nutricao',
+    technical_support_requests: '/tecnica',
   }
-  const route = notification.entity_type
-    ? routeByEntityType[notification.entity_type]
-    : undefined
+  const route =
+    notification.notification_type === 'dentistry_referral_ready' ||
+    (notification.notification_type.startsWith('referral_') &&
+      notification.message.toLowerCase().includes('odontológ'))
+      ? '/odontologia'
+      : notification.entity_type
+        ? routeByEntityType[notification.entity_type]
+        : undefined
   return route && canAccessAppRoute(accessContext, route) ? route : null
 }
 
