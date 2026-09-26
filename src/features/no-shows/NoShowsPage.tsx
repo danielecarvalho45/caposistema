@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import {
   getRpcService,
   loadingState,
@@ -10,6 +11,7 @@ import {
   type NoShowReschedulingRequest,
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import './no-shows-page.css'
 
 type NoShowsService = Pick<
@@ -372,6 +374,13 @@ export function NoShowsPage({
                 </div>
               </dl>
 
+              {canExecuteContact && (
+                <PatientWhatsAppButton
+                  patientId={selected.patient_id}
+                  label="WhatsApp do paciente"
+                />
+              )}
+
               {canExecuteContact && <><form className="no-show-form" onSubmit={submitContact}>
                 <h4>Registrar contato ou providência</h4>
                 <label>
@@ -457,7 +466,21 @@ export function NoShowsPage({
               <div className="no-show-reschedule">
                 <h4>Remarcação</h4>
                 {selected.rescheduling_requested ? (
-                  <p>Remarcação já solicitada para esta ocorrência.</p>
+                  <>
+                    <p>Remarcação já solicitada para esta ocorrência.</p>
+                    <Link
+                      to="/agenda"
+                      state={{
+                        patientId: selected.patient_id,
+                        patientName: selected.patient_name,
+                        professionalId: selected.professional_id,
+                        appointmentId: selected.appointment_id,
+                        origin: 'no_show_reschedule',
+                      }}
+                    >
+                      Abrir Agenda para remarcação
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <label>
