@@ -198,8 +198,10 @@ export function canAccessAppRoute(
           'coordenador',
           'administrativo_operacional',
         ]) ||
-        (Boolean(accessContext.professional_id) &&
-          accessContext.capabilities.includes('encaminhamento_interprofissional'))
+        (
+          Boolean(accessContext.professional_id) &&
+          hasRole(accessContext, ['profissional'])
+        )
       )
     case '/encerramentos':
       return (
