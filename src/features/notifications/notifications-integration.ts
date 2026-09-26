@@ -12,7 +12,7 @@ export type Notification = Readonly<{
   notification_type: string
   title: string
   message: string
-  priority: number | null
+  priority: string | null
   status: string
   patient_id: string | null
   entity_type: string | null
@@ -62,18 +62,6 @@ function nullableString(
   return value as string | null
 }
 
-function nullableNumber(
-  record: Record<string, unknown>,
-  key: string,
-  operation: string,
-) {
-  const value = record[key]
-  if (value !== null && typeof value !== 'number') {
-    throw contractError(operation, `${key} deve ser número ou null.`)
-  }
-  return value as number | null
-}
-
 function numberValue(
   record: Record<string, unknown>,
   key: string,
@@ -93,7 +81,7 @@ function parseNotification(value: unknown, operation: string): Notification {
     notification_type: stringValue(value, 'notification_type', operation),
     title: stringValue(value, 'title', operation),
     message: stringValue(value, 'message', operation),
-    priority: nullableNumber(value, 'priority', operation),
+    priority: nullableString(value, 'priority', operation),
     status: stringValue(value, 'status', operation),
     patient_id: nullableString(value, 'patient_id', operation),
     entity_type: nullableString(value, 'entity_type', operation),
@@ -117,7 +105,7 @@ function parseAction(value: unknown): NotificationActionResult {
   const operation = 'update_my_notification_for_interface'
   if (!isRecord(value)) throw contractError(operation, 'resultado inválido.')
   return {
-    success: value.success === true,
+    success: true,
     notification_id: stringValue(value, 'notification_id', operation),
     action: stringValue(value, 'action', operation),
   }
