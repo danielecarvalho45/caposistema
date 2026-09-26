@@ -9,6 +9,7 @@ import {
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
@@ -357,6 +358,12 @@ export function AgendaPage({
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
+  const [lastScheduledContact, setLastScheduledContact] = useState<Readonly<{
+    patientId: string
+    patientName: string
+    professionalName: string
+    slotStart: string
+  }> | null>(null)
   const [attendanceNotes, setAttendanceNotes] = useState('')
   const [attendanceReason, setAttendanceReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
@@ -478,6 +485,15 @@ export function AgendaPage({
       operationalOrigin: appointmentOrigin.trim() || null,
     })
     if (result.status === 'success') {
+      const professionalName =
+        professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
+        'Profissional CAPO'
+      setLastScheduledContact({
+        patientId: appointmentPatientId,
+        patientName: appointmentPatientQuery,
+        professionalName,
+        slotStart: validSlotStart,
+      })
       setAppointmentFeedback('Agendamento criado. Agenda recarregada do banco.')
       setAppointmentPatientId('')
       setAppointmentPatientQuery('')
@@ -879,6 +895,13 @@ export function AgendaPage({
               </button>
             </div>
             {appointmentFeedback && <p className="agenda-contract-note" role="status">{appointmentFeedback}</p>}
+            {lastScheduledContact && (
+              <PatientWhatsAppButton
+                patientId={lastScheduledContact.patientId}
+                label="WhatsApp — confirmar agendamento"
+                message={`Olá, ${lastScheduledContact.patientName}. Seu atendimento no CAPO está agendado para ${new Date(lastScheduledContact.slotStart).toLocaleString('pt-BR')} com ${lastScheduledContact.professionalName}.`}
+              />
+            )}
             <p className="agenda-contract-note">
               O agendamento é confirmado somente após retorno positivo do banco CAPO.
             </p>
