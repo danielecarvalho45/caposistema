@@ -2909,8 +2909,8 @@ export function createRpcService(transport: RpcTransport) {
       }),
     createAgendaBlock: (input: {
       agendaConfigId: string
-      weekday: number
-      specificDate: string
+      weekday: number | null
+      specificDate: string | null
       startTime: string
       endTime: string
       blockType: string
