@@ -126,21 +126,25 @@ describe('AgendaPage', () => {
       ...accessContext,
       professional_id: 'nutrition-professional-id',
       function_title: 'Nutricionista',
-      roles: [{ code: 'nutricao', name: 'Nutrição' }],
+      primary_specialty_name: 'Nutrição',
+      specialties: [
+        { specialty_id: 'nutrition-id', specialty_name: 'Nutrição', is_primary: true },
+      ],
+      roles: [{ code: 'profissional', name: 'Profissional' }],
       primary_context: {
         ...accessContext.primary_context,
-        code: 'nutricao',
-        name: 'Nutrição',
+        code: 'profissional',
+        name: 'Profissional',
       },
       real_identity: {
         ...accessContext.real_identity,
         professional_id: 'nutrition-professional-id',
         function_title: 'Nutricionista',
-        roles: [{ code: 'nutricao', name: 'Nutrição' }],
+        roles: [{ code: 'profissional', name: 'Profissional' }],
         primary_context: {
           ...accessContext.primary_context,
-          code: 'nutricao',
-          name: 'Nutrição',
+          code: 'profissional',
+          name: 'Profissional',
         },
       },
     }
