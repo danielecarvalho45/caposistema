@@ -123,9 +123,9 @@ export function ReportsPage({
   accessContext: AccessContext
   integration?: CAPOReportsIntegration
 }>) {
-  const isOnlyAdministrativeOperational = accessContext.roles.some((role) => role.code === 'administrativo_operacional') &&
-    !accessContext.roles.some((role) => ['administrador', 'coordenador', 'profissional'].includes(role.code))
-  if (isOnlyAdministrativeOperational) return <AdministrativeOperationalReport />
+  const isAdministrativeOperationalContext =
+    accessContext.primary_context.code === 'administrativo_operacional'
+  if (isAdministrativeOperationalContext) return <AdministrativeOperationalReport />
   return <AuthorizedReportsPage accessContext={accessContext} integration={integration} />
 }
 
