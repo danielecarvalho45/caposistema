@@ -2263,6 +2263,12 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_user_account_id: userAccountId, p_role_code: roleCode },
         parse: parseConfirmedJson,
       }),
+    getCapabilityCatalog: () =>
+      execute({
+        transport,
+        operation: 'get_capability_catalog_for_interface',
+        parse: parseConfirmedJson,
+      }),
     getEffectiveProfessionalCapabilities: (professionalId: string) =>
       execute({
         transport,
@@ -3199,6 +3205,7 @@ function createSupabaseTransport(
       case 'update_team_member_profile_for_interface':
       case 'set_team_member_active_for_interface':
       case 'set_team_member_primary_context_for_interface':
+      case 'get_capability_catalog_for_interface':
       case 'get_effective_professional_capabilities':
       case 'set_professional_capability_for_interface':
       case 'remove_professional_capability_for_interface':
