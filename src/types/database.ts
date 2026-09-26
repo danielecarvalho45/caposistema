@@ -31,6 +31,10 @@ export type Database = {
         Args: { p_referral_id: string }
         Returns: Json
       }
+      get_patient_contact_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
       get_social_vulnerability_indicator_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
