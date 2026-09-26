@@ -337,7 +337,7 @@ export type Database = {
           notification_type: string
           title: string
           message: string
-          priority: number | null
+          priority: string | null
           status: string
           patient_id: string | null
           entity_type: string | null
@@ -352,13 +352,9 @@ export type Database = {
         Args: {
           p_notification_id: string
           p_action: string
-          p_notes: string
+          p_notes?: string | null
         }
-        Returns: {
-          success: boolean
-          notification_id: string
-          action: string
-        }[]
+        Returns: Json
       }
       get_no_show_followups_for_interface: {
         Args: {
