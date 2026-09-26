@@ -63,6 +63,8 @@ export function QueuePage({
     useState<AsyncState<readonly PendingItem[]>>(loadingState)
   const [professionalQueue, setProfessionalQueue] =
     useState<AsyncState<unknown>>(loadingState)
+  const [patientQueue, setPatientQueue] =
+    useState<AsyncState<unknown>>(loadingState)
   const [familyQueue, setFamilyQueue] =
     useState<AsyncState<unknown>>(loadingState)
   const [psychologists, setPsychologists] = useState<readonly Record<string, unknown>[]>([])
@@ -105,7 +107,9 @@ export function QueuePage({
       return
     }
     setState(loadingState())
+    setPatientQueue(loadingState())
     setState(await loadPendingItems())
+    setPatientQueue(await getRpcService().getWaitingList(null, 'waiting', 50, 0))
     await loadFamilyQueue()
   }, [isProfessionalQueue, loadFamilyQueue, loadPendingItems])
 
@@ -118,6 +122,9 @@ export function QueuePage({
     } else if (isAdministrativeOperational) {
       void loadPendingItems().then((nextState) => {
         if (active) setState(nextState)
+      })
+      void getRpcService().getWaitingList(null, 'waiting', 50, 0).then((nextState) => {
+        if (active) setPatientQueue(nextState)
       })
       void getRpcService().getFamilyWaitingList('waiting', 50, 0).then((nextState) => {
         if (active) setFamilyQueue(nextState)
@@ -248,6 +255,59 @@ export function QueuePage({
 
   return (
     <section className="home-page" aria-labelledby="queue-title">
+      <div className="queue-card">
+        <div className="queue-heading">
+          <div>
+            <p className="eyebrow">Fila de Espera</p>
+            <h2>Fila de Pacientes</h2>
+            <p>Fila visual única. A especialidade permanece identificada na própria linha.</p>
+          </div>
+          <button type="button" onClick={() => void load()} disabled={patientQueue.status === 'loading'}>
+            Atualizar
+          </button>
+        </div>
+        {patientQueue.status === 'loading' && <p>Carregando fila de pacientes…</p>}
+        {patientQueue.status === 'error' && <p role="alert">{patientQueue.error.message}</p>}
+        {(patientQueue.status === 'empty' || (patientQueue.status === 'success' && waitingRows(patientQueue.data).length === 0)) && (
+          <p>Nenhum paciente aguardando.</p>
+        )}
+        {patientQueue.status === 'success' && waitingRows(patientQueue.data).length > 0 && (
+          <div className="queue-table-wrap">
+            <table className="queue-table">
+              <thead><tr><th>Paciente</th><th>Especialidade</th><th>Prioridade</th><th>Entrada</th><th>Ação</th></tr></thead>
+              <tbody>
+                {waitingRows(patientQueue.data).map((row, index) => (
+                  <tr key={rowText(row, 'waiting_list_id') + index}>
+                    <td>{rowText(row, 'patient_name')}</td>
+                    <td>{rowText(row, 'specialty_name')}</td>
+                    <td>{rowText(row, 'priority')}</td>
+                    <td>{formatDate(typeof row.entered_at === 'string' ? row.entered_at : null)}</td>
+                    <td>
+                      {canScheduleFamily ? (
+                        <Link
+                          to="/agenda"
+                          state={{
+                            patientId: rowText(row, 'patient_id'),
+                            patientName: rowText(row, 'patient_name'),
+                            specialtyId: rowText(row, 'specialty_id'),
+                            waitingListId: rowText(row, 'waiting_list_id'),
+                            origin: 'waiting_list',
+                          }}
+                        >
+                          Agendar
+                        </Link>
+                      ) : (
+                        <span>Supervisão</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       <div className="queue-card">
         <div className="queue-heading">
           <div>
