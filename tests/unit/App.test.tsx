@@ -792,6 +792,8 @@ describe('App', () => {
         },
       }),
       updateAdministrativeRequest: vi.fn(),
+      getFamilyPsychologyRequestContext: vi.fn(),
+      addFamilyToWaitingList: vi.fn(),
     }
 
     render(<RequestsPage accessContext={{ ...context, professional_id: 'professional-id', roles: [{ code: 'profissional', name: 'Profissional' }], primary_context: { ...context.primary_context, code: 'profissional', name: 'Profissional' } }} service={service} />)
