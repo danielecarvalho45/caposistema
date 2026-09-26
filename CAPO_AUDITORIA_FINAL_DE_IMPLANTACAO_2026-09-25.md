@@ -650,6 +650,30 @@ Foram corrigidas divergências entre interface e contratos físicos: a tela não
 
 ---
 
+## 7.11 Transporte — competência, necessidade, solicitação e PDF oficial
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A auditoria física confirmou que o fluxo de Transporte possui contratos separados para necessidade ativa, solicitação vinculada a atendimento, PDF armazenado, assinatura e providência administrativa. A interface integrada ainda chamava create_transport_request_for_interface com parâmetros antigos, não permitia selecionar o atendimento exigido, bloqueava o Auxiliar Administrativo da etapa administrativa e tentava assinar PDF antes de existir arquivo oficial.
+
+**Correções realizadas:**
+- competência profissional de criação restringida à Assistência Social com a capacidade preencher_solicitacao_transporte; Gestor continua autorizado diretamente;
+- Auxiliar Administrativo permanece sem preencher/gerar/assinar, mas pode confirmar, visualizar/baixar o documento, registrar encaminhamento, concluir ou cancelar conforme o backend;
+- reconhecimento da necessidade de transporte integrado antes da solicitação;
+- solicitação passa a enviar patient_id + appointment_id + transport_notes;
+- PDF oficial é gerado a partir do modelo aprovado, gravado no bucket privado capo-documents no caminho transport/<request_id>/..., registrado pela RPC oficial e assinado somente pelo Gestor;
+- visualização e download usam URL temporária do armazenamento privado;
+- encaminhamento externo exige canal institucional e só aparece depois do PDF preparado/assinado;
+- cancelamento da necessidade e cancelamento da solicitação permanecem separados e auditáveis.
+
+**Caminhos:** src/features/transport/TransportPage.tsx; src/app/route-access.ts; src/lib/supabase/rpc.ts; src/types/database.ts. Contratos físicos conferidos: recognize_transport_need_for_interface, get_transport_need_queue_for_interface, manage_transport_need_for_interface, get_transport_context_for_interface, create_transport_request_for_interface, manage_transport_request_for_interface, register_transport_pdf_for_interface, sign_transport_pdf_for_interface e get_transport_document_for_interface.
+
+**Conferência interna:** as assinaturas físicas das RPCs e as policies do bucket capo-documents foram relidas. A policy de INSERT exige caminho transport/<request_id>/... em PDF e papel Administrador; a policy de leitura autoriza os contextos operacionais previstos. A suíte automatizada ainda não foi executada após esta correção.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO/INTEGRAÇÃO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
