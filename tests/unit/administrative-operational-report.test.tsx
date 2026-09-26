@@ -73,7 +73,7 @@ describe('relações operacionais do Auxiliar', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: 'Relatórios Operacionais' }),
+      screen.getByRole('heading', { name: 'Relações operacionais' }),
     ).toBeVisible()
     expect(
       screen.getByRole('link', { name: 'Abrir relação de pendências e filas' }),
