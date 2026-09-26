@@ -2069,6 +2069,19 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_patient_id: patientId, p_specialty_id: specialtyId, p_priority: priority, p_notes: notes },
         parse: parseConfirmedJson,
       }),
+    completeWaitingListScheduling: (
+      waitingListId: string,
+      appointmentId: string,
+    ) =>
+      execute({
+        transport,
+        operation: 'complete_waiting_list_scheduling_for_interface',
+        args: {
+          p_waiting_list_id: waitingListId,
+          p_appointment_id: appointmentId,
+        },
+        parse: parseConfirmedJson,
+      }),
     updateWaitingListStatus: (waitingListId: string, action: string, notes: string | null = null) =>
       execute({
         transport,
@@ -3281,6 +3294,7 @@ function createSupabaseTransport(
       case 'create_family_psychology_appointment_for_interface':
       case 'update_family_waiting_list_status_for_interface':
       case 'register_patient_death_for_interface':
+      case 'complete_waiting_list_scheduling_for_interface':
       case 'get_waiting_list_for_interface':
       case 'add_patient_to_waiting_list_for_interface':
       case 'update_waiting_list_status_for_interface':
