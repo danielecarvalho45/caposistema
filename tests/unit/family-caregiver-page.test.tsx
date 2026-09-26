@@ -152,7 +152,7 @@ describe('FamilyCaregiverPage', () => {
     expect(screen.getByText(/Motivo da substituição/)).toBeVisible()
   })
 
-  it('mostra bloqueio real quando a busca de familiar não é autorizada', async () => {
+  it('não expõe a busca administrativa de familiar quando o contexto não pode corrigir', async () => {
     const service: FamilyCaregiverService = {
       getFamilyContext: async () => ({
         status: 'success',
@@ -166,48 +166,28 @@ describe('FamilyCaregiverPage', () => {
       createFamilyLink: async () => ({ status: 'success', data: {} }),
       replaceFamilyLink: async () => ({ status: 'success', data: {} }),
       closeFamilyLink: async () => ({ status: 'success', data: {} }),
-      updateFamilyLinkOperational: async () => ({
-        status: 'success',
-        data: {},
-      }),
-      searchFamilyMembers: async () => ({
-        status: 'error',
-        error: {
-          name: 'SupabaseOperationError',
-          message: 'Ação não autorizada.',
-          code: '42501',
-          kind: 'authorization',
-          operation: 'search_family_members_for_interface',
-        },
-      }),
+      updateFamilyLinkOperational: async () => ({ status: 'success', data: {} }),
+      searchFamilyMembers: async () => ({ status: 'empty' }),
       createPsychologyRequest: async () => ({ status: 'success', data: {} }),
       searchPatients: async () => ({
         status: 'success',
-        data: [
-          {
-            patient_id: 'patient-1',
-            full_name: 'Paciente Real',
-            cms: 'CMS-1',
-            patient_number: 'CAPO-1',
-          },
-        ],
+        data: [{
+          patient_id: 'patient-1',
+          full_name: 'Paciente Real',
+          cms: 'CMS-1',
+          patient_number: 'CAPO-1',
+        }],
       }),
     }
 
     const user = (await import('@testing-library/user-event')).default.setup()
-    render(
-      <FamilyCaregiverPage accessContext={accessContext} service={service} />,
-    )
-    await user.type(
-      screen.getByLabelText('Nome, CMS ou Nº CAPO'),
-      'Paciente real',
-    )
+    render(<FamilyCaregiverPage accessContext={accessContext} service={service} />)
+    await user.type(screen.getByLabelText('Nome, CMS ou Nº CAPO'), 'Paciente real')
     await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
     await user.click(screen.getByRole('button', { name: /Paciente Real/ }))
-    await user.type(screen.getByLabelText('Buscar familiar existente'), 'Maria')
-    await user.click(screen.getByRole('button', { name: 'Buscar familiar' }))
 
-    expect(screen.getByText(/Ação não autorizada/i)).toBeVisible()
+    expect(screen.queryByLabelText('Buscar familiar existente')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Buscar familiar' })).not.toBeInTheDocument()
   })
 
   it('explicita a separação dos registros confidenciais', () => {
@@ -218,6 +198,6 @@ describe('FamilyCaregiverPage', () => {
         'Não há transferência automática de acompanhamento entre familiares.',
       ),
     ).toBeVisible()
-    expect(screen.getByText(/Pendência de banco \/ integração/)).toBeVisible()
+    expect(screen.getByText('Não exibidos nesta tela.')).toBeVisible()
   })
 })
