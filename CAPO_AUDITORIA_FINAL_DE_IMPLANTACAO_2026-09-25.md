@@ -711,6 +711,37 @@ A função física do Supabase foi relida após a migração e o bloqueio de PDF
 
 ---
 
+## 7.13 Encerramentos por especialidade e ciclos de retorno
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A tela integrada misturava Encerramentos com Acompanhamento Social e oferecia ações administrativas que o backend reserva ao profissional responsável. Também exigia digitação manual de UUID de paciente e especialidade para o encerramento profissional.
+
+### Correções realizadas
+- removida a duplicação de Acompanhamento Social dentro da tela de Encerramentos;
+- conclusão do encerramento passou a aparecer somente quando o próprio backend devolve can_close=true para o profissional responsável;
+- reabertura passou a aparecer somente para Administrativo/Administrador quando can_reopen=true;
+- atribuição de profissional ficou limitada a Administrativo/Administrador e a pendências ainda sem responsável;
+- Coordenador permanece com visão de acompanhamento, sem receber ações que o backend não autoriza;
+- solicitação de encerramento da própria atuação passou a usar busca real de pacientes vinculados e lista real das especialidades do profissional, eliminando digitação manual de UUID;
+- abertura de novo ciclo de retorno passou a usar busca real do paciente e permanece restrita aos papéis administrativos autorizados.
+
+### Caminho alterado
+- src/features/closures/ClosuresPage.tsx
+
+### Contratos físicos confrontados
+- get_care_closures_for_interface
+- request_own_specialty_care_closure_for_interface
+- close_care_closure_for_interface
+- assign_care_closure_professional_for_interface
+- get_eligible_care_closure_professionals_for_interface
+- reopen_care_closure_for_interface
+- open_return_care_cycle_for_interface
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
