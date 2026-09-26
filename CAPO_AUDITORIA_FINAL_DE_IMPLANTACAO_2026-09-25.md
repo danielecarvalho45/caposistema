@@ -1391,3 +1391,34 @@ Roteiro final já previsto:
 **IMPLEMENTAÇÃO TÉCNICA CONFORME — AGUARDANDO TESTE OPERACIONAL FINAL.**
 
 Não reabrir Tarefa 1 nem blocos congelados por causa da Tarefa 2 sem autorização expressa da responsável.
+
+
+## 21.2 Fechamento técnico automático da Tarefa 2 — 26/09/2026
+
+**Resultado:** **TAREFA 2 CONCLUÍDA NA IMPLEMENTAÇÃO TÉCNICA — AGUARDANDO SOMENTE HOMOLOGAÇÃO OPERACIONAL FINAL.**
+
+Confronto realizado com:
+- Manual Técnico Integrado v5 vigente no `main`;
+- `TAREFA_02_FILA_OPERACIONAL_ADMINISTRATIVO.md`;
+- código físico atual da SPA;
+- contrato físico atual do Supabase oficial.
+
+### Conclusões
+
+- O Manual v5 registra o Bloco 1D-B como corrigido e integrado à SPA.
+- A RPC `get_pending_items_for_interface(p_limit integer, p_offset integer)` permanece implantada, autenticada e com autorização AO explícita no ramo `waiting_list`.
+- O frontend possui contrato tipado, wrapper RPC e renderização de estados reais.
+- A fila atual encaminha pendências somente para destinos conhecidos/autorizados; não inventa resolução local.
+- Contratos específicos de lista de espera já existem fisicamente para leitura, inclusão, atualização de status e conclusão de agendamento.
+- O documento `PENDENCIA_FILA_20260921.md` foi reclassificado como histórico/não bloqueante para esta tarefa; não existe base no Manual v5 para criar RPCs genéricas de “assumir” ou “resolver” pendência apenas por causa daquele registro.
+- Nenhuma correção de código ou banco foi necessária neste fechamento.
+- Nenhum bloco congelado foi reaberto.
+- Nenhuma nova pendência foi criada.
+
+### Única validação restante
+
+A homologação real 1E permanece reservada para o encerramento geral dos trabalhos, por decisão da responsável, cobrindo conta AO real, retorno com/sem itens, autorização e sessão.
+
+**Importante:** essa homologação final não impede considerar a implementação técnica da Tarefa 2 encerrada. O **Bloco 1**, porém, só poderá ser declarado congelado depois da 1E, conforme o Manual v5.
+
+**Estado:** **TAREFA 2 — CONCLUÍDA TECNICAMENTE.**
