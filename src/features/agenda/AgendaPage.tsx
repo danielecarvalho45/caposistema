@@ -366,6 +366,7 @@ export function AgendaPage({
     slotStart: string
   }> | null>(null)
   const [prefillWaitingListId, setPrefillWaitingListId] = useState('')
+  const [prefillRenewalId, setPrefillRenewalId] = useState('')
   const [attendanceNotes, setAttendanceNotes] = useState('')
   const [attendanceReason, setAttendanceReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
@@ -510,6 +511,22 @@ export function AgendaPage({
         }
         setPrefillWaitingListId('')
       }
+      if (prefillRenewalId && appointmentId) {
+        const linked =
+          await getRpcService().linkPrescriptionRenewalConsultAppointment(
+            prefillRenewalId,
+            appointmentId,
+          )
+        if (linked.status === 'error') {
+          setAppointmentFeedback(
+            'Agendamento criado, mas o vínculo com a Renovação de Receita não foi confirmado: ' +
+              linked.error.message,
+          )
+          await load()
+          return
+        }
+        setPrefillRenewalId('')
+      }
       const professionalName =
         professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
         'Profissional CAPO'
@@ -625,21 +642,49 @@ export function AgendaPage({
       location.state && typeof location.state === 'object'
         ? location.state as Record<string, unknown>
         : null
-    const patientId = typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
-    const patientName = typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
-    const specialtyId = typeof stateValue?.specialtyId === 'string' ? stateValue.specialtyId : ''
+    const patientId =
+      typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
+    const patientName =
+      typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
+    let specialtyId =
+      typeof stateValue?.specialtyId === 'string' ? stateValue.specialtyId : ''
+    const requestedProfessionalId =
+      typeof stateValue?.professionalId === 'string'
+        ? stateValue.professionalId
+        : ''
     const waitingListId =
       typeof stateValue?.waitingListId === 'string' ? stateValue.waitingListId : ''
-    if (!patientId || !specialtyId) return
-    setShowNewAppointment(true)
+    const renewalId =
+      typeof stateValue?.renewalId === 'string' ? stateValue.renewalId : ''
+    const origin = typeof stateValue?.origin === 'string' ? stateValue.origin : ''
+
+    if (!patientId) return
+
+    if (!specialtyId && requestedProfessionalId) {
+      if (schedulingCatalog.status !== 'success') return
+      const row = schedulingCatalogRows(schedulingCatalog.data).find(
+        (item) => item.professional_id === requestedProfessionalId,
+      )
+      specialtyId = row?.specialty_id ?? ''
+    }
+    if (!specialtyId) return
+
+    setShowScheduleForm(true)
     setAppointmentPatientId(patientId)
     setAppointmentPatientQuery(patientName)
     setSelectedSpecialtyId(specialtyId)
+    if (requestedProfessionalId) setSelectedProfessionalId(requestedProfessionalId)
     setPrefillWaitingListId(waitingListId)
+    setPrefillRenewalId(renewalId)
     setAppointmentOrigin(
-      stateValue?.origin === 'waiting_list' ? 'fila_de_espera' : '',
+      origin === 'waiting_list'
+        ? 'fila_de_espera'
+        : origin === 'prescription_renewal'
+          ? 'renovacao_receita_consulta'
+          : '',
     )
-  }, [isProfessional, location.state])
+    if (origin === 'prescription_renewal') setAppointmentType('consulta')
+  }, [isProfessional, location.state, schedulingCatalog])
 
   useEffect(() => {
     if (!rescheduleProfessionalId) return
