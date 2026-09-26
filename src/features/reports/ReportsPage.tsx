@@ -70,13 +70,49 @@ function startOfCurrentMonth() {
   return dateInputValue(new Date(date.getFullYear(), date.getMonth(), 1))
 }
 
+function dashboardRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+}
+
 function dashboardEntries(value: unknown): readonly [string, string | number | boolean][] {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return []
-  return Object.entries(value as Record<string, unknown>).flatMap(([key, item]) =>
+  const record = dashboardRecord(value)
+  if (!record) return []
+  return Object.entries(record).flatMap(([key, item]) =>
     typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
       ? [[key, item] as const]
       : [],
   )
+}
+
+function dashboardSections(value: unknown) {
+  const record = dashboardRecord(value)
+  if (!record) return [] as readonly [string, Record<string, unknown>][]
+  return Object.entries(record).flatMap(([key, item]) => {
+    const section = dashboardRecord(item)
+    return section && key !== 'meta' ? [[key, section] as [string, Record<string, unknown>]] : []
+  })
+}
+
+function dashboardSpecialties(value: unknown) {
+  const record = dashboardRecord(value)
+  const options = record?.specialty_options
+  if (!Array.isArray(options)) return [] as readonly { id: string; name: string }[]
+  return options.flatMap((item) => {
+    const row = dashboardRecord(item)
+    return row && typeof row.id === 'string' && typeof row.name === 'string'
+      ? [{ id: row.id, name: row.name }]
+      : []
+  })
+}
+
+function dashboardSpecialtyRows(value: unknown) {
+  const record = dashboardRecord(value)
+  const rows = record?.agenda_by_specialty
+  return Array.isArray(rows)
+    ? rows.filter((item): item is Record<string, unknown> => Boolean(dashboardRecord(item)))
+    : []
 }
 
 export function ReportsPage({
@@ -101,6 +137,7 @@ export function ReportsPage({
   const [reportState, setReportState] =
     useState<AsyncState<AssistentialOperationalReport>>(loadingState)
   const [dashboardState, setDashboardState] = useState<AsyncState<unknown>>(loadingState)
+  const [managerSpecialty, setManagerSpecialty] = useState('')
   const isProfessional =
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some(
@@ -140,27 +177,55 @@ export function ReportsPage({
   }, [endDate, integration, isProfessional, selectedSpecialty, startDate])
 
   useEffect(() => {
-    const specialtyId = isProfessional ? selectedSpecialty || null : null
-    if (isProfessional && !specialtyId) return
+    const specialtyId = isManager
+      ? managerSpecialty || null
+      : isProfessional
+        ? selectedSpecialty || null
+        : null
+    if (!isManager && isProfessional && !specialtyId) return
+    if (!isManager && !isProfessional) return
     let active = true
     const loadDashboard = integration.loadDashboard ?? ((from, to, specialty) => getRpcService().getReportsDashboard(from, to, specialty))
     void loadDashboard(startDate, endDate, specialtyId).then((nextState) => {
       if (active) setDashboardState(nextState)
     })
     return () => { active = false }
-  }, [endDate, integration, isProfessional, selectedSpecialty, startDate])
+  }, [endDate, integration, isManager, isProfessional, managerSpecialty, selectedSpecialty, startDate])
 
-  if (!isProfessional && isManager) {
+  if (isManager) {
+    const managerSpecialties =
+      dashboardState.status === 'success'
+        ? dashboardSpecialties(dashboardState.data)
+        : []
     return (
       <section className="reports-page" aria-labelledby="manager-reports-title">
         <header className="reports-card reports-heading">
           <div>
             <p className="eyebrow">Governança e Gestão</p>
             <h2 id="manager-reports-title">Relatórios Gerenciais</h2>
-            <p>Indicadores institucionais de agenda, filas, faltosos, solicitações e fluxos autorizados.</p>
+            <p>Indicadores institucionais calculados a partir dos registros reais do CAPO.</p>
+          </div>
+          <div className="reports-filters">
+            <label>
+              De
+              <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+            </label>
+            <label>
+              Até
+              <input type="date" min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+            </label>
+            <label>
+              Especialidade
+              <select value={managerSpecialty} onChange={(event) => setManagerSpecialty(event.target.value)}>
+                <option value="">Todas</option>
+                {managerSpecialties.map((specialty) => (
+                  <option key={specialty.id} value={specialty.id}>{specialty.name}</option>
+                ))}
+              </select>
+            </label>
           </div>
         </header>
-        <DashboardPanel state={dashboardState} />
+        <DashboardPanel state={dashboardState} management />
       </section>
     )
   }
@@ -288,10 +353,65 @@ export function ReportsPage({
   )
 }
 
-function DashboardPanel({ state }: Readonly<{ state: AsyncState<unknown> }>) {
+function DashboardPanel({ state, management = false }: Readonly<{ state: AsyncState<unknown>; management?: boolean }>) {
   if (state.status === 'loading') return <article className="reports-card"><p>Carregando dashboard oficial...</p></article>
   if (state.status === 'empty') return <article className="reports-card"><p>Nenhum indicador autorizado foi retornado.</p></article>
   if (state.status === 'error') return <article className="reports-card reports-error" role="alert"><p>Não foi possível carregar o dashboard: {state.error.message}</p></article>
   const entries = dashboardEntries(state.data)
-  return <article className="reports-card"><h3>Dashboard oficial</h3>{entries.length === 0 ? <p>O backend não retornou métricas escalares para este contexto.</p> : <dl className="reports-metrics">{entries.map(([key, value]) => <div key={key}><dt>{metricLabel(key)}</dt><dd>{String(value)}</dd></div>)}</dl>}</article>
+  const sections = management ? dashboardSections(state.data) : []
+  const specialtyRows = management ? dashboardSpecialtyRows(state.data) : []
+  return (
+    <article className="reports-card">
+      <h3>Dashboard oficial</h3>
+      {management ? (
+        <>
+          {sections.length === 0 && specialtyRows.length === 0 && (
+            <p>O backend não retornou indicadores gerenciais estruturados.</p>
+          )}
+          <div className="reports-metrics">
+            {sections.map(([sectionName, section]) => {
+              const metrics = dashboardEntries(section)
+              if (metrics.length === 0) return null
+              return (
+                <section key={sectionName} aria-label={metricLabel(sectionName)}>
+                  <h4>{metricLabel(sectionName)}</h4>
+                  <dl>
+                    {metrics.map(([key, value]) => (
+                      <div key={key}><dt>{metricLabel(key)}</dt><dd>{String(value)}</dd></div>
+                    ))}
+                  </dl>
+                </section>
+              )
+            })}
+          </div>
+          {specialtyRows.length > 0 && (
+            <div className="reports-card">
+              <h4>Agenda por especialidade</h4>
+              <table>
+                <thead><tr><th>Especialidade</th><th>Válidos</th><th>Realizados</th><th>Faltas</th><th>Retornos</th><th>Absenteísmo</th></tr></thead>
+                <tbody>
+                  {specialtyRows.map((row, index) => (
+                    <tr key={String(row.specialty_id ?? index)}>
+                      <td>{String(row.specialty_name ?? 'Sem especialidade')}</td>
+                      <td>{String(row.valid_period ?? 0)}</td>
+                      <td>{String(row.realized_period ?? 0)}</td>
+                      <td>{String(row.no_show_period ?? 0)}</td>
+                      <td>{String(row.returns_period ?? 0)}</td>
+                      <td>{String(row.absenteeism_rate_pct ?? 0)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      ) : entries.length === 0 ? (
+        <p>O backend não retornou métricas escalares para este contexto.</p>
+      ) : (
+        <dl className="reports-metrics">
+          {entries.map(([key, value]) => <div key={key}><dt>{metricLabel(key)}</dt><dd>{String(value)}</dd></div>)}
+        </dl>
+      )}
+    </article>
+  )
 }
