@@ -906,6 +906,88 @@ A interface mantém Faltosos separado de Busca Ativa. Administrador e Administra
 
 ---
 
+## 7.18 Solicitações Administrativas — papel profissional canônico e contingência da Coordenação
+**Data:** 26/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A interface ainda reconhecia papéis legados ligados a especialidades para permitir criação de solicitações. O contrato físico utiliza vínculo profissional real e o papel canônico profissional. Além disso, o backend autoriza a Coordenação por has_full_access() a assumir a rotina administrativa quando necessário, mas a interface não expunha as ações correspondentes.
+
+### Correções realizadas
+- removida dependência de papéis legados de especialidade na criação/consulta de Solicitações;
+- criação profissional passou a depender somente de vínculo profissional + papel profissional;
+- Coordenação passou a poder executar as mesmas ações de contingência que o backend já autoriza: iniciar, registrar providência, devolver, concluir, recusar e cancelar quando cabível;
+- histórico e contrarreferência permanecem preservados pelo contrato físico.
+
+### Caminho alterado
+- src/features/requests/RequestsPage.tsx
+
+### Evidência física confrontada
+- create_administrative_request_for_interface exige vínculo profissional;
+- get_administrative_requests_for_interface considera Administrador, Administrativo Operacional e Coordenador na visão ampliada;
+- update_administrative_request_for_interface usa has_full_access() ou Administrativo Operacional para ações administrativas;
+- administrative_requests possui trigger de auditoria e trigger de notificação.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
+## 7.19 Encaminhamento Interprofissional — emissão por capacidade e recebimento pelo destinatário
+**Data:** 26/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A regra estrutural determina que Encaminhamento Interprofissional não é automático por profissão: a emissão depende da capacidade delegável encaminhamento_interprofissional. Porém, depois que o Administrativo atribui um encaminhamento, o profissional destinatário precisa conseguir abrir o módulo e atuar mesmo que não possua capacidade de emissão.
+
+### Correções realizadas
+- rota /encaminhamentos passou a aceitar profissional real como destinatário potencial;
+- o botão/módulo de Encaminhamentos continua oculto na navegação do profissional comum quando ele não possui a capacidade delegada de emissão;
+- notificações ou contexto direto podem abrir o encaminhamento recebido, submetidos ao canAccessAppRoute;
+- criação continua condicionada à capability encaminhamento_interprofissional dentro da própria tela;
+- Coordenação passou a receber as ações de contingência que o backend já autoriza por has_full_access();
+- testes de rota foram atualizados para cobrir destinatário profissional sem capacidade de emissão.
+
+### Caminhos alterados
+- src/app/route-access.ts
+- src/components/navigation/navigation-config.ts
+- src/features/referrals/ReferralsPage.tsx
+- tests/unit/route-access.test.ts
+
+### Evidência física confrontada
+- create_interprofessional_referral_for_interface exige a capability encaminhamento_interprofissional;
+- get_interprofessional_referrals_for_interface permite ao profissional ver o que enviou ou o que foi atribuído a ele;
+- get_interprofessional_referral_targets_for_interface seleciona profissional ativo da especialidade de destino;
+- update_interprofessional_referral_for_interface separa ações do Administrativo, destinatário e solicitante.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — TESTES ATUALIZADOS, MAS A SUÍTE AINDA NÃO FOI EXECUTADA.
+
+---
+
+## 7.20 Faltosos — automação da Falta e contingência da Coordenação
+**Data:** 26/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A auditoria confirmou fisicamente que Faltosos é um fluxo próprio, separado de Busca Ativa. O gatilho trg_patient_no_show cria/aciona o acompanhamento quando a agenda recebe attendance_status='faltou'. A rotina administrativa principal é do Auxiliar Administrativo; a Coordenação possui contingência operacional e o backend já a autoriza por has_full_access(), mas a tela permitia apenas consulta ao Coordenador.
+
+### Correções realizadas
+- Coordenação passou a poder registrar contato/providência e solicitar remarcação quando assumir contingência;
+- Assistência Social continua fora do fluxo de Faltosos;
+- Busca Ativa permanece separada e não recebe automaticamente uma Falta;
+- remarcação de Faltoso continua gerando solicitação administrativa própria e o gatilho close_no_show_followup_after_reschedule encerra o acompanhamento quando a remarcação efetiva é registrada.
+
+### Caminho alterado
+- src/features/no-shows/NoShowsPage.tsx
+
+### Evidência física confrontada
+- trg_patient_no_show em patient_appointments;
+- handle_patient_no_show;
+- get_no_show_followups_for_interface;
+- register_no_show_contact_for_interface;
+- request_no_show_rescheduling_for_interface;
+- trg_close_no_show_followup_after_reschedule.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
