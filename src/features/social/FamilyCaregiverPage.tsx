@@ -19,6 +19,7 @@ export function FamilyCaregiverPage({
   const [patientQuery, setPatientQuery] = useState('')
   const [patients, setPatients] = useState<readonly ReferralPatient[]>([])
   const [patientId, setPatientId] = useState('')
+  const [patientName, setPatientName] = useState('')
   const [context, setContext] = useState<FamilyContext | null>(null)
   const [familyQuery, setFamilyQuery] = useState('')
   const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>(
@@ -54,7 +55,7 @@ export function FamilyCaregiverPage({
   }
 
   async function searchFamilies() {
-    if (!authorized || familyQuery.trim().length < 2) return
+    if (!context?.can_admin_correct || familyQuery.trim().length < 2) return
     const result = await service.searchFamilyMembers(familyQuery.trim(), 20)
     setFamilyMembers(result.status === 'success' ? result.data : [])
     if (result.status === 'error') setError(result.error.message)
@@ -152,7 +153,7 @@ export function FamilyCaregiverPage({
     >
       <header className="family-caregiver-header">
         <div>
-          <p className="eyebrow">Assistência Social</p>
+          <p className="eyebrow">Fluxo autorizado</p>
           <h1 id="family-caregiver-title">Familiar / Cuidador</h1>
           <p>
             Consulta controlada do vínculo familiar, conforme os contratos e as
@@ -192,6 +193,7 @@ export function FamilyCaregiverPage({
                     setFeedback(null)
                     setError(null)
                     setPatientId(patient.patient_id)
+                    setPatientName(patient.full_name)
                     void loadContext(patient.patient_id)
                   }}
                 >
@@ -206,7 +208,7 @@ export function FamilyCaregiverPage({
         )}
         {patientId && (
           <p className="family-caregiver-selected">
-            Paciente selecionado: {patientId}
+            Paciente selecionado: {patientName}
           </p>
         )}
       </section>
@@ -313,19 +315,21 @@ export function FamilyCaregiverPage({
               </select>
             </label>
           </div>
-          <div className="family-caregiver-search">
-            <label>
-              Buscar familiar existente
-              <input
-                value={familyQuery}
-                onChange={(event) => setFamilyQuery(event.target.value)}
-              />
-            </label>
-            <button type="button" onClick={() => void searchFamilies()}>
-              Buscar familiar
-            </button>
-          </div>
-          {familyMembers.length > 0 && (
+          {context?.can_admin_correct && (
+            <div className="family-caregiver-search">
+              <label>
+                Buscar familiar existente
+                <input
+                  value={familyQuery}
+                  onChange={(event) => setFamilyQuery(event.target.value)}
+                />
+              </label>
+              <button type="button" onClick={() => void searchFamilies()}>
+                Buscar familiar
+              </button>
+            </div>
+          )}
+          {context?.can_admin_correct && familyMembers.length > 0 && (
             <ul className="family-caregiver-results">
               {familyMembers.map((member, index) => (
                 <li key={String(member.id ?? index)}>
@@ -371,7 +375,7 @@ export function FamilyCaregiverPage({
                 Atualizar dados operacionais
               </button>
             )}
-            {context?.active_link && (
+            {context?.active_link && context.can_admin_correct && (
               <button
                 type="button"
                 disabled={busy}
@@ -420,10 +424,9 @@ export function FamilyCaregiverPage({
       ) : null}
 
       <footer className="family-caregiver-pending">
-        <strong>Pendência de banco / integração</strong>
+        <strong>Integração oficial CAPO</strong>
         <p>
-          As operações usam exclusivamente os contratos oficiais do Supabase. O
-          Luto permanece separado por falta de RPC de interface autorizada.
+          O vínculo familiar e o fluxo de luto usam contratos distintos e auditáveis do Supabase.
         </p>
         <small>Contexto autorizado: {accessContext.primary_context.name}</small>
       </footer>
