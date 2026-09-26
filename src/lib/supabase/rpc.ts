@@ -2721,6 +2721,46 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_specialty_id: specialtyId },
         parse: parseReferralTargets,
       }),
+    getPatientForEdit: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'get_patient_for_edit_for_interface',
+        args: { p_patient_id: patientId },
+        parse: (value) => value,
+      }),
+    updatePatient: (input: {
+      patientId: string
+      fullName: string
+      birthDate: string
+      cms: string | null
+      sex: string | null
+      phone: string | null
+      phoneSecondary: string | null
+      address: string | null
+      capoStartDate: string | null
+      operationalNotes: string | null
+      status: 'ativo' | 'inativo'
+      origin: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'update_patient_for_interface',
+        args: {
+          p_patient_id: input.patientId,
+          p_full_name: input.fullName,
+          p_birth_date: input.birthDate,
+          p_cms: input.cms,
+          p_sex: input.sex,
+          p_phone: input.phone,
+          p_phone_secondary: input.phoneSecondary,
+          p_address: input.address,
+          p_capo_start_date: input.capoStartDate,
+          p_operational_notes: input.operationalNotes,
+          p_status: input.status,
+          p_origin: input.origin,
+        },
+        parse: (value) => value,
+      }),
     searchReferralPatients: (query: string, limit = 20, offset = 0) =>
       execute({
         transport,
@@ -3622,6 +3662,8 @@ function createSupabaseTransport(
             typeof args?.p_reason === 'string' ? args.p_reason : null,
         })
       case 'complete_first_access':
+      case 'get_patient_for_edit_for_interface':
+      case 'update_patient_for_interface':
       case 'get_patient_contact_for_interface':
       case 'get_birthdays_for_interface':
       case 'get_interprofessional_referral_specialties_for_interface':
