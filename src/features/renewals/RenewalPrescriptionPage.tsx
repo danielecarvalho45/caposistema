@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import {
   getRpcService,
@@ -16,6 +17,7 @@ type Service = Pick<
   | 'getPrescriptionRenewals'
   | 'managePrescriptionRenewalMedical'
   | 'managePrescriptionRenewalAdmin'
+  | 'getPrescriptionRenewalOperationalContext'
   | 'searchReferralPatients'
 >
 
@@ -66,6 +68,8 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   const [pickupLocation, setPickupLocation] = useState('')
   const [patientContacted, setPatientContacted] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [operationalContext, setOperationalContext] =
+    useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const selected = items.find((item) => item.renewal_id === selectedId) ?? null
@@ -101,6 +105,30 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
     return () => { active = false }
   }, [authorized, service, status])
 
+  useEffect(() => {
+    if (!authorized || !selectedId) {
+      setOperationalContext(null)
+      return
+    }
+    let active = true
+    void service.getPrescriptionRenewalOperationalContext(selectedId).then((result) => {
+      if (!active) return
+      if (
+        result.status === 'success' &&
+        result.data &&
+        typeof result.data === 'object' &&
+        !Array.isArray(result.data)
+      ) {
+        setOperationalContext(result.data as Record<string, unknown>)
+      } else {
+        setOperationalContext(null)
+      }
+    })
+    return () => {
+      active = false
+    }
+  }, [authorized, selectedId, service])
+
   async function searchPatients() {
     if (patientQuery.trim().length < 2) {
       setFeedback('Informe ao menos dois caracteres para buscar o paciente.')
@@ -131,9 +159,9 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
     setBusy(false)
   }
 
-  async function actMedical(action: 'start' | 'complete') {
+  async function actMedical(action: 'start' | 'renewed' | 'needs_consult') {
     if (!selected || busy) return
-    if (action === 'complete' && note.trim().length < 3) {
+    if (action !== 'start' && note.trim().length < 3) {
       setFeedback('Informe o retorno operacional com pelo menos 3 caracteres.')
       return
     }
@@ -141,13 +169,17 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
     const result = await service.managePrescriptionRenewalMedical(
       selected.renewal_id,
       action,
-      action === 'complete' ? note.trim() : null,
+      action === 'start' ? null : note.trim(),
     )
     if (result.status === 'success') {
       setNote('')
-      setFeedback(action === 'start'
-        ? 'Avaliação médica iniciada.'
-        : 'Etapa médica concluída e devolvida ao administrativo.')
+      setFeedback(
+        action === 'start'
+          ? 'Avaliação médica iniciada.'
+          : action === 'renewed'
+            ? 'Receita renovada no sistema oficial. Retorno enviado ao Administrativo.'
+            : 'Necessidade de consulta registrada. Retorno enviado ao Administrativo para agendamento.',
+      )
       await loadItems()
     } else setFeedback(errorMessage(result))
     setBusy(false)
@@ -253,13 +285,54 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
             {canManageMedical && selected.status === 'awaiting_medical' && <button type="button" onClick={() => void actMedical('start')} disabled={busy}>Iniciar avaliação médica</button>}
             {canManageMedical && selected.status === 'medical_in_progress' && <>
               <label>Retorno operacional<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
-              <button type="button" onClick={() => void actMedical('complete')} disabled={busy}>Concluir etapa médica e devolver ao administrativo</button>
+              <p>Registre somente a devolutiva operacional. O conteúdo da prescrição permanece no sistema oficial.</p>
+              <button type="button" onClick={() => void actMedical('renewed')} disabled={busy || note.trim().length < 3}>Receita renovada</button>
+              <button type="button" onClick={() => void actMedical('needs_consult')} disabled={busy || note.trim().length < 3}>Necessita consulta</button>
             </>}
             {canManageAdmin && selected.status === 'awaiting_admin' && <>
-              <label>Local/orientação de retirada<input value={pickupLocation} onChange={(event) => setPickupLocation(event.target.value)} /></label>
-              <label>Observação administrativa final<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
-              <label><input type="checkbox" checked={patientContacted} onChange={(event) => setPatientContacted(event.target.checked)} /> Paciente contatado/orientado</label>
-              <button type="button" onClick={() => void completeAdministrative()} disabled={busy}>Concluir retorno</button>
+              {operationalContext?.medical_outcome === 'needs_consult' ? (
+                <>
+                  <p><strong>Decisão médica:</strong> necessita consulta.</p>
+                  {operationalContext.consult_appointment_id ? (
+                    <p>
+                      Consulta vinculada:{' '}
+                      {operationalContext.consult_appointment_date
+                        ? new Date(String(operationalContext.consult_appointment_date)).toLocaleString('pt-BR')
+                        : 'agendamento confirmado'}
+                    </p>
+                  ) : (
+                    <Link
+                      to="/agenda"
+                      state={{
+                        patientId: selected.patient_id,
+                        patientName: selected.patient_name,
+                        professionalId: selected.doctor_id,
+                        renewalId: selected.renewal_id,
+                        origin: 'prescription_renewal',
+                      }}
+                    >
+                      Agendar consulta
+                    </Link>
+                  )}
+                  <label>Observação administrativa final<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
+                  <label><input type="checkbox" checked={patientContacted} onChange={(event) => setPatientContacted(event.target.checked)} /> Paciente contatado/orientado</label>
+                  <button
+                    type="button"
+                    onClick={() => void completeAdministrative()}
+                    disabled={busy || !operationalContext.consult_appointment_id || !patientContacted}
+                  >
+                    Concluir após agendamento e contato
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p><strong>Decisão médica:</strong> receita renovada no sistema oficial.</p>
+                  <label>Local/orientação de retirada<input value={pickupLocation} onChange={(event) => setPickupLocation(event.target.value)} /></label>
+                  <label>Observação administrativa final<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
+                  <label><input type="checkbox" checked={patientContacted} onChange={(event) => setPatientContacted(event.target.checked)} /> Paciente contatado/orientado</label>
+                  <button type="button" onClick={() => void completeAdministrative()} disabled={busy || !patientContacted}>Concluir retorno</button>
+                </>
+              )}
             </>}
             {canManageAdmin && !['completed', 'cancelled'].includes(selected.status) && <>
               <label>Motivo do cancelamento<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
