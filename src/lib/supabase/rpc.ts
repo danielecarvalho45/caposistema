@@ -3289,6 +3289,8 @@ function createSupabaseTransport(
       case 'set_professional_capability_for_interface':
       case 'remove_professional_capability_for_interface':
       case 'set_specialty_capability_status_for_interface':
+      case 'get_family_psychology_request_context_for_interface':
+      case 'add_family_to_waiting_list_for_interface':
       case 'get_family_waiting_list_for_interface':
       case 'get_family_queue_candidates_for_slot':
       case 'create_family_psychology_appointment_for_interface':
