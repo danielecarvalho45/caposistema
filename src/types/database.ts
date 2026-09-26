@@ -31,6 +31,14 @@ export type Database = {
         Args: { p_referral_id: string }
         Returns: Json
       }
+      get_social_vulnerability_indicator_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      set_social_vulnerability_indicator_for_interface: {
+        Args: { p_patient_id: string; p_level: string }
+        Returns: Json
+      }
       get_nutrition_documents_for_management: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: Json
