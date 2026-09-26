@@ -149,7 +149,19 @@ export function TransportPage({ accessContext }: Props) {
   const hasTransportCapability = accessContext.capabilities.includes(
     'preencher_solicitacao_transporte',
   )
-  const canCreateRequest = isManager || hasTransportCapability
+  const isSocialProfessional =
+    Boolean(accessContext.professional_id) &&
+    hasRole('profissional') &&
+    (accessContext.specialties ?? []).some(
+      (specialty) =>
+        specialty.specialty_name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toLowerCase() === 'assistencia social',
+    )
+  const canCreateRequest =
+    isManager || (isSocialProfessional && hasTransportCapability)
   const canAdminister = isManager || isAdministrativeOperational
   const authorized = canCreateRequest || canAdminister
 
@@ -439,7 +451,7 @@ export function TransportPage({ accessContext }: Props) {
               <label>Justificativa para alteração da necessidade
                 <textarea value={needReason} onChange={(event) => setNeedReason(event.target.value)} rows={2} />
               </label>
-              {!isManager && hasTransportCapability && (
+              {!isManager && isSocialProfessional && hasTransportCapability && (
                 <button type="button" disabled={busy || needReason.trim().length < 5} onClick={() => void manageNeed('request_cancel')}>
                   Solicitar cancelamento
                 </button>
@@ -482,7 +494,7 @@ export function TransportPage({ accessContext }: Props) {
           <button type="button" onClick={() => void createRequest()} disabled={busy || !selectedAppointmentId || reason.trim().length < 5}>
             Salvar solicitação
           </button>
-          {!isManager && hasTransportCapability && (
+          {!isManager && isSocialProfessional && hasTransportCapability && (
             <p>O PDF oficial será gerado e assinado pelo Gestor do Sistema. A etapa administrativa posterior recebe o documento já vinculado.</p>
           )}
         </div>
