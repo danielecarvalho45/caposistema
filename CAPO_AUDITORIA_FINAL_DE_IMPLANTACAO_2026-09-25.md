@@ -1275,3 +1275,21 @@ Toda nova auditoria/correção da implantação deve:
 **Conclusão registrada:** essas oito falhas **não comprovam, por si só, oito regressões do sistema**. A classificação definitiva permaneceu pendente porque a Matriz Funcional e as Especificações exigidas não foram localizadas no `main` do GitHub durante essa execução. **Nenhum módulo congelado foi reaberto.**
 
 **Estado documental:** este resultado havia sido registrado apenas localmente no ambiente de execução. Com este registro, o mesmo resultado passa a constar no Documento Mestre do GitHub, sem criação de documento paralelo e sem alteração de código, testes ou Supabase.
+
+
+## 20.9 Suíte interna ampliada — resultado comunicado em 26/09/2026
+
+**Resultado comunicado pela responsável:** 65 testes executados, 57 aprovados e 8 falhas. O registro local citado na comunicação não estava disponível nesta cópia de trabalho; os erros abaixo foram transcritos da comunicação. Nenhuma dessas oito falhas demonstra isoladamente uma regressão, e os fluxos interrompidos antes da ação ainda não foram validados.
+
+| Teste | Erro observado comunicado | Próxima verificação necessária |
+|---|---|---|
+| Shell com contexto real | Não encontrou `Olá, Nome real`. | Confrontar título e contexto montado com a Matriz e a Especificação Funcional vigentes. |
+| Fila no contexto administrativo | Não encontrou `Fila operacional`. | Confrontar título e rota com a regra administrativa vigente. |
+| Pendências da fila | Não encontrou `Fila de espera — Nutrição`; `Link` sem roteador. | Montar o cenário com roteador e verificar dado/visibilidade reais. |
+| Fila fora do contexto administrativo | O teste esperava ausência de `Fila`, mas o link apareceu. | Confrontar permissão por papel e contexto com a Matriz antes de decidir se há regressão. |
+| Criar solicitação | `useLocation()` sem roteador. | Corrigir a montagem do teste e então exercitar o envio. |
+| Bloquear solicitação sem autorização | `useLocation()` sem roteador. | Corrigir a montagem do teste e então exercitar o bloqueio. |
+| Criar pedido de renovação de receita | Não encontrou `Buscar paciente`. | Verificar campo e fluxo previstos na Especificação Funcional antes de ajustar teste/código. |
+| Decisão médica na renovação | Não encontrou `Observação da ação`. | Verificar etapa, papel e campo previstos antes de ajustar teste/código. |
+
+**Estado:** classificação definitiva das oito falhas **PENDENTE DE CONFRONTO INDIVIDUAL** com `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12` e `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12`. Esses documentos estão acessíveis na documentação do projeto fora da árvore `main`; a ausência no repositório não autoriza presumir requisitos nem alterar funções aprovadas. Usar a especificação estrutural somente como complemento e o Manual Técnico Integrado v5 para questões técnicas. Nenhum módulo congelado foi reaberto; nenhuma das oito falhas foi declarada corrigida neste registro.
