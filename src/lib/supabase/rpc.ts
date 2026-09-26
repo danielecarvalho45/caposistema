@@ -2870,9 +2870,9 @@ export function createRpcService(transport: RpcTransport) {
         parse: (value) => value,
       }),
     getReschedulableAppointments: (
-      patientId: string,
-      professionalId: string,
-      date: string,
+      patientId: string | null,
+      professionalId: string | null,
+      date: string | null,
       limit = 50,
     ) =>
       execute({
@@ -3446,9 +3446,11 @@ function createSupabaseTransport(
         })
       case 'get_reschedulable_appointments':
         return client.rpc(operation, {
-          p_patient_id: String(args?.p_patient_id ?? ''),
-          p_professional_id: String(args?.p_professional_id ?? ''),
-          p_date: String(args?.p_date ?? ''),
+          p_patient_id:
+            typeof args?.p_patient_id === 'string' ? args.p_patient_id : null,
+          p_professional_id:
+            typeof args?.p_professional_id === 'string' ? args.p_professional_id : null,
+          p_date: typeof args?.p_date === 'string' ? args.p_date : null,
           p_limit: Number(args?.p_limit ?? 50),
         })
       case 'reschedule_appointment_for_interface':
@@ -3463,8 +3465,10 @@ function createSupabaseTransport(
       case 'create_agenda_block_for_interface':
         return client.rpc(operation, {
           p_agenda_config_id: String(args?.p_agenda_config_id ?? ''),
-          p_weekday: Number(args?.p_weekday ?? 0),
-          p_specific_date: String(args?.p_specific_date ?? ''),
+          p_weekday:
+            typeof args?.p_weekday === 'number' ? args.p_weekday : null,
+          p_specific_date:
+            typeof args?.p_specific_date === 'string' ? args.p_specific_date : null,
           p_start_time: String(args?.p_start_time ?? ''),
           p_end_time: String(args?.p_end_time ?? ''),
           p_block_type: String(args?.p_block_type ?? ''),
