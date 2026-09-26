@@ -84,7 +84,7 @@ export function ReferralsPage({
     [accessContext.roles],
   )
   const canManage = roleCodes.some((role) =>
-    ['administrador', 'administrativo_operacional'].includes(role),
+    ['administrador', 'administrativo_operacional', 'coordenador'].includes(role),
   )
   const canCreate =
     Boolean(accessContext.professional_id) &&
