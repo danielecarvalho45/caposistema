@@ -11,6 +11,18 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      recognize_transport_need_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      get_transport_need_queue_for_interface: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      manage_transport_need_for_interface: {
+        Args: { p_cycle_id: string; p_action: string; p_reason: string }
+        Returns: Json
+      }
       get_transport_context_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
