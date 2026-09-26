@@ -11,6 +11,221 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      apply_agenda_change_request_for_interface: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      clear_homologation_context_for_interface: {
+        Args: { p_reason?: string | null }
+        Returns: Json
+      }
+      create_agenda_change_request_for_interface: {
+        Args: {
+          p_agenda_config_id: string
+          p_request_type: string
+          p_requested_changes: Json
+          p_justification: string
+        }
+        Returns: Json
+      }
+      create_nutrition_document_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      create_specialty_for_interface: {
+        Args: { p_name: string; p_description?: string | null }
+        Returns: Json
+      }
+      decide_agenda_change_request_for_interface: {
+        Args: {
+          p_request_id: string
+          p_decision: string
+          p_reason?: string | null
+        }
+        Returns: Json
+      }
+      get_agenda_change_requests_for_interface: {
+        Args: {
+          p_status?: string | null
+          p_professional_id?: string | null
+          p_limit?: number
+        }
+        Returns: {
+          request_id: string
+          professional_id: string
+          professional_name: string
+          agenda_config_id: string
+          request_type: string
+          requested_changes: Json
+          justification: string
+          status: string
+          decision_reason: string | null
+          created_at: string
+          updated_at: string
+          decided_at: string | null
+          effected_at: string | null
+        }[]
+      }
+      get_coordination_team_decisions_for_interface: {
+        Args: {
+          p_status?: string | null
+          p_professional_id?: string | null
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          decision_id: string
+          professional_id: string
+          professional_name: string
+          action_type: string
+          start_date: string
+          end_date: string
+          reason: string
+          decision: string
+          status: string
+          source_agenda_change_request_id: string | null
+          responsible_account_id: string
+          responsible_name: string
+          created_at: string
+          updated_at: string
+          total_count: number
+        }[]
+      }
+      get_coordinator_agenda_overview_for_interface: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+          p_specialty_id?: string | null
+          p_professional_id?: string | null
+        }
+        Returns: {
+          agenda_date: string
+          professional_id: string
+          professional_name: string
+          specialty_id: string
+          specialty_name: string
+          configured_capacity: number
+          occupied_count: number
+          block_count: number
+          exception_count: number
+          impact_count: number
+          agenda_status: string
+        }[]
+      }
+      get_coordinator_team_overview_for_interface: {
+        Args: {
+          p_query?: string | null
+          p_specialty_id?: string | null
+          p_status?: string | null
+          p_start_date?: string | null
+          p_end_date?: string | null
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          professional_id: string
+          full_name: string
+          function_title: string | null
+          specialties: Json
+          activity_count: number
+          available_slots_count: number
+          work_status: string
+          productivity_count: number
+          total_count: number
+        }[]
+      }
+      get_homologation_context_for_interface: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_homologation_options_for_interface: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      get_nutrition_admin_deliveries_for_interface: {
+        Args: {
+          p_status?: string | null
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json
+      }
+      get_nutrition_context_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      get_nutrition_document_for_interface: {
+        Args: { p_document_id: string }
+        Returns: Json
+      }
+      get_patient_care_specialties_for_professional_interface: {
+        Args: { p_patient_id: string }
+        Returns: {
+          specialty_id: string
+          specialty_name: string
+        }[]
+      }
+      manage_nutrition_admin_delivery_for_interface: {
+        Args: {
+          p_delivery_id: string
+          p_action: string
+          p_reason?: string | null
+        }
+        Returns: Json
+      }
+      register_coordination_team_decision_for_interface: {
+        Args: {
+          p_professional_id: string
+          p_action_type: string
+          p_start_date: string
+          p_end_date: string
+          p_reason: string
+          p_decision: string
+          p_source_agenda_change_request_id?: string | null
+        }
+        Returns: Json
+      }
+      register_nutrition_delivery_for_interface: {
+        Args: { p_document_id: string; p_mode: string }
+        Returns: Json
+      }
+      register_nutrition_pdf_for_interface: {
+        Args: { p_document_id: string; p_storage_path: string }
+        Returns: Json
+      }
+      register_patient_death_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_death_date: string
+          p_death_time?: string | null
+          p_source?: string | null
+          p_notes?: string | null
+        }
+        Returns: Json
+      }
+      save_nutrition_plan_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_breakfast?: string | null
+          p_lunch?: string | null
+          p_snack?: string | null
+          p_dinner?: string | null
+          p_hydration?: string | null
+          p_nutritional_supplement?: string | null
+          p_other_guidance?: string | null
+        }
+        Returns: Json
+      }
+      set_homologation_context_for_interface: {
+        Args: {
+          p_role_code: string
+          p_professional_id?: string | null
+          p_specialty_id?: string | null
+          p_test_patient_id?: string | null
+          p_reason?: string | null
+        }
+        Returns: Json
+      }
       recognize_transport_need_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
