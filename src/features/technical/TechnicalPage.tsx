@@ -143,6 +143,9 @@ export function TechnicalPage({
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null)
   const [historyState, setHistoryState] =
     useState<AsyncState<TechnicalSupportHistory> | null>(null)
+  const [supportResponse, setSupportResponse] = useState('')
+  const [supportFeedback, setSupportFeedback] = useState<string | null>(null)
+  const [supportBusy, setSupportBusy] = useState(false)
   const isAuthorized = accessContext.roles.some((role) =>
     ['administrador', 'administrador_tecnico'].includes(role.code),
   )
@@ -241,6 +244,39 @@ export function TechnicalPage({
     setSelectedRequest(requestId)
     setHistoryState(loadingState())
     setHistoryState(await integration.loadSupportHistory(requestId))
+  }
+
+  async function processSupport(
+    request: TechnicalSupportRequest,
+    action: 'iniciar' | 'solicitar_teste' | 'resolver' | 'cancelar',
+  ) {
+    if (supportBusy) return
+    const response = supportResponse.trim()
+    if (action !== 'iniciar' && response.length < 3) {
+      setSupportFeedback('Informe uma resposta ou justificativa com pelo menos três caracteres.')
+      return
+    }
+    setSupportBusy(true)
+    setSupportFeedback(null)
+    const result = await integration.processSupportRequest(
+      request.request_id,
+      action,
+      response || null,
+    )
+    if (result.status === 'success') {
+      setSupportResponse('')
+      setSupportFeedback('Chamado técnico atualizado no banco.')
+      const refreshed = await loadSnapshot()
+      setState(refreshed)
+      await openHistory(request.request_id)
+    } else {
+      setSupportFeedback(
+        result.status === 'error'
+          ? result.error.message
+          : 'O banco não confirmou a atualização do chamado.',
+      )
+    }
+    setSupportBusy(false)
   }
 
   if (!isAuthorized) {
@@ -390,21 +426,50 @@ export function TechnicalPage({
       {state.status === 'success' && activeTab === 'chamados' && (
         <article className="technical-card">
           <h3>Chamados de suporte recebidos</h3>
+          <label>
+            Resposta / justificativa técnica
+            <textarea
+              value={supportResponse}
+              onChange={(event) => setSupportResponse(event.target.value)}
+              maxLength={2000}
+              rows={4}
+            />
+          </label>
+          {supportFeedback && <p role="status">{supportFeedback}</p>}
           {state.data.supportRequests.length === 0 ? (
             <p>Nenhum chamado real disponível no contexto técnico.</p>
           ) : (
             <div className="technical-request-list">
               {state.data.supportRequests.map((request) => (
-                <button
-                  type="button"
-                  key={request.request_id}
-                  className={selectedRequest === request.request_id ? 'is-selected' : undefined}
-                  onClick={() => void openHistory(request.request_id)}
-                >
-                  <strong>{request.subject}</strong>
-                  <span>{request.status}</span>
-                  <small>{formatDateTime(request.created_at)}</small>
-                </button>
+                <div key={request.request_id}>
+                  <button
+                    type="button"
+                    className={selectedRequest === request.request_id ? 'is-selected' : undefined}
+                    onClick={() => void openHistory(request.request_id)}
+                  >
+                    <strong>{request.subject}</strong>
+                    <span>{request.status}</span>
+                    <small>{formatDateTime(request.created_at)}</small>
+                  </button>
+                  <div>
+                    {request.status === 'pendente' && (
+                      <button type="button" disabled={supportBusy} onClick={() => void processSupport(request, 'iniciar')}>Iniciar atendimento</button>
+                    )}
+                    {request.status === 'em_atendimento' && (
+                      <>
+                        <button type="button" disabled={supportBusy || supportResponse.trim().length < 3} onClick={() => void processSupport(request, 'solicitar_teste')}>Solicitar teste</button>
+                        <button type="button" disabled={supportBusy || supportResponse.trim().length < 3} onClick={() => void processSupport(request, 'resolver')}>Resolver</button>
+                        <button type="button" disabled={supportBusy || supportResponse.trim().length < 3} onClick={() => void processSupport(request, 'cancelar')}>Cancelar</button>
+                      </>
+                    )}
+                    {request.status === 'aguardando_teste' && (
+                      <>
+                        <button type="button" disabled={supportBusy || supportResponse.trim().length < 3} onClick={() => void processSupport(request, 'resolver')}>Resolver</button>
+                        <button type="button" disabled={supportBusy || supportResponse.trim().length < 3} onClick={() => void processSupport(request, 'cancelar')}>Cancelar</button>
+                      </>
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
           )}
