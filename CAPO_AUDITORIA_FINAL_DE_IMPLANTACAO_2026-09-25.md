@@ -850,6 +850,62 @@ O Painel Técnico já consultava dashboard, Estado do Sistema, integrações, lo
 
 ---
 
+## 7.18 Solicitações Administrativas — papel canônico e diálogo operacional
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A tela de Solicitações ainda carregava nomes de papéis antigos de especialidade para decidir quem era profissional. O backend físico já usa vínculo profissional e mantém o fluxo de criação, aceite, providência, devolução, reenvio, conclusão, recusa e cancelamento com histórico.
+
+### Correções realizadas
+- regras locais de acesso/criação foram alinhadas ao papel canônico `profissional`, sem criar papel por especialidade;
+- Administração e Administrativo Operacional continuam como executores das ações administrativas;
+- Coordenador mantém visão global de supervisão pelo contrato físico, sem receber botões administrativos que a tela não autoriza;
+- foi confirmado fisicamente o trigger `trg_notify_administrative_requests`, responsável pelas notificações automáticas do fluxo.
+
+### Caminho alterado
+- src/features/requests/RequestsPage.tsx
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
+## 7.19 Encaminhamento Interprofissional — capacidade de emissão e acesso do destinatário
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A documentação estabelece que a capacidade `encaminhamento_interprofissional` controla a emissão do encaminhamento. O backend, porém, permite que um profissional da especialidade de destino seja atribuído e depois inicie, registre providência e conclua o encaminhamento mesmo sem ser o emissor.
+
+### Correções realizadas
+- a rota pode ser aberta por profissional destinatário com vínculo profissional real;
+- o item de menu continua oculto para profissional comum sem a capacidade de emissão, preservando a regra de que o botão de Encaminhamento não aparece sem permissão;
+- a criação dentro da tela continua condicionada à capability `encaminhamento_interprofissional`;
+- Administração/Administrativo Operacional continuam aprovando e atribuindo destinatário;
+- destinatário continua limitado às ações start/record/complete e o solicitante às ações previstas pelo backend;
+- teste de rota foi atualizado para cobrir o destinatário profissional sem capability de emissão.
+
+### Caminhos alterados
+- src/app/route-access.ts
+- src/components/navigation/navigation-config.ts
+- tests/unit/route-access.test.ts
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — TESTE ATUALIZADO, MAS NÃO EXECUTADO.
+
+---
+
+## 7.20 Faltosos — automação de origem e separação da Busca Ativa
+**Data:** 25/09/2026  
+**Estado:** 🟢 CONFORME NA AUDITORIA FÍSICA DESTE BLOCO
+
+Foi confirmada a regra estrutural de que Falta gera o fluxo de Faltosos e não alimenta diretamente Busca Ativa. No banco atual existe o trigger `trg_patient_no_show`, acionado quando `patient_appointments.attendance_status='faltou'`, e o fluxo de remarcação possui o trigger `trg_close_no_show_followup_after_reschedule` para encerrar a pendência após remarcação originada de faltoso.
+
+A interface mantém Faltosos separado de Busca Ativa. Administrador e Administrativo Operacional executam contato/remarcação; Coordenador possui visão de supervisão. O backend `has_full_access()` inclui Administrador e Coordenador, portanto a leitura gerencial está fisicamente suportada.
+
+**Caminhos conferidos:** src/features/no-shows/NoShowsPage.tsx; src/app/route-access.ts; Supabase patient_appointments, get_no_show_followups_for_interface, register_no_show_contact_for_interface, request_no_show_rescheduling_for_interface, handle_patient_no_show e close_no_show_followup_after_reschedule.
+
+**Estado atual:** SEM CORREÇÃO ADICIONAL NESTE BLOCO — TESTE OPERACIONAL POSTERIOR.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
