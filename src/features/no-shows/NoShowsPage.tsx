@@ -95,7 +95,9 @@ export function NoShowsPage({
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const authorized = canManageNoShows(accessContext)
-  const canExecuteContact = accessContext.roles.some((role) => ['administrador', 'administrativo_operacional'].includes(role.code))
+  const canExecuteContact = accessContext.roles.some((role) =>
+    ['administrador', 'administrativo_operacional', 'coordenador'].includes(role.code),
+  )
 
   const loadFollowups = useCallback(async () => {
     setFollowups(loadingState())
