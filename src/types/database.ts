@@ -35,6 +35,14 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number }
         Returns: Json
       }
+      process_technical_support_request_for_interface: {
+        Args: {
+          p_request_id: string
+          p_action: string
+          p_response?: string | null
+        }
+        Returns: Json
+      }
       get_transport_context_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
