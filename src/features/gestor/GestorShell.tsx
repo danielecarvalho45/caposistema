@@ -79,6 +79,7 @@ export function GestorShell({
   const navigate = useNavigate()
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'available' | 'unavailable'>('checking')
   const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -122,8 +123,21 @@ export function GestorShell({
 
   return (
     <div className="gestor-shell">
-      <aside className="gestor-sidebar" aria-label="Navegação do Gestor">
-        <div className="gestor-brand"><img src="/assets/capo-logo.jpg" alt="CAPO" /></div>
+      <button
+        className={`gestor-sidebar-backdrop${menuOpen ? ' is-visible' : ''}`}
+        type="button"
+        aria-label="Fechar menu"
+        onClick={() => setMenuOpen(false)}
+      />
+      <aside
+        className={`gestor-sidebar${menuOpen ? ' is-open' : ''}`}
+        id="gestor-sidebar"
+        aria-label="Navegação do Gestor"
+      >
+        <div className="gestor-brand">
+          <img src="/assets/capo-logo.jpg" alt="CAPO" />
+          <button className="gestor-sidebar-close" type="button" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}>×</button>
+        </div>
         <nav className="gestor-nav" aria-label="Módulos do Gestor">
           <Link className="gestor-nav-link" to="/" aria-current={activePath === '/' ? 'page' : undefined}>
             <span aria-hidden="true">⌂</span> Início
@@ -144,6 +158,16 @@ export function GestorShell({
 
       <section className="gestor-workspace">
         <header className="gestor-header">
+          <button
+            className="gestor-mobile-menu"
+            type="button"
+            aria-label="Abrir menu"
+            aria-controls="gestor-sidebar"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(true)}
+          >
+            ☰
+          </button>
           <div className="gestor-user">
             <h1>{accessContext.full_name ?? accessContext.username}</h1>
             <p>Administrador do Sistema / Titular</p>
