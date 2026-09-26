@@ -3,6 +3,7 @@ import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, ty
 import type { AccessContext } from '../../types/access'
 import { AgendaPage } from '../agenda/AgendaPage'
 import { Link } from 'react-router-dom'
+import { getSupabaseClient } from '../../lib/supabase/client'
 
 type NutritionRecord = Readonly<Record<string, unknown>>
 type NutritionDeliveryAction = 'start' | 'complete' | 'cancel' | 'reopen'
@@ -26,6 +27,140 @@ function field(record: NutritionRecord | null, ...keys: string[]) {
   return null
 }
 
+function nutritionPdfSafe(value: string) {
+  return Array.from(value).map((character) => {
+    const code = character.charCodeAt(0)
+    if (code <= 255) return character
+    return ({ '–': '-', '—': '-', '“': '"', '”': '"', '‘': "'", '’': "'", '•': '*' } as Record<string, string>)[character] ?? '?'
+  }).join('')
+}
+
+function nutritionPdfBytes(value: string) {
+  return Uint8Array.from(Array.from(value).map((character) => character.charCodeAt(0) & 255))
+}
+
+function nutritionPdfEscape(value: string) {
+  return nutritionPdfSafe(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+}
+
+function nutritionPdfWrap(value: string, width = 84) {
+  const words = value.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
+  if (!words.length) return ['']
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word
+    if (next.length > width) {
+      if (current) lines.push(current)
+      current = word
+    } else {
+      current = next
+    }
+  }
+  if (current) lines.push(current)
+  return lines
+}
+
+function buildNutritionPdf(document: NutritionRecord) {
+  const snapshot = asRecord(document.plan_snapshot)
+  const labels: readonly [string, string][] = [
+    ['breakfast', 'Desjejum'],
+    ['lunch', 'Almoço'],
+    ['snack', 'Lanche'],
+    ['dinner', 'Jantar'],
+    ['hydration', 'Hidratação'],
+    ['nutritional_supplement', 'Complemento nutricional'],
+    ['other_guidance', 'Outras orientações'],
+  ]
+  const lines = [
+    'CAPO - PLANO ALIMENTAR NUTRICIONAL',
+    `Paciente: ${field(document, 'patient_name') ?? ''}`,
+    `CMS: ${field(document, 'cms') ?? '—'}`,
+    `Nº CAPO: ${field(document, 'patient_number') ?? '—'}`,
+    `Autoria: ${field(document, 'author_name') ?? ''}`,
+    `Registro profissional: ${field(document, 'author_registration') ?? 'Não informado'}`,
+    `Revisão: ${String(document.revision_no ?? '—')}`,
+    `Gerado em: ${new Date().toLocaleString('pt-BR')}`,
+    '',
+  ]
+  for (const [key, label] of labels) {
+    const value = typeof snapshot?.[key] === 'string' ? String(snapshot[key]).trim() : ''
+    if (value) lines.push(`${label}:`, ...nutritionPdfWrap(value), '')
+  }
+
+  const pages: string[][] = []
+  for (let index = 0; index < lines.length; index += 46) {
+    pages.push(lines.slice(index, index + 46))
+  }
+  if (!pages.length) pages.push(['CAPO - PLANO ALIMENTAR NUTRICIONAL'])
+
+  const objects: Record<number, Uint8Array> = {}
+  objects[1] = nutritionPdfBytes('<< /Type /Catalog /Pages 2 0 R >>')
+  objects[3] = nutritionPdfBytes('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>')
+  const kids: string[] = []
+  pages.forEach((page, pageIndex) => {
+    const pageObject = 4 + pageIndex * 2
+    const contentObject = 5 + pageIndex * 2
+    kids.push(`${pageObject} 0 R`)
+    objects[pageObject] = nutritionPdfBytes(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObject} 0 R >>`,
+    )
+    const stream =
+      'BT\n/F1 11 Tf\n14 TL\n48 790 Td\n' +
+      page.map((line, lineIndex) =>
+        `${lineIndex ? 'T*\\n' : ''}(${nutritionPdfEscape(line)}) Tj`,
+      ).join('\n') +
+      '\nET'
+    const streamBytes = nutritionPdfBytes(stream)
+    const prefix = nutritionPdfBytes(`<< /Length ${streamBytes.length} >>\nstream\n`)
+    const suffix = nutritionPdfBytes('\nendstream')
+    const contentBytes = new Uint8Array(prefix.length + streamBytes.length + suffix.length)
+    contentBytes.set(prefix, 0)
+    contentBytes.set(streamBytes, prefix.length)
+    contentBytes.set(suffix, prefix.length + streamBytes.length)
+    objects[contentObject] = contentBytes
+  })
+  objects[2] = nutritionPdfBytes(
+    `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages.length} >>`,
+  )
+
+  const maxObject = Math.max(...Object.keys(objects).map(Number))
+  const header = nutritionPdfBytes('%PDF-1.4\n')
+  const parts: Uint8Array[] = [header]
+  const offsets = [0]
+  let length = header.length
+  for (let index = 1; index <= maxObject; index += 1) {
+    offsets[index] = length
+    const object = objects[index]
+    const prefix = nutritionPdfBytes(`${index} 0 obj\n`)
+    const suffix = nutritionPdfBytes('\nendobj\n')
+    const wrapped = new Uint8Array(prefix.length + object.length + suffix.length)
+    wrapped.set(prefix, 0)
+    wrapped.set(object, prefix.length)
+    wrapped.set(suffix, prefix.length + object.length)
+    parts.push(wrapped)
+    length += wrapped.length
+  }
+  const xrefOffset = length
+  let xref = `xref\n0 ${maxObject + 1}\n0000000000 65535 f \n`
+  for (let index = 1; index <= maxObject; index += 1) {
+    xref += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`
+  }
+  xref += `trailer\n<< /Size ${maxObject + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
+  parts.push(nutritionPdfBytes(xref))
+  const total = parts.reduce((sum, part) => sum + part.length, 0)
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const part of parts) {
+    bytes.set(part, offset)
+    offset += part.length
+  }
+  return new Blob([bytes], { type: 'application/pdf' })
+}
+
 export function NutritionPage({
   accessContext,
 }: Readonly<{ accessContext: AccessContext }>) {
@@ -36,7 +171,12 @@ export function NutritionPage({
     accessContext.is_active && hasNutritionSpecialty === true &&
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some((role) => role.code === 'profissional')
-  const isAdmin = accessContext.roles.some((role) => ['administrador', 'administrativo_operacional', 'coordenador'].includes(role.code))
+  const isController = accessContext.roles.some((role) => role.code === 'administrador')
+  const isAdministrativeOperational = accessContext.roles.some((role) => role.code === 'administrativo_operacional')
+  const isCoordinator = accessContext.roles.some((role) => role.code === 'coordenador')
+  const canManageDeliveries = isController || isAdministrativeOperational
+  const canConsultDocuments = isController || isCoordinator
+  const authorized = isNutritionProfessional || canManageDeliveries || canConsultDocuments
   const [patientId, setPatientId] = useState('')
   const [selectedPatientName, setSelectedPatientName] = useState('')
   const [birthdays, setBirthdays] = useState<AsyncState<BirthdayOverview>>(loadingState)
@@ -53,6 +193,8 @@ export function NutritionPage({
   const [deliveries, setDeliveries] = useState<readonly NutritionRecord[]>([])
   const [deliveriesFeedback, setDeliveriesFeedback] = useState<string | null>(null)
   const [deliveryReason, setDeliveryReason] = useState('')
+  const [managementDocuments, setManagementDocuments] = useState<readonly NutritionRecord[]>([])
+  const [managementFeedback, setManagementFeedback] = useState<string | null>(null)
 
   useEffect(() => {
     if (!eligibleForSpecialty || !accessContext.professional_id) return
@@ -75,7 +217,7 @@ export function NutritionPage({
   }
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (!canManageDeliveries) return
     let active = true
     void getRpcService().getNutritionAdminDeliveries().then((result) => {
       if (!active) return
@@ -84,7 +226,26 @@ export function NutritionPage({
       else setDeliveriesFeedback(result.status === 'error' ? result.error.message : 'Entregas não retornaram dados.')
     })
     return () => { active = false }
-  }, [isAdmin])
+  }, [canManageDeliveries])
+
+  useEffect(() => {
+    if (!canConsultDocuments) return
+    let active = true
+    void getRpcService().getNutritionDocumentsForManagement(50, 0).then((result) => {
+      if (!active) return
+      if (result.status === 'success') {
+        setManagementDocuments(result.data as readonly NutritionRecord[])
+        setManagementFeedback(null)
+      } else if (result.status === 'empty') {
+        setManagementDocuments([])
+        setManagementFeedback(null)
+      } else {
+        setManagementDocuments([])
+        setManagementFeedback(result.status === 'error' ? result.error.message : 'Documentos não retornaram dados.')
+      }
+    })
+    return () => { active = false }
+  }, [canConsultDocuments])
 
   useEffect(() => {
     if (!isNutritionProfessional) return
@@ -148,16 +309,84 @@ export function NutritionPage({
   }
 
   async function generateDocument() {
-    if (!patientId || busy) {
-      setFeedback('Selecione um paciente real da Nutrição.')
+    if (!patientId || !planLoaded || !canEditPlan || busy) {
+      setFeedback('Selecione um paciente real da Nutrição com Plano Alimentar atual.')
       return
     }
     setBusy(true)
-    const result = await getRpcService().createNutritionDocument(patientId)
-    if (result.status === 'success') {
-      setDocument(result.data as NutritionRecord)
-      setFeedback('Documento nutricional gerado pelo banco.')
-    } else setFeedback(result.status === 'error' ? result.error.message : 'Documento não retornou confirmação.')
+    setFeedback('Gerando documento nutricional oficial…')
+    const created = await getRpcService().createNutritionDocument(patientId)
+    if (created.status !== 'success') {
+      setFeedback(created.status === 'error' ? created.error.message : 'Documento não retornou confirmação.')
+      setBusy(false)
+      return
+    }
+
+    const createdRecord = created.data as NutritionRecord
+    const documentId = field(createdRecord, 'document_id', 'id')
+    if (!documentId) {
+      setFeedback('O banco não retornou a identificação do documento nutricional.')
+      setBusy(false)
+      return
+    }
+
+    const loaded = await getRpcService().getNutritionDocument(documentId)
+    if (loaded.status !== 'success') {
+      setFeedback(loaded.status === 'error' ? loaded.error.message : 'O documento nutricional não pôde ser carregado.')
+      setBusy(false)
+      return
+    }
+
+    const officialDocument = loaded.data as NutritionRecord
+    const blob = buildNutritionPdf(officialDocument)
+    const storagePath = `nutrition/${documentId}/plano-alimentar-${Date.now()}.pdf`
+    const { error: uploadError } = await getSupabaseClient()
+      .storage.from('capo-documents')
+      .upload(storagePath, blob, { contentType: 'application/pdf', upsert: false })
+
+    if (uploadError) {
+      setFeedback(uploadError.message)
+      setBusy(false)
+      return
+    }
+
+    const registered = await getRpcService().registerNutritionPdf(documentId, storagePath)
+    if (registered.status !== 'success') {
+      setFeedback(registered.status === 'error' ? registered.error.message : 'O banco não confirmou o PDF nutricional.')
+      setBusy(false)
+      return
+    }
+
+    const reloaded = await getRpcService().getNutritionDocument(documentId)
+    setDocument(reloaded.status === 'success' ? reloaded.data as NutritionRecord : officialDocument)
+    setFeedback('PDF Nutricional Oficial gerado e vinculado ao documento.')
+    setBusy(false)
+  }
+
+  async function openNutritionDocument(documentId: string, download: boolean) {
+    if (!documentId || busy) return
+    setBusy(true)
+    const result = await getRpcService().getNutritionDocument(documentId)
+    if (result.status !== 'success') {
+      setManagementFeedback(result.status === 'error' ? result.error.message : 'Documento nutricional não localizado.')
+      setBusy(false)
+      return
+    }
+    const path = field(result.data as NutritionRecord, 'pdf_path')
+    if (!path) {
+      setManagementFeedback('O PDF oficial ainda não foi registrado para este documento.')
+      setBusy(false)
+      return
+    }
+    const { data, error } = await getSupabaseClient()
+      .storage.from('capo-documents')
+      .createSignedUrl(path, 120, download ? { download: true } : undefined)
+    if (error || !data?.signedUrl) {
+      setManagementFeedback(error?.message ?? 'Não foi possível abrir o PDF nutricional.')
+      setBusy(false)
+      return
+    }
+    globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
     setBusy(false)
   }
 
@@ -177,10 +406,10 @@ export function NutritionPage({
     setBusy(false)
   }
 
-  if (!isNutritionProfessional && !isAdmin && hasNutritionSpecialty === null) {
+  if (!authorized && hasNutritionSpecialty === null) {
     return <section className="home-page"><p>Verificando especialidade autorizada…</p></section>
   }
-  if (!isNutritionProfessional && !isAdmin) {
+  if (!authorized) {
     return (
       <section className="home-page" aria-labelledby="nutrition-blocked-title">
         <div className="home-welcome">
@@ -251,7 +480,7 @@ export function NutritionPage({
         </>
       )}
 
-      {isAdmin && (
+      {canManageDeliveries && (
         <section className="home-profile" aria-labelledby="nutrition-admin-title">
           <p className="eyebrow">Gestão administrativa</p>
           <h2 id="nutrition-admin-title">Entregas nutricionais</h2>
@@ -264,11 +493,19 @@ export function NutritionPage({
                 const id = field(delivery, 'delivery_id', 'id')
                 const status = field(delivery, 'status')?.toLowerCase()
                 const requiresReason = (action: NutritionDeliveryAction) => ['cancel', 'reopen'].includes(action)
-                const actionButton = (action: NutritionDeliveryAction, label: string) => id && <button type="button" disabled={busy || (requiresReason(action) && deliveryReason.trim().length < 5)} onClick={() => void manageDelivery(id, action)}>{label}</button>
+                const actionButton = (action: NutritionDeliveryAction, label: string) =>
+                  id && (action !== 'reopen' || isController) &&
+                  <button type="button" disabled={busy || (requiresReason(action) && deliveryReason.trim().length < 5)} onClick={() => void manageDelivery(id, action)}>{label}</button>
                 return (
                   <li key={id ?? index}>
                     <strong>{field(delivery, 'patient_name') ?? 'Paciente'}</strong>
                     <span>{field(delivery, 'status') ?? 'Situação não informada'}</span>
+                    {field(delivery, 'document_id') && (
+                      <>
+                        <button type="button" disabled={busy} onClick={() => void openNutritionDocument(field(delivery, 'document_id') ?? '', false)}>Visualizar PDF</button>
+                        <button type="button" disabled={busy} onClick={() => void openNutritionDocument(field(delivery, 'document_id') ?? '', true)}>Baixar PDF</button>
+                      </>
+                    )}
                     {status === 'pending' && <>{actionButton('start', 'Iniciar')}{actionButton('complete', 'Concluir')}{actionButton('cancel', 'Cancelar')}</>}
                     {status === 'in_progress' && <>{actionButton('complete', 'Concluir')}{actionButton('cancel', 'Cancelar')}</>}
                     {['completed', 'cancelled'].includes(status ?? '') && actionButton('reopen', 'Reabrir')}
@@ -280,6 +517,38 @@ export function NutritionPage({
         </section>
       )}
 
+      {canConsultDocuments && (
+        <section className="home-profile" aria-labelledby="nutrition-management-title">
+          <p className="eyebrow">Consulta gerencial</p>
+          <h2 id="nutrition-management-title">Documentos nutricionais oficiais</h2>
+          <p>Consulta operacional do PDF e de seus metadados. O conteúdo do Plano Alimentar permanece sem edição neste contexto.</p>
+          {managementFeedback && <p role="status">{managementFeedback}</p>}
+          {managementDocuments.length === 0 && <p>Nenhum documento nutricional oficial encontrado.</p>}
+          {managementDocuments.length > 0 && (
+            <ul>
+              {managementDocuments.map((item, index) => {
+                const documentId = field(item, 'document_id', 'id') ?? ''
+                return (
+                  <li key={documentId || index}>
+                    <strong>{field(item, 'patient_name') ?? 'Paciente'}</strong>
+                    <span>
+                      {field(item, 'author_name') ?? 'Autoria não informada'} · revisão {String(item.revision_no ?? '—')}
+                    </span>
+                    {item.pdf_available === true ? (
+                      <>
+                        <button type="button" disabled={busy} onClick={() => void openNutritionDocument(documentId, false)}>Visualizar PDF</button>
+                        <button type="button" disabled={busy} onClick={() => void openNutritionDocument(documentId, true)}>Baixar PDF</button>
+                      </>
+                    ) : (
+                      <small>PDF ainda não disponível.</small>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      )}
 
     </section>
   )
