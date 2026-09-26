@@ -9,6 +9,24 @@ import {
 } from './family-caregiver-integration'
 import './family-caregiver-page.css'
 
+function digits(value: string) {
+  return value.replace(/\D/g, '')
+}
+
+function openFamilyWhatsApp(phone: string, fullName: string) {
+  const clean = digits(phone)
+  if (!clean) return
+  const normalized = clean.startsWith('55') ? clean : `55${clean}`
+  const message = encodeURIComponent(
+    `Olá, ${fullName}. Aqui é a equipe do CAPO — Centro de Acolhimento ao Paciente Oncológico.`,
+  )
+  globalThis.open(
+    `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalized)}&text=${message}`,
+    '_blank',
+    'noopener,noreferrer',
+  )
+}
+
 export function FamilyCaregiverPage({
   accessContext,
   service = createFamilyCaregiverService(),
@@ -246,6 +264,24 @@ export function FamilyCaregiverPage({
                 · início{' '}
                 {String(context.active_link.linked_at ?? 'não informado')}
               </span>
+              {typeof context.active_link.phone === 'string' &&
+                context.active_link.phone.trim() && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openFamilyWhatsApp(
+                        String(context.active_link?.phone ?? ''),
+                        String(
+                          context.active_link?.full_name ??
+                            context.active_link?.family_member_name ??
+                            'Familiar',
+                        ),
+                      )
+                    }
+                  >
+                    WhatsApp do familiar
+                  </button>
+                )}
             </>
           ) : (
             <>
