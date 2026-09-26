@@ -48,6 +48,14 @@ export function authorizedNavigationItems(
       if (group !== undefined && item.group !== group) return false
       if (!canAccessAppRoute(accessContext, item.path)) return false
       if (item.path === '/atuacao' && (hasNutrition || hasSocial)) return false
+      if (
+        item.path === '/encaminhamentos' &&
+        accessContext.roles.some((role) => role.code === 'profissional') &&
+        !accessContext.roles.some((role) =>
+          ['administrador', 'coordenador', 'administrativo_operacional'].includes(role.code),
+        ) &&
+        !accessContext.capabilities.includes('encaminhamento_interprofissional')
+      ) return false
       return true
     },
   )
