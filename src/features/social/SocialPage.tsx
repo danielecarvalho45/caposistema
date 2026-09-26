@@ -9,6 +9,7 @@ import {
 import './social-page.css'
 import { Link } from 'react-router-dom'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
+import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 
 const defaultIntegration = createClosuresIntegration()
 const defaultSpecialtiesLoader = () => getRpcService().getMyAssistentialSpecialties()
@@ -149,6 +150,8 @@ export function SocialPage({
         </div>
         <AgendaPage accessContext={accessContext} onConfirmed={openConfirmedPatient} />
       </section>
+
+      <BirthdayPanel title="Aniversariantes de hoje" className="social-birthdays" />
 
       <section
         id="acompanhamento-social"
