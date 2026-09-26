@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRpcService, type AsyncState } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import './patients-page.css'
 
 const emptyState: AsyncState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]> = {
@@ -40,6 +41,9 @@ export function PatientsPage({
     cms: string | null
   }[]>>(emptyState)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<Record<string, string>>({})
+  const [editBusy, setEditBusy] = useState(false)
 
   const whatsappDigits = patientPhone.replace(/\D/g, '')
   const whatsappNumber = whatsappDigits.startsWith('55')
@@ -194,6 +198,67 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     if (next.status === 'error') {
       setFeedback(next.error.message)
     }
+  }
+
+  async function openPatientEditor(patientId: string) {
+    setEditBusy(true)
+    setFeedback(null)
+    const next = await getRpcService().getPatientForEdit(patientId)
+    if (next.status === 'success') {
+      const row = Array.isArray(next.data) ? next.data[0] : next.data
+      if (row && typeof row === 'object' && !Array.isArray(row)) {
+        const source = row as Record<string, unknown>
+        setEditingPatientId(patientId)
+        setEditForm({
+          full_name: String(source.full_name ?? ''),
+          birth_date: String(source.birth_date ?? ''),
+          cms: String(source.cms ?? ''),
+          sex: String(source.sex ?? ''),
+          phone: String(source.phone ?? ''),
+          phone_secondary: String(source.phone_secondary ?? ''),
+          address: String(source.address ?? ''),
+          capo_start_date: String(source.capo_start_date ?? ''),
+          operational_notes: String(source.operational_notes ?? ''),
+          origin: String(source.origin ?? ''),
+          status: String(source.status ?? 'ativo'),
+        })
+      } else {
+        setFeedback('O banco não retornou os dados editáveis do paciente.')
+      }
+    } else if (next.status === 'error') {
+      setFeedback(next.error.message)
+    }
+    setEditBusy(false)
+  }
+
+  async function savePatientEditor() {
+    if (!editingPatientId || editBusy) return
+    if (editForm.full_name?.trim().length < 3 || !editForm.birth_date) {
+      setFeedback('Informe nome completo e data de nascimento válidos.')
+      return
+    }
+    setEditBusy(true)
+    const next = await getRpcService().updatePatient({
+      patientId: editingPatientId,
+      fullName: editForm.full_name.trim(),
+      birthDate: editForm.birth_date,
+      cms: editForm.cms?.trim() || null,
+      sex: editForm.sex?.trim() || null,
+      phone: editForm.phone?.trim() || null,
+      phoneSecondary: editForm.phone_secondary?.trim() || null,
+      address: editForm.address?.trim() || null,
+      capoStartDate: editForm.capo_start_date || null,
+      operationalNotes: editForm.operational_notes?.trim() || null,
+      status: editForm.status === 'inativo' ? 'inativo' : 'ativo',
+      origin: editForm.origin?.trim() || null,
+    })
+    if (next.status === 'success') {
+      setFeedback('Cadastro administrativo do paciente atualizado.')
+      if (query.trim().length >= 2) await searchPatients()
+    } else if (next.status === 'error') {
+      setFeedback(next.error.message)
+    }
+    setEditBusy(false)
   }
 
   return (
@@ -451,6 +516,10 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                   Contexto administrativo: consulta autorizada para o perfil {accessContext.primary_context.name ?? 'atual'}.
                 </small>
                 <div className="patients-card-actions" aria-label={`Ações para ${patient.full_name}`}>
+                  <PatientWhatsAppButton patientId={patient.patient_id} />
+                  <button type="button" disabled={editBusy} onClick={() => void openPatientEditor(patient.patient_id)}>
+                    Editar cadastro
+                  </button>
                   <Link to="/agenda">Agenda Geral</Link>
                   <Link to="/gestor/fluxos">Fluxos e Acompanhamentos</Link>
                   <Link to="/encerramentos">Encerramentos</Link>
@@ -460,6 +529,57 @@ ${operatorName} – ADMINISTRATIVO CAPO`
           </div>
         )}
       </section>
+
+      {editingPatientId && (
+        <section className="home-profile" aria-labelledby="patient-edit-title">
+          <div>
+            <p className="eyebrow">Cadastro administrativo</p>
+            <h2 id="patient-edit-title">Editar paciente</h2>
+          </div>
+          <div className="patients-form-grid">
+            <label className="patients-span-2">Nome completo
+              <input value={editForm.full_name ?? ''} onChange={(event) => setEditForm({ ...editForm, full_name: event.target.value })} />
+            </label>
+            <label>Data de nascimento
+              <input type="date" value={editForm.birth_date ?? ''} onChange={(event) => setEditForm({ ...editForm, birth_date: event.target.value })} />
+            </label>
+            <label>CMS
+              <input value={editForm.cms ?? ''} onChange={(event) => setEditForm({ ...editForm, cms: event.target.value })} />
+            </label>
+            <label>Sexo
+              <input value={editForm.sex ?? ''} onChange={(event) => setEditForm({ ...editForm, sex: event.target.value })} />
+            </label>
+            <label>Telefone / WhatsApp
+              <input value={editForm.phone ?? ''} onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })} />
+            </label>
+            <label>Telefone alternativo
+              <input value={editForm.phone_secondary ?? ''} onChange={(event) => setEditForm({ ...editForm, phone_secondary: event.target.value })} />
+            </label>
+            <label className="patients-span-2">Endereço
+              <input value={editForm.address ?? ''} onChange={(event) => setEditForm({ ...editForm, address: event.target.value })} />
+            </label>
+            <label>Entrada no CAPO
+              <input type="date" value={editForm.capo_start_date ?? ''} onChange={(event) => setEditForm({ ...editForm, capo_start_date: event.target.value })} />
+            </label>
+            <label>Origem
+              <input value={editForm.origin ?? ''} onChange={(event) => setEditForm({ ...editForm, origin: event.target.value })} />
+            </label>
+            <label>Situação
+              <select value={editForm.status ?? 'ativo'} onChange={(event) => setEditForm({ ...editForm, status: event.target.value })}>
+                <option value="ativo">Ativo</option>
+                <option value="inativo">Inativo</option>
+              </select>
+            </label>
+            <label className="patients-span-all">Observação administrativa
+              <textarea rows={3} value={editForm.operational_notes ?? ''} onChange={(event) => setEditForm({ ...editForm, operational_notes: event.target.value })} />
+            </label>
+          </div>
+          <div className="patients-form-actions">
+            <button type="button" disabled={editBusy} onClick={() => void savePatientEditor()}>Salvar alterações</button>
+            <button type="button" disabled={editBusy} onClick={() => { setEditingPatientId(null); setEditForm({}) }}>Fechar</button>
+          </div>
+        </section>
+      )}
     </section>
   )
 }
