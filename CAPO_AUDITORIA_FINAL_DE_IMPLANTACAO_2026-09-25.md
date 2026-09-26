@@ -1309,7 +1309,7 @@ Toda nova auditoria/correção da implantação deve:
 
 ### Estado
 
-**CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE OPERACIONAL FINAL EM CELULAR.**
+**CONCLUÍDO E CONGELADO.** A disposição mobile foi corrigida no código e aceita como concluída pela responsável; eventual teste físico final permanece apenas como validação de encerramento, sem reabrir esta frente por dúvida genérica.
 
 Por determinação da responsável, a homologação visual/operacional em aparelho ou viewport móvel será executada ao final dos trabalhos, e não nesta etapa.
 
@@ -1330,4 +1330,4 @@ Esta URL passa a ser a referência oficial do sistema CAPO publicado para verifi
 - sempre distinguir alterações feitas no repositório `main` da versão efetivamente publicada;
 - antes de declarar uma correção como validada no ar, confirmar que o deploy correspondente está disponível neste endereço.
 
-**Estado:** referência de ambiente registrada para impedir uso futuro de URL obsoleta.
+**Estado:** **CONCLUÍDO E CONGELADO.** Referência de ambiente registrada para impedir uso futuro de URL obsoleta.
