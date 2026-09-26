@@ -3340,6 +3340,16 @@ function createSupabaseTransport(
       case 'get_active_searches_for_interface':
       case 'register_active_search_attempt_for_interface':
       case 'close_active_search_for_interface':
+      case 'get_coordinator_team_overview_for_interface':
+      case 'get_coordinator_agenda_overview_for_interface':
+      case 'get_agenda_change_requests_for_interface':
+      case 'create_agenda_change_request_for_interface':
+      case 'get_patient_care_specialties_for_professional_interface':
+      case 'decide_agenda_change_request_for_interface':
+      case 'apply_agenda_change_request_for_interface':
+      case 'register_coordination_team_decision_for_interface':
+      case 'get_coordination_team_decisions_for_interface':
+      case 'create_specialty_for_interface':
         return confirmedRpc(operation, args)
       case 'accept_legal_term':
         return client.rpc(operation, {
