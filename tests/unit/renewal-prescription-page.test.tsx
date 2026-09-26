@@ -44,6 +44,19 @@ const professionalContext: AccessContext = {
   homologation_context: null,
 }
 
+const administrativeContext: AccessContext = {
+  ...professionalContext,
+  professional_id: null,
+  function_title: 'Administrativo Operacional',
+  roles: [{ code: 'administrativo_operacional', name: 'Administrativo Operacional' }],
+  capabilities: [],
+  primary_context: {
+    ...professionalContext.primary_context,
+    code: 'administrativo_operacional',
+    name: 'Administrativo Operacional',
+  },
+}
+
 function renewalService(result: object) {
   return {
     getPrescriptionRenewalDoctors: vi.fn().mockResolvedValue({
@@ -114,7 +127,7 @@ describe('RenewalPrescriptionPage', () => {
 
     render(
       <RenewalPrescriptionPage
-        accessContext={professionalContext}
+        accessContext={administrativeContext}
         service={service}
       />,
     )
@@ -163,7 +176,7 @@ describe('RenewalPrescriptionPage', () => {
           doctor_id: 'doctor-id',
           doctor_name: 'Dr. José Silva',
           specialty_name: 'Clínica Geral',
-          status: 'awaiting_medical',
+          status: 'medical_in_progress',
           request_note: 'Continuidade de tratamento',
           medical_feedback: null,
           administrative_feedback: null,
@@ -181,7 +194,7 @@ describe('RenewalPrescriptionPage', () => {
       data: {
         success: true,
         renewal_id: 'renewal-id',
-        action: 'authorize',
+        action: 'renewed',
         status: 'awaiting_admin',
       },
     })
@@ -196,14 +209,14 @@ describe('RenewalPrescriptionPage', () => {
     await screen.findByText('Paciente real')
     await user.click(screen.getByRole('button', { name: /Paciente real/ }))
     await user.type(
-      screen.getByLabelText('Observação da ação'),
+      screen.getByLabelText('Retorno operacional'),
       'Receita renovada conforme avaliação',
     )
-    await user.click(screen.getByRole('button', { name: 'Autorizar e enviar ao administrativo' }))
+    await user.click(screen.getByRole('button', { name: 'Receita renovada' }))
 
     expect(service.managePrescriptionRenewalMedical).toHaveBeenCalledWith(
       'renewal-id',
-      'authorize',
+      'renewed',
       'Receita renovada conforme avaliação',
     )
   })
