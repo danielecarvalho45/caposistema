@@ -34,6 +34,11 @@ export type CAPOTechnicalIntegration = Readonly<{
   loadSupportHistory: (
     requestId: string,
   ) => Promise<AsyncState<TechnicalSupportHistory>>
+  processSupportRequest: (
+    requestId: string,
+    action: 'iniciar' | 'solicitar_teste' | 'resolver' | 'cancelar',
+    response?: string | null,
+  ) => Promise<AsyncState<unknown>>
 }>
 
 export function createTechnicalIntegration(
@@ -66,5 +71,7 @@ export function createTechnicalIntegration(
       service.getTechnicalSupportRequests(status, limit, offset),
     loadSupportHistory: (requestId) =>
       service.getTechnicalSupportHistory(requestId),
+    processSupportRequest: (requestId, action, response = null) =>
+      service.processTechnicalSupportRequest(requestId, action, response),
   }
 }
