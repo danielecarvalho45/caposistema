@@ -402,7 +402,8 @@ export function AgendaPage({
   const roleCodes = accessContext.roles.map((role) => role.code)
   const isProfessional =
     Boolean(accessContext.professional_id) &&
-    roleCodes.includes('profissional')
+    roleCodes.includes('profissional') &&
+    accessContext.primary_context.code === 'profissional'
   const canAccess = roleCodes.some((role) =>
     ['administrador', 'administrativo_operacional', 'coordenador', 'profissional'].includes(role),
   )
