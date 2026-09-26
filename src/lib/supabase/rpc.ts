@@ -2978,6 +2978,13 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'get_nutrition_document_for_interface', args: { p_document_id: documentId }, parse: parseConfirmedJson }),
     registerNutritionDelivery: (documentId: string, mode: string) =>
       execute({ transport, operation: 'register_nutrition_delivery_for_interface', args: { p_document_id: documentId, p_mode: mode }, parse: parseConfirmedJson }),
+    getNutritionDocumentsForManagement: (limit = 50, offset = 0) =>
+      execute({
+        transport,
+        operation: 'get_nutrition_documents_for_management',
+        args: { p_limit: limit, p_offset: offset },
+        parse: parseConfirmedJson as (value: unknown) => readonly NutritionAdminDelivery[],
+      }),
     getNutritionAdminDeliveries: (
       status: string | null = null,
       limit = 50,
@@ -3147,6 +3154,7 @@ function createSupabaseTransport(
       case 'register_nutrition_pdf_for_interface':
       case 'get_nutrition_document_for_interface':
       case 'register_nutrition_delivery_for_interface':
+      case 'get_nutrition_documents_for_management':
       case 'get_nutrition_admin_deliveries_for_interface':
       case 'manage_nutrition_admin_delivery_for_interface':
       case 'search_bereavement_family_members_for_interface':
