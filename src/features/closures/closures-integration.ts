@@ -48,6 +48,35 @@ async function readRows<T>(
   }
 }
 
+async function readSocialFollowups(): Promise<AsyncState<readonly SocialFollowup[]>> {
+  const combined: SocialFollowup[] = []
+  const seen = new Set<string>()
+  for (const status of ['ativo', 'encerrado'] as const) {
+    let offset = 0
+    while (true) {
+      const page = await readRows<SocialFollowup>(
+        'get_social_followups_for_interface',
+        'get_social_followups_for_interface',
+        { p_status: status, p_limit: 100, p_offset: offset },
+      )
+      if (page.status === 'error') return page
+      if (page.status === 'empty') break
+      if (page.status !== 'success') return { status: 'error', error: contractError('get_social_followups_for_interface', 'lista esperada') }
+      for (const item of page.data) {
+        const id = item.cycle_id
+        if (typeof id !== 'string' || !seen.has(id)) {
+          combined.push(item)
+          if (typeof id === 'string') seen.add(id)
+        }
+      }
+      offset += page.data.length
+      const total = page.data[0]?.total_count
+      if (page.data.length < 100 || (typeof total === 'number' && offset >= total)) break
+    }
+  }
+  return combined.length ? { status: 'success', data: combined } : { status: 'empty' }
+}
+
 async function write(
   operation: string,
   name: string,
@@ -186,16 +215,13 @@ export function createClosuresIntegration(): ClosuresIntegration {
           p_appointment_id: appointmentId,
         },
       ),
-    loadSocial: (status) =>
-      readRows(
-        'get_social_followups_for_interface',
-        'get_social_followups_for_interface',
-        {
-          p_status: status,
-          p_limit: 100,
-          p_offset: 0,
-        },
-      ),
+    loadSocial: (status) => status === null
+      ? readSocialFollowups()
+      : readRows('get_social_followups_for_interface', 'get_social_followups_for_interface', {
+        p_status: status,
+        p_limit: 100,
+        p_offset: 0,
+      }),
     closeSocial: (cycleId, reason) =>
       write(
         'close_social_followup_for_interface',

@@ -36,6 +36,72 @@ function dateInputValue(date: Date) {
 
 function metricLabel(value: string) {
   const labels: Record<string, string> = {
+    patients: 'Pacientes',
+    agenda: 'Agenda',
+    active_search: 'Busca ativa',
+    no_show_followup: 'Acompanhamento de Faltosos',
+    waiting_list: 'Fila de espera',
+    administrative_requests: 'Solicitações administrativas',
+    referrals: 'Encaminhamentos',
+    dentistry: 'Odontologia',
+    transport: 'Transporte',
+    closures: 'Encerramentos',
+    social: 'Acompanhamento Social',
+    prescription_renewal: 'Renovação de Receita',
+    nutrition: 'Nutrição',
+    family_links: 'Vínculos familiares',
+    total_period: 'Total no período',
+    total_current: 'Total atual',
+    registered_period: 'Cadastrados no período',
+    active_current: 'Ativos atualmente',
+    deaths_period: 'Óbitos no período',
+    valid_period: 'Válidos no período',
+    scheduled_period: 'Agendados no período',
+    confirmed_period: 'Confirmados no período',
+    realized_period: 'Realizados no período',
+    no_show_period: 'Faltas no período',
+    cancelled_period: 'Cancelados no período',
+    rescheduled_period: 'Remarcados no período',
+    returns_period: 'Retornos no período',
+    absenteeism_numerator: 'Faltas para cálculo de absenteísmo',
+    absenteeism_denominator: 'Atendimentos para cálculo de absenteísmo',
+    absenteeism_rate_pct: 'Taxa de absenteísmo (%)',
+    open_flows_current: 'Fluxos abertos atualmente',
+    attempts_period: 'Tentativas no período',
+    closed_flows_period: 'Fluxos encerrados no período',
+    open_current: 'Abertos atualmente',
+    rescheduling_requested_period: 'Remarcações solicitadas no período',
+    waiting_current: 'Aguardando atualmente',
+    entries_period: 'Entradas no período',
+    called_period: 'Convocados no período',
+    removed_period: 'Removidos no período',
+    created_period: 'Criados no período',
+    completed_period: 'Concluídos no período',
+    rejected_current: 'Recusados atualmente',
+    approved_period: 'Aprovados no período',
+    need_active_current: 'Necessidades ativas atualmente',
+    need_started_period: 'Necessidades iniciadas no período',
+    need_cancellation_requested_period: 'Cancelamentos solicitados no período',
+    need_closed_period: 'Necessidades encerradas no período',
+    requested_period: 'Solicitados no período',
+    external_forwarded_period: 'Encaminhados externamente no período',
+    pending_current: 'Pendentes atualmente',
+    initiated_period: 'Iniciados no período',
+    closed_period: 'Encerrados no período',
+    reopened_period: 'Reabertos no período',
+    reopening_requests_period: 'Reaberturas solicitadas no período',
+    reopening_approved_period: 'Reaberturas aprovadas no período',
+    reopening_denied_period: 'Reaberturas negadas no período',
+    started_period: 'Iniciados no período',
+    in_flow_current: 'Em fluxo atualmente',
+    documents_generated_period: 'Documentos gerados no período',
+    deliveries_registered_period: 'Entregas registradas no período',
+    admin_deliveries_open_current: 'Entregas administrativas abertas atualmente',
+    deliveries_completed_period: 'Entregas concluídas no período',
+    deliveries_cancelled_period: 'Entregas canceladas no período',
+    active_links_current: 'Vínculos ativos atualmente',
+    linked_period: 'Vinculados no período',
+    unlinked_period: 'Desvinculados no período',
     agendado: 'Agendados',
     confirmado: 'Confirmados',
     realizado: 'Realizados',
@@ -60,6 +126,11 @@ function metricLabel(value: string) {
     reaberto: 'Reabertos',
   }
   return labels[value] ?? value.replaceAll('_', ' ')
+}
+
+function dashboardLabel(value: string) {
+  const label = metricLabel(value)
+  return label === value.replaceAll('_', ' ') ? 'Indicador adicional' : label
 }
 
 function sectionEntries(section: OperationalReportSection) {
@@ -384,11 +455,11 @@ function DashboardPanel({ state, management = false }: Readonly<{ state: AsyncSt
               const metrics = dashboardEntries(section)
               if (metrics.length === 0) return null
               return (
-                <section key={sectionName} aria-label={metricLabel(sectionName)}>
-                  <h4>{metricLabel(sectionName)}</h4>
+                <section key={sectionName} aria-label={dashboardLabel(sectionName)}>
+                  <h4>{dashboardLabel(sectionName)}</h4>
                   <dl>
                     {metrics.map(([key, value]) => (
-                      <div key={key}><dt>{metricLabel(key)}</dt><dd>{String(value)}</dd></div>
+                      <div key={key}><dt>{dashboardLabel(key)}</dt><dd>{String(value)}</dd></div>
                     ))}
                   </dl>
                 </section>
@@ -420,7 +491,7 @@ function DashboardPanel({ state, management = false }: Readonly<{ state: AsyncSt
         <p>O backend não retornou métricas escalares para este contexto.</p>
       ) : (
         <dl className="reports-metrics">
-          {entries.map(([key, value]) => <div key={key}><dt>{metricLabel(key)}</dt><dd>{String(value)}</dd></div>)}
+          {entries.map(([key, value]) => <div key={key}><dt>{dashboardLabel(key)}</dt><dd>{String(value)}</dd></div>)}
         </dl>
       )}
     </article>
