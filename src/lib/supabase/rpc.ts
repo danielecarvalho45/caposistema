@@ -2993,6 +2993,27 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'get_family_bereavement_for_interface', args: { p_status: status, p_limit: limit, p_offset: offset }, parse: parseConfirmedJson }),
     closeFamilyBereavement: (familyMemberId: string, notes: string) =>
       execute({ transport, operation: 'close_family_bereavement_for_interface', args: { p_family_member_id: familyMemberId, p_notes: notes }, parse: parseConfirmedJson }),
+    recognizeTransportNeed: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'recognize_transport_need_for_interface',
+        args: { p_patient_id: patientId },
+        parse: parseConfirmedJson,
+      }),
+    getTransportNeedQueue: (limit = 100, offset = 0) =>
+      execute({
+        transport,
+        operation: 'get_transport_need_queue_for_interface',
+        args: { p_limit: limit, p_offset: offset },
+        parse: (value) => value,
+      }),
+    manageTransportNeed: (cycleId: string, action: 'request_cancel' | 'cancel', reason: string) =>
+      execute({
+        transport,
+        operation: 'manage_transport_need_for_interface',
+        args: { p_cycle_id: cycleId, p_action: action, p_reason: reason },
+        parse: parseConfirmedJson,
+      }),
     getTransportContext: (patientId: string) =>
       execute({ transport, operation: 'get_transport_context_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     createTransportRequest: (args: ConfirmedJsonArgs) =>
@@ -3112,6 +3133,9 @@ function createSupabaseTransport(
       case 'start_family_bereavement_for_interface':
       case 'get_family_bereavement_for_interface':
       case 'close_family_bereavement_for_interface':
+      case 'recognize_transport_need_for_interface':
+      case 'get_transport_need_queue_for_interface':
+      case 'manage_transport_need_for_interface':
       case 'get_transport_context_for_interface':
       case 'create_transport_request_for_interface':
       case 'register_transport_pdf_for_interface':
