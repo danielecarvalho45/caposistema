@@ -2552,6 +2552,26 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: parseDentistryReferralMutation,
       }),
+    registerDentistryPdfForInterface: (
+      referralId: string,
+      storagePath: string,
+    ) =>
+      execute({
+        transport,
+        operation: 'register_dentistry_pdf_for_interface',
+        args: {
+          p_referral_id: referralId,
+          p_storage_path: storagePath,
+        },
+        parse: parseConfirmedJson,
+      }),
+    getDentistryReferralDocumentForInterface: (referralId: string) =>
+      execute({
+        transport,
+        operation: 'get_dentistry_referral_document_for_interface',
+        args: { p_referral_id: referralId },
+        parse: parseConfirmedJson,
+      }),
     getBirthdays: () =>
       execute({
         transport,
@@ -3255,6 +3275,15 @@ function createSupabaseTransport(
           p_action: String(args?.p_action ?? ''),
           p_response:
             typeof args?.p_response === 'string' ? args.p_response : undefined,
+        })
+      case 'register_dentistry_pdf_for_interface':
+        return client.rpc(operation, {
+          p_referral_id: String(args?.p_referral_id ?? ''),
+          p_storage_path: String(args?.p_storage_path ?? ''),
+        })
+      case 'get_dentistry_referral_document_for_interface':
+        return client.rpc(operation, {
+          p_referral_id: String(args?.p_referral_id ?? ''),
         })
       case 'create_administrative_request_for_interface':
         return client.rpc(operation, {
