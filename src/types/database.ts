@@ -131,6 +131,14 @@ export type Database = {
         Args: { p_family_member_id: string; p_notes?: string | null }
         Returns: Json
       }
+      get_family_psychology_request_context_for_interface: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      add_family_to_waiting_list_for_interface: {
+        Args: { p_family_link_id: string; p_priority?: number; p_notes?: string | null }
+        Returns: Json
+      }
       get_family_waiting_list_for_interface: {
         Args: { p_status?: string | null; p_limit?: number; p_offset?: number }
         Returns: Json
