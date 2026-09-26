@@ -16,6 +16,7 @@ import {
 } from './assistential-integration'
 import './assistential-page.css'
 import { Link } from 'react-router-dom'
+import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 
 const defaultIntegration = createAssistentialIntegration()
 
@@ -259,6 +260,8 @@ export function AssistentialPage({
           onConfirmed={(appointment) => void openConfirmedPatient(appointment)}
         />
       </section>
+
+      <BirthdayPanel title="Aniversariantes de hoje" />
 
       <article id="assistential-patients" className="assistential-card">
         <h3>Pacientes sob sua atuação</h3>
