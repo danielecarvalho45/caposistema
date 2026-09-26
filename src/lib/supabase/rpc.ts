@@ -2980,12 +2980,19 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_delivery_id: deliveryId, p_action: action, p_reason: reason },
         parse: parseConfirmedJson,
       }),
-    startFamilyBereavement: (familyMemberId: string) =>
-      execute({ transport, operation: 'start_family_bereavement_for_interface', args: { p_family_member_id: familyMemberId }, parse: parseConfirmedJson }),
-    getFamilyBereavement: () =>
-      execute({ transport, operation: 'get_family_bereavement_for_interface', parse: parseConfirmedJson }),
-    closeFamilyBereavement: (familyMemberId: string) =>
-      execute({ transport, operation: 'close_family_bereavement_for_interface', args: { p_family_member_id: familyMemberId }, parse: parseConfirmedJson }),
+    searchBereavementFamilyMembers: (query: string, limit = 20) =>
+      execute({
+        transport,
+        operation: 'search_bereavement_family_members_for_interface',
+        args: { p_query: query, p_limit: limit },
+        parse: (value) => Array.isArray(value) ? value as readonly Record<string, unknown>[] : [],
+      }),
+    startFamilyBereavement: (familyMemberId: string, notes: string | null = null) =>
+      execute({ transport, operation: 'start_family_bereavement_for_interface', args: { p_family_member_id: familyMemberId, p_notes: notes }, parse: parseConfirmedJson }),
+    getFamilyBereavement: (status: string | null = null, limit = 50, offset = 0) =>
+      execute({ transport, operation: 'get_family_bereavement_for_interface', args: { p_status: status, p_limit: limit, p_offset: offset }, parse: parseConfirmedJson }),
+    closeFamilyBereavement: (familyMemberId: string, notes: string) =>
+      execute({ transport, operation: 'close_family_bereavement_for_interface', args: { p_family_member_id: familyMemberId, p_notes: notes }, parse: parseConfirmedJson }),
     getTransportContext: (patientId: string) =>
       execute({ transport, operation: 'get_transport_context_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     createTransportRequest: (args: ConfirmedJsonArgs) =>
@@ -3101,6 +3108,7 @@ function createSupabaseTransport(
       case 'register_nutrition_delivery_for_interface':
       case 'get_nutrition_admin_deliveries_for_interface':
       case 'manage_nutrition_admin_delivery_for_interface':
+      case 'search_bereavement_family_members_for_interface':
       case 'start_family_bereavement_for_interface':
       case 'get_family_bereavement_for_interface':
       case 'close_family_bereavement_for_interface':
