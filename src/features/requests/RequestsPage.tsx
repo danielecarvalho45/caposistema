@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import {
   getRpcService,
@@ -73,6 +74,7 @@ export function RequestsPage({
   service = getRpcService(),
   initialContextId = null,
 }: Props) {
+  const location = useLocation()
   const [view, setView] = useState('recebidas')
   const [status, setStatus] = useState<string>('')
   const [items, setItems] = useState<readonly AdministrativeRequest[]>([])
@@ -88,6 +90,8 @@ export function RequestsPage({
   const [counterReference, setCounterReference] = useState('')
   const [newSubject, setNewSubject] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [newPatientId, setNewPatientId] = useState<string | null>(null)
+  const [newPatientName, setNewPatientName] = useState('')
   const [familyRequestContext, setFamilyRequestContext] =
     useState<Record<string, unknown> | null>(null)
   const [familyPriority, setFamilyPriority] = useState(3)
@@ -145,6 +149,21 @@ export function RequestsPage({
     },
     [service],
   )
+
+  useEffect(() => {
+    const stateValue =
+      location.state && typeof location.state === 'object'
+        ? location.state as Record<string, unknown>
+        : null
+    const patientId =
+      typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
+    const patientName =
+      typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
+    if (!patientId || !canCreateProfessionalRequest) return
+    setNewPatientId(patientId)
+    setNewPatientName(patientName)
+    setView('nova')
+  }, [canCreateProfessionalRequest, location.state])
 
   useEffect(() => {
     if (!authorized) return
@@ -293,7 +312,7 @@ export function RequestsPage({
     }
     setBusy(true)
     const result = await service.createAdministrativeRequest(
-      null,
+      newPatientId,
       newSubject.trim(),
       newDescription.trim(),
     )
