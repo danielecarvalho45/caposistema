@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { PatientSearch } from '../../components/forms/PatientSearch'
 import {
   getRpcService,
   loadingState,
   type AsyncState,
-  type FamilyQueueCandidate,
-  type FamilyWaitingListItem,
   type NutritionAdminDelivery,
   type PendingItem,
   type ReferralPatient,
@@ -65,16 +63,11 @@ function contextPath(contextModule: string) {
 export function GestorOperationalPage() {
   const navigate = useNavigate()
   const rpc = getRpcService()
-  const [familyQueue, setFamilyQueue] = useState<RowsState<FamilyWaitingListItem>>(loadingState)
-  const [candidates, setCandidates] = useState<RowsState<FamilyQueueCandidate>>({ status: 'empty' })
   const [closures, setClosures] = useState<RowsState<CareClosure>>(loadingState)
   const [pending, setPending] = useState<RowsState<PendingItem>>(loadingState)
   const [deliveries, setDeliveries] = useState<RowsState<NutritionAdminDelivery>>(loadingState)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
-  const [professionalId, setProfessionalId] = useState('')
-  const [slotStart, setSlotStart] = useState('')
-  const [familyNotes, setFamilyNotes] = useState('')
   const [reason, setReason] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<ReferralPatient | null>(null)
   const [deathDate, setDeathDate] = useState('')
@@ -85,21 +78,18 @@ export function GestorOperationalPage() {
   const [deliveryReason, setDeliveryReason] = useState('')
 
   async function reloadAll() {
-    setFamilyQueue(loadingState())
     setClosures(loadingState())
     setPending(loadingState())
     setDeliveries(loadingState())
-    const [familyResult, closureResult, pendingResult, deliveryResult] = await Promise.all([
-      rpc.getFamilyWaitingList(null, 50, 0),
+    const [closureResult, pendingResult, deliveryResult] = await Promise.all([
       closuresIntegration.loadClosures(null),
       rpc.getPendingItems(50, 0),
       rpc.getNutritionAdminDeliveries(deliveryStatus || null, 50, 0),
     ])
-    setFamilyQueue(familyResult)
     setClosures(closureResult)
     setPending(pendingResult)
     setDeliveries(deliveryResult)
-    return [familyResult, closureResult, pendingResult, deliveryResult].every(
+    return [closureResult, pendingResult, deliveryResult].every(
       (result) => result.status !== 'error',
     )
   }
@@ -107,13 +97,11 @@ export function GestorOperationalPage() {
   useEffect(() => {
     let active = true
     void Promise.all([
-      rpc.getFamilyWaitingList(null, 50, 0),
       closuresIntegration.loadClosures(null),
       rpc.getPendingItems(50, 0),
       rpc.getNutritionAdminDeliveries(deliveryStatus || null, 50, 0),
-    ]).then(([familyResult, closureResult, pendingResult, deliveryResult]) => {
+    ]).then(([closureResult, pendingResult, deliveryResult]) => {
       if (!active) return
-      setFamilyQueue(familyResult)
       setClosures(closureResult)
       setPending(pendingResult)
       setDeliveries(deliveryResult)
@@ -141,16 +129,6 @@ export function GestorOperationalPage() {
     const reloaded = afterReload ? await afterReload() : await reloadAll()
     setFeedback(reloaded ? success : 'Operação confirmada pelo backend, mas a recarga da lista canônica falhou.')
     setBusy(null)
-  }
-
-  async function loadCandidates() {
-    if (!professionalId.trim() || !slotStart) {
-      setFeedback('Informe o profissional e o horário da vaga para consultar a elegibilidade real.')
-      return
-    }
-    setCandidates(loadingState())
-    setFeedback(null)
-    setCandidates(await rpc.getFamilyQueueCandidatesForSlot(professionalId.trim(), slotStart, 50))
   }
 
   async function reloadPatientContext() {
@@ -189,21 +167,12 @@ export function GestorOperationalPage() {
         </article>
 
         <article className="gestor-panel">
-          <h3>Fila de Familiares</h3>
-          <div className="gestor-team-form"><label>ID do profissional de Psicologia<input value={professionalId} onChange={(event) => setProfessionalId(event.target.value)} /></label><label>Início da vaga<input type="datetime-local" value={slotStart} onChange={(event) => setSlotStart(event.target.value)} /></label><button type="button" disabled={Boolean(busy)} onClick={() => void loadCandidates()}>Consultar elegibilidade</button></div>
-          {familyQueue.status === 'loading' && <p>Carregando fila de familiares...</p>}
-          {familyQueue.status === 'error' && <p role="alert">{familyQueue.error.message}</p>}
-          {familyQueue.status === 'success' && <ul className="gestor-result-list">{familyQueue.data.map((item, index) => {
-            const waitingListId = id(item, 'waiting_list_id', 'id')
-            return <li key={waitingListId || index}><strong>{text(item, 'family_member_name', 'family_name', 'patient_name')}</strong><small>{text(item, 'status', 'created_at')}</small><div><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-call-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'call', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Chamar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-pause-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'pause', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Pausar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-resume-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'resume', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Retomar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-cancel-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'cancel', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Cancelar</button><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-remove-${waitingListId}`, () => rpc.updateFamilyWaitingListStatus(waitingListId, 'remove', familyNotes.trim() || null), 'Fila de familiares recarregada após confirmação do backend.')}>Remover</button></div></li>
-          })}</ul>}
-          <label>Observação administrativa<textarea value={familyNotes} onChange={(event) => setFamilyNotes(event.target.value)} /></label>
-          {candidates.status === 'loading' && <p>Consultando candidatos elegíveis...</p>}
-          {candidates.status === 'error' && <p role="alert">{candidates.error.message}</p>}
-          {candidates.status === 'success' && <ul className="gestor-result-list">{candidates.data.map((candidate, index) => {
-            const waitingListId = id(candidate, 'waiting_list_id')
-            return <li key={waitingListId || index}><strong>{text(candidate, 'family_member_name', 'family_name', 'patient_name')}</strong><button type="button" disabled={Boolean(busy) || !waitingListId} onClick={() => void runMutation(`family-appointment-${waitingListId}`, () => rpc.createFamilyPsychologyAppointment({ waitingListId, professionalId: professionalId.trim(), slotStart, generalNotes: familyNotes.trim() || null }), 'Agendamento familiar confirmado e fila canônica recarregada.')}>Agendar</button></li>
-          })}</ul>}
+          <h3>Filas de Pacientes e Familiares</h3>
+          <p>
+            A operação usa a fila visual única do CAPO, com especialidade na linha
+            do paciente e fila própria de familiares.
+          </p>
+          <Link to="/fila">Abrir filas operacionais</Link>
         </article>
 
         <article className="gestor-panel">
