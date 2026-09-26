@@ -540,6 +540,116 @@ O contrato físico do banco foi confrontado com o código após a correção. N�
 
 ---
 
+## 7.2 Contexto principal e funções acumuladas
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+Foi corrigida a resolução do contexto principal para respeitar o papel configurado como principal sem apagar funções acumuladas. Contas com múltiplos papéis continuam com módulos adicionais autorizados, sem troca manual de login/perfil.
+
+**Caminhos:** Supabase resolve_user_primary_context e set_team_member_primary_context_for_interface; supabase/migrations/20260926180000_align_primary_context_with_configured_role.sql; src/app/route-access.ts; src/app/App.tsx; src/components/shell/AppShell.tsx; tests/unit/route-access.test.ts.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO/BANCO — AGUARDANDO TESTE OPERACIONAL.
+
+---
+
+## 7.3 Painel e navegação do Gestor/Titular
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+Foram restaurados no painel integrado do Gestor os acessos de Familiar, Relatórios, Atividades Recentes/Linha do Tempo, Status do Sistema e Transporte de acordo com a estrutura aprovada, sem reabrir o cabeçalho congelado.
+
+**Caminhos:** src/features/gestor/GestorDashboard.tsx; src/features/gestor/GestorShell.tsx.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO CONFERÊNCIA VISUAL APÓS PUBLICAÇÃO.
+
+---
+
+## 7.4 Agenda — catálogo real e ações de presença
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+O novo agendamento deixou de usar especialidade textual e profissionais derivados de agendamentos existentes. A tela passou a usar get_scheduling_catalog, filtrar profissionais pela especialidade e enviar ao backend as ações confirmado e faltou. O botão de Retorno foi removido do bloco de presença por não corresponder ao contrato de comparecimento.
+
+**Caminhos:** src/features/agenda/AgendaPage.tsx; src/lib/supabase/rpc.ts; src/types/access.ts; src/types/database.ts.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE OPERACIONAL.
+
+---
+
+## 7.5 Busca Ativa separada da Oferta Inicial
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+Foi separado o onboarding/Oferta Inicial do fluxo de Busca Ativa. Busca Ativa agora usa search_type follow_up e exige paciente ativo, não falecido e com histórico CAPO. Cadastro/Oferta Inicial registra desfecho no contrato initial.
+
+**Caminhos:** Supabase get_active_searches_for_interface, register_active_search_attempt_for_interface e close_active_search_for_interface; supabase/migrations/20260926190000_separate_followup_active_search_from_initial_offer.sql; src/features/gestor/ActiveSearchPage.tsx; src/features/patients/PatientsPage.tsx; src/features/gestor/GestorManagementPage.tsx; src/lib/supabase/rpc.ts; src/types/database.ts.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO/BANCO — AGUARDANDO TESTE OPERACIONAL.
+
+---
+
+## 7.6 Fila profissional e pendências administrativas
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A fila foi separada em visão profissional da própria especialidade e visão administrativa de pendências. Os contratos de waiting list foram registrados na camada RPC.
+
+**Caminhos:** src/features/queues/QueuePage.tsx; src/app/route-access.ts; src/lib/supabase/rpc.ts; src/types/database.ts.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE OPERACIONAL.
+
+---
+
+## 7.7 Especialidades efetivas no contexto de acesso
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+get_my_access_context passou a devolver a lista de especialidades efetivas do profissional. A interface deixou de depender de papéis específicos de especialidade e passou a compor Nutrição, Assistência Social e atuação padrão pelo vínculo profissional real.
+
+**Caminhos:** Supabase get_my_access_context; supabase/migrations/20260926200000_expose_effective_specialties_in_access_context.sql; src/types/access.ts; src/lib/supabase/rpc.ts; src/app/route-access.ts; src/app/App.tsx; src/components/navigation/navigation-config.ts; src/features/professional/AssistentialPage.tsx.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO/BANCO — AGUARDANDO TESTE OPERACIONAL.
+
+---
+
+## 7.8 Retorno próprio e remarcação do profissional
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+O backend foi alinhado à regra de que o primeiro atendimento é administrativo, mas o profissional pode consultar e remarcar apenas o próprio retorno na própria agenda, mantendo especialidade e vagas autorizadas.
+
+**Caminhos:** Supabase get_reschedulable_appointments e reschedule_appointment_for_interface; supabase/migrations/20260926210000_allow_professional_own_return_rescheduling.sql.
+
+**Estado atual:** CORRIGIDO NO BANCO — AGUARDANDO TESTE OPERACIONAL.
+
+---
+
+## 7.9 Acompanhamento Social a partir do agendamento confirmado
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A interface chamava start_social_followup_for_interface com parâmetros antigos. O contrato foi alinhado para patient_id + appointment_id e o início do acompanhamento passou a partir do paciente confirmado na agenda, sem digitação manual de ID de ciclo.
+
+**Caminhos:** src/features/closures/closures-integration.ts; src/features/social/SocialPage.tsx.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE OPERACIONAL.
+
+---
+
+## 7.10 Familiar/Cuidador e Luto
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+Foram corrigidas divergências entre interface e contratos físicos: a tela não afirma mais que o Luto está sem RPC; o Administrativo Operacional voltou a ter acesso ao fluxo de Familiar/Cuidador; ações administrativas ficaram restritas ao contexto administrativo; o Luto ganhou pesquisa segura própria para familiares vinculados a paciente falecido dentro do escopo social; o encerramento passou a enviar o motivo operacional exigido pelo backend; e papel de Administrador acumulado passou a ser reconhecido independentemente do contexto principal.
+
+**Caminhos:** Supabase search_bereavement_family_members_for_interface; supabase/migrations/20260926213000_add_scoped_bereavement_family_search.sql; src/lib/supabase/rpc.ts; src/types/database.ts; src/features/social/BereavementPage.tsx; src/features/social/FamilyCaregiverPage.tsx; src/app/route-access.ts.
+
+**Conferência interna:** assinaturas de get_family_bereavement_for_interface, start_family_bereavement_for_interface, close_family_bereavement_for_interface, get_family_context_for_interface e contratos de familiar foram relidas no Supabase. A suíte automatizada ainda não foi executada depois destas alterações.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO/BANCO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
