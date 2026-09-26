@@ -1270,7 +1270,7 @@ Toda nova auditoria/correção da implantação deve:
 | Criar pedido de renovação de receita | Não encontrou `Buscar paciente`. | Verificar campo e fluxo previstos na Especificação Funcional antes de ajustar teste/código. |
 | Decisão médica na renovação | Não encontrou `Observação da ação`. | Verificar etapa, papel e campo previstos antes de ajustar teste/código. |
 
-**Estado:** classificação definitiva das oito falhas **PENDENTE DE CONFRONTO INDIVIDUAL** com `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12` e `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12`. Esses documentos estão acessíveis na documentação do projeto fora da árvore `main`; a ausência no repositório não autoriza presumir requisitos nem alterar funções aprovadas. Usar a especificação estrutural somente como complemento e o Manual Técnico Integrado v5 para questões técnicas. Nenhum módulo congelado foi reaberto; nenhuma das oito falhas foi declarada corrigida neste registro.
+**Estado:** **PENDÊNCIA — 8 FALHAS DA SUÍTE AMPLIADA.** As oito falhas permanecem abertas apenas para confronto e reexecução futura. Nenhuma delas está classificada, neste momento, como regressão real. Não alterar função correta do sistema nem reabrir módulo congelado apenas por causa dessas falhas. A retomada deve ocorrer a partir desta pendência, usando somente a documentação vigente fisicamente disponível no `main`.
 
 ## 20.10 Continuidade controlada — regressão do relatório do Auxiliar (26/09/2026)
 
