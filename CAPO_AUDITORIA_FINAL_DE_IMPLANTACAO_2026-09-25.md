@@ -1895,3 +1895,46 @@ Correções novas desta Tarefa 2:
 **Validação restante:** typecheck, suíte completa, build global, auditoria visual final, publicação e homologações operacionais com contas/dados reais pertencem à **Tarefa 3 oficial**, conforme divisão estabelecida.
 
 **Não reabrir a Tarefa 2 sem nova evidência física ou autorização expressa da responsável.**
+
+
+# 27. TAREFA 3 OFICIAL — PARTE TÉCNICA NO CHAT (26/09/2026)
+
+**Início oficial:** 26/09/2026
+
+## Escopo desta execução no Chat
+
+Esta etapa corresponde somente à parte técnica da Tarefa 3 que será executada neste chat:
+
+- typecheck completo do projeto;
+- suíte completa de testes;
+- classificação das falhas encontradas;
+- correção somente de regressões reais comprovadas;
+- não alterar funcionalidade correta para satisfazer teste desatualizado;
+- reexecução dos testes após correções;
+- build completo;
+- registro técnico dos resultados neste Documento Mestre.
+
+## Escopo reservado ao Work
+
+Permanecem fora desta execução e serão conduzidos no Work:
+
+- auditoria final de consistência;
+- auditoria visual final;
+- validação do sistema publicado;
+- testes operacionais com contas reais;
+- homologações pendentes;
+- congelamento final dos blocos aprovados;
+- consolidação final das pendências reais;
+- fechamento do Documento Mestre;
+- geração do PDF final de continuidade.
+
+## Regras desta etapa
+
+- não reabrir Tarefa 1 ou Tarefa 2 sem nova evidência física;
+- não reabrir bloco congelado sem autorização expressa;
+- corrigir somente falha tecnicamente comprovada;
+- teste desatualizado deve ser alinhado ao contrato vigente, sem regressão funcional;
+- preservar as correções registradas nos Blocos 2A, 2B e 2C;
+- registrar cada regressão real e sua correção antes do fechamento desta parte técnica.
+
+**Estado:** TAREFA 3 — PARTE TÉCNICA NO CHAT INICIADA.
