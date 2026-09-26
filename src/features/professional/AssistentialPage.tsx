@@ -17,6 +17,8 @@ import {
 import './assistential-page.css'
 import { Link } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { canAccessAppRoute } from '../../app/route-access'
 
 const defaultIntegration = createAssistentialIntegration()
 
@@ -304,6 +306,46 @@ export function AssistentialPage({
                     {patient.cms ?? 'não informado'}
                   </span>
                   <small>Situação: {patient.status}</small>
+                  <div className="assistential-patient-actions">
+                    <PatientWhatsAppButton patientId={patient.patient_id} />
+                    {canAccessAppRoute(accessContext, '/solicitacoes') && (
+                      <Link
+                        to="/solicitacoes"
+                        state={{
+                          patientId: patient.patient_id,
+                          patientName: patient.full_name,
+                          origin: 'assistential_patient',
+                        }}
+                      >
+                        Solicitação
+                      </Link>
+                    )}
+                    {canAccessAppRoute(accessContext, '/encaminhamentos') &&
+                      accessContext.capabilities.includes('encaminhamento_interprofissional') && (
+                        <Link
+                          to="/encaminhamentos"
+                          state={{
+                            patientId: patient.patient_id,
+                            patientName: patient.full_name,
+                            origin: 'assistential_patient',
+                          }}
+                        >
+                          Encaminhamento
+                        </Link>
+                      )}
+                    {canAccessAppRoute(accessContext, '/encerramentos') && (
+                      <Link
+                        to="/encerramentos"
+                        state={{
+                          patientId: patient.patient_id,
+                          patientName: patient.full_name,
+                          origin: 'assistential_patient',
+                        }}
+                      >
+                        Encerramento
+                      </Link>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
