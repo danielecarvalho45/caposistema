@@ -2096,3 +2096,12 @@ A continuidade da Tarefa 3 passa agora ao **Work**, conforme divisão definida p
 - **HOMOLOGAÇÃO OPERACIONAL PENDENTE:** não houve criação/edição de dados clínicos ou administrativos; resultados de agenda, fila, faltosos, solicitações, relatórios, encaminhamentos, encerramentos, notificações e TI foram observados somente por leitura. É preciso ocorrência e autorização real para verificar transições, atualização depois da ação e acesso negado por papel.
 - **VISUAL MOBILE PENDENTE:** o navegador desta execução ofereceu somente viewport desktop para inspeção física; não declarar PASS/FAIL do sistema publicado em celular. A frente responsiva já congelada na seção anterior não foi reaberta.
 - **CONGELAMENTO FINAL E PDF:** não executados porque a auditoria visual por perfil e a homologação real não terminaram e P1/P2 aguardam decisão. Nenhum bloco congelado foi modificado. Nenhum arquivo de produção, teste ou Supabase foi alterado nesta execução.
+
+
+### 28.4 Decisão funcional pendente — controle Perfil e funções acumuladas
+
+A responsável esclareceu em 26/09/2026 que espera que o botão **Perfil** permita mudar a visão de trabalho quando o profissional acumular uma função clínica e uma administrativa, por exemplo Clínico Geral e Coordenador, respeitando as permissões estabelecidas. Não se trata de criar papéis ou ampliar acesso.
+
+**Conflito normativo comprovado antes de editar:** a seção 7.2 deste Documento Mestre registra que contas com múltiplos papéis conservam o contexto principal configurado no backend e acessam módulos adicionais autorizados **sem troca manual de login/perfil**; o Manual Técnico Integrado v5, lista de contratos obsoletos, também descreve a experiência integrada sem seletor Operação/Controle/TI. O tipo `AccessContext` traz `primary_context` resolvido pelo backend, e as telas compartilhadas escolhem visões conforme esse contexto. Uma simples alteração visual no botão não cumpre a nova expectativa e uma troca local não pode ampliar autorização no backend.
+
+**🟡 PENDÊNCIA DE DECISÃO / BLOCO CONGELADO:** confirmar expressamente se a nova instrução substitui a regra anterior para contas que acumulam função clínica e administrativa e se a seleção deve mudar somente a visão de trabalho na sessão (sem alterar `user_roles.is_primary` no banco), mantendo a conta única e as autorizações já concedidas. Até a decisão, P1 permanece em aberto, sem código/RPC alterado e sem reabrir bloco congelado. P2 — rótulos do Relatório — permanece independente.
