@@ -742,6 +742,62 @@ A tela integrada misturava Encerramentos com Acompanhamento Social e oferecia a�
 
 ---
 
+## 7.14 Notificações — contrato físico e abertura do contexto correto
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A camada de Notificações estava incompatível com o contrato físico do Supabase: priority era tratado como número embora o banco devolva texto, e a resposta de update_my_notification_for_interface era tratada como se tivesse campo success, que não existe no retorno físico.
+
+### Correções realizadas
+- priority alinhado para string/null;
+- parser da atualização considera sucesso somente após retorno válido da RPC, sem exigir campo inexistente;
+- tipos do banco atualizados;
+- teste unitário atualizado para o contrato real, inclusive retorno JSON sem success;
+- abertura de contexto ampliada para Solicitações, Encaminhamentos, Faltosos, Fila, Encerramentos, Transporte, Renovação de Receita, Nutrição e Suporte Técnico;
+- notificações odontológicas são direcionadas para Odontologia quando o tipo/mensagem identifica o fluxo;
+- toda navegação permanece submetida a canAccessAppRoute.
+
+### Caminhos alterados
+- src/features/notifications/notifications-integration.ts
+- src/types/database.ts
+- src/app/App.tsx
+- tests/unit/notifications-page.test.tsx
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — TESTE ATUALIZADO, MAS A SUÍTE AINDA NÃO FOI EXECUTADA.
+
+---
+
+## 7.15 Nutrição — PDF profissional, entrega administrativa e consulta gerencial
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+A auditoria encontrou três responsabilidades diferentes misturadas na mesma condição de interface: atuação profissional da Nutrição, entrega administrativa e consulta gerencial. Também foi confirmado que a tela integrada criava o registro do documento nutricional, mas não gerava/armazenava o PDF oficial previsto no Index aprovado.
+
+### Correções realizadas
+- papel profissional continua sendo o único que cria/edita Plano Alimentar e gera o PDF Nutricional Oficial;
+- o PDF passou a ser construído a partir do snapshot oficial retornado pelo banco, salvo em capo-documents/nutrition/<document_id>/...pdf e registrado por register_nutrition_pdf_for_interface;
+- profissional pode visualizar/baixar o PDF e enviá-lo ao fluxo administrativo por register_nutrition_delivery_for_interface;
+- Administrativo Operacional e Administrador recebem a lista de entregas e podem visualizar/baixar o PDF;
+- reabertura de entrega encerrada aparece somente ao Administrador/Controlador, em conformidade com o backend;
+- Coordenador deixou de chamar a RPC administrativa que não o autoriza;
+- criada RPC somente leitura get_nutrition_documents_for_management para Administrador e Coordenador consultarem metadados/PDFs sem editar conteúdo profissional;
+- rota /nutricao permanece acessível ao profissional de Nutrição, Administrador, Administrativo Operacional e Coordenador, mas cada contexto recebe somente as ações compatíveis.
+
+### Caminhos alterados
+- Supabase: get_nutrition_documents_for_management
+- supabase/migrations/20260926223000_add_nutrition_management_document_read.sql
+- src/lib/supabase/rpc.ts
+- src/types/database.ts
+- src/features/nutrition/NutritionPage.tsx
+- src/app/route-access.ts
+
+### Conferência interna
+Foram relidas as RPCs get_nutrition_context_for_interface, create_nutrition_document_for_interface, register_nutrition_pdf_for_interface, get_nutrition_document_for_interface, get_nutrition_admin_deliveries_for_interface e manage_nutrition_admin_delivery_for_interface, além das policies de leitura/gravação do bucket privado capo-documents. A nova RPC gerencial foi relida após a migração. A suíte automatizada ainda não foi executada.
+
+**Estado atual:** CORRIGIDO NO CÓDIGO/BANCO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
