@@ -1727,3 +1727,171 @@ Resultado:
 Suíte completa, typecheck, build global e homologações com contas/dados reais permanecem reservados para a **Tarefa 3**, conforme divisão oficial.
 
 **Não iniciar o Bloco 2C sem nova ordem da responsável.**
+
+
+## BLOCO 2C — Relatórios e contratos compartilhados interface ↔ Supabase (26/09/2026)
+
+**Escopo:**
+- relatórios;
+- contratos compartilhados interface ↔ Supabase;
+- consistência dos retornos das RPCs;
+- integração comum dos módulos;
+- revisão transversal final da Tarefa 2.
+
+### 25.1 Levantamento prévio
+
+Foram preservadas as correções já registradas de Relatórios, Notificações, TI, Nutrição, Transporte, Odontologia, Agenda, Coordenação e demais módulos. Não foram reabertos perfis ou blocos congelados.
+
+Relatórios já possuíam correção anterior para:
+- leitura do dashboard gerencial estruturado;
+- filtros por período e especialidade;
+- agenda por especialidade;
+- relatório operacional assistencial;
+- retirada de contagens parciais do relatório do Auxiliar Administrativo.
+
+### 25.2 Relatórios — contrato atual
+
+Foram reconfirmadas fisicamente as RPCs oficiais:
+
+- `get_reports_dashboard_for_interface(p_start_date date, p_end_date date, p_specialty_id uuid default null)` → `jsonb`;
+- `get_my_specialty_operational_report_for_interface(p_specialty_id uuid, p_start_date date, p_end_date date)` → `jsonb`.
+
+A interface atual:
+- usa o dashboard oficial para Administração/Coordenação;
+- usa o relatório operacional oficial por especialidade para profissional;
+- mantém o Auxiliar Administrativo sem contagem derivada de páginas limitadas, encaminhando para as relações reais de Fila e Faltosos;
+- não usa `state.data.length`/paginação como indicador institucional.
+
+Nenhuma divergência nova de Relatórios foi encontrada neste bloco.
+
+### 25.3 Matriz física dos contratos compartilhados
+
+Foi extraída a lista das operações efetivamente expostas por `src/lib/supabase/rpc.ts`.
+
+Resultado inicial:
+- **127 RPCs utilizadas pela camada de serviço**;
+- todas as 127 existem fisicamente no Supabase oficial;
+- **23 RPCs usadas não estavam declaradas em `src/types/database.ts`**.
+
+As 23 funções ausentes na tipagem existiam fisicamente no banco, incluindo contratos de:
+- Coordenação;
+- solicitações de alteração de agenda;
+- homologação;
+- Nutrição;
+- paciente × especialidades;
+- registro de óbito;
+- criação de especialidade.
+
+### 25.4 Correção — tipagem compartilhada incompleta
+
+`src/types/database.ts` foi alinhado às assinaturas físicas atuais das 23 RPCs, incluindo:
+- argumentos obrigatórios;
+- argumentos com `DEFAULT` tratados como opcionais;
+- retornos `jsonb`;
+- retornos tabulares estruturados das RPCs de Coordenação e paciente × especialidades.
+
+A correção não alterou banco, autorização nem comportamento funcional.
+
+### 25.5 Regressão real — operações expostas sem transporte
+
+A auditoria identificou uma segunda divergência objetiva:
+
+10 RPCs estavam:
+- expostas pelos métodos de `createRpcService()`;
+- existentes fisicamente no Supabase;
+- usadas por módulos atuais;
+- mas **não possuíam `case` no transporte padrão `createSupabaseTransport()`**.
+
+Sem correção, essas chamadas cairiam no erro:
+
+`RPC não cadastrada na camada CAPO.`
+
+Operações afetadas:
+- `get_coordinator_team_overview_for_interface`;
+- `get_coordinator_agenda_overview_for_interface`;
+- `get_agenda_change_requests_for_interface`;
+- `create_agenda_change_request_for_interface`;
+- `get_patient_care_specialties_for_professional_interface`;
+- `decide_agenda_change_request_for_interface`;
+- `apply_agenda_change_request_for_interface`;
+- `register_coordination_team_decision_for_interface`;
+- `get_coordination_team_decisions_for_interface`;
+- `create_specialty_for_interface`.
+
+### 25.6 Correção do transporte compartilhado
+
+As 10 operações foram registradas no grupo de transporte genérico confirmado, preservando:
+- os mesmos nomes físicos;
+- os mesmos argumentos já construídos pelo serviço;
+- as mesmas autorizações do backend;
+- os mesmos retornos;
+- nenhuma simulação local de sucesso.
+
+Arquivo corrigido:
+- `src/lib/supabase/rpc.ts`.
+
+### 25.7 Verificação matricial após correções
+
+A matriz foi repetida após as alterações.
+
+Resultado:
+- RPCs usadas pelo serviço: **127**;
+- RPCs tipadas em `database.ts`: **127/127**;
+- RPCs com caminho de transporte: **127/127**;
+- RPCs fisicamente existentes no Supabase: **127/127**;
+- RPC usada sem tipagem: **0**;
+- RPC usada sem transporte: **0**;
+- RPC usada sem função física correspondente: **0**.
+
+### 25.8 Arquivos alterados
+
+- `src/types/database.ts`;
+- `src/lib/supabase/rpc.ts`.
+
+Não houve alteração de schema, RLS, policy, trigger ou função do Supabase neste Bloco 2C.
+
+### 25.9 Estado do Bloco 2C
+
+**BLOCO 2C — CONCLUÍDO TECNICAMENTE.**
+
+Resultado:
+- Relatórios confrontados e conformes com os contratos oficiais;
+- camada compartilhada de RPCs confrontada integralmente;
+- 23 lacunas de tipagem corrigidas;
+- 10 regressões reais de transporte corrigidas;
+- matriz final 127/127/127/127;
+- nenhuma nova pendência funcional criada;
+- nenhum bloco congelado reaberto.
+
+---
+
+# 26. FECHAMENTO DA TAREFA 2 OFICIAL — TRANSVERSAL DO SISTEMA (26/09/2026)
+
+Com a conclusão dos Blocos 2A, 2B e 2C:
+
+**TAREFA 2 OFICIAL — CONCLUÍDA TECNICAMENTE.**
+
+Foram concluídos:
+- estrutura transversal e contexto;
+- agenda/contexto compartilhado;
+- funções acumuladas;
+- roteamento;
+- agenda e comparecimento;
+- paciente × especialidades;
+- capacidades;
+- automações;
+- notificações;
+- funções próprias das especialidades;
+- relatórios;
+- contratos compartilhados interface ↔ Supabase.
+
+Correções novas desta Tarefa 2:
+- seleção de visão de Agenda, Fila e Relatórios pelo `primary_context`;
+- alinhamento de testes diretamente relacionados ao contexto transversal;
+- remoção da função legada órfã `notify_waiting_list()`, preservando a automação substituta;
+- inclusão das 23 RPCs físicas ausentes da tipagem compartilhada;
+- registro das 10 RPCs que estavam sem transporte na camada CAPO.
+
+**Validação restante:** typecheck, suíte completa, build global, auditoria visual final, publicação e homologações operacionais com contas/dados reais pertencem à **Tarefa 3 oficial**, conforme divisão estabelecida.
+
+**Não reabrir a Tarefa 2 sem nova evidência física ou autorização expressa da responsável.**
