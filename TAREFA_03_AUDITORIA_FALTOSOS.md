@@ -1,5 +1,8 @@
 # Tarefa 03 — Auditoria do fluxo de Faltosos
 
+**Status atual (26/09/2026):** **IMPLEMENTAÇÃO TÉCNICA CONCLUÍDA — HOMOLOGAÇÃO OPERACIONAL FINAL RESERVADA PARA O ENCERRAMENTO DOS TRABALHOS.**
+
+
 ## Status
 
 **AMARELO — backend e SPA implementados; homologação real pendente.**
@@ -141,3 +144,44 @@ O build mantém somente o aviso não bloqueante de chunk JavaScript maior que 50
 ## Pendência de homologação
 
 O projeto continua sem conta ativa `administrativo_operacional`, agendamentos ou ocorrências de faltosos. Por isso, o fluxo de escrita completo não foi acionado com dados reais. Para congelar o bloco ainda é necessário homologar com conta AO autorizada: falta real, notificação, contato, remarcação, baixa, auditoria, negação ao profissional e sessão expirada.
+
+
+## Fechamento técnico em 26/09/2026
+
+A Tarefa 3 foi confrontada novamente com o Manual Técnico Integrado v5, o código atual do `main` e o estado físico atual do Supabase oficial.
+
+### Resultado
+
+- Faltosos permanece separado de Busca Ativa.
+- `patient_no_show_contacts` continua como histórico próprio de contatos.
+- As RPCs de leitura, histórico, registro de contato e solicitação de remarcação permanecem implantadas e expostas somente a `authenticated`, com `anon` sem execução.
+- A rota `/faltosos` permanece autorizada somente a Administração, Coordenação e Administrativo Operacional.
+- O profissional assistencial não opera o acompanhamento de faltosos pela rota.
+- O registro de falta continua originando o acompanhamento por trigger.
+- A criação de ocorrência possui notificação para o fluxo operacional.
+- O acompanhamento e os contatos possuem auditoria própria.
+- A remarcação de origem `faltoso` continua com trigger de fechamento/vínculo do acompanhamento.
+- O frontend atual mantém leitura, histórico, registro de contato/providência e solicitação de remarcação por RPC, sem persistência local ou sucesso simulado.
+- O banco não possui atualmente ocorrências reais de faltosos nem contatos de faltosos; também não há registros legados `search_type='no_show'` em `patient_active_searches`.
+- Nenhuma regressão técnica objetiva foi encontrada.
+- Nenhuma alteração de código, migration ou dado foi necessária.
+- Nenhum bloco congelado foi reaberto.
+- Nenhuma nova pendência foi criada.
+
+### Homologação operacional
+
+A validação ponta a ponta permanece para o encerramento geral dos trabalhos, conforme decisão da responsável, usando ocorrência real e conta autorizada. O roteiro final deve confirmar:
+
+1. falta real registrada na agenda;
+2. criação automática do acompanhamento;
+3. notificação operacional;
+4. visualização pelo AO;
+5. registro de contato/providência;
+6. solicitação e efetivação de remarcação;
+7. baixa e vínculo do novo agendamento;
+8. auditoria/timeline;
+9. negação ao profissional não autorizado;
+10. sessão inválida/expirada;
+11. funcionamento no ambiente publicado `https://caposistema.pages.dev/`.
+
+**Estado final desta tarefa:** **CONCLUÍDA NA IMPLEMENTAÇÃO TÉCNICA — AGUARDANDO SOMENTE HOMOLOGAÇÃO OPERACIONAL FINAL.**
