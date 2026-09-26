@@ -11,6 +11,41 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      get_transport_context_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      create_transport_request_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_appointment_id: string
+          p_transport_notes: string
+        }
+        Returns: Json
+      }
+      manage_transport_request_for_interface: {
+        Args: {
+          p_request_id: string
+          p_action: string
+          p_reason?: string | null
+          p_channel?: string | null
+          p_reference?: string | null
+          p_transport_notes?: string | null
+        }
+        Returns: Json
+      }
+      register_transport_pdf_for_interface: {
+        Args: { p_request_id: string; p_storage_path: string }
+        Returns: Json
+      }
+      sign_transport_pdf_for_interface: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      get_transport_document_for_interface: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
       search_bereavement_family_members_for_interface: {
         Args: { p_query: string; p_limit?: number }
         Returns: Json
