@@ -31,6 +31,14 @@ export type Database = {
         Args: { p_referral_id: string }
         Returns: Json
       }
+      get_prescription_renewal_operational_context_for_interface: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      link_prescription_renewal_consult_appointment_for_interface: {
+        Args: { p_request_id: string; p_appointment_id: string }
+        Returns: Json
+      }
       get_patient_for_edit_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
