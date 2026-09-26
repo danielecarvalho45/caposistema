@@ -140,9 +140,13 @@ export function canAccessAppRoute(
       )
     case '/nutricao':
       return (
-        accessContext.is_active && Boolean(accessContext.professional_id) &&
-        hasRole(accessContext, ['profissional']) &&
-        hasSpecialty(accessContext, 'Nutrição')
+        hasRole(accessContext, ['administrador', 'administrativo_operacional', 'coordenador']) ||
+        (
+          accessContext.is_active &&
+          Boolean(accessContext.professional_id) &&
+          hasRole(accessContext, ['profissional']) &&
+          hasSpecialty(accessContext, 'Nutrição')
+        )
       )
     case '/relatorios':
       return (
