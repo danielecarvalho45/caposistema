@@ -861,9 +861,9 @@ export type Database = {
       }
       get_reschedulable_appointments: {
         Args: {
-          p_patient_id: string
-          p_professional_id: string
-          p_date: string
+          p_patient_id: string | null
+          p_professional_id: string | null
+          p_date: string | null
           p_limit: number
         }
         Returns: {
@@ -884,19 +884,19 @@ export type Database = {
       reschedule_appointment_for_interface: {
         Args: {
           p_appointment_id: string
-          p_new_professional_id: string
+          p_new_professional_id: string | null
           p_new_slot_start: string
           p_reason: string
-          p_origin: string
-          p_new_notes: string
+          p_origin: string | null
+          p_new_notes: string | null
         }
         Returns: Json
       }
       create_agenda_block_for_interface: {
         Args: {
           p_agenda_config_id: string
-          p_weekday: number
-          p_specific_date: string
+          p_weekday: number | null
+          p_specific_date: string | null
           p_start_time: string
           p_end_time: string
           p_block_type: string

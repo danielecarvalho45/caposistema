@@ -1162,3 +1162,59 @@ Toda nova auditoria/correção da implantação deve:
    - teste interno;
    - teste operacional;
    - pendência de decisão.
+
+---
+
+# 20. TAREFA 1 — FECHAMENTO ESTRUTURAL POR PERFIL (26/09/2026)
+
+**Fontes normativas consultadas:** Especificação Estrutural da Interface, seções 3–7 e atualização sobre competência documental (12/09/2026); regras de continuidade e anti-loop das seções 16 e 19 deste documento. **Fontes físicas:** GitHub `danielecarvalho45/caposistema`, base `063bc82`, e assinaturas/definições das RPCs existentes no projeto Supabase `CAPO SISTEMA`. Este registro não substitui as seções 7.1–7.20 e as correções posteriores já congeladas. As alterações abaixo são pontuais, fundadas em divergências físicas novas.
+
+## 20.1 Coordenador — percorrido
+
+- **Correto:** contexto principal e módulo adicional conforme papel; painel de Coordenação, agendas da equipe, pacientes administrativos, filas, faltosos gerenciais, Busca Ativa gerencial, solicitações, decisões estruturais de agenda, relatórios, timeline, auditoria, contingência e suporte possuem caminhos físicos; a RPC de equipe restringe administrador/coordenador e a de Busca Ativa deixa decisões operacionais para administrador/auxiliar.
+- **Divergente:** painel não exibia especialidades, produtividade nem disponibilidade, embora a RPC já as devolvesse; justificativa de alteração de agenda era lida de `reason`, enquanto a RPC devolve `justification`.
+- **Corrigido:** painel exibe nomes de especialidades, atendimentos realizados e dias com disponibilidade (nome fiel à contagem da RPC), situação e atividades; justificativa lê o campo real.
+- **Arquivos/RPCs:** `src/features/coordination/CoordinationDashboard.tsx`; somente leitura das RPCs `get_coordinator_team_overview_for_interface` e `get_agenda_change_requests_for_interface`; nenhuma RPC alterada.
+- **Teste final:** conferir renderização com conta real de Coordenador, métricas e decisões em agenda real; manter homologação operacional anteriormente pendente.
+
+## 20.2 Auxiliar Administrativo — percorrido
+
+- **Correto:** contexto operacional; cadastro do paciente com Oferta CAPO integrada e número gerado pelo banco; Agenda Geral; fila, faltosos, solicitações, transporte apenas na fase administrativa, receita, odontologia, familiar/cuidador, encerramentos e notificações permanecem cobertos pelos fluxos anteriormente corrigidos. Não há gerenciador de agenda própria nem emissão profissional de PDF.
+- **Divergente:** não havia rota/navegação da Busca Ativa apesar da permissão expressa na RPC; link no resultado do paciente levava ao módulo reservado ao Gestor; óbito administrativo era autorizado pela RPC mas a única interface para registrá-lo estava em rota exclusiva do Gestor; rota de relatórios vedava o Auxiliar.
+- **Corrigido:** rota `/busca-ativa` e navegação para administrador/auxiliar; link de familiar autorizado no resultado do paciente; ação de óbito com confirmação do banco dentro da consulta de paciente; relatórios operacionais limitados e explicitamente identificados como até 50 registros reais de pendências e faltosos, sem expor o dashboard gerencial. Alinhada à assinatura da RPC a chamada de agendamento de familiar na fila e conectadas duas RPCs existentes à tela de Solicitações.
+- **Arquivos/RPCs:** `src/app/App.tsx`, `src/app/route-access.ts`, `src/components/navigation/navigation-config.ts`, `src/features/patients/PatientsPage.tsx`, `src/components/patients/RegisterPatientDeath.tsx`, `src/features/queues/QueuePage.tsx`, `src/features/reports/ReportsPage.tsx`, `src/features/reports/AdministrativeOperationalReport.tsx`, `src/lib/supabase/rpc.ts`; contratos existentes `register_patient_death_for_interface`, `get_active_searches_for_interface`, `register_active_search_attempt_for_interface`, `get_family_psychology_request_context_for_interface`, `add_family_to_waiting_list_for_interface`, `create_family_psychology_appointment_for_interface`, `get_pending_items_for_interface`, `get_no_show_followups_for_interface`; nenhuma RPC alterada.
+- **Teste final:** validar os estados e ações com conta real de Auxiliar; confirmar se as duas relações operacionais bastam para os indicadores exigidos na rotina; conferir cadastro → Oferta CAPO → primeiro agendamento em operação real.
+
+## 20.3 Assistência Social — percorrida
+
+- **Correto:** Minha Agenda; acompanhamento social ativo/encerrado; vulnerabilidade mínima; familiar/cuidador, luto, transporte com capacidade, solicitações e encaminhamento condicionado, encerramento próprio e relatórios da área; Faltosos continua fora do perfil. O backend restringe óbito a Gestor/Auxiliar/Assistência Social vinculada.
+- **Divergente:** a interface social não oferecia o registro autorizado de óbito, nem a lista somente dos nomes das especialidades que acompanham o paciente, apesar das RPCs específicas.
+- **Corrigido:** ações de óbito e consulta apenas de nomes das especialidades no paciente confirmado da agenda, sem datas, horários ou conteúdo alheio.
+- **Arquivos/RPCs:** `src/features/social/SocialPage.tsx`, `src/components/patients/RegisterPatientDeath.tsx`, `src/components/patients/PatientCareSpecialties.tsx`; RPCs existentes `register_patient_death_for_interface` e `get_patient_care_specialties_for_professional_interface` não modificadas.
+- **Teste final:** validar seleção de paciente real autorizado, consulta de especialidades e bloqueios da RPC; óbito somente com caso legítimo, nunca com dados fictícios.
+
+## 20.4 Clínico Geral — percorrido
+
+- **Correto:** contexto próprio de agenda; ações de presença/falta e retorno; pacientes vinculados e fila própria; solicitação; receita apenas como devolutiva operacional, sem prescrição no CAPO; encaminhamento condicionado à capacidade individual; encerramento da própria especialidade e relatório da área. O nome físico da especialidade no banco é `Clínica Geral` e coincide com a detecção normalizada no código.
+- **Divergente:** a atuação comum não mostrava quais outras especialidades acompanham o paciente.
+- **Corrigido:** lista mínima de nomes no resultado de paciente autorizado, consultada na RPC que valida o vínculo profissional.
+- **Arquivos/RPCs:** `src/features/professional/AssistentialPage.tsx`, `src/components/patients/PatientCareSpecialties.tsx`; leitura de `get_patient_care_specialties_for_professional_interface`; nenhuma RPC alterada.
+- **Teste final:** autenticação real de Clínico, devolutiva de receita e retorno próprio com vaga real; consulta de nomes restrita a paciente vinculado.
+
+## 20.5 Profissional Assistencial Padrão — percorrido
+
+- **Correto:** estrutura comum para Psicologia, Fisioterapia e especialidades futuras depende do cadastro de especialidade no banco; agenda própria, pacientes vinculados, fila, solicitações, relatórios, encerramento próprio e suporte têm rotas; Encaminhamento Interprofissional no menu depende da capacidade individual, sem concessão automática por especialidade.
+- **Divergente:** não se exibiam as especialidades que acompanham o paciente; a navegação ocultava Minha Atuação de quem acumulasse Assistência Social/Nutrição com outra especialidade comum.
+- **Corrigido:** lista de nomes restrita ao paciente vinculado e Minha Atuação preservada quando também houver especialidade assistencial comum efetiva.
+- **Arquivos/RPCs:** `src/features/professional/AssistentialPage.tsx`, `src/components/patients/PatientCareSpecialties.tsx`, `src/components/navigation/navigation-config.ts`; leitura de `get_patient_care_specialties_for_professional_interface`; nenhuma RPC alterada.
+- **Teste final:** conta real de cada especialidade, função acumulada e futura especialidade cadastrada no sistema; retorno, fila e autorização de encaminhamento.
+
+## 20.6 Gestor/Titular — percorrido, fechamento estrutural pendente
+
+- **Correto:** preservar o painel, cabeçalho, rodapé, status, famílias e fluxos já corrigidos nas seções anteriores; rotas de equipe/administração, Agenda Geral, auditoria, timeline, relatórios, TI, suporte e visão administrativa dos documentos; o Gestor não assume autoria de PDF odontológico/nutricional. Cadastro da equipe já contém papéis, especialidades dinâmicas, situação ativa/inativa e contexto principal.
+- **Divergente:** catálogo de capacidades era usado sem estado nem método de serviço declarados e os botões de atribuir capacidade referiam funções inexistentes; a alteração de situação podia deixar a ficha selecionada com estado antigo; não existia atalho à IA de desenvolvimento. **Pendente e classificado:** `Administração do Sistema` e `Equipe` abrem a mesma tela de cadastro. Configurações gerais e parâmetros de integração previstos no manual não têm contrato físico de edição no Supabase identificado nesta auditoria; exibir controles de gravação sem contrato seria sucesso simulado.
+- **Corrigido:** consulta real ao catálogo, ações individuais/especialidade com atualização pelo banco, limpeza da seleção após mutação, atalho externo à IA. Mantida a vedação à concessão automática de encaminhamento por especialidade.
+- **Arquivos/RPCs:** `src/features/gestor/GestorTeamPage.tsx`, `src/features/gestor/GestorShell.tsx`; RPCs existentes `get_capability_catalog_for_interface`, `set_professional_capability_for_interface`, `set_specialty_capability_status_for_interface`; nenhuma RPC alterada.
+- **Teste final:** cadastro, inativação/reativação e capacidades com conta real do Gestor; aprovação funcional e contrato físico para parâmetros gerais, sem alterar os manuais.
+
+**Estado da TAREFA 1:** seis perfis percorridos e pontos conhecidos classificados; **NÃO CONCLUÍDA** enquanto a lacuna estrutural de parâmetros gerais/integrações do Gestor permanecer sem contrato, e as correções não estiverem incorporadas e verificadas. Build de produção executado com sucesso nesta cópia local; verificação tipada e lint apontaram falhas preexistentes em testes e módulos não corrigidos aqui, registradas como pendências técnicas sem iniciar Tarefa 2 ou Tarefa 3. Nenhuma conta real ou dado clínico fictício foi criado.

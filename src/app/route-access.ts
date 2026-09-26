@@ -23,6 +23,7 @@ export const KNOWN_APP_ROUTES = [
   '/relatorios',
   '/encerramentos',
   '/coordenacao',
+  '/busca-ativa',
   '/coordenacao/busca-ativa',
   '/gestor/social',
   '/gestor/luto',
@@ -118,6 +119,8 @@ export function canAccessAppRoute(
     case '/coordenacao/auditoria':
     case '/coordenacao/busca-ativa':
       return hasRole(accessContext, ['administrador', 'coordenador'])
+    case '/busca-ativa':
+      return hasRole(accessContext, ['administrador', 'administrativo_operacional'])
     case '/pacientes':
       return hasRole(accessContext, ['administrador', 'coordenador', 'administrativo_operacional'])
     case '/agenda':
@@ -154,8 +157,10 @@ export function canAccessAppRoute(
           'administrador',
           'profissional',
           'coordenador',
+          'administrativo_operacional',
         ]) &&
         (hasRole(accessContext, ['administrador', 'coordenador']) ||
+          hasRole(accessContext, ['administrativo_operacional']) ||
           Boolean(accessContext.professional_id))
       )
     case '/assistencia-social':

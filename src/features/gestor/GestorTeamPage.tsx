@@ -30,6 +30,7 @@ export type TeamManagementService = Readonly<{
   setCapability: (professionalId: string, capabilityCode: string, isEnabled: boolean) => Promise<AsyncState<unknown>>
   removeCapability: (professionalId: string, capabilityCode: string) => Promise<AsyncState<unknown>>
   setSpecialtyCapability: (specialtyId: string, capabilityCode: string, isEnabled: boolean) => Promise<AsyncState<unknown>>
+  getCapabilityCatalog: () => Promise<AsyncState<unknown>>
   createSpecialty?: (name: string) => Promise<AsyncState<unknown>>
 }>
 
@@ -83,6 +84,7 @@ export function createTeamManagementService(): TeamManagementService {
     createSpecialty: (name) => rpc.createSpecialty(name),
     setPrimaryContext: (userAccountId, roleCode) => rpc.setTeamMemberPrimaryContext(userAccountId, roleCode),
     getCapabilities: (professionalId) => rpc.getEffectiveProfessionalCapabilities(professionalId),
+    getCapabilityCatalog: () => rpc.getCapabilityCatalog(),
     setCapability: (professionalId, capabilityCode, isEnabled) => rpc.setProfessionalCapability(professionalId, capabilityCode, isEnabled),
     removeCapability: (professionalId, capabilityCode) => rpc.removeProfessionalCapability(professionalId, capabilityCode),
     setSpecialtyCapability: (specialtyId, capabilityCode, isEnabled) => rpc.setSpecialtyCapabilityStatus(specialtyId, capabilityCode, isEnabled),
@@ -197,6 +199,7 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   const [newSpecialty, setNewSpecialty] = useState('')
   const [activeReason, setActiveReason] = useState('')
   const [capabilities, setCapabilities] = useState<readonly RecordValue[]>([])
+  const [capabilityCatalog, setCapabilityCatalog] = useState<unknown>(null)
   const [specialtyForCapability, setSpecialtyForCapability] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -388,8 +391,27 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
   async function mutate(action: () => Promise<AsyncState<unknown>>, message: string) {
     const result = await action()
     if (result.status !== 'success') { setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.'); return }
-    setFeedback(message)
     await reload()
+    setSelected(null)
+    setCapabilities([])
+    setFeedback(message)
+  }
+
+  async function mutateProfessionalCapability(code: string, isEnabled: boolean) {
+    if (!selected) return
+    const result = await service.setCapability(selected.professionalId, code, isEnabled)
+    if (result.status !== 'success') { setFeedback(errorMessage(result) ?? 'O banco não confirmou a alteração da permissão.'); return }
+    const refreshed = await service.getCapabilities(selected.professionalId)
+    if (refreshed.status === 'success') setCapabilities(records(refreshed.data, ['effective_capabilities', 'capabilities', 'items']))
+    setFeedback(refreshed.status === 'error' ? refreshed.error.message : 'Permissão atualizada no banco.')
+  }
+
+  async function mutateSpecialtyCapability(specialtyId: string, code: string, isEnabled: boolean) {
+    const result = await service.setSpecialtyCapability(specialtyId, code, isEnabled)
+    if (result.status !== 'success') { setFeedback(errorMessage(result) ?? 'O banco não confirmou a alteração da especialidade.'); return }
+    const refreshed = await service.getCapabilityCatalog()
+    if (refreshed.status === 'success') setCapabilityCatalog(refreshed.data)
+    setFeedback(refreshed.status === 'error' ? refreshed.error.message : 'Permissão da especialidade atualizada no banco.')
   }
 
   async function addSpecialty() {

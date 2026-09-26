@@ -19,6 +19,7 @@ export const navigationItems: readonly NavigationItem[] = [
   { path: '/familiar-cuidador', label: 'Familiar / Cuidador', icon: '♧', group: 'principal' },
   { path: '/fila', label: 'Fila', icon: '📋', group: 'principal' },
   { path: '/faltosos', label: 'Faltosos', icon: '⚑', group: 'principal' },
+  { path: '/busca-ativa', label: 'Busca Ativa', icon: '⌕', group: 'principal' },
   { path: '/solicitacoes', label: 'Solicitações', icon: '▤', group: 'principal' },
   { path: '/transporte', label: 'Transporte', icon: '⇄', group: 'principal' },
   { path: '/receita', label: 'Renovação de Receita', icon: '💊', group: 'principal' },
@@ -42,12 +43,13 @@ export function authorizedNavigationItems(
   }
   const hasNutrition = specialtyNames.includes('nutricao')
   const hasSocial = specialtyNames.includes('assistencia social')
+  const hasGeneralAssistentialSpecialty = specialtyNames.some((name) => name !== 'nutricao' && name !== 'assistencia social')
 
   return navigationItems.filter(
     (item) => {
       if (group !== undefined && item.group !== group) return false
       if (!canAccessAppRoute(accessContext, item.path)) return false
-      if (item.path === '/atuacao' && (hasNutrition || hasSocial)) return false
+      if (item.path === '/atuacao' && (hasNutrition || hasSocial) && !hasGeneralAssistentialSpecialty) return false
       if (
         item.path === '/encaminhamentos' &&
         accessContext.roles.some((role) => role.code === 'profissional') &&

@@ -12,6 +12,7 @@ import {
 } from './reports-integration'
 import { getRpcService } from '../../lib/supabase/rpc'
 import './reports-page.css'
+import { AdministrativeOperationalReport } from './AdministrativeOperationalReport'
 
 const defaultIntegration = createReportsIntegration()
 
@@ -121,6 +122,16 @@ export function ReportsPage({
 }: Readonly<{
   accessContext: AccessContext
   integration?: CAPOReportsIntegration
+}>) {
+  const isOnlyAdministrativeOperational = accessContext.roles.some((role) => role.code === 'administrativo_operacional') &&
+    !accessContext.roles.some((role) => ['administrador', 'coordenador', 'profissional'].includes(role.code))
+  if (isOnlyAdministrativeOperational) return <AdministrativeOperationalReport />
+  return <AuthorizedReportsPage accessContext={accessContext} integration={integration} />
+}
+
+function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
+  accessContext: AccessContext
+  integration: CAPOReportsIntegration
 }>) {
   const [specialtiesState, setSpecialtiesState] = useState<
     AsyncState<

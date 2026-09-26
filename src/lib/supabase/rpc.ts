@@ -2425,6 +2425,20 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: parseConfirmedJson,
       }),
+    getFamilyPsychologyRequestContext: (requestId: string) =>
+      execute({
+        transport,
+        operation: 'get_family_psychology_request_context_for_interface',
+        args: { p_request_id: requestId },
+        parse: parseConfirmedJson,
+      }),
+    addFamilyToWaitingList: (familyLinkId: string, priority: number, notes: string | null) =>
+      execute({
+        transport,
+        operation: 'add_family_to_waiting_list_for_interface',
+        args: { p_family_link_id: familyLinkId, p_priority: priority, p_notes: notes },
+        parse: parseConfirmedJson,
+      }),
     updateFamilyWaitingListStatus: (
       waitingListId: string,
       action: 'pause' | 'resume' | 'call' | 'cancel' | 'remove',

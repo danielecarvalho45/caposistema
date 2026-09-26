@@ -18,6 +18,7 @@ import './assistential-page.css'
 import { Link } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
 import { canAccessAppRoute } from '../../app/route-access'
 
 const defaultIntegration = createAssistentialIntegration()
@@ -306,6 +307,7 @@ export function AssistentialPage({
                     {patient.cms ?? 'não informado'}
                   </span>
                   <small>Situação: {patient.status}</small>
+                  <PatientCareSpecialties patientId={patient.patient_id} />
                   <div className="assistential-patient-actions">
                     <PatientWhatsAppButton patientId={patient.patient_id} />
                     {canAccessAppRoute(accessContext, '/solicitacoes') && (

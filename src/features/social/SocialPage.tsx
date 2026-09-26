@@ -10,6 +10,8 @@ import './social-page.css'
 import { Link } from 'react-router-dom'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
+import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
+import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
 
 const defaultIntegration = createClosuresIntegration()
 const defaultSpecialtiesLoader = () => getRpcService().getMyAssistentialSpecialties()
@@ -201,6 +203,8 @@ export function SocialPage({
         {canOperateSocial && selectedAppointment && (
           <div className="social-followup-form">
             <strong>Paciente confirmado na agenda: {selectedAppointment.patient_name}</strong>
+            <PatientCareSpecialties patientId={selectedAppointment.patient_id} />
+            <RegisterPatientDeath patientId={selectedAppointment.patient_id} patientName={selectedAppointment.patient_name} />
             <p>O acompanhamento será vinculado ao agendamento confirmado e ao ciclo CAPO correspondente.</p>
             <button type="button" disabled={busy} onClick={() => void startSocial()}>
               Iniciar acompanhamento social

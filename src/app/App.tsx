@@ -198,7 +198,7 @@ export function App() {
     <OperationalTimeline />
   ) : location.pathname === '/coordenacao/auditoria' ? (
     <AuditLogPage />
-  ) : location.pathname === '/coordenacao/busca-ativa' ? (
+  ) : location.pathname === '/coordenacao/busca-ativa' || location.pathname === '/busca-ativa' ? (
     <ActiveSearchPage accessContext={accessContext} />
   ) : location.pathname === '/gestor/familiares' ? (
     <GestorFamilyPage />

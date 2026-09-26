@@ -131,6 +131,7 @@ export function GestorShell({
           <NavGroup label="Atendimento e Acompanhamento" items={serviceItems} activePath={activePath} accessContext={accessContext} />
           <NavGroup label="Gestão do Serviço" items={managementItems} activePath={activePath} accessContext={accessContext} />
           <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
+          <a className="gestor-nav-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> IA de Desenvolvimento do CAPO</a>
           <NavGroup label="TI / Manutenção" items={[{ path: '/tecnica', icon: '🛠', label: 'Área Técnica' }]} activePath={activePath} accessContext={accessContext} />
         </nav>
         <button className="gestor-logout" type="button" onClick={() => void onLogout()}>↪ Sair</button>

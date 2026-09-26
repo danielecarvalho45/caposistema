@@ -185,12 +185,12 @@ export function QueuePage({
   async function scheduleFamily(waitingListId: string) {
     if (!canScheduleFamily || !familyProfessionalId || !familySlotStart || familyBusy) return
     setFamilyBusy(true)
-    const result = await getRpcService().createFamilyPsychologyAppointment(
+    const result = await getRpcService().createFamilyPsychologyAppointment({
       waitingListId,
-      familyProfessionalId,
-      familySlotStart,
-      familyNotes.trim() || null,
-    )
+      professionalId: familyProfessionalId,
+      slotStart: familySlotStart,
+      generalNotes: familyNotes.trim() || null,
+    })
     if (result.status === 'success') {
       setFamilyFeedback('Atendimento do familiar agendado e retirado da fila ativa.')
       setFamilyCandidates([])

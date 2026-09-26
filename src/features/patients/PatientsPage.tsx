@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getRpcService, type AsyncState } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import './patients-page.css'
 
 const emptyState: AsyncState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]> = {
@@ -517,11 +518,12 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                 </small>
                 <div className="patients-card-actions" aria-label={`Ações para ${patient.full_name}`}>
                   <PatientWhatsAppButton patientId={patient.patient_id} />
+                  <RegisterPatientDeath patientId={patient.patient_id} patientName={patient.full_name} />
                   <button type="button" disabled={editBusy} onClick={() => void openPatientEditor(patient.patient_id)}>
                     Editar cadastro
                   </button>
                   <Link to="/agenda">Agenda Geral</Link>
-                  <Link to="/gestor/fluxos">Fluxos e Acompanhamentos</Link>
+                  <Link to="/familiar-cuidador">Familiar / Cuidador</Link>
                   <Link to="/encerramentos">Encerramentos</Link>
                 </div>
               </article>

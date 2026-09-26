@@ -15,6 +15,18 @@ function value(row: Row, ...keys: string[]) {
   const found = keys.map((key) => row[key]).find((item) => typeof item === 'string' || typeof item === 'number')
   return found === undefined ? '—' : String(found)
 }
+function specialtyNames(row: Row) {
+  const specialties = row.specialties
+  if (!Array.isArray(specialties)) return '—'
+  return specialties.flatMap((item) => {
+    if (typeof item === 'string') return [item]
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      const name = (item as Row).name ?? (item as Row).specialty_name
+      return typeof name === 'string' ? [name] : []
+    }
+    return []
+  }).join(', ') || '—'
+}
 const links = [
   ['/pacientes', 'Pacientes em Acompanhamento'], ['/agenda', 'Agenda Geral'], ['/fila', 'Filas e Pendências'],
   ['/faltosos', 'Faltosos'], ['/coordenacao/busca-ativa', 'Busca Ativa'], ['/solicitacoes', 'Solicitações'], ['/encaminhamentos', 'Encaminhamentos'],
@@ -78,7 +90,14 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
   }
   return <div className="home-page"><header className="home-welcome"><p className="eyebrow">Coordenação</p><h1>Painel da Coordenação</h1><p>Visão gerencial da equipe e dos fluxos autorizados.</p></header>
     <section className="home-profile"><h2>Acessos rápidos</h2><div className="home-profile-grid">{links.filter(([path]) => canAccessAppRoute(accessContext, path)).map(([path, title]) => <Link className="home-profile-card" to={path} key={path}><strong>{title}</strong></Link>)}</div></section>
-    <Panel title="Equipe e Profissionais" state={team} fields={['full_name', 'function_title', 'work_status', 'activity_count']} />
+    <section className="home-profile"><h2>Equipe e Profissionais</h2>
+      {team.status === 'loading' && <p>Carregando…</p>}
+      {team.status === 'error' && <p role="alert">{team.error.message}</p>}
+      {team.status === 'empty' && <p>Nenhum registro retornado.</p>}
+      {team.status === 'success' && (rows(team.data).length ? <ul>{rows(team.data).map((row, index) => <li key={value(row, 'professional_id') + index}>
+        <strong>{value(row, 'full_name')}</strong> · {value(row, 'function_title')} · Especialidades: {specialtyNames(row)} · Situação: {value(row, 'work_status')} · Atividades: {value(row, 'activity_count')} · Atendimentos realizados: {value(row, 'productivity_count')} · Dias com disponibilidade: {value(row, 'available_slots_count')}
+      </li>)}</ul> : <p>Nenhum registro retornado.</p>)}
+    </section>
     <Panel title="Agendas da Equipe" state={agenda} fields={['agenda_date', 'professional_name', 'specialty_name', 'occupied_count', 'configured_capacity', 'agenda_status']} />
     <BirthdayPanel title="Aniversariantes de hoje" />
     <section className="home-profile"><h2>Registrar decisão da equipe</h2>
@@ -101,7 +120,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
       {requests.status === 'success' && (rows(requests.data).length ? <ul>{rows(requests.data).map((row, index) => {
         const id = value(row, 'request_id', 'agenda_change_request_id')
         const status = value(row, 'status')
-        return <li key={id + index}><strong>{value(row, 'professional_name', 'professional_id')}</strong> · {status} · {value(row, 'reason', 'description')}
+        return <li key={id + index}><strong>{value(row, 'professional_name', 'professional_id')}</strong> · {status} · {value(row, 'justification', 'reason', 'description')}
           {status === 'pendente' && <><button disabled={busy || id === '—'} onClick={() => void decide(id, 'aprovar')}>Aprovar</button><button disabled={busy || id === '—' || reason.trim().length < 5} onClick={() => void decide(id, 'rejeitar')}>Rejeitar</button></>}
           {status === 'aprovada' && <button disabled={busy || id === '—'} onClick={() => void decide(id, 'efetivar')}>Efetivar alteração</button>}
         </li>
