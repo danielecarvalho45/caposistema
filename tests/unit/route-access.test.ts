@@ -71,7 +71,8 @@ describe('route access', () => {
     expect(canAccessAppRoute(authorized, '/transporte')).toBe(true)
     expect(canAccessAppRoute(authorized, '/receita')).toBe(true)
     expect(canAccessAppRoute(authorized, '/odontologia')).toBe(true)
-    expect(canAccessAppRoute(context, '/odontologia')).toBe(false)
+    // O Auxiliar acompanha a etapa administrativa sem emitir o documento profissional.
+    expect(canAccessAppRoute(context, '/odontologia')).toBe(true)
   })
 
   it('exige vínculo profissional para atuação e relatórios', () => {
@@ -109,7 +110,8 @@ describe('route access', () => {
     expect(isKnownAppRoute('/nutricao')).toBe(true)
     expect(canAccessAppRoute(nutritionProfessional, '/nutricao')).toBe(true)
     expect(canAccessAppRoute({ ...nutritionProfessional, roles: [{ code: 'nutricao', name: 'Nutrição' }] }, '/nutricao')).toBe(false)
-    expect(canAccessAppRoute(context, '/nutricao')).toBe(false)
+    // Consulta administrativa autorizada; a produção do PDF permanece profissional.
+    expect(canAccessAppRoute(context, '/nutricao')).toBe(true)
   })
 
   it('restringe Assistência Social ao contexto profissional ativo real', () => {
