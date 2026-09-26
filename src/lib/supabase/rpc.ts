@@ -3134,6 +3134,21 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_request_id: requestId },
         parse: parseTechnicalSupportHistory,
       }),
+    processTechnicalSupportRequest: (
+      requestId: string,
+      action: 'iniciar' | 'solicitar_teste' | 'resolver' | 'cancelar',
+      response: string | null = null,
+    ) =>
+      execute({
+        transport,
+        operation: 'process_technical_support_request_for_interface',
+        args: {
+          p_request_id: requestId,
+          p_action: action,
+          p_response: response,
+        },
+        parse: parseConfirmedJson,
+      }),
   }
 }
 
@@ -3514,6 +3529,13 @@ function createSupabaseTransport(
       case 'get_technical_support_history_for_interface':
         return client.rpc(operation, {
           p_request_id: String(args?.p_request_id ?? ''),
+        })
+      case 'process_technical_support_request_for_interface':
+        return client.rpc(operation, {
+          p_request_id: String(args?.p_request_id ?? ''),
+          p_action: String(args?.p_action ?? ''),
+          p_response:
+            typeof args?.p_response === 'string' ? args.p_response : undefined,
         })
       case 'get_prescription_renewal_doctors_for_interface':
         return client.rpc(operation)
