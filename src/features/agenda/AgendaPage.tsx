@@ -8,6 +8,7 @@ import {
   type ReschedulableAppointment,
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
+import { OwnAgendaManager } from './OwnAgendaManager'
 import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
@@ -360,6 +361,7 @@ export function AgendaPage({
   const [attendanceReason, setAttendanceReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
   const [showRescheduleForm, setShowRescheduleForm] = useState(false)
+  const [showOwnAgendaManager, setShowOwnAgendaManager] = useState(false)
   const [reschedulableResult, setReschedulableResult] = useState<{ key: string; rows: readonly ReschedulableAppointment[] } | null>(null)
   const [selectedReschedulableId, setSelectedReschedulableId] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
@@ -385,10 +387,21 @@ export function AgendaPage({
   const contextHasSingleSpecialty = effectiveSpecialties.length === 1
   const shouldShowSpecialty = showSpecialty && !contextHasSingleSpecialty
   const pendingSpecialties: PatientSpecialtiesState = { status: 'loading' }
-  const slotKey = `${selectedProfessionalId}:${anchorDate}`
-  const availableSlots = !isProfessional && selectedProfessionalId && slotResult?.key === slotKey ? slotResult.rows : []
-  const reschedulableKey = `${appointmentPatientId}:${selectedProfessionalId}:${anchorDate}`
-  const reschedulableAppointments = showRescheduleForm && appointmentPatientId && selectedProfessionalId && reschedulableResult?.key === reschedulableKey ? reschedulableResult.rows : []
+  const rescheduleProfessionalId = isProfessional
+    ? accessContext.professional_id ?? ''
+    : selectedProfessionalId
+  const slotKey = `${rescheduleProfessionalId}:${anchorDate}`
+  const availableSlots =
+    rescheduleProfessionalId && slotResult?.key === slotKey ? slotResult.rows : []
+  const reschedulableKey = isProfessional
+    ? `own:${rescheduleProfessionalId}:${anchorDate}`
+    : `${appointmentPatientId}:${selectedProfessionalId}:${anchorDate}`
+  const reschedulableAppointments =
+    showRescheduleForm &&
+    rescheduleProfessionalId &&
+    reschedulableResult?.key === reschedulableKey
+      ? reschedulableResult.rows
+      : []
   const validSlotStart = availableSlots.some((slot) => slot.slot_start === selectedSlotStart) ? selectedSlotStart : ''
   const validReschedulableId = reschedulableAppointments.some((item) => item.appointment_id === selectedReschedulableId) ? selectedReschedulableId : ''
   const patientSpecialties: Record<string, PatientSpecialtiesState> = state.status === 'success' && isProfessional
@@ -480,17 +493,17 @@ export function AgendaPage({
   }
 
   async function rescheduleAppointment() {
-    if (!validReschedulableId || !selectedProfessionalId || !validSlotStart || rescheduleReason.trim().length < 3) {
+    if (!validReschedulableId || !rescheduleProfessionalId || !validSlotStart || rescheduleReason.trim().length < 3) {
       setAppointmentFeedback('Selecione agendamento, novo horário e informe o motivo da remarcação.')
       return
     }
     setAppointmentFeedback('Remarcando agendamento no banco…')
     const result = await getRpcService().rescheduleAppointment({
       appointmentId: validReschedulableId,
-      newProfessionalId: selectedProfessionalId,
+      newProfessionalId: rescheduleProfessionalId,
       newSlotStart: validSlotStart,
       reason: rescheduleReason.trim(),
-      origin: rescheduleOrigin.trim(),
+      origin: isProfessional ? 'manual' : rescheduleOrigin.trim() || 'manual',
       newNotes: rescheduleNotes.trim(),
     })
     if (result.status === 'success') {
@@ -566,34 +579,55 @@ export function AgendaPage({
   ])
 
   useEffect(() => {
-    if (isProfessional || !selectedProfessionalId) return
+    if (!rescheduleProfessionalId) return
+    if (isProfessional && !showRescheduleForm) return
     let active = true
     void getRpcService()
-      .getAvailableAppointmentSlots(selectedProfessionalId, anchorDate)
+      .getAvailableAppointmentSlots(rescheduleProfessionalId, anchorDate)
       .then((nextState) => {
         if (!active) return
-        setSlotResult({ key: `${selectedProfessionalId}:${anchorDate}`, rows: nextState.status === 'success' ? nextState.data : [] })
+        setSlotResult({
+          key: `${rescheduleProfessionalId}:${anchorDate}`,
+          rows: nextState.status === 'success' ? nextState.data : [],
+        })
         setSelectedSlotStart('')
       })
     return () => {
       active = false
     }
-  }, [anchorDate, isProfessional, selectedProfessionalId])
+  }, [anchorDate, isProfessional, rescheduleProfessionalId, showRescheduleForm])
 
   useEffect(() => {
-    if (!showRescheduleForm || !appointmentPatientId || !selectedProfessionalId) return
+    if (!showRescheduleForm || !rescheduleProfessionalId) return
+    if (!isProfessional && !appointmentPatientId) return
     let active = true
     void getRpcService()
-      .getReschedulableAppointments(appointmentPatientId, selectedProfessionalId, anchorDate, 50)
+      .getReschedulableAppointments(
+        isProfessional ? null : appointmentPatientId,
+        rescheduleProfessionalId,
+        anchorDate,
+        50,
+      )
       .then((nextState) => {
         if (!active) return
-        setReschedulableResult({ key: `${appointmentPatientId}:${selectedProfessionalId}:${anchorDate}`, rows: nextState.status === 'success' ? nextState.data : [] })
+        setReschedulableResult({
+          key: isProfessional
+            ? `own:${rescheduleProfessionalId}:${anchorDate}`
+            : `${appointmentPatientId}:${rescheduleProfessionalId}:${anchorDate}`,
+          rows: nextState.status === 'success' ? nextState.data : [],
+        })
         setSelectedReschedulableId('')
       })
     return () => {
       active = false
     }
-  }, [anchorDate, appointmentPatientId, selectedProfessionalId, showRescheduleForm])
+  }, [
+    anchorDate,
+    appointmentPatientId,
+    isProfessional,
+    rescheduleProfessionalId,
+    showRescheduleForm,
+  ])
 
   if (!canAccess || (isProfessional && !professionalId)) {
     return (
@@ -678,6 +712,29 @@ export function AgendaPage({
             </button>
           </div>
         </div>
+
+        {isProfessional && professionalId && (
+          <div className="agenda-actions" aria-label="Operações da própria agenda">
+            <button
+              type="button"
+              aria-expanded={showOwnAgendaManager}
+              onClick={() => setShowOwnAgendaManager((current) => !current)}
+            >
+              Gerenciar minha agenda
+            </button>
+            <button
+              type="button"
+              aria-expanded={showRescheduleForm}
+              onClick={() => setShowRescheduleForm((current) => !current)}
+            >
+              Remarcar retorno
+            </button>
+          </div>
+        )}
+
+        {isProfessional && professionalId && showOwnAgendaManager && (
+          <OwnAgendaManager professionalId={professionalId} />
+        )}
 
         {!isProfessional && (
           <>
@@ -828,17 +885,25 @@ export function AgendaPage({
           </section>
         )}
 
-        {showRescheduleForm && !isProfessional && (
+        {showRescheduleForm && (
           <section className="agenda-schedule-form" aria-labelledby="reschedule-title">
             <div className="agenda-section-heading">
               <p className="eyebrow">Atendimento e Acompanhamento</p>
-              <h3 id="reschedule-title">Remarcação / Retorno</h3>
+              <h3 id="reschedule-title">
+                {isProfessional ? 'Remarcar meu retorno' : 'Remarcação / Retorno'}
+              </h3>
             </div>
             <div className="agenda-form-grid">
               <label>
                 Agendamento
                 <select value={validReschedulableId} onChange={(event) => setSelectedReschedulableId(event.target.value)} disabled={reschedulableAppointments.length === 0}>
-                  <option value="">{reschedulableAppointments.length ? 'Selecionar agendamento' : 'Selecione paciente e profissional'}</option>
+                  <option value="">
+                    {reschedulableAppointments.length
+                      ? 'Selecionar agendamento'
+                      : isProfessional
+                        ? 'Nenhum retorno elegível nesta data'
+                        : 'Selecione paciente e profissional'}
+                  </option>
                   {reschedulableAppointments.map((item) => <option key={item.appointment_id} value={item.appointment_id}>{item.patient_name} · {new Date(item.appointment_date).toLocaleString('pt-BR')}</option>)}
                 </select>
               </label>
@@ -853,10 +918,12 @@ export function AgendaPage({
                 Motivo *
                 <input value={rescheduleReason} onChange={(event) => setRescheduleReason(event.target.value)} />
               </label>
-              <label>
-                Origem
-                <input value={rescheduleOrigin} onChange={(event) => setRescheduleOrigin(event.target.value)} />
-              </label>
+              {!isProfessional && (
+                <label>
+                  Origem
+                  <input value={rescheduleOrigin} onChange={(event) => setRescheduleOrigin(event.target.value)} />
+                </label>
+              )}
               <label className="agenda-form-wide">
                 Novas observações
                 <textarea rows={3} value={rescheduleNotes} onChange={(event) => setRescheduleNotes(event.target.value)} />
