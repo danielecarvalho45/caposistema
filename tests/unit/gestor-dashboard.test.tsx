@@ -19,9 +19,9 @@ describe('GestorDashboard', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Painel Geral do CAPO' })).toBeVisible()
-    expect(screen.getByRole('link', { name: /Equipe e Agendas/ })).toHaveAttribute('href', '/gestor/equipe')
-    expect(screen.getByRole('link', { name: /Auditoria e Relatórios/ })).toHaveAttribute('href', '/gestor/auditoria')
-    expect(screen.getByRole('link', { name: /TI \/ Manutenção/ })).toHaveAttribute('href', '/tecnica')
+    expect(screen.getByRole('link', { name: /Agenda/ })).toHaveAttribute('href', '/agenda')
+    expect(screen.getByRole('link', { name: /Indicadores do Sistema/ })).toHaveAttribute('href', '/relatorios')
+    expect(screen.getByRole('link', { name: /Status do Sistema/ })).toHaveAttribute('href', '/tecnica')
   })
 
   it('edita um profissional retornado pelo backend e recarrega a equipe', async () => {
@@ -85,7 +85,7 @@ describe('GestorDashboard', () => {
 
     render(<GestorTeamPage service={service} />)
     await user.type(screen.getByLabelText('Nome completo'), 'Conta de Teste')
-    await user.type(screen.getByLabelText(/^Conta de acesso/), '573829')
+    await user.type(screen.getByLabelText(/^Conta de acesso/), 'Capo573829')
     await user.type(screen.getByLabelText('Usuário'), 'contateste')
     await user.type(screen.getByLabelText('E-mail de recuperação'), 'teste@exemplo.com')
     await user.type(screen.getByLabelText('Função'), 'Administração')
@@ -95,7 +95,7 @@ describe('GestorDashboard', () => {
 
     await waitFor(() => expect(service.create).toHaveBeenCalledWith(expect.objectContaining({
       authUserId: null, roleCodes: ['administrador'], isProfessional: false,
-    }), '573829', true, ''))
+    }), 'Capo573829', true, ''))
   })
 
   it('usa qualquer especialidade ativa como principal sem uma lista fixa na tela', async () => {
@@ -112,7 +112,7 @@ describe('GestorDashboard', () => {
     }
     render(<GestorTeamPage service={service} />)
     await user.type(screen.getByLabelText('Nome completo'), 'Profissional Teste')
-    await user.type(screen.getByLabelText(/^Conta de acesso/), '573829')
+    await user.type(screen.getByLabelText(/^Conta de acesso/), 'Capo573829')
     await user.type(screen.getByLabelText('Usuário'), 'profissionalteste')
     await user.type(screen.getByLabelText('E-mail de recuperação'), 'teste@exemplo.com')
     await user.type(screen.getByLabelText('Função'), 'Fonoaudióloga')
@@ -123,6 +123,6 @@ describe('GestorDashboard', () => {
       roleCodes: ['profissional'],
       primarySpecialtyId: 'nova-especialidade',
       specialtyIds: ['nova-especialidade'],
-    }), '573829', true, ''))
+    }), 'Capo573829', true, ''))
   })
 })
