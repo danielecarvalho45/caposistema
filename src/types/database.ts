@@ -152,6 +152,10 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_waiting_list_scheduling_for_interface: {
+        Args: { p_waiting_list_id: string; p_appointment_id: string }
+        Returns: Json
+      }
       get_waiting_list_for_interface: {
         Args: {
           p_specialty_id?: string | null
