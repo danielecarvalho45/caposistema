@@ -2657,7 +2657,7 @@ export function createRpcService(transport: RpcTransport) {
       }),
     managePrescriptionRenewalMedical: (
       renewalId: string,
-      action: 'start' | 'complete',
+      action: 'start' | 'renewed' | 'needs_consult',
       operationalReturn: string | null = null,
     ) =>
       execute({
@@ -2669,6 +2669,26 @@ export function createRpcService(transport: RpcTransport) {
           p_operational_return: operationalReturn,
         },
         parse: parsePrescriptionRenewalMutation,
+      }),
+    getPrescriptionRenewalOperationalContext: (renewalId: string) =>
+      execute({
+        transport,
+        operation: 'get_prescription_renewal_operational_context_for_interface',
+        args: { p_request_id: renewalId },
+        parse: parseConfirmedJson,
+      }),
+    linkPrescriptionRenewalConsultAppointment: (
+      renewalId: string,
+      appointmentId: string,
+    ) =>
+      execute({
+        transport,
+        operation: 'link_prescription_renewal_consult_appointment_for_interface',
+        args: {
+          p_request_id: renewalId,
+          p_appointment_id: appointmentId,
+        },
+        parse: parseConfirmedJson,
       }),
     managePrescriptionRenewalAdmin: (input: {
       renewalId: string
@@ -3656,6 +3676,15 @@ function createSupabaseTransport(
             typeof args?.p_operational_return === 'string'
               ? args.p_operational_return
               : null,
+        })
+      case 'get_prescription_renewal_operational_context_for_interface':
+        return client.rpc(operation, {
+          p_request_id: String(args?.p_request_id ?? ''),
+        })
+      case 'link_prescription_renewal_consult_appointment_for_interface':
+        return client.rpc(operation, {
+          p_request_id: String(args?.p_request_id ?? ''),
+          p_appointment_id: String(args?.p_appointment_id ?? ''),
         })
       case 'manage_prescription_renewal_admin_for_interface':
         return client.rpc(operation, {
