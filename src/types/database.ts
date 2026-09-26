@@ -23,6 +23,14 @@ export type Database = {
         Args: { p_cycle_id: string; p_action: string; p_reason: string }
         Returns: Json
       }
+      register_dentistry_pdf_for_interface: {
+        Args: { p_referral_id: string; p_storage_path: string }
+        Returns: Json
+      }
+      get_dentistry_referral_document_for_interface: {
+        Args: { p_referral_id: string }
+        Returns: Json
+      }
       get_transport_context_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
