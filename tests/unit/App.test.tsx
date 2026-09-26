@@ -66,6 +66,10 @@ const context: AccessContext = {
 const professionalContext: AccessContext = {
   ...context,
   function_title: 'Psicóloga',
+  specialties: [
+    { specialty_id: 'psychology-id', specialty_name: 'Psicologia', is_primary: true },
+  ],
+  primary_specialty_name: 'Psicologia',
   roles: [{ code: 'profissional', name: 'Profissional' }],
   primary_context: {
     ...context.primary_context,
@@ -570,7 +574,7 @@ describe('App', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: 'Fila operacional' }),
+      screen.getByRole('heading', { name: 'Filas, pendências e fluxos' }),
     ).toBeVisible()
     expect(
       await screen.findByText('Nenhuma pendência operacional encontrada.'),
@@ -583,11 +587,12 @@ describe('App', () => {
 
   it('renderiza pendências retornadas pela RPC da fila', async () => {
     render(
-      <QueuePage
-        accessContext={context}
-        loadPendingItems={async () => ({
-          status: 'success',
-          data: [
+      <MemoryRouter>
+        <QueuePage
+          accessContext={context}
+          loadPendingItems={async () => ({
+            status: 'success',
+            data: [
             {
               pending_type: 'waiting_list',
               source_table: 'waiting_list',
@@ -604,9 +609,10 @@ describe('App', () => {
               priority: 1,
               total_count: 1,
             },
-          ],
-        })}
-      />,
+            ],
+          })}
+        />
+      </MemoryRouter>,
     )
 
     expect(await screen.findByText('Fila de espera — Nutrição')).toBeVisible()
@@ -614,21 +620,45 @@ describe('App', () => {
     expect(screen.getByText('1 pendência(s) encontrada(s)')).toBeVisible()
   })
 
-  it('não oferece a fila fora do contexto administrativo', () => {
-    renderShell({
-      ...context,
-      roles: [{ code: 'profissional', name: 'Profissional' }],
-      primary_context: {
-        ...context.primary_context,
-        code: 'profissional',
-        name: 'Profissional',
-      },
-    })
+  it('oferece ao profissional a fila da própria especialidade no contexto principal profissional', async () => {
+    renderShell(
+      professionalContext,
+      vi.fn().mockResolvedValue(undefined),
+      '/fila',
+    )
 
-    expect(screen.queryByRole('link', { name: 'Fila' })).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('heading', { name: 'Fila operacional' }),
-    ).not.toBeInTheDocument()
+      screen.getByRole('heading', { name: 'Fila da própria especialidade' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Fila' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+  })
+
+  it('preserva a fila profissional quando há função administrativa acumulada fora do contexto principal', async () => {
+    renderShell(
+      {
+        ...professionalContext,
+        roles: [
+          { code: 'profissional', name: 'Profissional' },
+          { code: 'administrador', name: 'Administrador' },
+        ],
+        primary_context: {
+          ...professionalContext.primary_context,
+          code: 'profissional',
+          name: 'Profissional',
+          source: 'configured',
+          is_configured: true,
+        },
+      },
+      vi.fn().mockResolvedValue(undefined),
+      '/fila',
+    )
+
+    expect(
+      screen.getByRole('heading', { name: 'Fila da própria especialidade' }),
+    ).toBeVisible()
   })
 
   it('carrega faltosos reais e seu histórico por RPC', async () => {
