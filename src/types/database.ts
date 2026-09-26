@@ -11,6 +11,22 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      search_bereavement_family_members_for_interface: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: Json
+      }
+      start_family_bereavement_for_interface: {
+        Args: { p_family_member_id: string; p_notes?: string | null }
+        Returns: Json
+      }
+      get_family_bereavement_for_interface: {
+        Args: { p_status?: string | null; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      close_family_bereavement_for_interface: {
+        Args: { p_family_member_id: string; p_notes?: string | null }
+        Returns: Json
+      }
       get_waiting_list_for_interface: {
         Args: {
           p_specialty_id?: string | null
