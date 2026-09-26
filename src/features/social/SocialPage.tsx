@@ -203,8 +203,8 @@ export function SocialPage({
         {canOperateSocial && selectedAppointment && (
           <div className="social-followup-form">
             <strong>Paciente confirmado na agenda: {selectedAppointment.patient_name}</strong>
-            <PatientCareSpecialties patientId={selectedAppointment.patient_id} />
-            <RegisterPatientDeath patientId={selectedAppointment.patient_id} patientName={selectedAppointment.patient_name} />
+            <PatientCareSpecialties key={selectedAppointment.patient_id} patientId={selectedAppointment.patient_id} />
+            <RegisterPatientDeath key={selectedAppointment.patient_id} patientId={selectedAppointment.patient_id} patientName={selectedAppointment.patient_name} />
             <p>O acompanhamento será vinculado ao agendamento confirmado e ao ciclo CAPO correspondente.</p>
             <button type="button" disabled={busy} onClick={() => void startSocial()}>
               Iniciar acompanhamento social
