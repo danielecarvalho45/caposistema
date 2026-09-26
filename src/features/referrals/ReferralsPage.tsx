@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import {
   getRpcService,
@@ -58,6 +59,7 @@ export function ReferralsPage({
   accessContext,
   service = getRpcService(),
 }: Props) {
+  const location = useLocation()
   const [view, setView] = useState('recebidos')
   const [direction, setDirection] = useState('all')
   const [status, setStatus] = useState('')
@@ -124,6 +126,23 @@ export function ReferralsPage({
     },
     [service],
   )
+
+  useEffect(() => {
+    if (!canCreate) return
+    const stateValue =
+      location.state && typeof location.state === 'object'
+        ? location.state as Record<string, unknown>
+        : null
+    const nextPatientId =
+      typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
+    const nextPatientName =
+      typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
+    if (!nextPatientId) return
+    setPatientId(nextPatientId)
+    setPatientQuery(nextPatientName)
+    setPatients([])
+    setDirection('sent')
+  }, [canCreate, location.state])
 
   useEffect(() => {
     let active = true
