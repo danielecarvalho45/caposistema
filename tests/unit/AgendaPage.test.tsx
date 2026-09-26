@@ -161,6 +161,35 @@ describe('AgendaPage', () => {
     )
   })
 
+  it('mantém a visão geral quando o papel profissional é acumulado mas não é o contexto principal', async () => {
+    const loadAgenda = vi.fn().mockResolvedValue({ status: 'empty' })
+    const accumulatedContext: AccessContext = {
+      ...accessContext,
+      roles: [
+        { code: 'administrador', name: 'Administrador' },
+        { code: 'profissional', name: 'Profissional' },
+      ],
+      primary_context: {
+        ...accessContext.primary_context,
+        code: 'administrador',
+        name: 'Administrador',
+        source: 'configured',
+        is_configured: true,
+      },
+    }
+
+    render(<AgendaPage accessContext={accumulatedContext} loadAgenda={loadAgenda} />)
+
+    expect(await screen.findByRole('heading', { name: 'Agenda Geral' })).toBeVisible()
+    await waitFor(() =>
+      expect(loadAgenda).toHaveBeenLastCalledWith(
+        '2026-09-17',
+        '2026-09-17',
+        null,
+      ),
+    )
+  })
+
   it('usa a visão geral de agenda para o Gestor sem misturar com o contexto assistencial', async () => {
     const loadAgenda = vi.fn().mockResolvedValue({ status: 'empty' })
     const gestorContext: AccessContext = {
