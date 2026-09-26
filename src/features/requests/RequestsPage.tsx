@@ -14,6 +14,8 @@ type Service = Pick<
   | 'getAdministrativeRequestEvents'
   | 'createAdministrativeRequest'
   | 'updateAdministrativeRequest'
+  | 'getFamilyPsychologyRequestContext'
+  | 'addFamilyToWaitingList'
 >
 
 type Props = Readonly<{
@@ -86,6 +88,10 @@ export function RequestsPage({
   const [counterReference, setCounterReference] = useState('')
   const [newSubject, setNewSubject] = useState('')
   const [newDescription, setNewDescription] = useState('')
+  const [familyRequestContext, setFamilyRequestContext] =
+    useState<Record<string, unknown> | null>(null)
+  const [familyPriority, setFamilyPriority] = useState(3)
+  const [familyQueueNotes, setFamilyQueueNotes] = useState('')
   const selected = items.find((item) => item.request_id === selectedId) ?? null
   const authorized = canAccessRequests(accessContext)
   const roleCodes = useMemo(
@@ -160,6 +166,33 @@ export function RequestsPage({
     }
   }, [authorized, service, status])
   useEffect(() => {
+    if (!authorized || !selectedId) {
+      setFamilyRequestContext(null)
+      return
+    }
+    let active = true
+    void service.getFamilyPsychologyRequestContext(selectedId).then((result) => {
+      if (!active) return
+      if (
+        result.status === 'success' &&
+        result.data &&
+        typeof result.data === 'object' &&
+        !Array.isArray(result.data)
+      ) {
+        const data = result.data as Record<string, unknown>
+        setFamilyRequestContext(
+          data.is_family_psychology_request === true ? data : null,
+        )
+      } else {
+        setFamilyRequestContext(null)
+      }
+    })
+    return () => {
+      active = false
+    }
+  }, [authorized, selectedId, service])
+
+  useEffect(() => {
     if (!authorized || !selectedId) return
     let active = true
     void service
@@ -205,6 +238,46 @@ export function RequestsPage({
     } else {
       setFeedback(
         errorMessage(result) ?? 'Não foi possível atualizar a solicitação.',
+      )
+    }
+    setBusy(false)
+  }
+
+  async function addFamilyRequestToQueue() {
+    if (!selected || !familyRequestContext || busy) return
+    const familyLinkId =
+      typeof familyRequestContext.family_link_id === 'string'
+        ? familyRequestContext.family_link_id
+        : ''
+    if (!familyLinkId) {
+      setFeedback('O vínculo familiar da solicitação não foi localizado.')
+      return
+    }
+    setBusy(true)
+    const result = await service.addFamilyToWaitingList(
+      familyLinkId,
+      familyPriority,
+      familyQueueNotes.trim() || null,
+    )
+    if (result.status === 'success') {
+      setFamilyQueueNotes('')
+      setFeedback('Familiar incluído na fila de Psicologia.')
+      const refreshed = await service.getFamilyPsychologyRequestContext(
+        selected.request_id,
+      )
+      if (
+        refreshed.status === 'success' &&
+        refreshed.data &&
+        typeof refreshed.data === 'object' &&
+        !Array.isArray(refreshed.data)
+      ) {
+        setFamilyRequestContext(refreshed.data as Record<string, unknown>)
+      }
+    } else {
+      setFeedback(
+        result.status === 'error'
+          ? result.error.message
+          : 'O banco não confirmou a inclusão na fila.',
       )
     }
     setBusy(false)
@@ -426,6 +499,52 @@ export function RequestsPage({
                 <h4>Descrição</h4>
                 <p>{selected.description}</p>
               </section>
+              {familyRequestContext && (
+                <section className="request-description" aria-labelledby="family-psychology-request-title">
+                  <h4 id="family-psychology-request-title">Organização da Psicologia do familiar</h4>
+                  <p>
+                    Familiar: <strong>{String(familyRequestContext.family_name ?? 'Familiar')}</strong>
+                    {' · '}paciente vinculado: {String(familyRequestContext.source_patient_name ?? 'não informado')}
+                  </p>
+                  {familyRequestContext.active_waiting_list_id ? (
+                    <p>O familiar já possui entrada ativa na Fila de Familiares.</p>
+                  ) : canManage ? (
+                    <>
+                      <label>
+                        Prioridade
+                        <select
+                          value={familyPriority}
+                          onChange={(event) => setFamilyPriority(Number(event.target.value))}
+                        >
+                          <option value={1}>1 — maior prioridade</option>
+                          <option value={2}>2</option>
+                          <option value={3}>3 — padrão</option>
+                          <option value={4}>4</option>
+                          <option value={5}>5 — menor prioridade</option>
+                        </select>
+                      </label>
+                      <label>
+                        Observação da fila
+                        <textarea
+                          value={familyQueueNotes}
+                          onChange={(event) => setFamilyQueueNotes(event.target.value)}
+                          maxLength={500}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void addFamilyRequestToQueue()}
+                      >
+                        Incluir familiar na Fila de Psicologia
+                      </button>
+                    </>
+                  ) : (
+                    <p>Coordenação: contexto disponível para supervisão; inclusão na fila permanece com o Administrativo.</p>
+                  )}
+                </section>
+              )}
+
               {selected.administrative_response && (
                 <section className="request-description">
                   <h4>Último retorno</h4>
