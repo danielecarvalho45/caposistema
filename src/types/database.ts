@@ -31,6 +31,27 @@ export type Database = {
         Args: { p_referral_id: string }
         Returns: Json
       }
+      get_patient_for_edit_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      update_patient_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_full_name: string
+          p_birth_date: string
+          p_cms: string | null
+          p_sex: string | null
+          p_phone: string | null
+          p_phone_secondary: string | null
+          p_address: string | null
+          p_capo_start_date: string | null
+          p_operational_notes: string | null
+          p_status: string
+          p_origin?: string | null
+        }
+        Returns: Json
+      }
       get_patient_contact_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
