@@ -7,6 +7,7 @@ import {
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { ProfileDashboard } from './ProfileDashboard'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import './home-page.css'
 
 function normalized(value: string | null | undefined) {
@@ -24,12 +25,6 @@ type HomePageProps = Readonly<{
   accessContext: AccessContext
   loadBirthdays?: () => Promise<AsyncState<BirthdayOverview>>
 }>
-
-async function greetBirthday(fullName: string) {
-  const message = `Olá, ${fullName}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`
-  await globalThis.navigator?.clipboard?.writeText(message)
-  globalThis.open('https://web.whatsapp.com/', '_blank', 'noopener,noreferrer')
-}
 
 function formatDateOnly(value: string) {
   const [year, month, day] = value.split('-').map(Number)
@@ -114,13 +109,11 @@ export function HomePage({
                             {patient.cms ? `CMS ${patient.cms}` : ''}
                           </small>
                         )}
-                        {isAdministrativeOperational && patient.phone && (
-                          <button
-                            type="button"
-                            onClick={() => void greetBirthday(patient.full_name)}
-                          >
-                            WhatsApp
-                          </button>
+                        {isAdministrativeOperational && (
+                          <PatientWhatsAppButton
+                            patientId={patient.patient_id}
+                            message={`Olá, ${patient.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`}
+                          />
                         )}
                       </li>
                     ))}
