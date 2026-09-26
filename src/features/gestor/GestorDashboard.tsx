@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState, type AgendaAppointment, type BirthdayOverview } from '../../lib/supabase/rpc'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 
 const quickAccess = [
   ['/pacientes', '👥', 'Pacientes', 'Cadastrar e consultar', 'blue'],
   ['/agenda', '▣', 'Agenda', 'Visualizar agendas', 'green'],
+  ['/fila', '≡', 'Filas', 'Pacientes e familiares', 'mint'],
   ['/faltosos', '◷', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
   ['/solicitacoes', '▤', 'Solicitações', 'Analisar e encaminhar', 'purple'],
   ['/transporte', '▰', 'Transporte', 'Providências e acompanhamento', 'yellow'],
@@ -49,7 +51,7 @@ export function GestorDashboard() {
           {birthdays.status === 'loading' && <p>Carregando aniversariantes…</p>}
           {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
-          {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}</li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
+          {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
         </article>
         <Link className="gestor-panel" to="/gestor/timeline"><h3>◷ Atividades Recentes</h3><p>Consultar os eventos operacionais registrados.</p></Link></aside>
       </section>
