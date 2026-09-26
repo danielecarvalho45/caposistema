@@ -163,6 +163,7 @@ export function TransportPage({ accessContext }: Props) {
   const [channel, setChannel] = useState('')
   const [reference, setReference] = useState('')
   const [cancellationReason, setCancellationReason] = useState('')
+  const [needReason, setNeedReason] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -170,6 +171,9 @@ export function TransportPage({ accessContext }: Props) {
   const appointments = rowsFromContext(context, 'appointments')
   const patient = context && typeof context.patient === 'object' && context.patient !== null
     ? context.patient as TransportRecord
+    : null
+  const activeNeed = context && typeof context.active_need === 'object' && context.active_need !== null
+    ? context.active_need as TransportRecord
     : null
 
   async function searchPatients() {
@@ -197,6 +201,43 @@ export function TransportPage({ accessContext }: Props) {
       setContext(null)
       setFeedback(result.error.message)
     }
+  }
+
+  async function recognizeNeed() {
+    if (!patientId || !canCreateRequest || busy) return
+    setBusy(true)
+    const result = await getRpcService().recognizeTransportNeed(patientId)
+    if (result.status === 'success') {
+      setFeedback('Necessidade de transporte reconhecida no banco.')
+      await loadContext(patientId, patientName)
+    } else {
+      setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a necessidade de transporte.')
+    }
+    setBusy(false)
+  }
+
+  async function manageNeed(action: 'request_cancel' | 'cancel') {
+    const cycleId = field(activeNeed, 'cycle_id', 'id')
+    if (!cycleId || needReason.trim().length < 5 || busy) {
+      setFeedback('Informe a justificativa da alteração da necessidade de transporte.')
+      return
+    }
+    setBusy(true)
+    const result = await getRpcService().manageTransportNeed(
+      cycleId,
+      action,
+      needReason.trim(),
+    )
+    if (result.status === 'success') {
+      setFeedback(action === 'request_cancel'
+        ? 'Solicitação de cancelamento da necessidade registrada.'
+        : 'Necessidade de transporte encerrada.')
+      setNeedReason('')
+      await loadContext(patientId, patientName)
+    } else {
+      setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a alteração da necessidade.')
+    }
+    setBusy(false)
   }
 
   async function createRequest() {
@@ -389,7 +430,37 @@ export function TransportPage({ accessContext }: Props) {
         )}
       </div>
 
-      {patientId && canCreateRequest && (
+      {patientId && (
+        <div className="home-ops">
+          <h2>Necessidade de transporte</h2>
+          {activeNeed ? (
+            <>
+              <p>Situação: <strong>{field(activeNeed, 'status') ?? 'ativo'}</strong></p>
+              <label>Justificativa para alteração da necessidade
+                <textarea value={needReason} onChange={(event) => setNeedReason(event.target.value)} rows={2} />
+              </label>
+              {!isManager && hasTransportCapability && (
+                <button type="button" disabled={busy || needReason.trim().length < 5} onClick={() => void manageNeed('request_cancel')}>
+                  Solicitar cancelamento
+                </button>
+              )}
+              {canAdminister && (
+                <button type="button" disabled={busy || needReason.trim().length < 5} onClick={() => void manageNeed('cancel')}>
+                  Encerrar necessidade
+                </button>
+              )}
+            </>
+          ) : canCreateRequest ? (
+            <button type="button" disabled={busy} onClick={() => void recognizeNeed()}>
+              Reconhecer necessidade de transporte
+            </button>
+          ) : (
+            <p>Nenhuma necessidade de transporte ativa para este paciente.</p>
+          )}
+        </div>
+      )}
+
+      {patientId && canCreateRequest && activeNeed && (
         <div className="home-ops">
           <h2>Solicitação de Transporte</h2>
           <p>Paciente: <strong>{patientName}</strong>{field(patient, 'cms') ? ` · CMS ${field(patient, 'cms')}` : ''}</p>
