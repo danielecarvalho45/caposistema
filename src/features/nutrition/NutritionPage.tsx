@@ -187,6 +187,7 @@ export function NutritionPage({
   const [plan, setPlan] = useState<NutritionPlan>(emptyPlan)
   const [planLoaded, setPlanLoaded] = useState(false)
   const [canEditPlan, setCanEditPlan] = useState(false)
+  const [vulnerabilityAlert, setVulnerabilityAlert] = useState<NutritionRecord | null>(null)
   const [document, setDocument] = useState<NutritionRecord | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -259,14 +260,16 @@ export function NutritionPage({
   }
 
   async function selectNutritionPatient(id: string, name: string) {
-    setFeedback(null); setPatientId(''); setPlanLoaded(false); setDocument(null)
+    setFeedback(null); setPatientId(''); setPlanLoaded(false); setDocument(null); setVulnerabilityAlert(null)
     const result = await getRpcService().getNutritionContext(id)
     if (result.status !== 'success') {
       setFeedback(result.status === 'error' ? result.error.message : 'O contexto nutricional do paciente não foi retornado.')
       return
     }
     const loaded = planFromContext(result.data)
+    const context = asRecord(result.data)
     setPlan(loaded.plan); setCanEditPlan(loaded.canEdit); setPlanLoaded(true)
+    setVulnerabilityAlert(asRecord(context?.vulnerability_alert))
     setPatientId(id); setSelectedPatientName(name)
     globalThis.document.getElementById('nutrition-plan-title')?.scrollIntoView?.({ block: 'start' })
   }
@@ -487,6 +490,14 @@ export function NutritionPage({
           <section className="home-profile" aria-labelledby="nutrition-plan-title">
             <p className="eyebrow">Planejamento Alimentar</p>
             <h2 id="nutrition-plan-title">Plano Alimentar e PDF oficial</h2>
+            {patientId && (
+              <p role="status">
+                <strong>Vulnerabilidade — impacto mínimo autorizado:</strong>{' '}
+                {vulnerabilityAlert
+                  ? String(vulnerabilityAlert.impact_level ?? 'sem nível informado')
+                  : 'nenhum alerta ativo'}
+              </p>
+            )}
             <label>Paciente vinculado
               <input value={patientQuery} onChange={(event) => setPatientQuery(event.target.value)} placeholder="Nome, Nº CAPO ou CMS" />
             </label>
