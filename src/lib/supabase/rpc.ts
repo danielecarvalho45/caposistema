@@ -291,6 +291,7 @@ export type BirthdayPatient = Readonly<{
   full_name: string
   patient_number: string | null
   cms: string | null
+  phone: string | null
 }>
 
 export type BirthdayTeamMember = Readonly<{
@@ -1309,6 +1310,7 @@ function parseBirthdayOverview(value: unknown): BirthdayOverview {
         full_name: requiredString(item, 'full_name', operation),
         patient_number: nullableString(item, 'patient_number', operation),
         cms: nullableString(item, 'cms', operation),
+        phone: nullableString(item, 'phone', operation),
       }
     }),
     team: value.team.map((item) => {
