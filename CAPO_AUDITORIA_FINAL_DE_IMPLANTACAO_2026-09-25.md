@@ -798,6 +798,58 @@ Foram relidas as RPCs get_nutrition_context_for_interface, create_nutrition_docu
 
 ---
 
+## 7.16 Relatórios — filtros gerenciais e leitura das métricas estruturadas
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+O dashboard gerencial retornado pelo Supabase é estruturado em blocos aninhados (pacientes, agenda, filas, faltosos, solicitações, encaminhamentos, Odontologia, Transporte, encerramentos, Social, Receita, Nutrição e familiares). A interface, porém, lia somente valores escalares no primeiro nível e por isso podia exibir o dashboard como vazio mesmo com métricas reais.
+
+### Correções realizadas
+- relatórios de Administrador/Coordenador passaram a exibir os blocos reais retornados pelo backend;
+- período inicial/final ficou selecionável na própria visão gerencial;
+- filtro de especialidade passou a usar specialty_options retornado pelo backend;
+- agenda por especialidade passou a ser exibida com válidos, realizados, faltas, retornos e absenteísmo;
+- quando uma conta acumula função gerencial e profissional, o acesso gerencial aos Relatórios não é ocultado pelo vínculo profissional.
+
+### Caminho alterado
+- src/features/reports/ReportsPage.tsx
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
+## 7.17 TI / Manutenção — processamento dos chamados
+**Data:** 25/09/2026  
+**Estado:** 🟡 DIVERGENTE E CORRIGIDO
+
+O Painel Técnico já consultava dashboard, Estado do Sistema, integrações, logs, chamados e histórico, mas a interface não estava ligada ao contrato físico que processa chamados. Assim, o módulo Chamados Recebidos funcionava apenas como leitura.
+
+### Correções realizadas
+- process_technical_support_request_for_interface foi registrado na camada CAPO;
+- integração técnica passou a expor iniciar, solicitar teste, resolver e cancelar chamados;
+- tela de Chamados recebeu resposta/justificativa técnica e ações condicionadas ao status real;
+- após cada ação confirmada pelo banco, o snapshot e o histórico do chamado são recarregados;
+- nenhuma ferramenta fictícia de manutenção, URL de IA ou estado de sistema foi inventado.
+
+### Caminhos alterados
+- src/lib/supabase/rpc.ts
+- src/types/database.ts
+- src/features/technical/technical-integration.ts
+- src/features/technical/TechnicalPage.tsx
+
+### Contratos físicos confrontados
+- get_technical_dashboard_for_interface
+- get_technical_system_status_for_interface
+- get_technical_integrations_for_interface
+- get_technical_runtime_logs_for_interface
+- get_technical_support_requests_for_interface
+- get_technical_support_history_for_interface
+- process_technical_support_request_for_interface
+
+**Estado atual:** CORRIGIDO NO CÓDIGO — AGUARDANDO TESTE INTERNO E OPERACIONAL.
+
+---
+
 # 17. PENDÊNCIAS DE DECISÃO
 
 Nenhuma registrada até o momento.
