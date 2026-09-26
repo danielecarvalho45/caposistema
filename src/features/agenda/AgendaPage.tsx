@@ -751,7 +751,7 @@ export function AgendaPage({
           ? 'renovacao_receita_consulta'
           : '',
     )
-    if (origin === 'prescription_renewal') setAppointmentType('consulta')
+    if (origin === 'prescription_renewal') setAppointmentType('Retorno')
   }, [isProfessional, location.state, schedulingCatalog])
 
   useEffect(() => {
