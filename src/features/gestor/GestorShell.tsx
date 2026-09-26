@@ -4,6 +4,7 @@ import type { AccessContext } from '../../types/access'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { getNotificationsService } from '../notifications/notifications-integration'
+import { ProfileShortcuts } from '../../components/shell/ProfileShortcuts'
 import './gestor.css'
 
 type GestorShellProps = Readonly<{
@@ -184,11 +185,7 @@ export function GestorShell({
                 )}
               </button>
             )}
-            <button className="gestor-profile-button" type="button" onClick={() => navigate('/perfil')}>
-              <span aria-hidden="true">👤</span>
-              <span>Perfil: {profileLabel}</span>
-              <span aria-hidden="true">⌄</span>
-            </button>
+            <ProfileShortcuts accessContext={accessContext} activePath={activePath} className="gestor-profile-button" profileLabel={profileLabel} />
           </div>
         </header>
         <section className="gestor-welcome-approved" aria-label="Boas-vindas">

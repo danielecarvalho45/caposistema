@@ -5,6 +5,7 @@ import { authorizedNavigationItems } from '../navigation/navigation-config'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getNotificationsService } from '../../features/notifications/notifications-integration'
 import { getRpcService } from '../../lib/supabase/rpc'
+import { ProfileShortcuts } from './ProfileShortcuts'
 import './app-shell.css'
 
 type AppShellProps = Readonly<{
@@ -295,11 +296,7 @@ export function AppShell({
                 )}
               </Link>
             )}
-            <Link className="app-profile-button" to="/perfil" title={contextName}>
-              <span aria-hidden="true">👤</span>
-              <span>Perfil: {contextName}</span>
-              <span aria-hidden="true">⌄</span>
-            </Link>
+            <ProfileShortcuts accessContext={accessContext} activePath={activePath} className="app-profile-button" profileLabel={contextName} />
           </div>
         </header>
 

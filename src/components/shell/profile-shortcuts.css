@@ -1,0 +1,28 @@
+.profile-shortcuts { position: relative; }
+.profile-shortcuts-static { display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+.profile-shortcuts-menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 5px);
+  right: 0;
+  display: grid;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 20px));
+  padding: 5px;
+  border: 1px solid #d8e5f0;
+  border-radius: 7px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(31 67 104 / 16%);
+}
+.profile-shortcuts-menu a {
+  display: block;
+  padding: 10px;
+  border-radius: 5px;
+  color: #17365f;
+  font: 600 12px Arial, Helvetica, sans-serif;
+  text-decoration: none;
+}
+.profile-shortcuts-menu a:hover, .profile-shortcuts-menu a:focus-visible {
+  background: #eaf3fb;
+  outline: 2px solid #8cb8e0;
+}
