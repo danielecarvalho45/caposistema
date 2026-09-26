@@ -18,6 +18,7 @@ type NavItem = Readonly<{ path: string; icon: string; label: string }>
 const serviceItems: readonly NavItem[] = [
   { path: '/pacientes', icon: '👥', label: 'Pacientes' },
   { path: '/agenda', icon: '▣', label: 'Agenda Geral' },
+  { path: '/fila', icon: '≡', label: 'Filas' },
   { path: '/solicitacoes', icon: '▤', label: 'Solicitações' },
   { path: '/transporte', icon: '▰', label: 'Transporte' },
   { path: '/gestor/fluxos', icon: '◉', label: 'Fluxos e Acompanhamentos' },
