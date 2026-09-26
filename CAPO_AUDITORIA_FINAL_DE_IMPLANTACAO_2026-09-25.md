@@ -1938,3 +1938,128 @@ Permanecem fora desta execução e serão conduzidos no Work:
 - registrar cada regressão real e sua correção antes do fechamento desta parte técnica.
 
 **Estado:** TAREFA 3 — PARTE TÉCNICA NO CHAT INICIADA.
+
+
+## 27.1 Execução técnica concluída no Chat — 26/09/2026
+
+A parte técnica da Tarefa 3 foi executada sobre uma branch temporária derivada do `main`, exclusivamente para permitir execução automatizada sem adicionar infraestrutura de CI ao branch oficial:
+
+`audit/tarefa-3-tecnica`
+
+O workflow temporário não foi incorporado ao `main`. Somente os alinhamentos de testes que passaram integralmente foram transportados ao branch oficial.
+
+### 27.2 Typecheck
+
+Primeira execução:
+- instalação: PASS;
+- typecheck: FAIL;
+- erros localizados exclusivamente em arquivos de teste;
+- nenhum erro TypeScript foi identificado em `src/`.
+
+Classificação:
+- mocks de serviços ficaram desatualizados após evolução dos contratos;
+- testes de renovação ainda usavam ação médica antiga;
+- mocks de Gestor, Solicitações, Luto e TI não continham métodos adicionados aos contratos atuais.
+
+Após alinhamento dos testes:
+
+**TYPECHECK — PASS.**
+
+### 27.3 Suíte completa de testes
+
+Na primeira execução completa, após zerar o typecheck, apareceram falhas causadas por três grupos:
+
+1. ambiente de teste sem as variáveis públicas mínimas exigidas pelo cliente Supabase;
+2. páginas que passaram a usar `useLocation()` sendo montadas por testes antigos sem `Router`;
+3. expectativas de interface e fluxo anteriores às correções já registradas no Documento Mestre.
+
+Nenhuma dessas falhas justificou regressão do código funcional.
+
+Foram alinhados somente os cenários de teste aos contratos vigentes, incluindo:
+- Shell atual com saudação institucional aprovada;
+- Solicitações com Router e contratos de Psicologia Familiar;
+- Agenda com Router;
+- Encaminhamentos com Router;
+- Encerramentos sem digitação manual de UUID e sem fluxo Social duplicado;
+- Familiar/Cuidador com busca administrativa condicionada a `can_admin_correct`;
+- Gestor com acessos e validação de senha vigentes;
+- catálogo atual de capacidades da equipe;
+- Renovação de Receita separando criação administrativa da decisão médica;
+- Assistência Social com especialidade efetiva no `AccessContext`;
+- Luto com busca segura vigente;
+- relatório operacional do AO com título atual;
+- ação médica de Renovação alinhada a `renewed`.
+
+Arquivos de teste alinhados:
+- `tests/unit/App.test.tsx`;
+- `tests/unit/requests-page.test.tsx`;
+- `tests/unit/gestor-dashboard.test.tsx`;
+- `tests/unit/gestor-team-page.test.tsx`;
+- `tests/unit/renewal-prescription-page.test.tsx`;
+- `tests/unit/social-page.test.tsx`;
+- `tests/unit/supabase-rpc.test.ts`;
+- `tests/unit/AgendaPage.test.tsx`;
+- `tests/unit/referrals-page.test.tsx`;
+- `tests/unit/closures-page.test.tsx`;
+- `tests/unit/administrative-operational-report.test.tsx`;
+- `tests/unit/family-caregiver-page.test.tsx`.
+
+Resultado final da suíte:
+
+- **24 arquivos de teste PASS / 24**;
+- **143 testes PASS / 143**;
+- **0 testes FAIL**;
+- duração da suíte: aproximadamente **10,15 s**.
+
+**SUÍTE COMPLETA — PASS.**
+
+### 27.4 Regressões reais nesta parte da Tarefa 3
+
+Após confrontar os erros com o código atual e com as correções já registradas:
+
+**nenhuma regressão funcional nova foi comprovada em `src/` durante esta parte da Tarefa 3.**
+
+As alterações transportadas ao `main` nesta etapa foram somente alinhamentos de testes desatualizados.
+
+Nenhuma funcionalidade correta foi modificada para satisfazer teste antigo.
+
+Nenhum bloco congelado foi reaberto.
+
+### 27.5 Build final técnico
+
+Após typecheck e suíte completa PASS, o build foi executado automaticamente.
+
+Resultado:
+- 149 módulos transformados;
+- `dist/index.html`: 0,45 kB;
+- CSS: 84,60 kB (gzip 14,86 kB);
+- JavaScript: 950,54 kB (gzip 244,24 kB);
+- build concluído em aproximadamente 210 ms.
+
+**BUILD — PASS.**
+
+O bundler emitiu aviso informativo de chunk JavaScript superior a 500 kB. O aviso não interrompeu o build e não foi classificado como regressão funcional desta tarefa.
+
+### 27.6 Resultado da parte técnica no Chat
+
+**TAREFA 3 — PARTE TÉCNICA NO CHAT: CONCLUÍDA.**
+
+Resultado consolidado:
+- typecheck: **PASS**;
+- suíte completa: **143/143 PASS**;
+- build: **PASS**;
+- regressões funcionais novas comprovadas: **0**;
+- blocos congelados reabertos: **0**;
+- código funcional alterado nesta parte: **0 arquivos de produção**;
+- testes antigos alinhados aos contratos vigentes: **12 arquivos**.
+
+A continuidade da Tarefa 3 passa agora ao **Work**, conforme divisão definida pela responsável, para:
+- auditoria final de consistência;
+- auditoria visual final;
+- validação do sistema publicado;
+- testes operacionais com contas reais;
+- homologações pendentes;
+- congelamento final dos blocos aprovados;
+- consolidação de eventuais pendências reais;
+- fechamento final do Documento Mestre;
+- PDF final de continuidade.
