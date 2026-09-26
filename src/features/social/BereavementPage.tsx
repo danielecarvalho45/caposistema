@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type AsyncState, loadingState } from '../../lib/supabase/rpc'
-import {
-  createFamilyCaregiverService,
-  type FamilyCaregiverService,
-  type FamilyMember,
-} from './family-caregiver-integration'
 import './family-caregiver-page.css'
 
 type BereavementRecord = Readonly<Record<string, unknown>>
@@ -20,11 +15,17 @@ function bereavementRows(value: unknown): readonly BereavementRecord[] {
 function isSocialSpecialty(value: string): boolean {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'assistencia social'
 }
-type BereavementService = Pick<ReturnType<typeof getRpcService>, 'getFamilyBereavement' | 'startFamilyBereavement' | 'closeFamilyBereavement' | 'getMyAssistentialSpecialties'>
+type BereavementService = Pick<
+  ReturnType<typeof getRpcService>,
+  'getFamilyBereavement' |
+  'searchBereavementFamilyMembers' |
+  'startFamilyBereavement' |
+  'closeFamilyBereavement' |
+  'getMyAssistentialSpecialties'
+>
 
 type BereavementPageProps = Readonly<{
   accessContext: AccessContext
-  familyService?: FamilyCaregiverService
   service?: BereavementService
 }>
 
@@ -38,17 +39,17 @@ function field(record: BereavementRecord, ...keys: string[]) {
 
 export function BereavementPage({
   accessContext,
-  familyService = createFamilyCaregiverService(),
   service = getRpcService(),
 }: BereavementPageProps) {
-  const primaryContext = accessContext.primary_context.code
-  const isManager = primaryContext === 'administrador'
+  const isManager = accessContext.roles.some((role) => role.code === 'administrador')
   const [socialSpecialty, setSocialSpecialty] = useState<string | null>(null)
   const canOperate = accessContext.is_active && (isManager || socialSpecialty === accessContext.professional_id)
 
   const [state, setState] = useState<AsyncState<readonly BereavementRecord[]>>(loadingState)
   const [familyQuery, setFamilyQuery] = useState('')
-  const [familyMembers, setFamilyMembers] = useState<readonly FamilyMember[]>([])
+  const [familyMembers, setFamilyMembers] = useState<readonly BereavementRecord[]>([])
+  const [startNotes, setStartNotes] = useState('')
+  const [closeNotes, setCloseNotes] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -88,7 +89,7 @@ export function BereavementPage({
 
   async function searchFamilies() {
     if (familyQuery.trim().length < 2) return
-    const result = await familyService.searchFamilyMembers(familyQuery.trim(), 20)
+    const result = await service.searchBereavementFamilyMembers(familyQuery.trim(), 20)
     setFamilyMembers(result.status === 'success' ? result.data : [])
     if (result.status === 'error') setFeedback(result.error.message)
   }
@@ -96,21 +97,33 @@ export function BereavementPage({
   async function start(familyMemberId: string) {
     if (busy) return
     setBusy(true)
-    const result = await service.startFamilyBereavement(familyMemberId)
+    const result = await service.startFamilyBereavement(
+      familyMemberId,
+      startNotes.trim() || null,
+    )
     if (result.status === 'success') {
       const reloaded = await loadBereavements()
       setFeedback(reloaded.status === 'success' || reloaded.status === 'empty' ? 'Luto iniciado e consulta atualizada.' : 'A operação foi recebida, mas a atualização da lista falhou.')
+      setStartNotes('')
+      setFamilyMembers([])
     } else setFeedback(result.status === 'error' ? result.error.message : 'Retorno sem confirmação.')
     setBusy(false)
   }
 
   async function close(familyMemberId: string) {
-    if (busy) return
+    if (busy || closeNotes.trim().length < 2) {
+      setFeedback('Informe o motivo operacional do encerramento.')
+      return
+    }
     setBusy(true)
-    const result = await service.closeFamilyBereavement(familyMemberId)
+    const result = await service.closeFamilyBereavement(
+      familyMemberId,
+      closeNotes.trim(),
+    )
     if (result.status === 'success') {
       const reloaded = await loadBereavements()
       setFeedback(reloaded.status === 'success' || reloaded.status === 'empty' ? 'Luto encerrado e consulta atualizada.' : 'A operação foi recebida, mas a atualização da lista falhou.')
+      setCloseNotes('')
     } else setFeedback(result.status === 'error' ? result.error.message : 'Retorno sem confirmação.')
     setBusy(false)
   }
@@ -127,7 +140,7 @@ export function BereavementPage({
           </p>
         </div>
         <span className="family-caregiver-connection">
-          {isManager ? 'Gestão autorizada' : 'Visualização gerencial'}
+          {canOperate ? 'Operação autorizada' : 'Somente consulta'}
         </span>
       </header>
 
@@ -142,13 +155,28 @@ export function BereavementPage({
               <input value={familyQuery} onChange={(event) => setFamilyQuery(event.target.value)} />
             </label>
             <button type="button" onClick={() => void searchFamilies()}>Buscar</button>
+            <label>
+              Observação inicial
+              <textarea
+                value={startNotes}
+                onChange={(event) => setStartNotes(event.target.value)}
+                maxLength={500}
+              />
+            </label>
             {familyMembers.length > 0 && (
               <ul>
                 {familyMembers.map((member, index) => (
-                  <li key={String(member.id ?? index)}>
-                    <span>{String(member.full_name ?? member.name ?? 'Familiar')}</span>
-                    <button type="button" disabled={busy} onClick={() => void start(String(member.id))}>Iniciar luto</button>
-                    <button type="button" disabled={busy} onClick={() => void close(String(member.id))}>Encerrar luto</button>
+                  <li key={String(member.family_member_id ?? index)}>
+                    <span>
+                      {String(member.full_name ?? 'Familiar')} · paciente de origem: {String(member.source_patient_name ?? 'não informado')}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={busy || member.bereavement_active === true}
+                      onClick={() => void start(String(member.family_member_id))}
+                    >
+                      {member.bereavement_active === true ? 'Luto já ativo' : 'Iniciar luto'}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -167,14 +195,38 @@ export function BereavementPage({
             <p>Nenhum acompanhamento de luto real encontrado.</p>
           )}
           {state.status === 'success' && state.data.length > 0 && (
-            <ul>
-              {state.data.map((record, index) => (
-                <li key={field(record, 'bereavement_cycle_id') ?? index}>
-                  <strong>{field(record, 'family_name') ?? 'Familiar'}</strong>
-                  <span>{field(record, 'status') ?? 'Situação não informada'}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              {canOperate && (
+                <label>
+                  Motivo operacional do encerramento
+                  <textarea
+                    value={closeNotes}
+                    onChange={(event) => setCloseNotes(event.target.value)}
+                    minLength={2}
+                    maxLength={500}
+                  />
+                </label>
+              )}
+              <ul>
+                {state.data.map((record, index) => (
+                  <li key={field(record, 'bereavement_cycle_id') ?? index}>
+                    <strong>{field(record, 'family_name') ?? 'Familiar'}</strong>
+                    <span>
+                      {field(record, 'status') ?? 'Situação não informada'} · paciente de origem: {field(record, 'patient_name') ?? 'não informado'}
+                    </span>
+                    {canOperate && field(record, 'status') === 'active' && (
+                      <button
+                        type="button"
+                        disabled={busy || closeNotes.trim().length < 2}
+                        onClick={() => void close(field(record, 'family_member_id') ?? '')}
+                      >
+                        Encerrar luto
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
           <small>
             {isManager
