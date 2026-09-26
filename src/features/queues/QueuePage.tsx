@@ -63,6 +63,17 @@ export function QueuePage({
     useState<AsyncState<readonly PendingItem[]>>(loadingState)
   const [professionalQueue, setProfessionalQueue] =
     useState<AsyncState<unknown>>(loadingState)
+  const [familyQueue, setFamilyQueue] =
+    useState<AsyncState<unknown>>(loadingState)
+  const [psychologists, setPsychologists] = useState<readonly Record<string, unknown>[]>([])
+  const [familyProfessionalId, setFamilyProfessionalId] = useState('')
+  const [familySlotDate, setFamilySlotDate] = useState('')
+  const [familySlots, setFamilySlots] = useState<readonly Record<string, unknown>[]>([])
+  const [familySlotStart, setFamilySlotStart] = useState('')
+  const [familyCandidates, setFamilyCandidates] = useState<readonly Record<string, unknown>[]>([])
+  const [familyNotes, setFamilyNotes] = useState('')
+  const [familyFeedback, setFamilyFeedback] = useState<string | null>(null)
+  const [familyBusy, setFamilyBusy] = useState(false)
 
   const isAdministrativeOperational = accessContext.roles.some(
     (role) =>
@@ -74,6 +85,18 @@ export function QueuePage({
     !isAdministrativeOperational &&
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some((role) => role.code === 'profissional')
+  const canScheduleFamily = accessContext.roles.some(
+    (role) =>
+      role.code === 'administrador' ||
+      role.code === 'administrativo_operacional',
+  )
+
+  const loadFamilyQueue = useCallback(async () => {
+    setFamilyQueue(loadingState())
+    const result = await getRpcService().getFamilyWaitingList('waiting', 50, 0)
+    setFamilyQueue(result)
+    return result
+  }, [])
 
   const load = useCallback(async () => {
     if (isProfessionalQueue) {
@@ -83,7 +106,8 @@ export function QueuePage({
     }
     setState(loadingState())
     setState(await loadPendingItems())
-  }, [isProfessionalQueue, loadPendingItems])
+    await loadFamilyQueue()
+  }, [isProfessionalQueue, loadFamilyQueue, loadPendingItems])
 
   useEffect(() => {
     let active = true
@@ -95,9 +119,82 @@ export function QueuePage({
       void loadPendingItems().then((nextState) => {
         if (active) setState(nextState)
       })
+      void getRpcService().getFamilyWaitingList('waiting', 50, 0).then((nextState) => {
+        if (active) setFamilyQueue(nextState)
+      })
+      void getRpcService().getSchedulingCatalog().then((catalogState) => {
+        if (!active || catalogState.status !== 'success' || !Array.isArray(catalogState.data)) return
+        const psychologyRows = catalogState.data.filter((item): item is Record<string, unknown> =>
+          Boolean(item) &&
+          typeof item === 'object' &&
+          !Array.isArray(item) &&
+          String((item as Record<string, unknown>).specialty_name ?? '')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .trim().toLowerCase() === 'psicologia',
+        )
+        setPsychologists(psychologyRows)
+      })
     }
     return () => { active = false }
   }, [isAdministrativeOperational, isProfessionalQueue, loadPendingItems])
+
+  async function loadFamilySlots() {
+    if (!familyProfessionalId || !familySlotDate) return
+    setFamilyBusy(true)
+    setFamilyFeedback(null)
+    const result = await getRpcService().getAvailableAppointmentSlots(
+      familyProfessionalId,
+      familySlotDate,
+    )
+    if (result.status === 'success') {
+      setFamilySlots(result.data as readonly Record<string, unknown>[])
+      setFamilyFeedback(result.data.length ? null : 'Nenhuma vaga disponível nesta data.')
+    } else {
+      setFamilySlots([])
+      setFamilyFeedback(result.status === 'error' ? result.error.message : 'Nenhuma vaga disponível nesta data.')
+    }
+    setFamilyBusy(false)
+  }
+
+  async function loadFamilyCandidates() {
+    if (!familyProfessionalId || !familySlotStart) return
+    setFamilyBusy(true)
+    setFamilyFeedback(null)
+    const result = await getRpcService().getFamilyQueueCandidatesForSlot(
+      familyProfessionalId,
+      familySlotStart,
+      20,
+    )
+    if (result.status === 'success' && Array.isArray(result.data)) {
+      setFamilyCandidates(result.data as readonly Record<string, unknown>[])
+      setFamilyFeedback(result.data.length ? null : 'Nenhum familiar elegível para esta vaga.')
+    } else {
+      setFamilyCandidates([])
+      setFamilyFeedback(result.status === 'error' ? result.error.message : 'Nenhum familiar elegível para esta vaga.')
+    }
+    setFamilyBusy(false)
+  }
+
+  async function scheduleFamily(waitingListId: string) {
+    if (!canScheduleFamily || !familyProfessionalId || !familySlotStart || familyBusy) return
+    setFamilyBusy(true)
+    const result = await getRpcService().createFamilyPsychologyAppointment(
+      waitingListId,
+      familyProfessionalId,
+      familySlotStart,
+      familyNotes.trim() || null,
+    )
+    if (result.status === 'success') {
+      setFamilyFeedback('Atendimento do familiar agendado e retirado da fila ativa.')
+      setFamilyCandidates([])
+      setFamilySlotStart('')
+      setFamilyNotes('')
+      await loadFamilyQueue()
+    } else {
+      setFamilyFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o agendamento.')
+    }
+    setFamilyBusy(false)
+  }
 
   if (!isAdministrativeOperational && !isProfessionalQueue) {
     return (
@@ -151,6 +248,126 @@ export function QueuePage({
 
   return (
     <section className="home-page" aria-labelledby="queue-title">
+      <div className="queue-card">
+        <div className="queue-heading">
+          <div>
+            <p className="eyebrow">Fila de Espera</p>
+            <h2>Fila de Familiares</h2>
+            <p>Fluxo próprio de familiares vinculados a pacientes, com incompatibilidade entre psicólogo do paciente e psicólogo do familiar validada pelo CAPO.</p>
+          </div>
+          <button type="button" onClick={() => void loadFamilyQueue()} disabled={familyQueue.status === 'loading' || familyBusy}>
+            Atualizar
+          </button>
+        </div>
+
+        {familyQueue.status === 'loading' && <p>Carregando fila de familiares…</p>}
+        {familyQueue.status === 'error' && <p role="alert">{familyQueue.error.message}</p>}
+        {familyQueue.status === 'empty' && <p>Nenhum familiar aguardando.</p>}
+        {familyQueue.status === 'success' && waitingRows(familyQueue.data).length === 0 && <p>Nenhum familiar aguardando.</p>}
+        {familyQueue.status === 'success' && waitingRows(familyQueue.data).length > 0 && (
+          <div className="queue-table-wrap">
+            <table className="queue-table">
+              <thead><tr><th>Familiar</th><th>Paciente vinculado</th><th>Relação</th><th>Prioridade</th><th>Entrada</th></tr></thead>
+              <tbody>
+                {waitingRows(familyQueue.data).map((row, index) => (
+                  <tr key={rowText(row, 'waiting_list_id') + index}>
+                    <td>{rowText(row, 'family_name')}</td>
+                    <td>{rowText(row, 'source_patient_name')}</td>
+                    <td>{rowText(row, 'relationship')}</td>
+                    <td>{rowText(row, 'priority')}</td>
+                    <td>{formatDate(typeof row.entered_at === 'string' ? row.entered_at : null)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="queue-heading">
+          <div>
+            <h3>Cruzar vaga com próximo familiar elegível</h3>
+            <p>O CAPO exclui automaticamente o psicólogo que acompanha o paciente vinculado e respeita prioridade e ordem da fila.</p>
+          </div>
+        </div>
+
+        <label>
+          Psicólogo
+          <select value={familyProfessionalId} onChange={(event) => {
+            setFamilyProfessionalId(event.target.value)
+            setFamilySlots([])
+            setFamilySlotStart('')
+            setFamilyCandidates([])
+          }}>
+            <option value="">Selecionar</option>
+            {psychologists.map((row, index) => (
+              <option key={rowText(row, 'professional_id') + index} value={rowText(row, 'professional_id')}>
+                {rowText(row, 'professional_name')}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Data da vaga
+          <input type="date" value={familySlotDate} onChange={(event) => {
+            setFamilySlotDate(event.target.value)
+            setFamilySlots([])
+            setFamilySlotStart('')
+            setFamilyCandidates([])
+          }} />
+        </label>
+        <button type="button" disabled={familyBusy || !familyProfessionalId || !familySlotDate} onClick={() => void loadFamilySlots()}>
+          Buscar vagas
+        </button>
+
+        {familySlots.length > 0 && (
+          <label>
+            Vaga
+            <select value={familySlotStart} onChange={(event) => {
+              setFamilySlotStart(event.target.value)
+              setFamilyCandidates([])
+            }}>
+              <option value="">Selecionar</option>
+              {familySlots.map((slot, index) => (
+                <option key={rowText(slot, 'slot_start') + index} value={rowText(slot, 'slot_start')}>
+                  {new Date(rowText(slot, 'slot_start')).toLocaleString('pt-BR')}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <button type="button" disabled={familyBusy || !familyProfessionalId || !familySlotStart} onClick={() => void loadFamilyCandidates()}>
+          Identificar próximo familiar elegível
+        </button>
+
+        {familyCandidates.length > 0 && (
+          <>
+            <label>
+              Observação do agendamento
+              <textarea value={familyNotes} onChange={(event) => setFamilyNotes(event.target.value)} maxLength={500} />
+            </label>
+            <ul>
+              {familyCandidates.map((candidate, index) => (
+                <li key={rowText(candidate, 'waiting_list_id') + index}>
+                  <strong>{rowText(candidate, 'family_name')}</strong>
+                  <span>Paciente vinculado: {rowText(candidate, 'source_patient_name')}</span>
+                  <span>Prioridade: {rowText(candidate, 'priority')}</span>
+                  {canScheduleFamily && index === 0 && (
+                    <button type="button" disabled={familyBusy} onClick={() => void scheduleFamily(rowText(candidate, 'waiting_list_id'))}>
+                      Agendar próximo elegível
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {familyFeedback && <p role="status">{familyFeedback}</p>}
+        {!canScheduleFamily && <p>Coordenação: consulta e cruzamento disponíveis; a efetivação do agendamento permanece no Administrativo Operacional.</p>}
+      </div>
+
       <div className="queue-card">
         <div className="queue-heading">
           <div>
