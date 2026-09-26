@@ -1577,3 +1577,153 @@ Resultado:
 A suíte completa, typecheck, build global e homologação operacional permanecem para a **Tarefa 3**, conforme divisão oficial do trabalho.
 
 **Não iniciar o Bloco 2B sem nova ordem da responsável.**
+
+
+## BLOCO 2B — Fluxos, capacidades e automações (26/09/2026)
+
+**Escopo:**
+- agenda e comparecimento;
+- paciente × especialidades;
+- capacidades;
+- automações de fluxo;
+- notificações;
+- funções próprias das especialidades.
+
+### 24.1 Levantamento prévio
+
+Foram preservadas todas as correções já registradas nas seções 7.x, na Tarefa 1 concluída e nos blocos técnicos históricos. Não foram reabertos perfis congelados nem repetidas auditorias já concluídas.
+
+O confronto mostrou que já estavam implantados e documentados, entre outros:
+- catálogo real e ações de presença da Agenda;
+- especialidades efetivas no contexto;
+- retorno próprio/remarcação profissional;
+- Faltosos separado de Busca Ativa;
+- Transporte por competência/capability;
+- Encaminhamento Interprofissional por capability individual;
+- automação de Faltosos;
+- notificações de Solicitações, Encaminhamentos, Faltosos, Encerramentos e impacto social→Nutrição.
+
+### 24.2 Agenda e comparecimento
+
+A RPC física `update_appointment_attendance_for_interface` foi reconferida.
+
+Permanece comprovado:
+- sessão e termo obrigatórios;
+- conta ativa obrigatória;
+- Administrativo/Coordenação/Administração podem atuar dentro de sua autorização;
+- profissional somente altera agendamento próprio;
+- ações válidas: `confirmado`, `realizado`, `faltou`, `cancelado`;
+- não permite presença/falta futura;
+- cancelamento exige justificativa;
+- mudança de comparecimento permanece persistida no backend e aciona os gatilhos derivados aplicáveis.
+
+Nenhuma divergência nova foi encontrada.
+
+### 24.3 Paciente × especialidades
+
+A RPC `get_patient_care_specialties_for_professional_interface` permanece:
+- restrita a profissional ativo e autenticado;
+- limitada a paciente dentro da atuação real do profissional;
+- vinculada ao ciclo CAPO aberto;
+- retornando apenas especialidades ativas do ciclo;
+- sem ampliar acesso global ao prontuário/paciente.
+
+Nenhuma divergência nova foi encontrada.
+
+### 24.4 Capacidades
+
+Foram reconferidos:
+- `get_capability_catalog_for_interface`;
+- `get_effective_professional_capabilities`;
+- `set_professional_capability_for_interface`;
+- `set_specialty_capability_status_for_interface`.
+
+O modelo continua coerente:
+- capacidades por especialidade vêm de `specialty_capabilities`;
+- exceções individuais vêm de `professional_capabilities`;
+- somente profissional ativo recebe capacidades efetivas;
+- capacidade individual delegável permanece restrita a `encaminhamento_interprofissional`;
+- capacidades estruturais por especialidade permanecem vinculadas ao catálogo canônico:
+  - `renovacao_receita` → Clínica Geral;
+  - `emitir_encaminhamento_odontologico_externo` → Clínica Geral;
+  - `preencher_solicitacao_transporte` → Assistência Social;
+- Administração continua sendo o único contexto autorizado a alterar o catálogo.
+
+Nenhuma divergência nova foi encontrada.
+
+### 24.5 Notificações e automações — cobertura física
+
+Foram confirmados gatilhos/funções ativos para:
+- nova solicitação e transições administrativas → AO/solicitante;
+- encaminhamento operacional/interprofissional e odontológico → destinatários correspondentes;
+- falta registrada → criação do acompanhamento + notificação AO;
+- encerramento assistencial → acompanhamento administrativo;
+- vulnerabilidade social com impacto alimentar → profissional de Nutrição dentro do escopo;
+- cancelamento/remarcação de agenda com paciente aguardando → notificação de vaga para AO;
+- fechamento do acompanhamento de faltoso após remarcação efetiva.
+
+Não foi encontrada duplicidade ativa de trigger para a antiga automação da fila.
+
+### 24.6 Correção nova comprovada — `notify_waiting_list()`
+
+O Manual Técnico v5 já classificava `notify_waiting_list()` como **OBSOLETO/INCOMPATÍVEL**, pois esperava estados `vaga_disponivel`/`disponivel`, inexistentes no domínio atual de `waiting_list`.
+
+Confronto físico de 26/09/2026 confirmou:
+- a função antiga ainda existia no banco;
+- nenhum trigger atual a utilizava;
+- a automação correta já existe em `capo_notify_waiting_vacancy_from_appointment()`;
+- o trigger ativo `trg_capo_notify_waiting_vacancy_from_appointment` está ligado a `patient_appointments`;
+- a automação vigente procura paciente `waiting` da especialidade liberada e notifica o papel `administrativo_operacional`.
+
+**Correção aplicada:**
+- removida somente a função órfã `public.notify_waiting_list()`;
+- preservada integralmente a automação substituta ativa.
+
+**Migration aplicada no Supabase oficial e registrada no GitHub:**
+`supabase/migrations/20260926132000_remove_legacy_notify_waiting_list.sql`.
+
+**Verificação pós-correção:**
+- função legada ausente: PASS;
+- função substituta presente: PASS;
+- trigger substituto ativo: PASS.
+
+### 24.7 Verificação de segurança após DDL
+
+O advisor de segurança foi executado após a migration.
+
+Ele reportou avisos globais sobre RPCs `SECURITY DEFINER` executáveis por `authenticated` e sobre proteção de senhas vazadas desabilitada. Esses avisos:
+- não foram introduzidos por esta migration;
+- abrangem a arquitetura global do projeto e funções fora deste bloco;
+- não demonstram regressão específica do Bloco 2B;
+- não foram convertidos em pendência desta tarefa sem confronto específico posterior com o escopo de segurança global.
+
+A migration deste bloco somente removeu uma função órfã e não criou nova superfície de execução.
+
+### 24.8 Funções próprias das especialidades
+
+O confronto transversal preservou as competências já corrigidas:
+- Clínica Geral: Renovação de Receita e emissão odontológica conforme capability;
+- Assistência Social: Transporte conforme capability e fluxo social próprio;
+- Nutrição: recebe automação de vulnerabilidade alimentar somente quando profissional e paciente estão no escopo;
+- Psicologia/Fisioterapia/futuras especialidades: área assistencial compartilhada e capacidades adicionais somente quando delegadas;
+- Encaminhamento Interprofissional não é concedido automaticamente por especialidade.
+
+Nenhuma função própria foi ampliada por inferência de cargo ou título textual.
+
+### 24.9 Estado do Bloco 2B
+
+**BLOCO 2B — CONCLUÍDO TECNICAMENTE.**
+
+Resultado:
+- agenda/comparecimento confrontados;
+- paciente×especialidades confrontado;
+- capacidades confrontadas;
+- automações e notificações confrontadas;
+- 1 legado incompatível comprovado e removido;
+- automação substituta confirmada ativa;
+- nenhuma nova pendência funcional criada;
+- nenhum bloco congelado reaberto.
+
+Suíte completa, typecheck, build global e homologações com contas/dados reais permanecem reservados para a **Tarefa 3**, conforme divisão oficial.
+
+**Não iniciar o Bloco 2C sem nova ordem da responsável.**
