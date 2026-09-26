@@ -344,6 +344,7 @@ export function AgendaPage({
   onConfirmed?: (appointment: AgendaAppointment) => void
   loadPatientSpecialties?: (patientId: string) => Promise<AsyncState<unknown>>
 }>) {
+  const location = useLocation()
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
@@ -593,6 +594,25 @@ export function AgendaPage({
     professionalId,
     startDate,
   ])
+
+  useEffect(() => {
+    if (isProfessional) return
+    const stateValue =
+      location.state && typeof location.state === 'object'
+        ? location.state as Record<string, unknown>
+        : null
+    const patientId = typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
+    const patientName = typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
+    const specialtyId = typeof stateValue?.specialtyId === 'string' ? stateValue.specialtyId : ''
+    if (!patientId || !specialtyId) return
+    setShowNewAppointment(true)
+    setAppointmentPatientId(patientId)
+    setAppointmentPatientQuery(patientName)
+    setSelectedSpecialtyId(specialtyId)
+    setAppointmentOrigin(
+      stateValue?.origin === 'waiting_list' ? 'fila_de_espera' : '',
+    )
+  }, [isProfessional, location.state])
 
   useEffect(() => {
     if (!rescheduleProfessionalId) return
