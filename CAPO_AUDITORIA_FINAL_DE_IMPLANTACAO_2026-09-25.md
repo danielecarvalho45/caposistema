@@ -1316,3 +1316,18 @@ Por determinação da responsável, a homologação visual/operacional em aparel
 ### Regra anti-loop desta frente
 
 Não reabrir a disposição mobile já corrigida por dúvida genérica ou por teste antigo. Reabrir somente se o teste operacional final apresentar divergência física reproduzível, ou se uma documentação normativa vigente do GitHub trouxer regra diferente e comprovável.
+
+
+## 20.11 Ambiente público vigente do CAPO — referência oficial de 26/09/2026
+
+**URL pública vigente:** `https://caposistema.pages.dev/`
+
+Esta URL passa a ser a referência oficial do sistema CAPO publicado para verificações de interface, disposição, navegação e homologação operacional.
+
+**Regra de continuidade:**
+- usar `https://caposistema.pages.dev/` como ambiente público vigente;
+- não usar URLs antigas de Workers/Pages já substituídas ou deletadas como referência de validação;
+- sempre distinguir alterações feitas no repositório `main` da versão efetivamente publicada;
+- antes de declarar uma correção como validada no ar, confirmar que o deploy correspondente está disponível neste endereço.
+
+**Estado:** referência de ambiente registrada para impedir uso futuro de URL obsoleta.
