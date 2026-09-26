@@ -1253,3 +1253,25 @@ Toda nova auditoria/correção da implantação deve:
 **Veredito destes 15 erros observados:** 15 × **TESTE DESATUALIZADO** na causa imediata; 0 × **REGRESSÃO REAL comprovada por essas falhas**; 0 × **DEPENDÊNCIA DE TESTE OPERACIONAL como causa imediata**. Esta é classificação do *primeiro erro que interrompeu cada teste*, não declaração de que os requisitos passaram. Depois de adequar os cenários de teste aos contratos vigentes, eventuais novas falhas deverão ser classificadas de novo; os fluxos que exigem conta/permissão/dados reais permanecem para homologação operacional após implantação. Nenhuma função correta foi alterada para fazer teste antigo passar.
 
 **Achado independente que não integra os 15 erros:** o relatório operacional novo do Auxiliar exibe contagens `state.data.length` de até 50 itens. O Manual Técnico v5 proíbe tratar tamanhos de listas de sessão como relatório oficial, e a Matriz 14.12/18.2 exige métricas com fonte física confiável. **REGRESSÃO REAL identificada na apresentação dessas contagens; não foi corrigida nesta etapa de classificação, não alterar Supabase sem ordem.** Não usar essa tela como relatório oficial até corrigir a apresentação/contrato.
+
+
+## 20.9 Resultado dos oito testes da suíte ampliada — registro de 26/09/2026
+
+**Escopo:** registro fiel do resultado informado após a execução ampliada. Este registro não reabre módulos congelados e não classifica, por si só, cada falha como regressão real.
+
+**Resultado geral:** 65 testes executados; **57 passaram** e **8 falharam**.
+
+| Teste | Erro observado |
+|---|---|
+| Shell com contexto real | Não encontrou o título `Olá, Nome real`. |
+| Fila no contexto administrativo | Não encontrou o título `Fila operacional`. |
+| Pendências da fila | Não encontrou `Fila de espera — Nutrição`; houve também erro de `Link` sem roteador. |
+| Fila fora do contexto administrativo | O teste esperava que o link `Fila` não aparecesse, mas ele apareceu. |
+| Criar solicitação | Erro de `useLocation()` sem roteador; o envio não chegou a ser testado. |
+| Bloquear solicitação sem autorização | O mesmo erro de roteador; o bloqueio não chegou a ser testado. |
+| Criar pedido de renovação de receita | Não encontrou o campo `Buscar paciente`; a criação não chegou a ser testada. |
+| Decisão médica na renovação | Não encontrou o campo `Observação da ação`; a decisão não chegou a ser testada. |
+
+**Conclusão registrada:** essas oito falhas **não comprovam, por si só, oito regressões do sistema**. A classificação definitiva permaneceu pendente porque a Matriz Funcional e as Especificações exigidas não foram localizadas no `main` do GitHub durante essa execução. **Nenhum módulo congelado foi reaberto.**
+
+**Estado documental:** este resultado havia sido registrado apenas localmente no ambiente de execução. Com este registro, o mesmo resultado passa a constar no Documento Mestre do GitHub, sem criação de documento paralelo e sem alteração de código, testes ou Supabase.
