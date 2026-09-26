@@ -209,7 +209,12 @@ export function canAccessAppRoute(
       )
     case '/transporte':
       return hasRole(accessContext, ['administrador', 'administrativo_operacional']) ||
-        accessContext.capabilities.includes('preencher_solicitacao_transporte')
+        (
+          Boolean(accessContext.professional_id) &&
+          hasRole(accessContext, ['profissional']) &&
+          hasSpecialty(accessContext, 'Assistência Social') &&
+          accessContext.capabilities.includes('preencher_solicitacao_transporte')
+        )
     case '/receita':
       return hasRole(accessContext, ['administrador', 'administrativo_operacional']) ||
         accessContext.capabilities.includes('renovacao_receita')
