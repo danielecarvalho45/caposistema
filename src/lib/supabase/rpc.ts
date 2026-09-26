@@ -2972,6 +2972,23 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_professional_id: professionalId },
         parse: (value) => value,
       }),
+    getSocialVulnerabilityIndicator: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'get_social_vulnerability_indicator_for_interface',
+        args: { p_patient_id: patientId },
+        parse: parseConfirmedJson,
+      }),
+    setSocialVulnerabilityIndicator: (
+      patientId: string,
+      level: 'verde' | 'amarelo' | 'vermelho',
+    ) =>
+      execute({
+        transport,
+        operation: 'set_social_vulnerability_indicator_for_interface',
+        args: { p_patient_id: patientId, p_level: level },
+        parse: parseConfirmedJson,
+      }),
     getNutritionContext: (patientId: string) =>
       execute({ transport, operation: 'get_nutrition_context_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     saveNutritionPlan: (args: ConfirmedJsonArgs) =>
@@ -3169,6 +3186,8 @@ function createSupabaseTransport(
   ) => Promise<{ data: unknown; error: unknown }>
   return async (operation, args) => {
     switch (operation) {
+      case 'get_social_vulnerability_indicator_for_interface':
+      case 'set_social_vulnerability_indicator_for_interface':
       case 'get_nutrition_context_for_interface':
       case 'save_nutrition_plan_for_interface':
       case 'create_nutrition_document_for_interface':
