@@ -148,6 +148,8 @@ function renderShell(
           getAdministrativeRequestEvents: vi.fn(),
           createAdministrativeRequest: vi.fn(),
           updateAdministrativeRequest: vi.fn(),
+          getFamilyPsychologyRequestContext: vi.fn(),
+          addFamilyToWaitingList: vi.fn(),
         }}
       />
     ) : activePath === '/encaminhamentos' ? (
@@ -227,6 +229,7 @@ function renderShell(
             data: [],
           }),
           loadSupportHistory: vi.fn(),
+          processSupportRequest: vi.fn().mockResolvedValue({ status: 'empty' }),
         }}
       />
     ) : activePath === '/em-construcao' ||
@@ -829,6 +832,8 @@ describe('App', () => {
           getAdministrativeRequestEvents: vi.fn(),
           createAdministrativeRequest: vi.fn(),
           updateAdministrativeRequest: vi.fn(),
+          getFamilyPsychologyRequestContext: vi.fn(),
+          addFamilyToWaitingList: vi.fn(),
         }}
       />,
     )
