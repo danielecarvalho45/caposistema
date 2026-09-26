@@ -43,6 +43,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_capability_catalog_for_interface: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_transport_context_for_interface: {
         Args: { p_patient_id: string }
         Returns: Json
