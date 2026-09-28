@@ -1,3 +1,4 @@
+// CAPO — seletor de contexto da conta de homologação; alteração deste arquivo deve integrar o build publicado.
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
