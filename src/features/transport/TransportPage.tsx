@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 
 type TransportRecord = Readonly<Record<string, unknown>>
 
@@ -105,20 +106,26 @@ function buildTransportPdfBlob(input: Readonly<{
     '',
     'CAPO - Centro de Acolhimento ao Paciente Oncológico',
     'Secretaria Municipal de Saúde de Pouso Alegre - MG',
-  ].flatMap((line) => wrapLine(line)).slice(0, 48)
+  ].flatMap((line) => wrapLine(line)).slice(0, 42)
 
   const stream =
-    'BT\n/F1 10 Tf\n50 792 Td\n14 TL\n' +
+    'q\n495 0 0 165 50 660 cm\n/Logo Do\nQ\nBT\n/F1 10 Tf\n50 625 Td\n14 TL\n' +
     lines.map((line) => `(${pdfEscape(line)}) Tj\nT*\n`).join('') +
     'ET\n'
   const contentBytes = winAnsiBytes(stream)
+  const logo = getCapoDocumentLogoJpeg()
   const objects = [
     winAnsiBytes('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
     winAnsiBytes('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'),
-    winAnsiBytes('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n'),
+    winAnsiBytes('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> /XObject << /Logo 5 0 R >> >> /Contents 6 0 R >>\nendobj\n'),
     winAnsiBytes('4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n'),
     concatBytes([
-      winAnsiBytes(`5 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n`),
+      winAnsiBytes(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${CAPO_DOCUMENT_LOGO_WIDTH} /Height ${CAPO_DOCUMENT_LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n`),
+      logo,
+      winAnsiBytes('\nendstream\nendobj\n'),
+    ]),
+    concatBytes([
+      winAnsiBytes(`6 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n`),
       contentBytes,
       winAnsiBytes('endstream\nendobj\n'),
     ]),
@@ -134,9 +141,9 @@ function buildTransportPdfBlob(input: Readonly<{
   }
   const xrefOffset = offset
   const xref =
-    'xref\n0 6\n0000000000 65535 f \n' +
+    'xref\n0 7\n0000000000 65535 f \n' +
     offsets.slice(1).map((value) => `${String(value).padStart(10, '0')} 00000 n \n`).join('') +
-    `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
+    `trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
   parts.push(winAnsiBytes(xref))
   return new Blob([concatBytes(parts)], { type: 'application/pdf' })
 }
