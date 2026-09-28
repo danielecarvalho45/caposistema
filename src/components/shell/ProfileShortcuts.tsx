@@ -1,6 +1,6 @@
 // CAPO — seletor de contexto da conta de homologação; alteração deste arquivo deve integrar o build publicado.
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import {
   getRpcService,
@@ -20,6 +20,7 @@ type ProfileShortcutsProps = Readonly<{
   className: string
   profileLabel: string
   homologationService?: HomologationService
+  onContextChange?: () => Promise<void>
 }>
 
 type HomologationTarget = Readonly<{
@@ -105,7 +106,9 @@ export function ProfileShortcuts({
   className,
   profileLabel,
   homologationService,
+  onContextChange,
 }: ProfileShortcutsProps) {
+  const navigate = useNavigate()
   const [openedAtPath, setOpenedAtPath] = useState<string | null>(null)
   const [homologationOptions, setHomologationOptions] =
     useState<HomologationOptions | null>(null)
@@ -157,14 +160,19 @@ export function ProfileShortcuts({
 
     if (target.roleCode === null) {
       if (!accessContext.homologation_context?.enabled) {
-        window.location.assign('/')
+        setOpenedAtPath(null)
+        navigate('/')
+        setSwitchingHomologation(false)
         return
       }
       const result = await service.clearHomologationContext(
         'Retorno ao contexto técnico da conta de homologação.',
       )
       if (result.status === 'success') {
-        window.location.assign('/')
+        await onContextChange?.()
+        setOpenedAtPath(null)
+        navigate('/')
+        setSwitchingHomologation(false)
         return
       }
       setSwitchingHomologation(false)
@@ -221,7 +229,10 @@ export function ProfileShortcuts({
     })
 
     if (result.status === 'success') {
-      window.location.assign('/')
+      await onContextChange?.()
+      setOpenedAtPath(null)
+      navigate('/')
+      setSwitchingHomologation(false)
       return
     }
 
