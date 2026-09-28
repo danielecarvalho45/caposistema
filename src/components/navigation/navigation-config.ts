@@ -13,7 +13,6 @@ export const navigationItems: readonly NavigationItem[] = [
   { path: '/pacientes', label: 'Pacientes', icon: '👥', group: 'principal' },
   { path: '/agenda', label: 'Agenda Geral', icon: '🗓', group: 'principal' },
   { path: '/minha-agenda/solicitar-alteracao', label: 'Solicitar ao Coordenador', icon: '▤', group: 'principal' },
-  { path: '/atuacao', label: 'Minha atuação', icon: '+', group: 'principal' },
   { path: '/nutricao', label: 'Nutrição', icon: '◉', group: 'principal' },
   { path: '/assistencia-social', label: 'Assistência Social', icon: '♡', group: 'principal' },
   { path: '/familiar-cuidador', label: 'Familiar / Cuidador', icon: '♧', group: 'principal' },
