@@ -2431,3 +2431,24 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Correção:** `src/features/reports/ReportsPage.tsx` apresenta **Relatório para PDF**, com **Visão geral — todos os relatórios** e opções correspondentes somente às seções realmente retornadas com indicadores pelo dashboard, inclusive Agenda por especialidade quando houver dados. A escolha determina as seções exportadas, sem modificar o painel visível, os valores, os filtros de período/especialidade, a autorização ou a chamada de `get_reports_dashboard_for_interface`. `src/features/reports/report-export.ts` identifica no cabeçalho do PDF o recorte escolhido. Sem alterações em Supabase, SQL, RPC ou permissões. `tests/unit/reports-labels.test.tsx` comprova seção escolhida, visão geral, números preservados e ausência de nova consulta.
 
 **Testes:** testes direcionados **5/5 PASS**; suíte completa **36/36 arquivos, 240/240 testes PASS**; `npm run typecheck` **PASS**; `npm run build` **PASS** (aviso de tamanho do bundle); `git diff --check` **PASS**. **Estado:** CORRIGIDO NO CÓDIGO / TESTE INTERNO CONCLUÍDO; validação do seletor e do PDF com conta real no Pages **PENDENTE**, sem declarar download publicado verificado.
+
+
+### 28.19 Padronização institucional dos PDFs do CAPO (28/09/2026)
+
+**Solicitação:** aplicar a identidade institucional oficial aprovada pela Titular a todos os PDFs gerados pelo sistema CAPO, incluindo os PDFs dos Relatórios Gerenciais.
+
+**Levantamento físico anterior à correção:** foram identificados quatro geradores ativos de PDF na SPA atual: Relatórios Gerenciais, Transporte, Plano Alimentar/Nutrição e Encaminhamento Odontológico. Todos produziam PDF a partir de streams próprios e não apresentavam, de forma uniforme, o cabeçalho institucional completo com a arte CAPO + Secretaria Municipal de Saúde + Prefeitura de Pouso Alegre.
+
+**Correção aplicada:** a arte institucional já registrada em `src/lib/pdf/capo-document-brand.ts` passou a ser consumida por um gerador compartilhado, `src/lib/pdf/capo-document-pdf.ts`. O cabeçalho é incorporado como imagem JPEG no próprio PDF, em cada página, antes do conteúdo funcional. Os quatro emissores foram ligados a esse gerador comum:
+- `src/features/reports/report-export.ts` — Relatórios Gerenciais, inclusive a opção de escolha do relatório já implementada;
+- `src/features/transport/TransportPage.tsx` — Solicitação de Transporte;
+- `src/features/nutrition/NutritionPage.tsx` — Plano Alimentar Nutricional;
+- `src/features/dentistry/DentistryPage.tsx` — Encaminhamento Odontológico.
+
+**Preservação funcional:** não houve alteração de RPC, SQL, RLS, policies, Storage, autorização, cálculo de indicadores, dados de paciente, fluxo de assinatura ou regras de emissão. A mudança ficou restrita à composição visual dos PDFs e ao reaproveitamento de um único cabeçalho institucional. O conteúdo específico de cada documento foi preservado.
+
+**Teste de proteção adicionado:** `tests/unit/report-export.test.ts` passou a verificar que o PDF gerencial contém recurso de imagem institucional (`/Subtype /Image`), referência `/XObject` e execução de `/Logo Do`, além das verificações já existentes de conteúdo e paginação. O gerador compartilhado foi submetido, nesta manutenção direta, a verificação estática TypeScript isolada com `tsc --noEmit`: **PASS**. A suíte completa `npm test`, `npm run typecheck` e `npm run build` do repositório **não foi executada nesta sessão**, portanto não declarar PASS global até nova execução no ambiente completo.
+
+**Commits da alteração direta:** `8b7fa2c594826a5baca4b7dea3c83d98eccb290f`, `582e32f1226c364ad24ed0123b9e386f2f39269a`, `d50f524d0295c1b0c0e3433bd097da33ae7d2eb3`, `fe3135ebff61407c308c259268e84f69a48acd3b`, `a3aca830069a2d9222366fa9c278b216918b6e67`, `6948fe204a8647b832169c963128e360a75ad471`, `6ffb10c598e83539b73d5a1221e93b9a61a4d035`, `458aef5e6b1bef55d888e44e2d9211d15fb0a07e`, `a9130a4e414944780915a5665bf6aa39f210c9d3`, `2341f40f85e326b5837d719e61a8a336c84f1609` e `b63480c0d75131010e9b16fa6d48f7b6ae77841b`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / IDENTIDADE INSTITUCIONAL CENTRALIZADA / AGUARDANDO SUÍTE COMPLETA E VALIDAÇÃO VISUAL DOS PDFs PUBLICADOS**. Não declarar homologação visual final até abrir ao menos um PDF de cada fluxo após a publicação.
