@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 
 type TransportRecord = Readonly<Record<string, unknown>>
@@ -39,30 +40,6 @@ function requestId(record: TransportRecord) {
   return field(record, 'request_id', 'id') ?? ''
 }
 
-function winAnsiBytes(value: string) {
-  const bytes = new Uint8Array(value.length)
-  for (let index = 0; index < value.length; index += 1) {
-    const code = value.charCodeAt(index)
-    bytes[index] = code <= 255 ? code : 63
-  }
-  return bytes
-}
-
-function concatBytes(parts: readonly Uint8Array[]) {
-  const length = parts.reduce((total, part) => total + part.length, 0)
-  const result = new Uint8Array(length)
-  let offset = 0
-  for (const part of parts) {
-    result.set(part, offset)
-    offset += part.length
-  }
-  return result
-}
-
-function pdfEscape(value: string) {
-  return value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
-}
-
 function wrapLine(value: string, width = 86) {
   const words = value.split(/\s+/).filter(Boolean)
   if (words.length === 0) return ['']
@@ -89,7 +66,7 @@ function buildTransportPdfBlob(input: Readonly<{
   appointmentLabel: string | null
 }>) {
   const lines = [
-    'Secretaria Municipal de Saúde de Pouso Alegre - MG',
+    'SOLICITAÇÃO DE TRANSPORTE',
     '',
     'Ao Setor de Transportes da Secretaria Municipal de Saúde.',
     '',
@@ -103,49 +80,9 @@ function buildTransportPdfBlob(input: Readonly<{
     'Os dias e horários do transporte ficam sob responsabilidade do CAPO, que os informará com antecedência por meio de relatório e/ou outro meio de comunicação estabelecido com o Setor de Transportes da Secretaria Municipal de Saúde.',
     '',
     `Solicitante: ${input.requester}`,
-    '',
-    'CAPO - Centro de Acolhimento ao Paciente Oncológico',
-    'Secretaria Municipal de Saúde de Pouso Alegre - MG',
-  ].flatMap((line) => wrapLine(line)).slice(0, 42)
+  ].flatMap((line) => wrapLine(line))
 
-  const stream =
-    'q\n495 0 0 165 50 660 cm\n/Logo Do\nQ\nBT\n/F1 10 Tf\n50 625 Td\n14 TL\n' +
-    lines.map((line) => `(${pdfEscape(line)}) Tj\nT*\n`).join('') +
-    'ET\n'
-  const contentBytes = winAnsiBytes(stream)
-  const logo = getCapoDocumentLogoJpeg()
-  const objects = [
-    winAnsiBytes('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
-    winAnsiBytes('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'),
-    winAnsiBytes('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> /XObject << /Logo 5 0 R >> >> /Contents 6 0 R >>\nendobj\n'),
-    winAnsiBytes('4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n'),
-    concatBytes([
-      winAnsiBytes(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${CAPO_DOCUMENT_LOGO_WIDTH} /Height ${CAPO_DOCUMENT_LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n`),
-      logo,
-      winAnsiBytes('\nendstream\nendobj\n'),
-    ]),
-    concatBytes([
-      winAnsiBytes(`6 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n`),
-      contentBytes,
-      winAnsiBytes('endstream\nendobj\n'),
-    ]),
-  ]
-  const header = winAnsiBytes('%PDF-1.4\n')
-  const parts: Uint8Array[] = [header]
-  const offsets = [0]
-  let offset = header.length
-  for (const object of objects) {
-    offsets.push(offset)
-    parts.push(object)
-    offset += object.length
-  }
-  const xrefOffset = offset
-  const xref =
-    'xref\n0 7\n0000000000 65535 f \n' +
-    offsets.slice(1).map((value) => `${String(value).padStart(10, '0')} 00000 n \n`).join('') +
-    `trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
-  parts.push(winAnsiBytes(xref))
-  return new Blob([concatBytes(parts)], { type: 'application/pdf' })
+  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40 })
 }
 
 export function TransportPage({ accessContext }: Props) {
