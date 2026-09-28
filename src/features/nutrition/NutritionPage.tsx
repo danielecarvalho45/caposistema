@@ -5,6 +5,7 @@ import { AgendaPage } from '../agenda/AgendaPage'
 import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 
 type NutritionRecord = Readonly<Record<string, unknown>>
 type NutritionDeliveryAction = 'start' | 'complete' | 'cancel' | 'reopen'
@@ -77,7 +78,7 @@ function buildNutritionPdf(document: NutritionRecord) {
     ['other_guidance', 'Outras orientações'],
   ]
   const lines = [
-    'CAPO - PLANO ALIMENTAR NUTRICIONAL',
+    'PLANO ALIMENTAR NUTRICIONAL',
     `Paciente: ${field(document, 'patient_name') ?? ''}`,
     `CMS: ${field(document, 'cms') ?? '—'}`,
     `Nº CAPO: ${field(document, 'patient_number') ?? '—'}`,
@@ -92,25 +93,37 @@ function buildNutritionPdf(document: NutritionRecord) {
     if (value) lines.push(`${label}:`, ...nutritionPdfWrap(value), '')
   }
 
+  const linesPerPage = 35
   const pages: string[][] = []
-  for (let index = 0; index < lines.length; index += 46) {
-    pages.push(lines.slice(index, index + 46))
+  for (let index = 0; index < lines.length; index += linesPerPage) {
+    pages.push(lines.slice(index, index + linesPerPage))
   }
-  if (!pages.length) pages.push(['CAPO - PLANO ALIMENTAR NUTRICIONAL'])
+  if (!pages.length) pages.push(['PLANO ALIMENTAR NUTRICIONAL'])
 
   const objects: Record<number, Uint8Array> = {}
   objects[1] = nutritionPdfBytes('<< /Type /Catalog /Pages 2 0 R >>')
   objects[3] = nutritionPdfBytes('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>')
+  const logo = getCapoDocumentLogoJpeg()
+  const logoPrefix = nutritionPdfBytes(
+    `<< /Type /XObject /Subtype /Image /Width ${CAPO_DOCUMENT_LOGO_WIDTH} /Height ${CAPO_DOCUMENT_LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n`,
+  )
+  const logoSuffix = nutritionPdfBytes('\nendstream')
+  const logoObject = new Uint8Array(logoPrefix.length + logo.length + logoSuffix.length)
+  logoObject.set(logoPrefix, 0)
+  logoObject.set(logo, logoPrefix.length)
+  logoObject.set(logoSuffix, logoPrefix.length + logo.length)
+  objects[4] = logoObject
+
   const kids: string[] = []
   pages.forEach((page, pageIndex) => {
-    const pageObject = 4 + pageIndex * 2
-    const contentObject = 5 + pageIndex * 2
+    const pageObject = 5 + pageIndex * 2
+    const contentObject = 6 + pageIndex * 2
     kids.push(`${pageObject} 0 R`)
     objects[pageObject] = nutritionPdfBytes(
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObject} 0 R >>`,
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> /XObject << /Logo 4 0 R >> >> /Contents ${contentObject} 0 R >>`,
     )
     const stream =
-      'BT\n/F1 11 Tf\n14 TL\n48 790 Td\n' +
+      'q\n499 0 0 166 48 658 cm\n/Logo Do\nQ\nBT\n/F1 11 Tf\n14 TL\n48 620 Td\n' +
       page.map((line, lineIndex) =>
         `${lineIndex ? 'T*\\n' : ''}(${nutritionPdfEscape(line)}) Tj`,
       ).join('\n') +
