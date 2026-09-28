@@ -1,4 +1,5 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
 import { ReportsPage } from '../../src/features/reports/ReportsPage'
 import type { AccessContext } from '../../src/types/access'
@@ -33,4 +34,19 @@ it('traduz somente os rótulos, preservando os indicadores, filtros e valores re
   for (const key of ['closures', 'patients', 'no show followup', 'total period']) {
     expect(screen.queryByText(key, { exact: true })).not.toBeInTheDocument()
   }
+})
+
+it.each(['administrador', 'coordenador'])('oferece impressão e PDF do relatório gerencial ao %s com filtros reais', async (role) => {
+  const user = userEvent.setup()
+  const loadDashboard = vi.fn().mockResolvedValue({ status: 'success', data: {
+    specialty_options: [{ id: 'nutrition', name: 'Nutrição' }],
+    patients: { total_current: 17 },
+  } })
+  render(<ReportsPage accessContext={{ roles: [{ code: role, name: role }], primary_context: { code: role }, professional_id: null } as unknown as AccessContext} integration={{ loadDashboard, loadSpecialties: vi.fn(), loadReport: vi.fn() }} />)
+  await screen.findByText('Total atual')
+  expect(screen.getByRole('button', { name: 'Imprimir' })).toBeEnabled()
+  expect(screen.getByRole('button', { name: 'Gerar / salvar PDF' })).toBeEnabled()
+  await user.selectOptions(screen.getByLabelText('Especialidade'), 'nutrition')
+  expect(loadDashboard).toHaveBeenCalledWith(expect.any(String), expect.any(String), 'nutrition')
+  expect(await screen.findByText(/Especialidade: Nutrição/)).toBeVisible()
 })

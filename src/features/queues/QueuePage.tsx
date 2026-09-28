@@ -6,6 +6,8 @@ import {
   type PendingItem,
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
+import { PatientSearch } from '../../components/forms/PatientSearch'
+import type { ReferralPatient } from '../../lib/supabase/rpc'
 import { Link } from 'react-router-dom'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import './queue-page.css'
@@ -76,6 +78,14 @@ export function QueuePage({
   const [familyNotes, setFamilyNotes] = useState('')
   const [familyFeedback, setFamilyFeedback] = useState<string | null>(null)
   const [familyBusy, setFamilyBusy] = useState(false)
+  const [queuePatient, setQueuePatient] = useState<ReferralPatient | null>(null)
+  const [showQueueForm, setShowQueueForm] = useState(false)
+  const [queueSpecialties, setQueueSpecialties] = useState<AsyncState<readonly { specialty_id: string; specialty_name: string }[]>>(loadingState)
+  const [queueSpecialty, setQueueSpecialty] = useState('')
+  const [queuePriority, setQueuePriority] = useState(3)
+  const [queueNotes, setQueueNotes] = useState('')
+  const [queueFeedback, setQueueFeedback] = useState<string | null>(null)
+  const [queueBusy, setQueueBusy] = useState(false)
 
   const isAdministrativeOperational = [
     'administrador',
@@ -91,6 +101,34 @@ export function QueuePage({
       role.code === 'administrador' ||
       role.code === 'administrativo_operacional',
   )
+  const canAddPatient = accessContext.roles.some((role) =>
+    role.code === 'administrador' || role.code === 'administrativo_operacional',
+  )
+
+  async function addPatient() {
+    if (!canAddPatient || !queuePatient || !queueSpecialty || queueBusy) return
+    setQueueBusy(true)
+    setQueueFeedback(null)
+    const result = await getRpcService().addPatientToWaitingList(queuePatient.patient_id, queueSpecialty, queuePriority, queueNotes.trim() || null)
+    if (result.status === 'success') {
+      setQueuePatient(null)
+      setQueueSpecialty('')
+      setQueueNotes('')
+      setPatientQueue(loadingState())
+      const reloaded = await getRpcService().getWaitingList(null, 'waiting', 50, 0)
+      setPatientQueue(reloaded)
+      setQueueFeedback(reloaded.status === 'error' ? 'Paciente incluído, mas não foi possível atualizar a lista: ' + reloaded.error.message : 'Paciente incluído na fila de espera.')
+    } else {
+      setQueueFeedback(result.status === 'error' ? result.error.message : 'A inclusão não foi confirmada. Tente novamente.')
+    }
+    setQueueBusy(false)
+  }
+
+  async function openQueueForm() {
+    setShowQueueForm(true)
+    setQueueSpecialties(loadingState())
+    setQueueSpecialties(await getRpcService().getReferralSpecialties())
+  }
 
   const loadFamilyQueue = useCallback(async () => {
     setFamilyQueue(loadingState())
@@ -265,6 +303,26 @@ export function QueuePage({
             Atualizar
           </button>
         </div>
+        {canAddPatient && <>
+          <button type="button" onClick={() => void openQueueForm()} disabled={queueBusy}>Adicionar paciente à fila</button>
+          {showQueueForm && <div className="queue-add-form">
+            <PatientSearch label="Buscar paciente por nome, CMS ou Nº CAPO" loadPatients={(query, limit, offset) => getRpcService().searchReferralPatients(query, limit, offset)} onSelect={setQueuePatient} />
+            {queuePatient && <p>Paciente selecionado: <strong>{queuePatient.full_name}</strong></p>}
+            {queueSpecialties.status === 'loading' && <p>Carregando especialidades…</p>}
+            {queueSpecialties.status === 'error' && <p role="alert">{queueSpecialties.error.message}</p>}
+            {queueSpecialties.status === 'success' && <label>Especialidade
+              <select value={queueSpecialty} onChange={(event) => setQueueSpecialty(event.target.value)}><option value="">Selecionar especialidade</option>{queueSpecialties.data.map((item) => <option key={item.specialty_id} value={item.specialty_id}>{item.specialty_name}</option>)}</select>
+            </label>}
+            <label>Prioridade
+              <select value={queuePriority} onChange={(event) => setQueuePriority(Number(event.target.value))}>{[1, 2, 3, 4, 5].map((priority) => <option key={priority} value={priority}>{priority}</option>)}</select>
+            </label>
+            <label>Observação opcional
+              <textarea value={queueNotes} maxLength={500} onChange={(event) => setQueueNotes(event.target.value)} />
+            </label>
+            <button type="button" disabled={queueBusy || !queuePatient || !queueSpecialty} onClick={() => void addPatient()}>Confirmar inclusão</button>
+          </div>}
+          {queueFeedback && <p role="status">{queueFeedback}</p>}
+        </>}
         {patientQueue.status === 'loading' && <p>Carregando fila de pacientes…</p>}
         {patientQueue.status === 'error' && <p role="alert">{patientQueue.error.message}</p>}
         {(patientQueue.status === 'empty' || (patientQueue.status === 'success' && waitingRows(patientQueue.data).length === 0)) && (
@@ -273,7 +331,7 @@ export function QueuePage({
         {patientQueue.status === 'success' && waitingRows(patientQueue.data).length > 0 && (
           <div className="queue-table-wrap">
             <table className="queue-table">
-              <thead><tr><th>Paciente</th><th>Especialidade</th><th>Prioridade</th><th>Entrada</th><th>Ação</th></tr></thead>
+              <thead><tr><th>Paciente</th><th>Especialidade</th><th>Prioridade</th><th>Entrada</th><th>Situação</th><th>Ação</th></tr></thead>
               <tbody>
                 {waitingRows(patientQueue.data).map((row, index) => (
                   <tr key={rowText(row, 'waiting_list_id') + index}>
@@ -281,6 +339,7 @@ export function QueuePage({
                     <td>{rowText(row, 'specialty_name')}</td>
                     <td>{rowText(row, 'priority')}</td>
                     <td>{formatDate(typeof row.entered_at === 'string' ? row.entered_at : null)}</td>
+                    <td>{row.status === 'waiting' ? 'Aguardando' : rowText(row, 'status')}</td>
                     <td>
                       {canScheduleFamily ? (
                         <Link

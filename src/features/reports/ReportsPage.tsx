@@ -13,6 +13,7 @@ import {
 import { getRpcService } from '../../lib/supabase/rpc'
 import './reports-page.css'
 import { AdministrativeOperationalReport } from './AdministrativeOperationalReport'
+import { buildReportPdf, type ReportExport } from './report-export'
 
 const defaultIntegration = createReportsIntegration()
 
@@ -219,6 +220,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
   const [reportState, setReportState] =
     useState<AsyncState<AssistentialOperationalReport>>(loadingState)
   const [dashboardState, setDashboardState] = useState<AsyncState<unknown>>(loadingState)
+  const [dashboardLoadedKey, setDashboardLoadedKey] = useState('')
   const [managerSpecialty, setManagerSpecialty] = useState('')
   const isProfessional =
     Boolean(accessContext.professional_id) &&
@@ -269,7 +271,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     let active = true
     const loadDashboard = integration.loadDashboard ?? ((from, to, specialty) => getRpcService().getReportsDashboard(from, to, specialty))
     void loadDashboard(startDate, endDate, specialtyId).then((nextState) => {
-      if (active) setDashboardState(nextState)
+      if (active) { setDashboardState(nextState); setDashboardLoadedKey(`${startDate}:${endDate}:${specialtyId ?? ''}`) }
     })
     return () => { active = false }
   }, [endDate, integration, isManager, isProfessional, managerSpecialty, selectedSpecialty, startDate])
@@ -279,6 +281,27 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
       dashboardState.status === 'success'
         ? dashboardSpecialties(dashboardState.data)
         : []
+    const specialtyName = managerSpecialties.find((item) => item.id === managerSpecialty)?.name ?? (managerSpecialty ? 'Especialidade selecionada' : 'Todas')
+    const report: ReportExport | null = dashboardState.status === 'success' && dashboardLoadedKey === `${startDate}:${endDate}:${managerSpecialty}` ? {
+      scope: accessContext.roles.some((role) => role.code === 'administrador') ? 'Gestor / Titular' : 'Coordenador',
+      from: startDate,
+      to: endDate,
+      specialty: specialtyName,
+      issuedAt: new Date().toLocaleString('pt-BR'),
+      sections: [
+        ...dashboardSections(dashboardState.data).map(([key, section]) => ({ title: dashboardLabel(key), metrics: dashboardEntries(section).map(([metric, value]) => [dashboardLabel(metric), String(value)] as const) })),
+        ...(dashboardSpecialtyRows(dashboardState.data).length ? [{ title: 'Agenda por especialidade', metrics: dashboardSpecialtyRows(dashboardState.data).map((row) => [String(row.specialty_name ?? 'Sem especialidade'), `Válidos: ${row.valid_period ?? 0}; Realizados: ${row.realized_period ?? 0}; Faltas: ${row.no_show_period ?? 0}; Retornos: ${row.returns_period ?? 0}; Absenteísmo: ${row.absenteeism_rate_pct ?? 0}%`] as const) }] : []),
+      ],
+    } : null
+    function downloadPdf() {
+      if (!report) return
+      const url = URL.createObjectURL(buildReportPdf(report))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `CAPO-relatorio-gerencial-${startDate}-${endDate}.pdf`
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    }
     return (
       <section className="reports-page" aria-labelledby="manager-reports-title">
         <header className="reports-card reports-heading">
@@ -307,6 +330,14 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
             </label>
           </div>
         </header>
+        {report && <div className="reports-card reports-export-meta">
+          <strong>CAPO — Relatórios Gerenciais</strong>
+          <span>Escopo: {report.scope} · Período: {report.from} a {report.to} · Especialidade: {report.specialty} · Emissão: {report.issuedAt}</span>
+        </div>}
+        <div className="reports-card reports-export-actions">
+          <button type="button" disabled={!report} onClick={() => window.print()}>Imprimir</button>
+          <button type="button" disabled={!report} onClick={downloadPdf}>Gerar / salvar PDF</button>
+        </div>
         <DashboardPanel state={dashboardState} management />
       </section>
     )
@@ -448,7 +479,7 @@ function DashboardPanel({ state, management = false }: Readonly<{ state: AsyncSt
       {management ? (
         <>
           {sections.length === 0 && specialtyRows.length === 0 && (
-            <p>O backend não retornou indicadores gerenciais estruturados.</p>
+            <p>Nenhum indicador gerencial disponível para esta seleção.</p>
           )}
           <div className="reports-metrics">
             {sections.map(([sectionName, section]) => {

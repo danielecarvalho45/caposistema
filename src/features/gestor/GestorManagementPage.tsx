@@ -11,7 +11,7 @@ type ManagementView = 'equipe' | 'administracao' | 'timeline' | 'auditoria' | 's
 const content: Record<ManagementView, Readonly<{ kicker: string; title: string; description: string }>> = {
   equipe: { kicker: 'Gestão do Serviço', title: 'Equipe e Agendas', description: 'Profissionais, especialidades, disponibilidade, agendas e situação de trabalho.' },
   administracao: { kicker: 'Administração do Sistema', title: 'Usuários e Contas', description: 'Cadastro de profissional, especialidades, agenda e permissões.' },
-  timeline: { kicker: 'Governança e Gestão', title: 'Linha do Tempo Operacional', description: 'Sequência de eventos operacionais autorizados, distinta da auditoria.' },
+  timeline: { kicker: 'Governança e Gestão', title: 'Histórico Operacional do Paciente', description: 'Eventos administrativos e operacionais do paciente no CAPO.' },
   auditoria: { kicker: 'Governança e Gestão', title: 'Auditoria e Relatórios', description: 'Consulta de autoria, data/hora, alterações operacionais e indicadores.' },
   suporte: { kicker: 'Gestão do Serviço', title: 'Suporte', description: 'Solicitação e acompanhamento de suporte técnico.' },
   fluxos: { kicker: 'Atendimento e Acompanhamento', title: 'Fluxos e Acompanhamentos', description: 'Acompanhamento transversal dos fluxos autorizados do serviço.' },
@@ -24,7 +24,7 @@ export function GestorManagementPage({ view, accessContext }: Readonly<{ view: M
   if (view === 'timeline') return <OperationalTimeline />
   if (view === 'auditoria') return <AuditLogPage />
   if (view === 'busca-ativa') return <ActiveSearchPage accessContext={accessContext} />
-  if (view === 'suporte') return <section className="gestor-route" aria-labelledby="support-title"><header><span>Gestão do Serviço</span><h2 id="support-title">Suporte</h2><p>Solicitação técnica registrada pelo backend CAPO.</p></header><article className="gestor-panel"><TechnicalSupportRequest affectedModule="gestor" /></article></section>
+  if (view === 'suporte') return <section className="gestor-route" aria-labelledby="support-title"><header><span>Gestão do Serviço</span><h2 id="support-title">Suporte</h2><p>Consulte e acompanhe solicitações de suporte do CAPO.</p></header><article className="gestor-panel">{accessContext.roles.some((role) => role.code === 'administrador_tecnico') ? <Link to="/tecnica">Abrir Área Técnica e chamados de suporte</Link> : <TechnicalSupportRequest affectedModule="gestor" />}</article></section>
   return (
     <section className="gestor-route" aria-labelledby="gestor-route-title">
       <header><span>{page.kicker}</span><h2 id="gestor-route-title">{page.title}</h2><p>{page.description}</p></header>

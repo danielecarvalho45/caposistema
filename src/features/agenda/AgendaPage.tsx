@@ -361,7 +361,7 @@ export function AgendaPage({
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('')
   const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
   const [selectedSlotStart, setSelectedSlotStart] = useState('')
-  const [slotResult, setSlotResult] = useState<{ key: string; rows: readonly AvailableAppointmentSlot[] } | null>(null)
+  const [slotResult, setSlotResult] = useState<{ key: string; rows: readonly AvailableAppointmentSlot[]; status: 'success' | 'empty' | 'error' } | null>(null)
   const [appointmentPatientQuery, setAppointmentPatientQuery] = useState('')
   const [appointmentPatientId, setAppointmentPatientId] = useState('')
   const [appointmentPatients, setAppointmentPatients] = useState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]>([])
@@ -369,6 +369,7 @@ export function AgendaPage({
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
+  const [queueInclusionBusy, setQueueInclusionBusy] = useState(false)
   const [lastScheduledContact, setLastScheduledContact] = useState<Readonly<{
     patientId: string
     patientName: string
@@ -500,6 +501,15 @@ export function AgendaPage({
     if (query.length < 2) return
     const result = await getRpcService().searchReferralPatients(query, 20, 0)
     setAppointmentPatients(result.status === 'success' ? result.data : [])
+  }
+
+  async function addSelectedPatientToQueue() {
+    if (!appointmentPatientId || !selectedSpecialtyId || queueInclusionBusy || isProfessional || !roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))) return
+    setQueueInclusionBusy(true)
+    setAppointmentFeedback(null)
+    const result = await getRpcService().addPatientToWaitingList(appointmentPatientId, selectedSpecialtyId, 3, null)
+    setAppointmentFeedback(result.status === 'success' ? 'Paciente incluído na fila de espera desta especialidade.' : result.status === 'error' ? result.error.message : 'A inclusão na fila não foi confirmada.')
+    setQueueInclusionBusy(false)
   }
 
   async function createAppointment() {
@@ -767,6 +777,7 @@ export function AgendaPage({
         setSlotResult({
           key: `${selectedProfessionalId}:${anchorDate}`,
           rows: nextState.status === 'success' ? nextState.data : [],
+          status: nextState.status === 'error' ? 'error' : nextState.status === 'success' ? 'success' : 'empty',
         })
         setSelectedSlotStart('')
       })
@@ -1068,6 +1079,7 @@ export function AgendaPage({
                   )}
                 </div>
               </label>
+              {!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role)) && appointmentPatientId && selectedSpecialtyId && selectedProfessionalId && slotResult?.key === slotKey && slotResult.status !== 'error' && availableSlots.length === 0 && <button type="button" disabled={queueInclusionBusy} onClick={() => void addSelectedPatientToQueue()}>Incluir na fila</button>}
               {isProfessional ? (
                 <label>
                   Tipo

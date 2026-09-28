@@ -92,3 +92,10 @@
     flex-direction: column;
   }
 }
+@media print {
+  body * { visibility: hidden !important; }
+  .reports-page, .reports-page * { visibility: visible !important; }
+  .reports-page { position: absolute; inset: 0; width: 100%; background: white; }
+  .reports-filters, .reports-export-actions { display: none !important; }
+  .reports-card { break-inside: avoid; box-shadow: none; }
+}

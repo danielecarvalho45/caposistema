@@ -163,6 +163,7 @@ export function TransportPage({ accessContext }: Props) {
   const canCreateRequest =
     isManager || (isSocialProfessional && hasTransportCapability)
   const canAdminister = isManager || isAdministrativeOperational
+  const canForwardExternally = isAdministrativeOperational
   const authorized = canCreateRequest || canAdminister
 
   const [query, setQuery] = useState('')
@@ -415,6 +416,16 @@ export function TransportPage({ accessContext }: Props) {
         <p>Solicitação, documento oficial e acompanhamento da providência.</p>
       </div>
 
+      {canCreateRequest && <div className="home-ops" aria-label="Etapas da solicitação de transporte">
+        <h2>Como solicitar transporte</h2>
+        <ol>
+          <li>Localizar paciente.</li><li>Reconhecer necessidade de transporte, quando necessário.</li>
+          <li>Selecionar atendimento.</li><li>Preencher motivo.</li><li>Salvar solicitação.</li>
+          <li>Gerar PDF com o Gestor.</li><li>Assinar PDF com o Gestor.</li>
+          <li>Encaminhar para continuidade administrativa.</li>
+        </ol>
+      </div>}
+
       {feedback && <p role="status">{feedback}</p>}
 
       <div className="home-ops">
@@ -502,7 +513,7 @@ export function TransportPage({ accessContext }: Props) {
 
       <div className="home-ops">
         <h2>Acompanhamento</h2>
-        {canAdminister && (
+        {canForwardExternally && (
           <>
             <label>Canal institucional para encaminhamento
               <input value={channel} onChange={(event) => setChannel(event.target.value)} placeholder="Ex.: e-mail institucional" />
@@ -546,10 +557,10 @@ export function TransportPage({ accessContext }: Props) {
                     {canAdminister && status === 'solicitado' && (
                       <button type="button" disabled={busy} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
                     )}
-                    {canAdminister && status === 'confirmado' && pdfPrepared && !forwarded && (
+                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && (
                       <button type="button" disabled={busy || channel.trim().length < 2} onClick={() => void manage(request, 'forward')}>Registrar encaminhamento</button>
                     )}
-                    {canAdminister && status === 'confirmado' && forwarded && (
+                    {canForwardExternally && status === 'confirmado' && forwarded && (
                       <button type="button" disabled={busy} onClick={() => void manage(request, 'complete')}>Concluir</button>
                     )}
                     {canAdminister && ['solicitado', 'confirmado'].includes(status) && (
