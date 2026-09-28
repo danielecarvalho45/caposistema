@@ -102,7 +102,7 @@ export function AccessDeniedPage() {
 }
 
 export function App() {
-  const { accessContext, logout } = useAccessFlow()
+  const { accessContext, logout, refreshAccessContext } = useAccessFlow()
   const location = useLocation()
   const pendingContextId = typeof location.state?.contextId === 'string'
     ? location.state.contextId
@@ -262,5 +262,5 @@ export function App() {
     )
   }
 
-  return <AppShell accessContext={accessContext} onLogout={logout} activePath={location.pathname}>{content}</AppShell>
+  return <AppShell accessContext={accessContext} onLogout={logout} onRefreshAccessContext={refreshAccessContext} activePath={location.pathname}>{content}</AppShell>
 }
