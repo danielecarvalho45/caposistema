@@ -59,7 +59,7 @@ describe('estrutura dos cabeçalhos por contexto', () => {
     expect(screen.getByLabelText(/Conexão/)).toBeInTheDocument()
     expect(screen.getByText(/Sistema CAPO — Gestão Administrativa e Operacional/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Perfil: Administrador/ }))
-    expect(screen.getByRole('link', { name: 'Minha atuação' })).toHaveAttribute('href', '/atuacao')
+    expect(screen.getByRole('link', { name: 'Minha Agenda' })).toHaveAttribute('href', '/agenda')
     expect(screen.queryByRole('link', { name: 'Nutrição' })).not.toBeInTheDocument()
   })
 })
