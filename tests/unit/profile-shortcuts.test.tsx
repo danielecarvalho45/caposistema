@@ -106,4 +106,90 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
     expect(screen.getByTestId('path')).toHaveTextContent('/coordenacao')
     expect(screen.queryByRole('link', { name: 'Coordenação' })).not.toBeInTheDocument()
   })
+
+  it('usa o mesmo botão Perfil para todos os contextos de homologação, sem Gestor Titular', async () => {
+    const homologationContext: AccessContext = {
+      ...context,
+      username: 'manuteste',
+      professional_id: null,
+      full_name: null,
+      roles: [{ code: 'administrador_tecnico', name: 'Administrador Técnico' }],
+      primary_context: {
+        role_id: 'technical-role',
+        code: 'administrador_tecnico',
+        name: 'Administrador Técnico',
+        source: 'configured',
+        is_configured: true,
+        requires_configuration: false,
+      },
+      is_homologation_account: true,
+      real_identity: {
+        professional_id: null,
+        full_name: null,
+        function_title: null,
+        roles: [{ code: 'administrador_tecnico', name: 'Administrador Técnico' }],
+        primary_context: {
+          role_id: 'technical-role',
+          code: 'administrador_tecnico',
+          name: 'Administrador Técnico',
+          source: 'configured',
+          is_configured: true,
+          requires_configuration: false,
+        },
+      },
+      homologation_context: {
+        enabled: false,
+        role_code: null,
+        role_name: null,
+        professional_id: null,
+        professional_name: null,
+        specialty_id: null,
+        specialty_name: null,
+        test_patient_id: null,
+        test_patient_name: null,
+        reason: null,
+        started_at: null,
+      },
+    }
+    const homologationService = {
+      getHomologationOptions: async () => ({
+        status: 'success' as const,
+        data: { roles: [], professionals: [], specialties: [] },
+      }),
+      setHomologationContext: async () => ({
+        status: 'success' as const,
+        data: {},
+      }),
+      clearHomologationContext: async () => ({
+        status: 'success' as const,
+        data: {},
+      }),
+    }
+
+    render(
+      <MemoryRouter>
+        <ProfileShortcuts
+          accessContext={homologationContext}
+          activePath="/"
+          className="app-profile-button"
+          profileLabel="Administrador Técnico"
+          homologationService={homologationService}
+        />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /Perfil: Administrador Técnico/ }))
+
+    expect(screen.getByRole('button', { name: /TI \/ Manutenção/ })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Coordenador' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Administrativo Operacional' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Médico Clínico Geral' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Nutrição' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Assistência Social' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Psicologia' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Fisioterapia' })).toBeVisible()
+    expect(screen.queryByText(/Gestor/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Titular/i)).not.toBeInTheDocument()
+  })
+
 })
