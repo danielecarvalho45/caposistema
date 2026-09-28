@@ -97,26 +97,14 @@ const links: Record<string, readonly DashboardLink[]> = {
     },
   ],
   administrativo_operacional: [
-    {
-      path: '/fila',
-      label: 'Fila Operacional',
-      description: 'Ver pendências do contexto atual.',
-    },
-    {
-      path: '/agenda',
-      label: 'Agenda Geral',
-      description: 'Consultar os agendamentos autorizados.',
-    },
-    {
-      path: '/faltosos',
-      label: 'Faltosos',
-      description: 'Registrar contatos e remarcações.',
-    },
-    {
-      path: '/solicitacoes',
-      label: 'Solicitações',
-      description: 'Receber e tratar demandas.',
-    },
+    { path: '/pacientes', label: 'Pacientes', description: 'Cadastrar / consultar', icon: '👥', tone: 'quick-blue' },
+    { path: '/agenda', label: 'Agenda', description: 'Agendar / consultar / remarcar', icon: '▣', tone: 'quick-green' },
+    { path: '/solicitacoes', label: 'Solicitações', description: 'Receber / aceitar / concluir', icon: '▤', tone: 'quick-purple' },
+    { path: '/faltosos', label: 'Faltosos', description: 'Contato e remarcação', icon: '◷', tone: 'quick-pink' },
+    { path: '/busca-ativa', label: 'Busca Ativa', description: 'Reengajamento', icon: '⌕', tone: 'quick-violet' },
+    { path: '/transporte', label: 'Transporte', description: 'Providências pendentes', icon: '↗', tone: 'quick-yellow' },
+    { path: '/familiar-cuidador', label: 'Familiares', description: 'Vínculo e fila', icon: '♡', tone: 'quick-mint' },
+    { path: '/encaminhamentos', label: 'Encaminhamentos', description: 'Recebidos / enviados', icon: '⇢', tone: 'quick-slate' },
   ],
   profissional: [
     {
@@ -196,16 +184,16 @@ export function ProfileDashboard({
 
   if (availableLinks.length === 0) return null
 
-  const isGestor = primaryCode === 'administrador'
+  const useApprovedQuickLayout = ['administrador', 'administrativo_operacional', 'coordenador'].includes(primaryCode)
 
   return (
     <section
-      className={`home-profile${isGestor ? ' home-profile-gestor' : ''}`}
+      className={`home-profile${useApprovedQuickLayout ? ' home-profile-gestor' : ''}`}
       aria-labelledby="profile-panel-title"
-      aria-label={isGestor ? 'Painel do Gestor / Titular do Sistema' : undefined}
+      aria-label={primaryCode === 'administrador' ? 'Painel do Gestor / Titular do Sistema' : undefined}
     >
       <div>
-        {!isGestor && <p className="eyebrow">Contexto principal</p>}
+        {!useApprovedQuickLayout && <p className="eyebrow">Contexto principal</p>}
         <h2 id="profile-panel-title">
           {titles[primaryCode] ?? 'Áreas autorizadas'}
         </h2>
@@ -214,12 +202,12 @@ export function ProfileDashboard({
         {availableLinks.map((item) => (
           <Link
             className={`home-profile-card${
-              isGestor ? ` ${item.tone ?? 'quick-blue'}` : ''
+              useApprovedQuickLayout ? ` ${item.tone ?? 'quick-blue'}` : ''
             }`}
             to={item.path}
             key={item.path}
           >
-            {isGestor && item.icon && (
+            {useApprovedQuickLayout && item.icon && (
               <span className="home-profile-icon" aria-hidden="true">
                 {item.icon}
               </span>
