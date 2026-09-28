@@ -2772,3 +2772,28 @@ Os atalhos aprovados do bloco principal são:
 **Commits principais:** `1bbd551bc4264f46ed59b66d010efe29ac7cf250`, `909e10ce8fcfafecd5135333ccd1cace9a6e8299`, `cbd3d88bfc3f139a3b17f16cd88dea1765f1eb38`, `061bab8cd16e7bd3da12f4e8457b9202568e5da0`, `be6f6801967001148945e6d9af235085949696a7`, `782783d9e1f8169b498acd71ff65755b1abfceef`, `84864464e2289273d29782a9c0cb73e4ee1ef5d2`, `215e97942b0109a6f31516b12ad96d7a3dc767c3`.
 
 **Estado:** **REGRESSÃO CORRIGIDA NO CÓDIGO / ESTRUTURA PROFISSIONAL VISÍVEL RESTAURADA / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO VISUAL REAL**.
+
+
+### 28.28 Correção funcional — Renovação de Receita: Administrativo solicitante / Médico Clínico executor (28/09/2026)
+
+**Evidência de homologação real apresentada pela Titular:** no contexto do Médico Clínico, a tela de Renovação de Receita estava visualmente e funcionalmente semelhante ao fluxo Administrativo e chegava a exibir retorno de autorização relacionado à seleção de médico destinatário. Isso contrariava a divisão funcional do CAPO: **o Administrativo é o solicitante e o Médico Clínico é o executor da tarefa**.
+
+**Regra funcional consolidada:** o Administrativo localiza o paciente, seleciona o Médico Clínico destinatário, informa o motivo operacional e envia a solicitação. O Médico Clínico recebe somente as solicitações destinadas a ele, aceita a tarefa, executa a etapa médica no sistema oficial e, quando a receita estiver pronta, registra no CAPO **onde o paciente deverá retirá-la**. A solicitação retorna então ao Administrativo, que consulta a devolutiva do Clínico, contata/orienta o paciente e encerra o fluxo. Quando o Clínico indicar necessidade de consulta, o retorno segue ao Administrativo para agendamento.
+
+**Divergência física confirmada no banco antes da correção:** a coluna `pickup_location` já existia em `public.prescription_renewal_requests`, porém a RPC médica `manage_prescription_renewal_medical_for_interface` não aceitava local de retirada; esse campo era preenchido apenas na etapa administrativa. A RPC de listagem já devolvia `pickup_location`.
+
+**Correção no Supabase oficial:** aplicada a migration física `20260928215704_align_prescription_renewal_clinician_executor_flow`. A RPC médica passou a aceitar `p_pickup_location`; para a ação `renewed`, o local de retirada é obrigatório e gravado pelo Médico Clínico. A notificação ao Administrativo informa que a receita está pronta e que o local de retirada deve ser consultado. A RPC administrativa preserva o local informado pelo Clínico durante a conclusão e continua responsável por contato/orientação e encerramento. A assinatura física pós-migração foi conferida no projeto oficial `fftebavlhbfcrvrtnrld`.
+
+**Correção de interface — Médico Clínico:** `src/features/renewals/RenewalPrescriptionPage.tsx` passou a apresentar o contexto profissional como **Renovação de Receita — Solicitações Recebidas**, com a descrição de que são tarefas encaminhadas pelo Administrativo. A tela profissional não consulta mais a lista de médicos destinatários, eliminando a mensagem indevida de autorização. As ações médicas passaram a ser **Aceitar solicitação**, registrar **Observação operacional**, informar **Local de retirada da receita**, marcar **Informar receita pronta** ou **Necessita consulta**.
+
+**Correção de interface — Administrativo:** permanece com **Nova solicitação**, busca do paciente, seleção do Médico Clínico e envio. No retorno de receita pronta, o local de retirada aparece como informação **fornecida pelo Médico Clínico**; o Administrativo registra somente a orientação/contato e a observação administrativa final antes de concluir.
+
+**Contratos frontend atualizados:** `src/lib/supabase/rpc.ts` passa `p_pickup_location` para a RPC médica; `src/types/database.ts` registra o novo parâmetro opcional. Os testes unitários de Renovação e de transporte RPC foram atualizados para exigir o fluxo médico com local de retirada.
+
+**Arquivos alterados:** `src/features/renewals/RenewalPrescriptionPage.tsx`, `src/lib/supabase/rpc.ts`, `src/types/database.ts`, `tests/unit/renewal-prescription-page.test.tsx`, `tests/unit/supabase-rpc.test.ts` e `supabase/migrations/20260928215704_align_prescription_renewal_clinician_executor_flow.sql`.
+
+**Commits principais:** `96c1286a713200c43677c934e22e0ae7aa09e624`, `7568cbf0013dfa4b0cf45a9b9691f7559154dd7b`, `2128558e7dcd05da2af18d85b1e60f0be6837ec7`, `a18a5c92288a293fd09c553d4992a4c905d81ddd`, `551010a0bff6f93d0a418242ee881f198c88a279` e `e8e4c2ec441d7567e623986a96ebd9692f719730`.
+
+**Validação disponível nesta sessão:** assinatura física das RPCs no Supabase conferida após a migration: `manage_prescription_renewal_medical_for_interface(p_request_id uuid, p_action text, p_operational_return text, p_pickup_location text)`. O banco e o GitHub estão alinhados quanto ao novo contrato. A suíte `npm test`, `typecheck` e `build` não foi executada por esta conexão; não declarar PASS automatizado nem homologação visual publicada.
+
+**Estado:** **CORRIGIDO NO SUPABASE E NO CÓDIGO / ADMINISTRATIVO SOLICITANTE E CLÍNICO EXECUTOR SEPARADOS / AGUARDANDO PUBLICAÇÃO, SUÍTE COMPLETA E TESTE OPERACIONAL REAL**.
