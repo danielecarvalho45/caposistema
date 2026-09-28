@@ -66,12 +66,12 @@ export function buildCapoDocumentPdf(
 
   pages.forEach((page, index) => {
     const stream = bytes(
-      `q\n505 0 0 90 45 738 cm\n/Logo Do\nQ\nBT\n/F1 ${fontSize} Tf\n45 716 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
+      `q\n505 0 0 90 45 738 cm\n/Logo Do\nQ\nBT\n/F1 7 Tf\n45 726 Td\n(CAPO | Secretaria Municipal de Saude | Prefeitura de Pouso Alegre) Tj\nET\nBT\n/F1 ${fontSize} Tf\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
     )
     const contentId = pageIds[index] + 1
     objects.push(
       bytes(
-        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> /XObject << /Logo 4 0 R >> >> /Contents ${contentId} 0 R >>`,
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /ProcSet [/PDF /Text /ImageC] /Font << /F1 3 0 R >> /XObject << /Logo 4 0 R >> >> /Contents ${contentId} 0 R >>`,
       ),
     )
     objects.push(join([bytes(`<< /Length ${stream.length} >>\nstream\n`), stream, bytes('endstream')]))
