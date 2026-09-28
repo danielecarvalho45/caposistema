@@ -1,0 +1,17 @@
+.gestor-audit-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; align-items: end; gap: 12px; }
+.gestor-audit-filters label { display: grid; gap: 5px; min-width: 0; font-size: 12px; }
+.gestor-audit-filters input, .gestor-audit-filters select { width: 100%; min-width: 0; }
+.gestor-audit-filters button { min-height: 38px; }
+.gestor-audit-list { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.gestor-audit-list li { min-width: 0; padding: 14px; border: 1px solid #d9e7f3; border-radius: 8px; }
+.gestor-audit-list time { display: block; margin-bottom: 6px; color: #536d8b; }
+.gestor-audit-item-heading { display: grid; gap: 3px; }
+.gestor-audit-item-heading strong { font-size: 15px; }
+.gestor-audit-list p { font-size: 13px; overflow-wrap: anywhere; }
+.gestor-audit-list details { margin-top: 10px; }
+.gestor-audit-list summary { cursor: pointer; color: #005ca9; }
+.gestor-audit-details { max-width: 100%; overflow-x: auto; }
+.gestor-audit-details table { width: 100%; border-collapse: collapse; text-align: left; }
+.gestor-audit-details th, .gestor-audit-details td { padding: 8px; border-bottom: 1px solid #d9e7f3; overflow-wrap: anywhere; }
+@media (max-width: 850px) { .gestor-audit-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } .gestor-audit-filters button { grid-column: 1 / -1; } }
+@media (max-width: 480px) { .gestor-audit-filters { grid-template-columns: minmax(0, 1fr); } .gestor-audit-filters button { grid-column: auto; } }
