@@ -31,15 +31,15 @@ export function getProfileShortcuts(accessContext: AccessContext): Shortcut[] {
     const hasNutrition = specialties.includes('nutricao')
     const hasSocial = specialties.includes('assistencia social')
     const hasGeneral = specialties.some((name) => name !== 'nutricao' && name !== 'assistencia social')
-    const professionalPaths: readonly AppRoute[] = ['/nutricao', '/assistencia-social', '/atuacao']
+    const professionalPaths: readonly AppRoute[] = ['/nutricao', '/assistencia-social']
     const professionalItems = authorizedNavigationItems(accessContext, 'principal')
       .filter((item) => professionalPaths.includes(item.path) && (
         item.path === '/nutricao' ? hasNutrition
           : item.path === '/assistencia-social' ? hasSocial
-            : hasGeneral
+            : false
       ))
     candidates.push(...professionalItems.map(({ path, label }) => ({ path, label })))
-    if (professionalItems.length === 0) {
+    if (hasGeneral || professionalItems.length === 0) {
       candidates.push({ path: '/agenda', label: 'Minha Agenda' })
     }
   }
