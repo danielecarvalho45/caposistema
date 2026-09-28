@@ -588,3 +588,59 @@
     grid-row: 1;
   }
 }
+
+
+/* CAPO — restauração do painel aprovado do Administrativo Operacional */
+.operational-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 0.86fr);
+  gap: 13px;
+}
+
+.operational-agenda-panel {
+  min-width: 0;
+}
+
+.operational-agenda-panel .gestor-panel-head {
+  margin-bottom: 10px;
+}
+
+.operational-compact-list {
+  display: grid;
+  gap: 7px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.operational-compact-list li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  border: 1px solid #e3edf5;
+  border-radius: 7px;
+  background: rgba(249, 252, 255, 0.78);
+  color: #294a70;
+  font-size: 11px;
+}
+
+.operational-compact-list li span {
+  color: #6c819b;
+  font-size: 10px;
+}
+
+@media (max-width: 1050px) {
+  .operational-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .operational-dashboard-grid {
+    display: block;
+  }
+
+  .operational-dashboard-grid .gestor-side-stack {
+    margin-top: 13px;
+  }
+}
