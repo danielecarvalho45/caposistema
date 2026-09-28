@@ -206,18 +206,24 @@ describe('RenewalPrescriptionPage', () => {
       />,
     )
 
-    await screen.findByText('Paciente real')
+    expect(await screen.findByText('Renovação de Receita — Solicitações Recebidas')).toBeVisible()
+    expect(service.getPrescriptionRenewalDoctors).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: /Paciente real/ }))
     await user.type(
-      screen.getByLabelText('Retorno operacional'),
+      screen.getByLabelText('Observação operacional'),
       'Receita renovada conforme avaliação',
     )
-    await user.click(screen.getByRole('button', { name: 'Receita renovada' }))
+    await user.type(
+      screen.getByLabelText('Local de retirada da receita *'),
+      'Farmácia do CAPO',
+    )
+    await user.click(screen.getByRole('button', { name: 'Informar receita pronta' }))
 
     expect(service.managePrescriptionRenewalMedical).toHaveBeenCalledWith(
       'renewal-id',
       'renewed',
       'Receita renovada conforme avaliação',
+      'Farmácia do CAPO',
     )
   })
 })
