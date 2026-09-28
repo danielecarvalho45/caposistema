@@ -99,12 +99,6 @@ export function AssistentialPage({
   const isProfessional =
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some((role) => role.code === 'profissional')
-  const isClinicalGeneral = (accessContext.specialties ?? []).some(
-    (specialty) => specialty.specialty_name.normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'clinica geral',
-  ) || accessContext.primary_specialty_name?.normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'clinica geral'
-
   useEffect(() => {
     if (!isProfessional) return
     let active = true
