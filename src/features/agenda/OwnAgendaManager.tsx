@@ -31,7 +31,7 @@ function booleanValue(value: unknown) {
 type Props = Readonly<{
   professionalId: string
   title?: string
-  description?: string
+  intro?: string
 }>
 
 type PendingConfirmation = Readonly<{
@@ -43,7 +43,7 @@ type PendingConfirmation = Readonly<{
 export function OwnAgendaManager({
   professionalId,
   title = 'Gerenciar minha agenda',
-  description = 'Ajustes temporários da própria disponibilidade. Mudanças estruturais de jornada, carga ou disponibilidade devem ser solicitadas ao Coordenador.',
+  intro = 'Ajustes temporários da própria disponibilidade. Mudanças estruturais de jornada, carga ou disponibilidade devem ser solicitadas ao Coordenador.',
 }: Props) {
   const rpc = useMemo(() => getRpcService(), [])
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
@@ -179,7 +179,7 @@ export function OwnAgendaManager({
   return (
     <section className="agenda-own-management" aria-labelledby="own-agenda-title">
       <h3 id="own-agenda-title">{title}</h3>
-      <p>{description}</p>
+      <p>{intro}</p>
 
       {configuration?.status === 'loading' && <p>Carregando configuração da agenda…</p>}
       {configuration?.status === 'error' && (
