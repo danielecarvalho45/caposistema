@@ -73,6 +73,7 @@ type AccessActions = Readonly<{
     newPassword: string,
   ) => Promise<void>
   logout: () => Promise<void>
+  refreshAccessContext: () => Promise<void>
 }>
 
 type AccessContextValue = AccessFlow & AccessActions
@@ -795,6 +796,9 @@ export function AccessProvider({
           // A sessão local e a interface continuam sendo limpas.
         }
         setFlow({ ...initialFlow, screen: 'login' })
+      },
+      async refreshAccessContext() {
+        await loadAccessContext()
       },
     }),
     [
