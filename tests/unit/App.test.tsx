@@ -290,14 +290,9 @@ describe('App', () => {
       '/assets/capo-logo.jpg',
     )
     expect(screen.getByLabelText('Área de trabalho CAPO')).toHaveFocus()
-    const accessSummary = screen.getByRole('region', {
-      name: 'Resumo do seu contexto',
-    })
-    expect(
-      within(accessSummary).getAllByText('Administrativo Operacional'),
-    ).toHaveLength(2)
-    expect(screen.getByText('1 permissão funcional reconhecida')).toBeVisible()
-    expect(screen.getByText('preencher_solicitacao_transporte')).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Agenda do dia' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Painel Operacional' })).toBeVisible()
+    expect(screen.queryByRole('region', { name: 'Resumo do seu contexto' })).not.toBeInTheDocument()
   })
 
   it('prioriza o primary_context real do backend para o painel inicial mesmo quando o cargo legado sugere operacional', () => {
