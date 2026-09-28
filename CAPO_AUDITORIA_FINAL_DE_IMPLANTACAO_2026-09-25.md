@@ -2269,3 +2269,29 @@ A partir desta seção, os agentes seguintes devem considerar como base oficial:
 4. qualquer nova pendência de correção deve ser sustentada por evidência física nova e registrada neste mesmo Documento Mestre;
 5. a manutenção de P2 e P3 deve ser cirúrgica e não autoriza reabertura de outros blocos concluídos.
 
+
+
+### 28.12 Pendência de homologação — Tarefa 2 — login para conferência das telas (28/09/2026)
+
+**Registro da responsável:** a criação/preparação de acesso para conferência das telas dos perfis profissionais no sistema publicado já foi iniciada como **Tarefa 2** desta frente de homologação e permanece pendente de conclusão.
+
+**Objetivo da Tarefa 2:**
+- disponibilizar um login exclusivo de homologação no sistema publicado;
+- não utilizar nem alterar a conta real da Gestora/Titular para essa finalidade;
+- permitir conferir as telas dos demais contextos autorizados;
+- contemplar Coordenador, Administrativo Operacional, Clínico Geral, Nutrição, Assistência Social, Psicologia, Fisioterapia e TI/Manutenção;
+- utilizar, preferencialmente, a estrutura física já existente de conta de homologação e contexto de homologação do CAPO;
+- preservar identidade real separada do contexto simulado;
+- registrar as trocas em auditoria;
+- não criar dados fictícios de produção.
+
+**Estado físico conhecido até este registro:**
+- existe uma única conta em Supabase Auth atualmente vinculada ao uso real;
+- a conta exclusiva de homologação ainda não foi criada no Supabase Auth;
+- o banco já possui suporte físico para homologação, incluindo `is_homologation_account`, `get_homologation_options_for_interface()`, `set_homologation_context_for_interface()`, `get_homologation_context_for_interface()`, `clear_homologation_context_for_interface()` e integração com `get_my_access_context()`.
+
+**Pendência:** criar o usuário exclusivo de homologação no Supabase Auth e concluir seu vínculo/configuração no CAPO para então executar a conferência visual e funcional das telas no ambiente publicado.
+
+**Classificação:** 🟡 **PENDÊNCIA DE HOMOLOGAÇÃO — TAREFA 2 EM ANDAMENTO.**
+
+**Importante:** esta Tarefa 2 de homologação não substitui nem reabre a Tarefa 2 técnica já concluída no histórico principal da auditoria. Trata-se da numeração operacional desta nova frente de conferência das telas.
