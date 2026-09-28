@@ -6,6 +6,7 @@ import {
 } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { normalizeSupabaseError } from '../../lib/supabase/errors'
+import { OwnAgendaManager } from '../agenda/OwnAgendaManager'
 
 type RecordValue = Readonly<Record<string, unknown>>
 
@@ -454,6 +455,15 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
         {selected && !selected.userAccountId && <button type="button" disabled={submitting} onClick={() => void createAccessForSelected()}>{submitting ? 'Processando…' : 'Criar acesso'}</button>}
       </form>
     </div>
+    {selected && (
+      <section className="gestor-panel" aria-label="Agenda do profissional selecionado">
+        <OwnAgendaManager
+          professionalId={selected.professionalId}
+          title={`Agenda de ${selected.fullName}`}
+          description="Horários e ajustes operacionais temporários da agenda deste profissional. Férias, mudança permanente de horário, turno ou carga seguem o fluxo Coordenação → anuência → efetivação administrativa."
+        />
+      </section>
+    )}
     {selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3>{selected.userAccountId && <select aria-label="Contexto principal" defaultValue="" onChange={(event) => { if (event.target.value) void mutate(() => service.setPrimaryContext(selected.userAccountId!, event.target.value), 'Contexto principal atualizado.') }}><option value="">Definir contexto principal</option>{roles.filter((role) => profile.roleCodes.includes(role.id)).map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3><p>As capacidades são lidas do catálogo atual do banco. Nenhuma especialidade concede automaticamente Encaminhamento Interprofissional.</p>{capabilityOptions.filter((item) => item.individualAssignable).length === 0 ? <p>Nenhuma capacidade individual atribuível foi retornada pelo banco.</p> : <ul className="gestor-capability-list">{capabilityOptions.filter((item) => item.individualAssignable).map((item) => <li key={item.code}><label className="gestor-check"><input type="checkbox" checked={effectiveCapabilityCodes.has(item.code)} onChange={(event) => void mutateProfessionalCapability(item.code, event.target.checked)} />{item.code}</label>{effectiveCapabilityCodes.has(item.code) && <button type="button" onClick={() => void mutate(() => service.removeCapability(selected.professionalId, item.code), 'Permissão individual removida.')}>Remover permissão individual</button>}</li>)}</ul>}<p>Capacidades próprias de especialidade são administradas somente nos vínculos que já existem no catálogo canônico.</p><label>Especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && (selectedSpecialtyCapabilities.length === 0 ? <p>Nenhuma capacidade específica cadastrada para esta especialidade.</p> : <ul className="gestor-capability-list">{selectedSpecialtyCapabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); const isEnabled = capability.is_enabled === true; return code ? <li key={code}><label className="gestor-check"><input type="checkbox" checked={isEnabled} disabled={code === 'encaminhamento_interprofissional'} onChange={(event) => void mutateSpecialtyCapability(specialtyForCapability, code, event.target.checked)} />{code}</label>{code === 'encaminhamento_interprofissional' && <small>Concessão individual; não automática por especialidade.</small>}</li> : null })}</ul>)}</article></section>}
     {feedback && <p className="gestor-feedback" role="status">{feedback}</p>}
   </section>
