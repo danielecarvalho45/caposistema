@@ -2692,3 +2692,55 @@ As verificações reais de `administrador` e `coordenador` permanecem preservada
 **Commit:** `6cf16143b6bd03f5c2a598c751c4a784ec94028b`.
 
 **Estado:** **CORRIGIDO NO SUPABASE E REGISTRADO NO GITHUB / AGUARDANDO TESTE REAL NO CONTEXTO COORDENADOR DA CONTA `manuteste`**.
+
+
+### 28.26 Regressão visual/estrutural da Home do Administrativo Operacional — restauração do padrão aprovado (28/09/2026)
+
+**Evidência de homologação real apresentada pela Titular:** a Home do contexto `administrativo_operacional` passou a exibir cards genéricos grandes, um bloco redundante de resumo operacional e não exibia a **Agenda do dia**, divergindo do Index aprovado `index(20260913-024654)_AUXILIAR_ADMINISTRATIVO.html`.
+
+**Fonte canônica restaurada:** o Index aprovado contém, nesta ordem:
+1. Painel Operacional / atalhos rápidos;
+2. Agenda do dia;
+3. Pendências do dia;
+4. Faltosos;
+5. indicadores operacionais;
+6. Aniversariantes.
+
+Os atalhos aprovados do bloco principal são:
+- Pacientes;
+- Agenda;
+- Solicitações;
+- Faltosos;
+- Busca Ativa;
+- Transporte;
+- Familiares;
+- Encaminhamentos.
+
+**Correção cirúrgica aplicada no React atual:**
+- restaurados os oito atalhos do Administrativo Operacional conforme o Index aprovado;
+- restaurado o padrão visual compacto/colorido já utilizado pela interface aprovada, sem redesenho;
+- restaurado o bloco real `Agenda do dia`, alimentado por `get_agenda_for_interface`;
+- restaurados os blocos `Pendências do dia` e `Faltosos`, alimentados por `get_pending_items_for_interface` e `get_no_show_followups_for_interface`;
+- removida da Home operacional a repetição do resumo genérico `Painel Operacional / Resumo do seu contexto` que havia reaparecido na implementação corrente;
+- nenhuma informação fictícia foi adicionada; estados vazios permanecem explícitos;
+- nenhuma regra de negócio, RLS, trigger ou autorização foi ampliada.
+
+**Validação de backend:** `has_app_role()` já reconhece o papel simulado ativo das contas marcadas como homologação. Portanto Agenda, Pendências e Faltosos podem usar o mesmo contrato de autorização do Administrativo Operacional real dentro da conta `manuteste`, sem conceder o papel permanentemente.
+
+**Conferência dos demais perfis contra o estado registrado no Documento Mestre:**
+- Nutrição: `Minha Agenda` continua antes de `Aniversariantes de hoje`;
+- Assistência Social: `Minha Agenda` continua antes de `Aniversariantes de hoje`;
+- Coordenação: `Equipe e Profissionais` continua antes de `Agendas da Equipe` e `Aniversariantes de hoje`;
+- TI: permanece com Painel Técnico próprio;
+- Gestor/Titular não foi alterado nesta restauração.
+
+**Arquivos alterados:**
+- `src/features/home/ProfileDashboard.tsx`;
+- `src/features/home/HomePage.tsx`;
+- `src/features/home/home-page.css`;
+- `tests/unit/App.test.tsx`;
+- `tests/unit/profile-dashboard.test.tsx`.
+
+**Commits:** `71fda737f9f5157d96d9b100271ad11dbf2d58b9`, `fd0fdf34ff0a9ce6e2a29c1eab02f45f6a38b610`, `4190f08a7ce4f74d1ba5c3c82a605c5d2086fbb7`, `6650841eb480cf8f8d868d3811f1f6f965d4263a`, `51a119548349233c3d4864c5d4c992566895da8f`.
+
+**Estado:** **REGRESSÃO CORRIGIDA NO CÓDIGO / PADRÃO APROVADO RESTAURADO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO VISUAL REAL**.
