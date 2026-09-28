@@ -866,6 +866,7 @@ export type Database = {
           p_request_id: string
           p_action: string
           p_operational_return?: string | null
+          p_pickup_location?: string | null
         }
         Returns: Json
       }
