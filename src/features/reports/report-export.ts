@@ -13,7 +13,6 @@ export type ReportExport = Readonly<{
 
 export function reportLines(report: ReportExport): string[] {
   return [
-    'CAPO - Centro de Acolhimento ao Paciente Oncológico',
     'Relatórios Gerenciais',
     `Escopo: ${report.scope}`,
     `Período: ${report.from} a ${report.to}`,
