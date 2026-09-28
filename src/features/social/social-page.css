@@ -226,3 +226,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* CAPO — somente padronização visual dos atalhos da Assistência Social */
+.social-quick-card {
+  text-align:center;
+  align-items:center;
+  justify-items:center;
+  align-content:center;
+  min-height:104px;
+  box-shadow:0 2px 9px rgb(31 67 104 / 2.5%);
+}
+.social-quick-icon {
+  display:block;
+  font-size:29px;
+  line-height:1;
+}
+.social-quick-card--agenda { color:#008e50; background:rgb(235 251 241 / 84%); border-color:rgb(110 155 200 / 18%); }
+.social-quick-card--followup { color:#006bd9; background:rgb(232 246 255 / 82%); border-color:rgb(110 155 200 / 18%); }
+.social-quick-card--family { color:#c98500; background:rgb(255 248 232 / 90%); border-color:rgb(110 155 200 / 18%); }
+.social-quick-card--requests { color:#5a00d9; background:rgb(244 239 255 / 86%); border-color:rgb(110 155 200 / 18%); }
+.social-quick-card span:not(.social-quick-icon) { color:currentColor; opacity:.78; }
