@@ -211,7 +211,7 @@ export function OwnAgendaManager({
             }}>
               <option value="">Selecionar</option>
               <option value="intervalo">Café / Intervalo</option>
-              <option value="alimentacao">Alimentação</option>
+              <option value="alimentacao">Alimentação / Almoço</option>
               <option value="reuniao">Reunião</option>
               <option value="atividade">Atividade interna</option>
               <option value="relatorio">Relatório</option>
