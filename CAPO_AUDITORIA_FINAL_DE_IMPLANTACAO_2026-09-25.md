@@ -2651,3 +2651,24 @@ A sessão é preservada; após a seleção, o contexto efetivo é recarregado e 
 - `32f3abac41dfbb4285fee5b83b6065a449525c09`.
 
 **Estado:** **IMPLEMENTADO NO BANCO E NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL REAL COM A CONTA `manuteste`**.
+
+
+### 28.24 Correção da troca de perfil sem novo login (28/09/2026)
+
+**Falha observada na homologação real:** ao selecionar outro perfil na conta `manuteste`, o contexto era alterado no banco, porém a interface executava `window.location.assign('/')`, provocando recarga completa da aplicação e exigindo novo login no ambiente publicado.
+
+**Correção cirúrgica:** a troca de contexto passou a:
+1. executar `set_homologation_context_for_interface` ou `clear_homologation_context_for_interface`;
+2. atualizar o `AccessContext` dentro da sessão já autenticada por `refreshAccessContext()`;
+3. navegar internamente para `/` com React Router;
+4. preservar a sessão, sem reload completo e sem novo login.
+
+**Arquivos alterados:**
+- `src/features/access/access-context.tsx`;
+- `src/components/shell/AppShell.tsx`;
+- `src/app/App.tsx`;
+- `src/components/shell/ProfileShortcuts.tsx`.
+
+**Commits:** `dbbfa7fb6cbda073385608d291405f01ef3bfbdf`, `f7b904a4dfc97d613bc911880dc28aa003352477`, `f7246f68c0d39043bd4cbdfde3191dfd55876dd3`, `e5373d8161ded292f7a4e50bb65f999285a39a02`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO NOVA PUBLICAÇÃO E TESTE REAL DA TROCA DE PERFIL SEM REAUTENTICAÇÃO**.
