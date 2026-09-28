@@ -2420,4 +2420,6 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 
 **Correção restrita:** `src/features/gestor/GestorShell.tsx` deixa apenas o atalho existente **Área Técnica** na navegação do Gestor; `src/features/gestor/GestorManagementPage.tsx` encaminha à Área Técnica o acesso direto à antiga rota de Suporte, sem formulário de solicitação. Não houve mudança em permissões, Supabase ou na área TI. `tests/unit/gestor-support-routing.test.tsx` cobre Gestor/Titular com e sem papel TI adicional.
 
-**Verificação:** testes, typecheck, build e validação publicada devem constar do resultado físico desta retificação; a homologação de chamados reais continua limitada à existência de ocorrência adequada, sem sucesso simulado.
+**Verificação:** `npm test` **36/36 arquivos, 239/239 testes PASS**; `npm run typecheck` **PASS**; `npm run build` **PASS** (aviso de bundle grande); `git diff --check` **PASS**. Código e retificação publicados no `main` pelo commit `ab2db2bd37adadb5b311a6bb2eb6656d80bc73d3`.
+
+**Validação publicada:** a página oficial abriu, mas solicitou novo login após atualização; o comportamento com a conta real da titular **não foi reverificado**. Estado: **CORRIGIDO NO CÓDIGO / TESTE INTERNO CONCLUÍDO / AGUARDANDO TESTE OPERACIONAL**. A homologação de chamados reais depende ainda de ocorrência adequada, sem sucesso simulado.
