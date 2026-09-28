@@ -2495,3 +2495,22 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Commits:** `ac0cd00d90e05afea8b32a79117db8a8b8c4743f` e `7adeff750e305a2ad01537f9bcc5c9180a696450`.
 
 **Estado:** **CORRIGIDO INTERNAMENTE NO CÓDIGO / ZERO PRESERVADO COMO DADO / LOGO AINDA EXIGE VALIDAÇÃO NO BUILD PUBLICADO**. Se um novo PDF publicado não apresentar nem a logo nem o marcador textual institucional acima, fica comprovado que o ambiente publicado não está executando este build do `main`, e a próxima ação deve ser no processo de publicação/deploy, não no conteúdo do PDF.
+
+
+### 28.20 Reorganização funcional da Área Técnica — TI individual e Gestor/Titular (28/09/2026)
+
+**Solicitação:** reorganizar a Área Técnica já existente sem criar novos módulos, sem alterar contratos do banco e sem duplicar implementação entre o perfil TI e o Gestor/Titular. A mesma organização deve aparecer na entrada técnica individual e na Área Técnica acessada pelo Gestor/Titular.
+
+**Fundamento e estado físico:** a rota `/tecnica` já utiliza o componente compartilhado `src/features/technical/TechnicalPage.tsx` e é autorizada aos papéis `administrador` e `administrador_tecnico`. A documentação técnica vigente e `TAREFA_08_LOGS_E_OBSERVABILIDADE_TECNICA.md` confirmam que painel, estado do sistema, integrações, logs runtime, chamados e histórico persistido já utilizam os contratos canônicos existentes. Portanto, a correção foi aplicada no ponto compartilhado, sem criar duas telas ou duas lógicas.
+
+**Correção aplicada:** a navegação principal da Área Técnica foi reorganizada em quatro áreas: **Painel Técnico**, **Chamados**, **Diagnóstico** e **Manutenção**. No Painel Técnico, situação geral, banco, autenticação, integrações, avisos/incidentes e resumo dos chamados passaram a usar apresentação funcional simples com os estados **Operacional / Atenção / Indisponível**; códigos e métodos técnicos de verificação não são exibidos nessa visão. Em Chamados, a fila e o andamento permanecem ligados aos mesmos contratos e o histórico persistido deixa de ser uma aba principal separada, passando a ser consultado dentro da própria área de Chamados. Em Diagnóstico foram reunidos Estado do Sistema, Integrações e Logs Técnicos, preservando os dados sanitizados já retornados pelo backend. Em Manutenção foram agrupados o repositório oficial GitHub, o projeto oficial Supabase, a IA de Desenvolvimento do CAPO sem URL inventada quando não configurada, a Documentação Técnica e a área de correções/manutenções em andamento. O Perfil Técnico foi preservado dentro da mesma área de Manutenção.
+
+**Linguagem e segurança:** nomes internos como método de verificação não aparecem no Painel Técnico. Identificadores de integração recebem rótulo funcional quando reconhecidos, inclusive Supabase Auth / Edge Functions. Os detalhes técnicos continuam disponíveis somente no contexto de Diagnóstico onde são necessários à investigação. Nenhum log, incidente, chamado ou manutenção fictícia foi criado para preencher a interface.
+
+**Arquivos alterados:** `src/features/technical/TechnicalPage.tsx` e `src/features/technical/technical-page.css`. Commits da manutenção: `dd0d200d1c67d7bb2ea092074023821582956afc`, `c2ccea82a8d46a8e588c7412a5cee68a72125fa6` e `fc8e8fea574aec91735ad174893e44e726ec9b48`. Comparação contra `66bc26f897abf8975d4b94dcc5d0c2859f733999`: somente esses dois arquivos foram modificados.
+
+**Preservação funcional:** nenhuma RPC, SQL, RLS, policy, migration, permissão, contrato Supabase, rota de autorização ou fluxo técnico foi modificado. O Gestor/Titular continua acessando a mesma Área Técnica por seu papel `administrador`; o perfil TI continua utilizando `administrador_tecnico`.
+
+**Validação disponível nesta sessão:** inspeção física pós-alteração do arquivo e comparação de commits confirmaram o escopo restrito aos dois arquivos acima. Não há workflow de GitHub Actions disponível no repositório para executar automaticamente `npm test`, `npm run typecheck` e `npm run build` por esta conexão. Portanto, **não declarar PASS de suíte, typecheck, build ou homologação visual publicada nesta etapa**.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / ESCOPO CONFERIDO / AGUARDANDO SUÍTE COMPLETA E VALIDAÇÃO OPERACIONAL DA ÁREA TÉCNICA PUBLICADA**.
