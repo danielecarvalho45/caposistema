@@ -3,7 +3,6 @@ import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
-import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 
 type TransportRecord = Readonly<Record<string, unknown>>
 
