@@ -2554,3 +2554,26 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Commits:** `547dc1abf3442a748637263f07712db5c1cbbba7` — remoção da Agenda Geral; `0d983f40f137e0a4757ceda9eff9119b3a115051` — inclusão no Início do Gestor/Titular.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / POSIÇÃO CONFERIDA NA MAIN / AGUARDANDO VALIDAÇÃO VISUAL PUBLICADA**.
+
+
+### 28.23 Aba própria de Gestão de Agenda no Gestor/Titular (28/09/2026)
+
+**Solicitação:** o Gestor/Titular precisa ter uma aba própria para executar sobre a agenda de qualquer profissional os mesmos ajustes temporários já liberados na tela **Minha Agenda** do profissional, sem misturar essas ações com cadastro de equipe nem com mudanças estruturais sujeitas à Coordenação.
+
+**Fonte física confrontada:** o arquivo nominal `CAPO_ESPECIFICACAO_ESTRUTURAL_DA_INTERFACE_2026-09-12.md` não está presente na árvore atual da `main`. Para não presumir conteúdo ausente, a regra foi confrontada com o Index estrutural aprovado existente no repositório (`index(20260913-103215).html`) e com o componente vigente `src/features/agenda/OwnAgendaManager.tsx`. Ambos separam **ajustes temporários da própria disponibilidade** de **mudanças estruturais de jornada/carga**, que devem seguir Coordenação.
+
+**Operações temporárias preservadas:** Café / Intervalo; Alimentação / Almoço; Reunião; Atividade interna; Relatório; Bloquear período; Exceção de data. Os contratos continuam sendo `getAgendaConfiguration`, `createAgendaBlock` e `createAgendaException`.
+
+**Correção aplicada:** `src/features/gestor/GestorTeamPage.tsx` passou a ter duas abas internas: **Cadastro de Profissionais** e **Gestão de Agenda**. Na aba Gestão de Agenda, o Gestor seleciona o profissional na lista da equipe, abre a configuração/horários reais retornados pelo backend e utiliza o mesmo `OwnAgendaManager` empregado no fluxo profissional. O cadastro, papéis, especialidades e permissões permanecem isolados na aba Cadastro de Profissionais.
+
+**Governança preservada:** férias, mudança permanente de horário, mudança de turno, alteração de carga e demais mudanças estruturais não são efetivadas nesta aba. Continuam no fluxo **Coordenação → anuência → efetivação administrativa**.
+
+**Ajuste de rótulo:** a opção `alimentacao` passou a ser apresentada como **Alimentação / Almoço**, sem mudança do valor técnico ou do contrato existente.
+
+**Arquivos alterados:** `src/features/gestor/GestorTeamPage.tsx`, `src/features/agenda/OwnAgendaManager.tsx` e `src/features/gestor/gestor.css`.
+
+**Commits:** `6f2937bc3d296212ab400af0badd15fba6f472f3`, `47235667dac1741e77634f6c83e429ddd8b64c15` e `41f979245f87d69355ff0609832b07dc691db78e`.
+
+**Preservação:** nenhuma RPC, SQL, RLS, policy, trigger, migration ou permissão de backend foi alterada. A correção reutiliza exclusivamente contratos já existentes.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / ABA DE GESTÃO DE AGENDA CRIADA NO GESTOR / AGUARDANDO VALIDAÇÃO VISUAL PUBLICADA E SUÍTE COMPLETA**.
