@@ -1,6 +1,5 @@
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 
-import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 
 export type ReportExport = Readonly<{
   scope: string
