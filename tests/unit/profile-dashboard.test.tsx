@@ -67,8 +67,8 @@ describe('ProfileDashboard', () => {
       }),
     ).toBeVisible()
     expect(
-      screen.getByRole('link', { name: /Fila Operacional/ }),
-    ).toHaveAttribute('href', '/fila')
+      screen.getByRole('link', { name: /Pacientes/ }),
+    ).toHaveAttribute('href', '/pacientes')
     expect(
       screen.queryByRole('link', { name: /Área técnica/ }),
     ).not.toBeInTheDocument()
@@ -164,11 +164,11 @@ describe('ProfileDashboard', () => {
     )
 
     expect(
-      screen.getByRole('link', { name: /Agenda Geral/ }),
+      screen.getByRole('link', { name: /^Agenda/ }),
     ).toHaveAttribute('href', '/agenda')
     expect(
-      screen.getByRole('link', { name: /Fila Operacional/ }),
-    ).toHaveAttribute('href', '/fila')
+      screen.getByRole('link', { name: /Pacientes/ }),
+    ).toHaveAttribute('href', '/pacientes')
     expect(
       screen.queryByRole('link', { name: /Minha Agenda/ }),
     ).not.toBeInTheDocument()
