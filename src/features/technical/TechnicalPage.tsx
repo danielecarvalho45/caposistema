@@ -22,15 +22,8 @@ const defaultIntegration = createTechnicalIntegration()
 type TechnicalTab =
   | 'painel'
   | 'chamados'
-  | 'estado'
-  | 'integracoes'
-  | 'logs'
+  | 'diagnostico'
   | 'manutencao'
-  | 'documentacao'
-  | 'ferramentas'
-  | 'historico'
-  | 'avisos'
-  | 'perfil'
 
 type TechnicalSnapshot = Readonly<{
   dashboard: TechnicalDashboard
@@ -41,17 +34,10 @@ type TechnicalSnapshot = Readonly<{
 }>
 
 const tabs: ReadonlyArray<readonly [TechnicalTab, string]> = [
-  ['painel', 'Painel'],
+  ['painel', 'Painel Técnico'],
   ['chamados', 'Chamados'],
-  ['estado', 'Estado do sistema'],
-  ['integracoes', 'Conectividade e integrações'],
-  ['logs', 'Logs técnicos'],
-  ['manutencao', 'Manutenção e correções'],
-  ['documentacao', 'Documentação técnica'],
-  ['ferramentas', 'Ferramentas'],
-  ['historico', 'Histórico de suporte'],
-  ['avisos', 'Avisos'],
-  ['perfil', 'Perfil'],
+  ['diagnostico', 'Diagnóstico'],
+  ['manutencao', 'Manutenção'],
 ]
 
 const TECHNICAL_LOAD_TIMEOUT_MS = 30_000
@@ -107,7 +93,67 @@ function formatDateTime(value: string | null) {
 }
 
 function metricLabel(value: string) {
-  return value.replaceAll('_', ' ')
+  const labels: Record<string, string> = {
+    pendente: 'Recebidos',
+    em_atendimento: 'Em atendimento',
+    aguardando_teste: 'Aguardando teste',
+    resolvido: 'Resolvidos',
+    resolvida: 'Resolvidos',
+    cancelado: 'Cancelados',
+    cancelada: 'Cancelados',
+  }
+  return labels[value] ?? value.replaceAll('_', ' ')
+}
+
+function publicStatus(value: string) {
+  const normalized = value.toLowerCase()
+  if (normalized === 'operacional' || normalized === 'ok' || normalized === 'success') {
+    return { label: 'Operacional', className: 'operacional' }
+  }
+  if (
+    normalized === 'indisponivel' ||
+    normalized === 'indisponível' ||
+    normalized === 'error' ||
+    normalized === 'critical'
+  ) {
+    return { label: 'Indisponível', className: 'indisponivel' }
+  }
+  return { label: 'Atenção', className: 'atencao' }
+}
+
+function integrationLabel(value: string) {
+  const normalized = value.toLowerCase()
+  if (normalized.includes('supabase') && normalized.includes('auth')) {
+    return normalized.includes('edge')
+      ? 'Supabase Auth / Edge Functions'
+      : 'Supabase Auth'
+  }
+  if (normalized.includes('edge')) return 'Edge Functions'
+  return value
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function findComponent(
+  components: TechnicalSystemStatus['components'],
+  terms: readonly string[],
+) {
+  return components.find((item) => {
+    const source = `${item.component} ${item.label}`.toLowerCase()
+    return terms.some((term) => source.includes(term))
+  })
+}
+
+function combinedStatus(values: readonly string[]) {
+  if (values.length === 0) return publicStatus('desconhecido')
+  const statuses = values.map((value) => publicStatus(value))
+  if (statuses.some((item) => item.label === 'Indisponível')) {
+    return publicStatus('indisponivel')
+  }
+  if (statuses.some((item) => item.label === 'Atenção')) {
+    return publicStatus('desconhecido')
+  }
+  return publicStatus('operacional')
 }
 
 function StateMessage({
@@ -301,10 +347,9 @@ export function TechnicalPage({
       <header className="technical-card technical-heading">
         <div>
           <p className="eyebrow">Administração técnica</p>
-          <h2 id="technical-title">Operação e observabilidade</h2>
+          <h2 id="technical-title">Área Técnica do CAPO</h2>
           <p>
-            Estado real do CAPO, integrações, eventos runtime e histórico de
-            suporte.
+            Situação do sistema, chamados, diagnóstico e manutenção em um único lugar.
           </p>
         </div>
         <div className="technical-period">
@@ -351,55 +396,105 @@ export function TechnicalPage({
 
       <StateMessage state={state} />
 
-      {state.status === 'success' && activeTab === 'painel' && (
-        <div className="technical-grid">
-          <article className="technical-card">
-            <h3>Chamados por situação</h3>
-            <dl className="technical-metrics">
-              {Object.entries(state.data.dashboard.support).map(
-                ([key, value]) => (
-                  <div key={key}>
-                    <dt>{metricLabel(key)}</dt>
-                    <dd>{String(value)}</dd>
-                  </div>
-                ),
-              )}
-            </dl>
-          </article>
-          <article className="technical-card">
-            <h3>Eventos por severidade</h3>
-            <dl className="technical-metrics">
-              {Object.entries(state.data.dashboard.runtime.by_severity).map(
-                ([key, value]) => (
-                  <div key={key}>
-                    <dt>{metricLabel(key)}</dt>
-                    <dd>{String(value)}</dd>
-                  </div>
-                ),
-              )}
-            </dl>
-          </article>
-          <article className="technical-card technical-span">
-            <h3>Erros recentes</h3>
-            {state.data.dashboard.runtime.recent_errors.length === 0 ? (
-              <p>Nenhum erro ou evento crítico registrado no período.</p>
-            ) : (
-              <div className="technical-events">
-                {state.data.dashboard.runtime.recent_errors.map((event) => (
-                  <article key={event.id}>
-                    <strong>{event.component}</strong>
-                    <span>{event.event_code ?? event.result}</span>
-                    <small>{formatDateTime(event.occurred_at)}</small>
-                    <p>{event.technical_message ?? 'Sem mensagem técnica.'}</p>
-                  </article>
-                ))}
-              </div>
-            )}
-          </article>
-        </div>
-      )}
+      {state.status === 'success' && activeTab === 'painel' && (() => {
+        const database = findComponent(state.data.systemStatus.components, [
+          'database',
+          'banco',
+        ])
+        const auth = findComponent(state.data.systemStatus.components, [
+          'auth',
+          'autenticação',
+          'autenticacao',
+        ])
+        const systemSituation = combinedStatus(
+          state.data.systemStatus.components.map((item) => item.status),
+        )
+        const integrationsSituation = combinedStatus(
+          state.data.integrations.integrations.map((item) => item.status),
+        )
+        const recentIncidents = state.data.dashboard.runtime.recent_errors.length
+        const supportTotal = Object.values(state.data.dashboard.support).reduce(
+          (total, value) => total + Number(value || 0),
+          0,
+        )
 
-      {state.status === 'success' && activeTab === 'estado' && (
+        const cards = [
+          {
+            title: 'Situação geral do sistema',
+            status: systemSituation,
+            detail:
+              systemSituation.label === 'Operacional'
+                ? 'Os componentes verificados estão funcionando normalmente.'
+                : 'Existe pelo menos um componente que precisa de atenção.',
+          },
+          {
+            title: 'Banco',
+            status: publicStatus(database?.status ?? 'desconhecido'),
+            detail:
+              database?.detail ??
+              'A verificação do banco ainda não retornou uma explicação disponível.',
+          },
+          {
+            title: 'Autenticação',
+            status: publicStatus(auth?.status ?? 'desconhecido'),
+            detail:
+              auth?.detail ??
+              'A verificação da autenticação ainda não retornou uma explicação disponível.',
+          },
+          {
+            title: 'Integrações',
+            status: integrationsSituation,
+            detail:
+              state.data.integrations.integrations.length === 0
+                ? 'Nenhuma integração externa foi retornada para verificação.'
+                : `${state.data.integrations.integrations.length} integração(ões) acompanhada(s).`,
+          },
+          {
+            title: 'Avisos / incidentes',
+            status: publicStatus(recentIncidents > 0 ? 'desconhecido' : 'operacional'),
+            detail:
+              recentIncidents > 0
+                ? `${recentIncidents} ocorrência(s) recente(s) precisa(m) de análise em Diagnóstico.`
+                : 'Nenhum incidente crítico recente foi registrado no período.',
+          },
+          {
+            title: 'Resumo dos chamados',
+            status: publicStatus('operacional'),
+            detail: `${supportTotal} chamado(s) contabilizado(s) no período selecionado.`,
+          },
+        ]
+
+        return (
+          <div className="technical-grid technical-overview-grid">
+            {cards.map((card) => (
+              <article className="technical-card" key={card.title}>
+                <div className="technical-card-heading">
+                  <h3>{card.title}</h3>
+                  <span className={`technical-status is-${card.status.className}`}>
+                    {card.status.label}
+                  </span>
+                </div>
+                <p>{card.detail}</p>
+              </article>
+            ))}
+            <article className="technical-card technical-span">
+              <h3>Chamados por situação</h3>
+              <dl className="technical-metrics">
+                {Object.entries(state.data.dashboard.support).map(
+                  ([key, value]) => (
+                    <div key={key}>
+                      <dt>{metricLabel(key)}</dt>
+                      <dd>{String(value)}</dd>
+                    </div>
+                  ),
+                )}
+              </dl>
+            </article>
+          </div>
+        )
+      })()}
+
+      {state.status === 'success' && activeTab === 'diagnostico' && (
         <article className="technical-card">
           <h3>Componentes verificados</h3>
           <p className="technical-muted">
@@ -411,12 +506,11 @@ export function TechnicalPage({
               <article key={item.component}>
                 <div>
                   <strong>{item.label}</strong>
-                  <span className={`technical-status is-${item.status}`}>
-                    {item.status}
+                  <span className={`technical-status is-${publicStatus(item.status).className}`}>
+                    {publicStatus(item.status).label}
                   </span>
                 </div>
                 <p>{item.detail}</p>
-                <small>Método: {item.verification}</small>
               </article>
             ))}
           </div>
@@ -478,13 +572,54 @@ export function TechnicalPage({
 
       {state.status === 'success' && activeTab === 'manutencao' && (
         <article className="technical-card">
-          <h3>Manutenção e correções</h3>
-          <p>As operações de manutenção permanecem condicionadas aos contratos técnicos autorizados.</p>
-          <p className="technical-muted">Nenhuma ferramenta de alteração foi criada nesta interface.</p>
+          <h3>Manutenção</h3>
+          <p>
+            Acessos e referências para executar somente correções técnicas autorizadas.
+          </p>
+          <div className="technical-action-grid">
+            <a
+              className="technical-action-card"
+              href="https://github.com/danielecarvalho45/caposistema"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <strong>GitHub</strong>
+              <span>Abrir repositório oficial do Sistema CAPO</span>
+            </a>
+            <a
+              className="technical-action-card"
+              href="https://supabase.com/dashboard/project/fftebavlhbfcrvrtnrld"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <strong>Supabase</strong>
+              <span>Abrir projeto oficial do Sistema CAPO</span>
+            </a>
+            <div className="technical-action-card is-disabled">
+              <strong>IA de Desenvolvimento do CAPO</strong>
+              <span>Acesso externo não configurado nesta interface.</span>
+            </div>
+            <a
+              className="technical-action-card"
+              href="https://github.com/danielecarvalho45/caposistema/blob/main/CAPO_Manual_Tecnico_Integrado_Banco_Interface_ATUALIZADO_2026-09-15_v5(1).md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <strong>Documentação Técnica</strong>
+              <span>Abrir manual técnico vigente no repositório</span>
+            </a>
+          </div>
+          <div className="technical-maintenance-status">
+            <h4>Correções / manutenções em andamento</h4>
+            <p>
+              Esta área não cria atividades fictícias. As manutenções em andamento
+              devem refletir somente registros reais disponíveis nos contratos técnicos.
+            </p>
+          </div>
         </article>
       )}
 
-      {state.status === 'success' && activeTab === 'documentacao' && (
+      {state.status === 'success' && activeTab === 'manutencao' && (
         <article className="technical-card">
           <h3>Documentação técnica</h3>
           <p>Documentação consultada conforme os registros técnicos disponíveis.</p>
@@ -492,21 +627,14 @@ export function TechnicalPage({
         </article>
       )}
 
-      {state.status === 'success' && activeTab === 'ferramentas' && (
+      {state.status === 'success' && activeTab === 'manutencao' && (
         <article className="technical-card">
           <h3>Ferramentas / atalhos</h3>
           <p>Nenhuma ferramenta operacional disponível para execução nesta sessão.</p>
         </article>
       )}
 
-      {state.status === 'success' && activeTab === 'avisos' && (
-        <article className="technical-card">
-          <h3>Avisos técnicos</h3>
-          <p>Nenhum aviso técnico real disponível.</p>
-        </article>
-      )}
-
-      {state.status === 'success' && activeTab === 'perfil' && (
+      {state.status === 'success' && activeTab === 'manutencao' && (
         <article className="technical-card">
           <h3>Perfil técnico</h3>
           <dl className="technical-profile-list">
@@ -517,7 +645,7 @@ export function TechnicalPage({
         </article>
       )}
 
-      {state.status === 'success' && activeTab === 'integracoes' && (
+      {state.status === 'success' && activeTab === 'diagnostico' && (
         <article className="technical-card">
           <h3>Integrações inventariadas</h3>
           <p className="technical-muted">
@@ -531,13 +659,14 @@ export function TechnicalPage({
               {state.data.integrations.integrations.map((item) => (
                 <article key={item.technical_name}>
                   <div>
-                    <strong>{item.technical_name}</strong>
-                    <span className={`technical-status is-${item.status}`}>
-                      {item.status}
+                    <strong>{integrationLabel(item.technical_name)}</strong>
+                    <span
+                      className={`technical-status is-${publicStatus(item.status).className}`}
+                    >
+                      {publicStatus(item.status).label}
                     </span>
                   </div>
                   <p>{item.evidence}</p>
-                  <small>Monitoramento: {item.monitoring_source}</small>
                   <small>
                     Último sucesso: {formatDateTime(item.last_success_at)} ·
                     Último erro: {formatDateTime(item.last_error_at)}
@@ -549,7 +678,7 @@ export function TechnicalPage({
         </article>
       )}
 
-      {state.status === 'success' && activeTab === 'logs' && (
+      {state.status === 'success' && activeTab === 'diagnostico' && (
         <article className="technical-card">
           <div className="technical-heading">
             <div>
@@ -624,7 +753,7 @@ export function TechnicalPage({
         </article>
       )}
 
-      {state.status === 'success' && activeTab === 'historico' && (
+      {state.status === 'success' && activeTab === 'chamados' && (
         <div className="technical-history-layout">
           <article className="technical-card">
             <h3>Chamados técnicos</h3>
