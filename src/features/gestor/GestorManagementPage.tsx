@@ -1,7 +1,6 @@
 import { ActiveSearchPage } from './ActiveSearchPage'
 import { Link } from 'react-router-dom'
 import { GestorTeamPage } from './GestorTeamPage'
-import { TechnicalSupportRequest } from '../../components/forms/TechnicalSupportRequest'
 import { OperationalTimeline } from './OperationalTimeline'
 import { AuditLogPage } from './AuditLogPage'
 import type { AccessContext } from '../../types/access'
@@ -24,7 +23,7 @@ export function GestorManagementPage({ view, accessContext }: Readonly<{ view: M
   if (view === 'timeline') return <OperationalTimeline />
   if (view === 'auditoria') return <AuditLogPage />
   if (view === 'busca-ativa') return <ActiveSearchPage accessContext={accessContext} />
-  if (view === 'suporte') return <section className="gestor-route" aria-labelledby="support-title"><header><span>Gestão do Serviço</span><h2 id="support-title">Suporte</h2><p>Consulte e acompanhe solicitações de suporte do CAPO.</p></header><article className="gestor-panel">{accessContext.roles.some((role) => role.code === 'administrador_tecnico') ? <Link to="/tecnica">Abrir Área Técnica e chamados de suporte</Link> : <TechnicalSupportRequest affectedModule="gestor" />}</article></section>
+  if (view === 'suporte') return <section className="gestor-route" aria-labelledby="support-title"><header><span>Gestão do Serviço</span><h2 id="support-title">Suporte</h2><p>Consulte e acompanhe solicitações de suporte do CAPO.</p></header><article className="gestor-panel"><Link to="/tecnica">Abrir Área Técnica e chamados de suporte</Link></article></section>
   return (
     <section className="gestor-route" aria-labelledby="gestor-route-title">
       <header><span>{page.kicker}</span><h2 id="gestor-route-title">{page.title}</h2><p>{page.description}</p></header>

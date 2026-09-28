@@ -2411,3 +2411,13 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Limites e decisão:** nenhum fluxo transacional com paciente real foi executado apenas para obter PASS; não houve contas reais de Coordenador, AO e Social disponíveis nesta homologação. A titular continua sem o papel TI efetivo e vê suporte comum; requer classificação/decisão específica sobre atribuição de função, sem inserir papel por inferência. O botão PDF gerencial foi publicado e o gerador de arquivo passou no teste interno, mas a captura automática do download publicado esgotou o tempo do navegador; não declarar PDF aberto ou impressão física validada. A fidelidade da autoria da Auditoria continua nos limites de 28.15. As limitações acima não são sucessos simulados nem autorização para reabrir a Área TI.
 
 **Estado da frente atual:** correções de código publicadas, suíte funcional verde, pendências reais de homologação explicitadas. Parar aqui conforme ordem; não iniciar reorganização de TI nem Tarefa 2 da Conta Mestre.
+
+### 28.17 Retificação pontual — TI é função do Gestor/Titular (28/09/2026)
+
+**Regra estrutural:** a seção 4.1 do `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12.md` atribui ao Administrador do Sistema/Titular a governança técnica e inclui expressamente **TI / Manutenção** entre seus módulos. A rota `/tecnica` já admite o papel `administrador` em `src/app/route-access.ts`. Logo, a conta Gestor/Titular não depende de receber também o papel `administrador_tecnico` para acessar a Área Técnica.
+
+**Divergência e causa física:** a correção 4 da seção 28.16 condicionou o atalho e o encaminhamento de `/gestor/suporte` ao papel adicional `administrador_tecnico`. Por isso a titular, que tem papel `administrador`, continuou vendo um formulário de solicitação de suporte para si mesma. Ficam **retificadas e substituídas** a regra, a limitação de homologação e a necessidade de atribuir papel TI descritas naquela linha e no parágrafo de limites de 28.16; não se deve adicionar um segundo papel para resolver esse caso.
+
+**Correção restrita:** `src/features/gestor/GestorShell.tsx` deixa apenas o atalho existente **Área Técnica** na navegação do Gestor; `src/features/gestor/GestorManagementPage.tsx` encaminha à Área Técnica o acesso direto à antiga rota de Suporte, sem formulário de solicitação. Não houve mudança em permissões, Supabase ou na área TI. `tests/unit/gestor-support-routing.test.tsx` cobre Gestor/Titular com e sem papel TI adicional.
+
+**Verificação:** testes, typecheck, build e validação publicada devem constar do resultado físico desta retificação; a homologação de chamados reais continua limitada à existência de ocorrência adequada, sem sucesso simulado.

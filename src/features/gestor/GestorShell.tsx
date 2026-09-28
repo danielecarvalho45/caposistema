@@ -144,7 +144,7 @@ export function GestorShell({
             <span aria-hidden="true">⌂</span> Início
           </Link>
           <NavGroup label="Atendimento e Acompanhamento" items={serviceItems} activePath={activePath} accessContext={accessContext} />
-          <NavGroup label="Gestão do Serviço" items={managementItems.filter((item) => item.path !== '/gestor/suporte' || !accessContext.roles.some((role) => role.code === 'administrador_tecnico'))} activePath={activePath} accessContext={accessContext} />
+          <NavGroup label="Gestão do Serviço" items={managementItems.filter((item) => item.path !== '/gestor/suporte')} activePath={activePath} accessContext={accessContext} />
           <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
           <a className="gestor-nav-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> IA de Desenvolvimento do CAPO</a>
           <NavGroup label="TI / Manutenção" items={[{ path: '/tecnica', icon: '🛠', label: 'Área Técnica' }]} activePath={activePath} accessContext={accessContext} />
