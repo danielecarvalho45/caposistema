@@ -2744,3 +2744,31 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `71fda737f9f5157d96d9b100271ad11dbf2d58b9`, `fd0fdf34ff0a9ce6e2a29c1eab02f45f6a38b610`, `4190f08a7ce4f74d1ba5c3c82a605c5d2086fbb7`, `6650841eb480cf8f8d868d3811f1f6f965d4263a`, `51a119548349233c3d4864c5d4c992566895da8f`.
 
 **Estado:** **REGRESSÃO CORRIGIDA NO CÓDIGO / PADRÃO APROVADO RESTAURADO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO VISUAL REAL**.
+
+
+### 28.27 Regressão de composição — módulo genérico “Minha atuação” nos perfis profissionais padrão (28/09/2026)
+
+**Evidência de homologação real apresentada pela Titular:** no contexto profissional padrão, exemplificado por Fisioterapia, a Home exibia um bloco genérico denominado `Área compartilhada / Minha atuação assistencial`, além de item lateral `Minha atuação`. Esse elemento não corresponde à composição visual aprovada dos perfis profissionais do CAPO.
+
+**Correção cirúrgica aplicada:**
+- removido o item visível `Minha atuação` da navegação lateral;
+- removido o card `Minha Atuação` do painel profissional genérico;
+- removido da tela profissional o cabeçalho `Área compartilhada / Minha atuação assistencial`;
+- removido o bloco redundante de atalhos `Rotina profissional` que precedia a agenda;
+- o perfil profissional padrão passa a entrar diretamente por **Minha agenda**, preservando em seguida aniversariantes, pacientes vinculados e resumo operacional;
+- quando houver mais de uma especialidade ativa no mesmo vínculo profissional, o seletor de especialidade permanece disponível junto da agenda; com apenas uma especialidade, ele não é exibido;
+- no mecanismo de **acúmulo de função**, o mesmo botão `Perfil` passa a direcionar Psicologia, Fisioterapia, Clínica Geral e demais especialidades profissionais padrão para `Minha Agenda`, e não para um módulo genérico `Minha atuação`;
+- Nutrição e Assistência Social continuam usando suas telas específicas;
+- a rota interna `/atuacao` foi preservada apenas por compatibilidade técnica e não é oferecida como módulo de navegação ao usuário;
+- funções próprias como `Encerrar minha atuação` permanecem preservadas porque representam ação funcional específica, e não a tela genérica removida.
+
+**Arquivos alterados:**
+- `src/components/navigation/navigation-config.ts`;
+- `src/features/home/ProfileDashboard.tsx`;
+- `src/features/professional/AssistentialPage.tsx`;
+- `src/components/shell/profile-shortcuts.ts`;
+- testes de App, ProfileShortcuts e contrato do shell.
+
+**Commits principais:** `1bbd551bc4264f46ed59b66d010efe29ac7cf250`, `909e10ce8fcfafecd5135333ccd1cace9a6e8299`, `cbd3d88bfc3f139a3b17f16cd88dea1765f1eb38`, `061bab8cd16e7bd3da12f4e8457b9202568e5da0`, `be6f6801967001148945e6d9af235085949696a7`, `782783d9e1f8169b498acd71ff65755b1abfceef`, `84864464e2289273d29782a9c0cb73e4ee1ef5d2`, `215e97942b0109a6f31516b12ad96d7a3dc767c3`.
+
+**Estado:** **REGRESSÃO CORRIGIDA NO CÓDIGO / ESTRUTURA PROFISSIONAL VISÍVEL RESTAURADA / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO VISUAL REAL**.
