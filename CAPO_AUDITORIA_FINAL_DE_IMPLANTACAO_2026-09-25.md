@@ -2797,3 +2797,29 @@ Os atalhos aprovados do bloco principal são:
 **Validação disponível nesta sessão:** assinatura física das RPCs no Supabase conferida após a migration: `manage_prescription_renewal_medical_for_interface(p_request_id uuid, p_action text, p_operational_return text, p_pickup_location text)`. O banco e o GitHub estão alinhados quanto ao novo contrato. A suíte `npm test`, `typecheck` e `build` não foi executada por esta conexão; não declarar PASS automatizado nem homologação visual publicada.
 
 **Estado:** **CORRIGIDO NO SUPABASE E NO CÓDIGO / ADMINISTRATIVO SOLICITANTE E CLÍNICO EXECUTOR SEPARADOS / AGUARDANDO PUBLICAÇÃO, SUÍTE COMPLETA E TESTE OPERACIONAL REAL**.
+
+
+### 28.28 Padronização visual dos atalhos principais por perfil (28/09/2026)
+
+**Ordem da Titular:** aplicar o padrão visual de atalhos coloridos já aprovado no CAPO, sem reestruturar telas nem alterar funções.
+
+**Escopo executado:**
+- **Assistência Social:** somente os atalhos já existentes foram padronizados visualmente, sem qualquer alteração nos blocos funcionais, agenda, acompanhamento social ou fluxos. Permanecem: Minha Agenda, Acompanhamento Social no Serviço CAPO, Familiar / Cuidador e Solicitações.
+- **Nutrição:** atalhos existentes de Planejamento Alimentar, Solicitações e Relatórios passaram a usar o mesmo padrão cromático/ícones dos acessos rápidos aprovados.
+- **Coordenação:** os acessos rápidos existentes passaram a usar cores e ícones distintos, preservando exatamente as rotas e permissões já existentes.
+- **Painéis compartilhados por perfil:** o contrato cromático dos cards foi generalizado para permitir que atalhos principais de Coordenador, Administrativo Operacional, Profissional, Nutrição e TI utilizem a mesma identidade visual quando renderizados pelo componente comum.
+- **Gestor/Titular:** nenhuma função ou estrutura foi alterada; seu padrão aprovado foi apenas reutilizado como referência visual.
+- Nenhuma RPC, RLS, policy, trigger, tabela, autorização, ordem de fluxo ou regra de negócio foi alterada.
+- Nenhum atalho funcional novo foi criado nesta padronização; foram estilizados os atalhos já existentes.
+
+**Arquivos alterados:**
+- `src/features/social/SocialPage.tsx`;
+- `src/features/social/social-page.css`;
+- `src/features/nutrition/NutritionPage.tsx`;
+- `src/features/coordination/CoordinationDashboard.tsx`;
+- `src/features/home/ProfileDashboard.tsx`;
+- `src/features/home/home-page.css`.
+
+**Commits:** `2b8dea3fa617ae45812913ad98cf07bc94b04e19`, `8f60b8e02cbff76967223dcb09868098ac88d52e`, `085f29e02a20f3a4b9b19f190477c840485f1d0e`, `88bdb6ab46b142ef1c16667d5ec61a90768a3e14`, `46e658bbd40665c36bc89fa99f76d5fdf714f3c0`, `5e5886dd391cd9e9938dee231346b80de0698694`.
+
+**Estado:** **PADRONIZAÇÃO VISUAL APLICADA NO CÓDIGO / SEM ALTERAÇÃO FUNCIONAL / AGUARDANDO HOMOLOGAÇÃO VISUAL PUBLICADA**.
