@@ -162,10 +162,10 @@ export function SocialPage({
       <section className="social-quick-access" aria-labelledby="quick-title">
         <h2 id="quick-title">Acessos rápidos</h2>
         <div className="social-quick-grid">
-          <a className="social-quick-card social-quick-card--agenda" href="#agenda"><strong>Minha Agenda</strong><span>Dia, semana e mês</span></a>
-          <a className="social-quick-card social-quick-card--followup" href="#acompanhamento-social"><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></a>
-          <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
-          <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><strong>Solicitações</strong><span>Providências operacionais</span></Link>
+          <a className="social-quick-card social-quick-card--agenda" href="#agenda"><span className="social-quick-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></a>
+          <a className="social-quick-card social-quick-card--followup" href="#acompanhamento-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></a>
+          <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
+          <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
         </div>
       </section>
 
