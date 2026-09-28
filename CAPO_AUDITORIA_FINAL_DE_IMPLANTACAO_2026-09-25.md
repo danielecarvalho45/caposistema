@@ -2465,3 +2465,18 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Demais documentos:** Transporte, Nutrição e Odontologia permanecem igualmente **não homologados visualmente** até que seus PDFs publicados sejam efetivamente gerados e abertos.
 
 **Estado:** 🔴 **PDF DE RELATÓRIOS — NÃO HOMOLOGADO / PUBLICADO SEM ALTERAÇÃO VISÍVEL SEGUNDO TESTE REAL DA TITULAR.**
+
+
+### 28.21 Ajuste cirúrgico do cabeçalho institucional dos PDFs (28/09/2026)
+
+**Evidência visual da Titular:** o PDF de Relatórios publicado apresentou o cabeçalho institucional ocupando uma faixa excessivamente alta, afastando o conteúdo do topo da página. A Titular autorizou reduzir a altura do cabeçalho e mantê-lo mais próximo da margem superior.
+
+**Correção cirúrgica:** alterado exclusivamente o posicionamento do cabeçalho compartilhado em `src/lib/pdf/capo-document-pdf.ts`. A imagem institucional permanece com largura útil de 505 pontos, mas a altura de exibição foi reduzida de 168,333 para **90 pontos** e reposicionada para o topo da página (`y=738`). O início do conteúdo foi elevado para `y=716`. Como o gerador é compartilhado, o ajuste vale igualmente para Relatórios, Transporte, Nutrição e Odontologia.
+
+**Relatórios:** removida apenas a linha textual redundante `CAPO - Centro de Acolhimento ao Paciente Oncológico` de `src/features/reports/report-export.ts`, pois a identificação institucional já passa a ser feita pelo cabeçalho gráfico. Título do documento, escopo, período, especialidade, tipo do relatório e dados permanecem inalterados.
+
+**Preservação:** nenhuma alteração em RPC, SQL, Supabase, autorização, indicadores, conteúdo clínico/administrativo, armazenamento, assinatura ou fluxo de emissão.
+
+**Commits:** `605c92cf0c28ffef2d27a197982c773daaca841d` e `7035b55ecb4c74b80acbfcfd89d6296501a9301a`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO NOVA PUBLICAÇÃO E VALIDAÇÃO VISUAL DO PDF REAL**. O FAIL operacional de 28.20 só poderá ser encerrado após a Titular abrir um PDF novo gerado pelo build que contenha estes commits.
