@@ -2335,3 +2335,40 @@ Concluir a homologação do ambiente Gestor/Titular por inspeção real da respo
 - **Tarefa 2:** criação/configuração do login de homologação para conferência das telas dos demais perfis.
 
 Esta numeração pertence exclusivamente à **frente atual de homologação das telas** e não altera a numeração histórica das tarefas técnicas já concluídas no Documento Mestre.
+
+
+### 28.14 Tarefa 1 — Pendência consolidada — Auditoria do Gestor/Titular (28/09/2026)
+
+**Origem:** revisão manual da tela publicada pela responsável do projeto, dentro da Tarefa 1 da frente atual de homologação.
+
+**Tela:** Gestor/Titular → Auditoria e Relatórios → Auditoria.
+
+**Constatação funcional:** a arquitetura está correta ao manter a **Auditoria administrativa/operacional** no ambiente do Gestor/Titular e separar os **logs técnicos** para a área de TI/Manutenção.
+
+**Regra estrutural confirmada:**
+- Auditoria do Gestor/Titular = trilha administrativa/operacional protegida das alterações relevantes do CAPO;
+- deve permitir compreender quem realizou determinada ação, quando ocorreu, em qual módulo/registro e, quando disponível e autorizado, estado/valor anterior e novo;
+- auditoria técnica, logs de infraestrutura, falhas técnicas, conectividade e registros de manutenção pertencem à área **TI / Manutenção**;
+- não misturar auditoria operacional com logs técnicos.
+
+**Divergência de interface/usabilidade encontrada:** a tela atual expõe filtros técnicos como **Entidade** e **Ação** em campos livres, exigindo do Gestor conhecimento de nomes internos de tabelas e ações técnicas como `INSERT`, `UPDATE` e `DELETE`.
+
+**Correção futura esperada, sem execução nesta etapa:**
+- preservar a RPC e a fonte real da auditoria;
+- não alterar a arquitetura nem mover a Auditoria para TI;
+- substituir filtros técnicos por filtros compreensíveis em linguagem de negócio, como:
+  - Período;
+  - Área/Módulo;
+  - Tipo de alteração;
+  - Usuário/Responsável;
+  - Paciente/registro quando aplicável;
+- mapear internamente as opções amigáveis para os códigos técnicos do backend;
+- apresentar resultados com data/hora, autoria, ação, origem/módulo, registro relacionado e resumo da alteração;
+- exibir estado anterior/novo quando já houver dado seguro e autorizado;
+- não expor nomes técnicos de tabela ao usuário final;
+- não incluir logs técnicos nessa tela;
+- logs técnicos permanecem exclusivamente na área de TI/Manutenção.
+
+**Classificação:** 🟡 **PENDÊNCIA DA TAREFA 1 — CORREÇÃO PONTUAL DE INTERFACE/USABILIDADE.**
+
+**Regra de continuidade:** não corrigir isoladamente agora. Manter esta pendência registrada para inclusão posterior no comando consolidado de alterações da Tarefa 1 destinado ao Work.
