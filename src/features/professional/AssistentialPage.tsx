@@ -104,9 +104,6 @@ export function AssistentialPage({
       .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'clinica geral',
   ) || accessContext.primary_specialty_name?.normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'clinica geral'
-  const pageTitle = isClinicalGeneral
-    ? 'Atuação do Médico Clínico Geral'
-    : 'Minha atuação assistencial'
 
   useEffect(() => {
     if (!isProfessional) return
@@ -188,38 +185,6 @@ export function AssistentialPage({
 
   return (
     <section className="assistential-page" aria-labelledby="assistential-title">
-      <header className="assistential-card assistential-heading">
-        <div>
-          <p className="eyebrow">Área compartilhada</p>
-          <h2 id="assistential-title">{pageTitle}</h2>
-          <p>
-            {isClinicalGeneral
-              ? 'Agenda, pacientes vinculados, retornos, solicitações e encaminhamentos da atuação clínica.'
-              : 'Visão operacional comum às especialidades vinculadas ao profissional.'}
-          </p>
-        </div>
-        {!isClinicalGeneral && (
-          <label>
-            Especialidade
-            <select
-              value={selectedSpecialty}
-              disabled={specialtiesState.status !== 'success'}
-              onChange={(event) => setSelectedSpecialty(event.target.value)}
-            >
-              {specialtiesState.status === 'success' &&
-                specialtiesState.data.map((specialty) => (
-                  <option
-                    key={specialty.specialty_id}
-                    value={specialty.specialty_id}
-                  >
-                    {specialty.specialty_name}
-                  </option>
-                ))}
-            </select>
-          </label>
-        )}
-      </header>
-
       {specialtiesState.status === 'loading' && (
         <div className="assistential-card" aria-live="polite">
           Carregando especialidades…
@@ -237,19 +202,6 @@ export function AssistentialPage({
         </div>
       )}
 
-      <section className="assistential-card assistential-shortcuts" aria-labelledby="assistential-shortcuts-title">
-        <div>
-          <p className="eyebrow">Acessos rápidos</p>
-          <h3 id="assistential-shortcuts-title">Rotina profissional</h3>
-        </div>
-        <nav aria-label="Atalhos da rotina profissional">
-          <a href="#assistential-agenda">Minha Agenda</a>
-          <a href="#assistential-patients">Pacientes vinculados</a>
-          <a href="#assistential-summary">Resumo operacional</a>
-          {specialtiesState.status === 'success' && specialtiesState.data.some((item) => item.specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === 'nutricao') && <Link to="/nutricao">Nutrição</Link>}
-        </nav>
-      </section>
-
       <section id="assistential-agenda" aria-labelledby="assistential-agenda-title">
         <h3
           id="assistential-agenda-title"
@@ -257,6 +209,21 @@ export function AssistentialPage({
         >
           Minha agenda
         </h3>
+        {specialtiesState.status === 'success' && specialtiesState.data.length > 1 && (
+          <label className="assistential-specialty-selector">
+            Especialidade
+            <select
+              value={selectedSpecialty}
+              onChange={(event) => setSelectedSpecialty(event.target.value)}
+            >
+              {specialtiesState.data.map((specialty) => (
+                <option key={specialty.specialty_id} value={specialty.specialty_id}>
+                  {specialty.specialty_name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <AgendaPage
           accessContext={accessContext}
           loadAgenda={integration.loadAgenda}
