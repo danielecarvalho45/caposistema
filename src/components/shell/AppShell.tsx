@@ -12,6 +12,7 @@ type AppShellProps = Readonly<{
   accessContext: AccessContext
   children: ReactNode
   onLogout: () => Promise<void>
+  onRefreshAccessContext?: () => Promise<void>
   activePath?: string
 }>
 
@@ -24,6 +25,7 @@ export function AppShell({
   accessContext,
   children,
   onLogout,
+  onRefreshAccessContext,
   activePath = '/',
 }: AppShellProps) {
   const [loggingOut, setLoggingOut] = useState(false)
@@ -296,7 +298,7 @@ export function AppShell({
                 )}
               </Link>
             )}
-            <ProfileShortcuts accessContext={accessContext} activePath={activePath} className="app-profile-button" profileLabel={contextName} />
+            <ProfileShortcuts accessContext={accessContext} activePath={activePath} className="app-profile-button" profileLabel={contextName} onContextChange={onRefreshAccessContext} />
           </div>
         </header>
 
