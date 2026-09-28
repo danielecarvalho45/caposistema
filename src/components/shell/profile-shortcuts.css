@@ -26,3 +26,46 @@
   background: #eaf3fb;
   outline: 2px solid #8cb8e0;
 }
+
+.profile-shortcuts-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #17365f;
+  font: 600 12px Arial, Helvetica, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.profile-shortcuts-menu button:hover,
+.profile-shortcuts-menu button:focus-visible {
+  background: #eaf3fb;
+  outline: 2px solid #8cb8e0;
+}
+.profile-shortcuts-menu button[aria-current='page'] {
+  background: #eef7f0;
+  color: #245b37;
+  cursor: default;
+}
+.profile-shortcuts-menu button:disabled:not([aria-current='page']) {
+  cursor: wait;
+  opacity: .65;
+}
+.profile-shortcuts-menu button small {
+  font-size: 10px;
+  font-weight: 700;
+}
+.profile-shortcuts-heading,
+.profile-shortcuts-state,
+.profile-shortcuts-error {
+  margin: 4px 8px;
+  font: 600 11px Arial, Helvetica, sans-serif;
+}
+.profile-shortcuts-heading { color: #64778b; }
+.profile-shortcuts-state { color: #506579; }
+.profile-shortcuts-error { color: #8a2430; }
