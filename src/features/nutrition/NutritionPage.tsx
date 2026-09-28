@@ -5,7 +5,6 @@ import { AgendaPage } from '../agenda/AgendaPage'
 import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
-import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 
 type NutritionRecord = Readonly<Record<string, unknown>>
