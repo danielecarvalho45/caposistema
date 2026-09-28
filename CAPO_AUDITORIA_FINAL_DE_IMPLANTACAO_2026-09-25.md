@@ -2595,3 +2595,59 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Estado:** **CORRIGIDO NO CÓDIGO / VALIDADO INTERNAMENTE / PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES**. PDFs já armazenados não são regravados por esta alteração. A pendência antiga de deploy descrita em 28.20 somente se encerra após gerar e abrir novos PDFs no sistema publicado.
 
 **Publicação e conferência física do GitHub:** commit `d5cef933bc4b6fc94274590c2356ff27daf8cece` publicado no `main`. Leitura posterior de `origin/main` confirmou o PNG oficial (blob `a400b1bc28912c581e0d2ef71ca6cf8bff271286`) e o gerador com imagem proporcional e rodapé por extenso. A validação publicada com conta real segue pendente; não há confirmação de PDF novo baixado no Pages nesta sessão.
+
+
+### 28.23 Tarefa 2 — conta mestre de homologação e troca de contexto no mesmo login (28/09/2026)
+
+**Objetivo autorizado pela Titular:** criar uma conta exclusiva de manutenção/homologação, separada da conta Gestor/Titular, para conferir as telas ativas do CAPO em um único login, sem autenticar novamente a cada perfil e sem conceder o contexto Gestor/Titular.
+
+**Conta configurada no Supabase:**
+- username interno: `manuteste`;
+- conta ativa;
+- `is_homologation_account = true`;
+- papel real/base e contexto inicial: `administrador_tecnico` — TI / Manutenção;
+- papel `administrador` / Gestor-Titular não concedido;
+- termo vigente aceito;
+- registro-base em `homologation_contexts` criado.
+
+**Perfis profissionais exclusivos de homologação criados e ativos:**
+- Médico Clínico Geral → Clínica Geral;
+- Nutrição → Nutrição;
+- Assistência Social → Assistência Social;
+- Psicologia → Psicologia;
+- Fisioterapia → Fisioterapia.
+
+As capacidades efetivas existentes foram preservadas conforme a configuração real do banco: Clínica Geral possui renovação de receita e encaminhamento odontológico externo; Assistência Social possui preenchimento de solicitação de transporte; os demais contextos utilizam as permissões/capacidades atualmente existentes para suas especialidades. Nenhuma capability fictícia foi adicionada.
+
+**Interface:** o botão já existente `Perfil` foi reutilizado para a conta de homologação, preservando o padrão visual do sistema. Para `manuteste`, ele passa a oferecer:
+- TI / Manutenção;
+- Coordenador;
+- Administrativo Operacional;
+- Médico Clínico Geral;
+- Nutrição;
+- Assistência Social;
+- Psicologia;
+- Fisioterapia.
+
+Não existe opção Gestor/Titular nesse seletor.
+
+A troca usa exclusivamente as RPCs de homologação já existentes:
+- `get_homologation_options_for_interface`;
+- `set_homologation_context_for_interface`;
+- `clear_homologation_context_for_interface`.
+
+A sessão é preservada; após a seleção, o contexto efetivo é recarregado e a aplicação passa a aplicar as mesmas regras de rota, especialidade e capability usadas por contas reais.
+
+**Cobertura das telas ativas fora do Gestor/Titular:** a combinação dos contextos acima cobre as rotas correntes de TI, Coordenação, Administrativo Operacional e áreas profissionais/especializadas (Clínica Geral, Nutrição, Assistência Social, Psicologia e Fisioterapia), inclusive Agenda, Solicitações, Fila, Faltosos, Encaminhamentos, Encerramentos, Relatórios e módulos condicionados por especialidade/capability. As rotas exclusivas `/gestor/*` permanecem deliberadamente fora desta conta.
+
+**Arquivos alterados:**
+- `src/components/shell/ProfileShortcuts.tsx`;
+- `src/components/shell/profile-shortcuts.css`;
+- `tests/unit/profile-shortcuts.test.tsx`.
+
+**Commits de interface/teste:**
+- `8deba4db7b01ef3e2f70a6988aa8301da0b19030`;
+- `5d68be83f4d6ab5f5fb362850fcad528b6bed3bf`;
+- `32f3abac41dfbb4285fee5b83b6065a449525c09`.
+
+**Estado:** **IMPLEMENTADO NO BANCO E NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL REAL COM A CONTA `manuteste`**.
