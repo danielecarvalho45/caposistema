@@ -75,7 +75,7 @@ function buildNutritionPdf(document: NutritionRecord) {
     if (value) lines.push(`${label}:`, ...nutritionPdfWrap(value), '')
   }
 
-  return buildCapoDocumentPdf(lines, { fontSize: 11, lineHeight: 14, linesPerPage: 40 })
+  return buildCapoDocumentPdf(lines, { fontSize: 11, lineHeight: 14, linesPerPage: 40, generatedBy: field(document, 'author_name') ?? 'Autoria não informada' })
 }
 
 export function NutritionPage({

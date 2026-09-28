@@ -102,7 +102,7 @@ function buildDentistryOfficialPdf(
     `Data da emissão: ${generatedAt.toLocaleString('pt-BR')}`,
   ].flatMap((line) => dentistryPdfWrap(line))
 
-  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40 })
+  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40, generatedBy: referral.requesting_professional_name, generatedAt })
 }
 
 export function DentistryPage({ accessContext, service }: Props) {

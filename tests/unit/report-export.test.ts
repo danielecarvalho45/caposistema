@@ -49,5 +49,19 @@ it('mantem indicadores zerados como dados validos no PDF gerencial', async () =>
   expect(content).toContain('Realizados no período: 0')
   expect(content).toContain('Faltas no período: 0')
   expect(content).toContain('/ProcSet [/PDF /Text /ImageC]')
-  expect(content).toContain('CAPO | Secretaria Municipal de Saude | Prefeitura de Pouso Alegre')
+  expect(content).not.toContain('CAPO | Secretaria Municipal de Saude | Prefeitura de Pouso Alegre')
+})
+
+it('gera documento sem registros com timbre, filtros e autoria, sem inventar indicadores', async () => {
+  const pdf = buildReportPdf({
+    scope: 'Gestor / Titular', from: '2026-09-01', to: '2026-09-28',
+    specialty: 'Todas', issuedAt: '28/09/2026 17:00', generatedBy: 'Gestor autenticado', sections: [],
+  })
+  const content = new TextDecoder('latin1').decode(await pdf.arrayBuffer())
+  expect(content).toContain('/Subtype /Image')
+  expect(content).toContain('Relatórios Gerenciais')
+  expect(content).toContain('Período: 2026-09-01 a 2026-09-28')
+  expect(content).toContain('Nenhum registro retornado para os filtros selecionados.')
+  expect(content).toContain('por Gestor autenticado')
+  expect(content).not.toContain('Total no período: 0')
 })

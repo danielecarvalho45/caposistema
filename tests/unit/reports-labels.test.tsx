@@ -76,3 +76,11 @@ it('permite escolher uma seção real para o PDF sem alterar o painel nem os nú
     expect(loadDashboard).toHaveBeenCalledTimes(1)
   } finally { createUrl.mockRestore(); click.mockRestore() }
 })
+
+it('permite PDF institucional quando a consulta retorna estado vazio', async () => {
+  const loadDashboard = vi.fn().mockResolvedValue({ status: 'empty' })
+  render(<ReportsPage accessContext={{ roles: [{ code: 'administrador' }], primary_context: { code: 'administrador' }, professional_id: null, username: 'gestor_autenticado' } as unknown as AccessContext} integration={{ loadDashboard, loadSpecialties: vi.fn(), loadReport: vi.fn() }} />)
+  await screen.findByText('Nenhum indicador autorizado foi retornado.')
+  expect(screen.getByRole('button', { name: 'Gerar / salvar PDF' })).toBeEnabled()
+  expect(screen.getByText(/Relatório: Visão geral/)).toBeVisible()
+})

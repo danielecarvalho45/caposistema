@@ -3,6 +3,9 @@
   gap: var(--space-5);
 }
 
+.reports-print-brand,
+.reports-print-footer { display: none; }
+
 .reports-card {
   padding: clamp(20px, 4vw, 28px);
   border: 1px solid var(--color-border);
@@ -98,4 +101,8 @@
   .reports-page { position: absolute; inset: 0; width: 100%; background: white; }
   .reports-filters, .reports-export-actions { display: none !important; }
   .reports-card { break-inside: avoid; box-shadow: none; }
+  .reports-page { padding-top: 105px; padding-bottom: 50px; }
+  .reports-print-brand { display: block; position: fixed; top: 12px; left: 5%; width: 90%; }
+  .reports-print-brand img { display: block; width: 100%; height: auto; max-height: 90px; object-fit: contain; }
+  .reports-print-footer { display: block; position: fixed; bottom: 12px; left: 5%; width: 90%; font-size: 10px; }
 }

@@ -11,7 +11,19 @@ type CapoPdfOptions = Readonly<{
   fontSize?: number
   lineHeight?: number
   linesPerPage?: number
+  generatedBy: string
+  generatedAt?: Date
 }>
+
+export function capoPdfFooter(generatedBy: string, generatedAt: Date): string {
+  const date = new Intl.DateTimeFormat('pt-BR', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo',
+  }).format(generatedAt)
+  const time = new Intl.DateTimeFormat('pt-BR', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo',
+  }).format(generatedAt)
+  return `Documento gerado em ${date}, às ${time}, por ${generatedBy.trim() || 'Autoria não informada'}.`
+}
 
 function pdfSafe(value: string) {
   return Array.from(value).map((character) => {
@@ -39,13 +51,26 @@ function escape(value: string) {
   return pdfSafe(value).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
 }
 
+function footerLines(value: string): string[] {
+  const words = value.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    if (current && `${current} ${word}`.length > 105) { lines.push(current); current = word }
+    else current = current ? `${current} ${word}` : word
+  }
+  if (current) lines.push(current)
+  return lines
+}
+
 export function buildCapoDocumentPdf(
   lines: readonly string[],
-  options: CapoPdfOptions = {},
+  options: CapoPdfOptions,
 ) {
   const fontSize = options.fontSize ?? 10
   const lineHeight = options.lineHeight ?? 14
   const linesPerPage = options.linesPerPage ?? 40
+  const footer = capoPdfFooter(options.generatedBy, options.generatedAt ?? new Date())
   const pages = Array.from(
     { length: Math.max(1, Math.ceil(lines.length / linesPerPage)) },
     (_, page) => lines.slice(page * linesPerPage, (page + 1) * linesPerPage),
@@ -66,7 +91,7 @@ export function buildCapoDocumentPdf(
 
   pages.forEach((page, index) => {
     const stream = bytes(
-      `q\n505 0 0 90 45 738 cm\n/Logo Do\nQ\nBT\n/F1 7 Tf\n45 726 Td\n(CAPO | Secretaria Municipal de Saude | Prefeitura de Pouso Alegre) Tj\nET\nBT\n/F1 ${fontSize} Tf\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
+      `q\n505 0 0 82.65 45 745 cm\n/Logo Do\nQ\nBT\n/F1 ${fontSize} Tf\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\nBT\n/F1 8 Tf\n11 TL\n45 54 Td\n${footerLines(footer).map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
     )
     const contentId = pageIds[index] + 1
     objects.push(

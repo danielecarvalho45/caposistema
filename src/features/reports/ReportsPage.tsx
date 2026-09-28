@@ -14,6 +14,8 @@ import { getRpcService } from '../../lib/supabase/rpc'
 import './reports-page.css'
 import { AdministrativeOperationalReport } from './AdministrativeOperationalReport'
 import { buildReportPdf, type ReportExport } from './report-export'
+import documentHeader from '../../assets/capo-timbre-oficial.png'
+import { capoPdfFooter } from '../../lib/pdf/capo-document-pdf'
 
 const defaultIntegration = createReportsIntegration()
 
@@ -223,6 +225,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
   const [dashboardLoadedKey, setDashboardLoadedKey] = useState('')
   const [managerSpecialty, setManagerSpecialty] = useState('')
   const [selectedManagerReport, setSelectedManagerReport] = useState('')
+  const [printGeneratedAt, setPrintGeneratedAt] = useState<Date | null>(null)
   const isProfessional =
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some(
@@ -290,13 +293,14 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
       ...(specialtyRows.length ? [{ key: 'agenda_by_specialty', label: 'Agenda por especialidade' }] : []),
     ]
     const selectedOption = reportOptions.find((option) => option.key === selectedManagerReport)
-    const report: ReportExport | null = dashboardState.status === 'success' && dashboardLoadedKey === `${startDate}:${endDate}:${managerSpecialty}` && (!selectedManagerReport || selectedOption) && reportOptions.length > 0 ? {
+    const report: ReportExport | null = (dashboardState.status === 'success' || dashboardState.status === 'empty') && dashboardLoadedKey === `${startDate}:${endDate}:${managerSpecialty}` && (!selectedManagerReport || selectedOption) ? {
       scope: accessContext.roles.some((role) => role.code === 'administrador') ? 'Gestor / Titular' : 'Coordenador',
       from: startDate,
       to: endDate,
       specialty: specialtyName,
       reportType: selectedOption?.label ?? 'Visão geral',
       issuedAt: new Date().toLocaleString('pt-BR'),
+      generatedBy: accessContext.full_name?.trim() || accessContext.username,
       sections: [
         ...availableSections.filter(([key, section]) => (!selectedManagerReport || key === selectedManagerReport) && dashboardEntries(section).length > 0).map(([key, section]) => ({ title: dashboardLabel(key), metrics: dashboardEntries(section).map(([metric, value]) => [dashboardLabel(metric), String(value)] as const) })),
         ...(specialtyRows.length && (!selectedManagerReport || selectedManagerReport === 'agenda_by_specialty') ? [{ title: 'Agenda por especialidade', metrics: specialtyRows.map((row) => [String(row.specialty_name ?? 'Sem especialidade'), `Válidos: ${row.valid_period ?? 0}; Realizados: ${row.realized_period ?? 0}; Faltas: ${row.no_show_period ?? 0}; Retornos: ${row.returns_period ?? 0}; Absenteísmo: ${row.absenteeism_rate_pct ?? 0}%`] as const) }] : []),
@@ -304,7 +308,8 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     } : null
     function downloadPdf() {
       if (!report) return
-      const url = URL.createObjectURL(buildReportPdf(report))
+      const generatedAt = new Date()
+      const url = URL.createObjectURL(buildReportPdf({ ...report, generatedAt, issuedAt: generatedAt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) }))
       const link = document.createElement('a')
       link.href = url
       link.download = `CAPO-relatorio-gerencial-${startDate}-${endDate}.pdf`
@@ -313,6 +318,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     }
     return (
       <section className="reports-page" aria-labelledby="manager-reports-title">
+        <div className="reports-print-brand"><img src={documentHeader} alt="CAPO, Secretaria Municipal de Saúde e Prefeitura de Pouso Alegre" /></div>
         <header className="reports-card reports-heading">
           <div>
             <p className="eyebrow">Governança e Gestão</p>
@@ -351,10 +357,11 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
           <span>Relatório: {report.reportType} · Escopo: {report.scope} · Período: {report.from} a {report.to} · Especialidade: {report.specialty} · Emissão: {report.issuedAt}</span>
         </div>}
         <div className="reports-card reports-export-actions">
-          <button type="button" disabled={!report} onClick={() => window.print()}>Imprimir</button>
+          <button type="button" disabled={!report} onClick={() => { setPrintGeneratedAt(new Date()); window.setTimeout(() => window.print(), 0) }}>Imprimir</button>
           <button type="button" disabled={!report} onClick={downloadPdf}>Gerar / salvar PDF</button>
         </div>
         <DashboardPanel state={dashboardState} management />
+        {report && <div className="reports-print-footer">{capoPdfFooter(report.generatedBy ?? 'Autoria não informada', printGeneratedAt ?? new Date())}</div>}
       </section>
     )
   }

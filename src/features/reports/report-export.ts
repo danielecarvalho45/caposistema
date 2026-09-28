@@ -8,6 +8,8 @@ export type ReportExport = Readonly<{
   specialty: string
   reportType?: string
   issuedAt: string
+  generatedBy?: string
+  generatedAt?: Date
   sections: readonly Readonly<{ title: string; metrics: readonly (readonly [string, string])[] }>[]
 }>
 
@@ -20,7 +22,7 @@ export function reportLines(report: ReportExport): string[] {
     ...(report.reportType ? [`Relatório: ${report.reportType}`] : []),
     `Emitido em: ${report.issuedAt}`,
     '',
-    ...report.sections.flatMap((section) => [section.title, ...section.metrics.map(([label, value]) => `${label}: ${value}`), '']),
+    ...(report.sections.length ? report.sections.flatMap((section) => [section.title, ...section.metrics.map(([label, value]) => `${label}: ${value}`), '']) : ['Nenhum registro retornado para os filtros selecionados.']),
   ]
 }
 
@@ -40,5 +42,5 @@ export function buildReportPdf(report: ReportExport): Blob {
     if (current) result.push(current)
     return result
   })
-  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 15, linesPerPage: 40 })
+  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 15, linesPerPage: 40, generatedBy: report.generatedBy ?? 'Autoria não informada', generatedAt: report.generatedAt })
 }

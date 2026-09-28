@@ -81,7 +81,7 @@ function buildTransportPdfBlob(input: Readonly<{
     `Solicitante: ${input.requester}`,
   ].flatMap((line) => wrapLine(line))
 
-  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40 })
+  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40, generatedBy: input.requester })
 }
 
 export function TransportPage({ accessContext }: Props) {

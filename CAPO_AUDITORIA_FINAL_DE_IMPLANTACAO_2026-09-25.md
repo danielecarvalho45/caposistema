@@ -2497,7 +2497,7 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Estado:** **CORRIGIDO INTERNAMENTE NO CÓDIGO / ZERO PRESERVADO COMO DADO / LOGO AINDA EXIGE VALIDAÇÃO NO BUILD PUBLICADO**. Se um novo PDF publicado não apresentar nem a logo nem o marcador textual institucional acima, fica comprovado que o ambiente publicado não está executando este build do `main`, e a próxima ação deve ser no processo de publicação/deploy, não no conteúdo do PDF.
 
 
-### 28.20 Reorganização funcional da Área Técnica — TI individual e Gestor/Titular (28/09/2026)
+### 28.23 Reorganização funcional da Área Técnica — TI individual e Gestor/Titular (28/09/2026)
 
 **Solicitação:** reorganizar a Área Técnica já existente sem criar novos módulos, sem alterar contratos do banco e sem duplicar implementação entre o perfil TI e o Gestor/Titular. A mesma organização deve aparecer na entrada técnica individual e na Área Técnica acessada pelo Gestor/Titular.
 
@@ -2516,7 +2516,7 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Estado:** **CORRIGIDO NO CÓDIGO / ESCOPO CONFERIDO / AGUARDANDO SUÍTE COMPLETA E VALIDAÇÃO OPERACIONAL DA ÁREA TÉCNICA PUBLICADA**.
 
 
-### 28.21 Correção pontual — gestão da agenda pelo Gestor e governança Coordenação → Administrativo (28/09/2026)
+### 28.24 Correção pontual — gestão da agenda pelo Gestor e governança Coordenação → Administrativo (28/09/2026)
 
 **Problemas observados:** (1) em **Gestor/Titular → Equipe e Agendas**, selecionar um profissional permitia editar cadastro, especialidades, papéis e permissões, mas não abria a configuração/horários reais da agenda desse profissional; (2) a Coordenação possuía a ação de **Efetivar alteração** depois da aprovação, misturando anuência com execução administrativa; (3) a Agenda Geral não apresentava ao Administrativo/Gestor autorizado as solicitações de alteração estrutural já aprovadas que aguardavam efetivação.
 
@@ -2541,7 +2541,7 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Estado:** **CORRIGIDO NO CÓDIGO / FLUXO FUNCIONAL SEPARADO / HORÁRIOS DO PROFISSIONAL LIGADOS AO GESTOR / AGUARDANDO SUÍTE COMPLETA E TESTE OPERACIONAL PUBLICADO**.
 
 
-### 28.22 Reposicionamento da efetivação de alterações estruturais — Início do Gestor/Titular (28/09/2026)
+### 28.25 Reposicionamento da efetivação de alterações estruturais — Início do Gestor/Titular (28/09/2026)
 
 **Solicitação visual/funcional:** o bloco **Alterações estruturais aprovadas** não deve ocupar espaço dentro da **Agenda Geral**. A função deve aparecer separadamente na aba **Início** do Gestor/Titular, imediatamente depois de **Cadastro de Profissional**.
 
@@ -2556,7 +2556,7 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Estado:** **CORRIGIDO NO CÓDIGO / POSIÇÃO CONFERIDA NA MAIN / AGUARDANDO VALIDAÇÃO VISUAL PUBLICADA**.
 
 
-### 28.23 Aba própria de Gestão de Agenda no Gestor/Titular (28/09/2026)
+### 28.26 Aba própria de Gestão de Agenda no Gestor/Titular (28/09/2026)
 
 **Solicitação:** o Gestor/Titular precisa ter uma aba própria para executar sobre a agenda de qualquer profissional os mesmos ajustes temporários já liberados na tela **Minha Agenda** do profissional, sem misturar essas ações com cadastro de equipe nem com mudanças estruturais sujeitas à Coordenação.
 
@@ -2577,3 +2577,19 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Preservação:** nenhuma RPC, SQL, RLS, policy, trigger, migration ou permissão de backend foi alterada. A correção reutiliza exclusivamente contratos já existentes.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / ABA DE GESTÃO DE AGENDA CRIADA NO GESTOR / AGUARDANDO VALIDAÇÃO VISUAL PUBLICADA E SUÍTE COMPLETA**.
+
+### 28.27 Substituição do timbre canônico em todos os PDFs (28/09/2026)
+
+**Problema e imagem oficial:** a arte institucional incorporada anteriormente estava errada, e o gerador ainda compunha uma identificação textual separada abaixo dela. A Titular enviou o novo timbre completo `Imagem do ChatGPT 28 de set. de 2026, 17_10_24(1).png`. O arquivo integral e inalterado foi preservado em `src/assets/capo-timbre-oficial.png` (SHA-256 `f441287d862a90abac95f5464e72882ad9eef4c32811bc9fd326b2c32b83c1a3`, idêntico ao anexo recebido). `src/lib/pdf/capo-document-brand.ts` contém a mesma arte convertida integralmente para JPEG, na proporção original 1448 × 237, para incorporação no PDF; não houve recorte nem redesenho. A linha antiga montada com texto foi removida.
+
+**Geradores físicos encontrados e atendidos:** `src/features/reports/report-export.ts` (Relatórios Gerenciais), `src/features/transport/TransportPage.tsx` (Solicitação de Transporte), `src/features/nutrition/NutritionPage.tsx` (Plano Alimentar) e `src/features/dentistry/DentistryPage.tsx` (Encaminhamento Odontológico). Todos chamam `src/lib/pdf/capo-document-pdf.ts`. A impressão opcional dos Relatórios pelo navegador também recebeu o PNG integral em `src/features/reports/ReportsPage.tsx` e `reports-page.css`. Busca posterior por criação de PDF em `src` não encontrou outro gerador ativo.
+
+**Composição:** cada página mostra a arte única no topo, à largura útil de 505 pontos e altura proporcional de 82,65 pontos, com corpo abaixo da faixa. O rodapé registra a data e hora de geração em português, fuso de São Paulo, e a autoria fornecida pelo fluxo real: conta Gestor/Coordenador em Relatórios; solicitante Gestor em Transporte; profissional autor do Plano Alimentar em Nutrição; médico solicitante em Odontologia. Quando o autor não consta no contrato, a informação aparece explicitamente como não informada, sem atribuição fictícia. A imagem antiga e a linha textual redundante não são utilizadas.
+
+**Relatórios sem registros e zeros:** PDF geral permanece habilitado quando a consulta oficial retorna estado vazio, com título, escopo, filtros e mensagem de ausência de registros; não inventa contagem. Indicadores numéricos `0` retornados pelo dashboard continuam impressos como `0`. RPCs, SQL, Supabase, Storage, autorização e fluxos de emissão não foram alterados.
+
+**Arquivos desta correção:** `src/assets/capo-timbre-oficial.png`, `src/lib/pdf/{capo-document-brand,capo-document-pdf}.ts`, `src/features/reports/{ReportsPage.tsx,report-export.ts,reports-page.css}`, `src/features/{transport/TransportPage.tsx,nutrition/NutritionPage.tsx,dentistry/DentistryPage.tsx}`, `tests/unit/{capo-document-pdf,report-export,reports-labels}.test.*` e este Documento Mestre. A numeração duplicada das seções finais 28.20–28.23 foi regularizada para 28.23–28.26, sem reescrever o conteúdo histórico.
+
+**Verificação interna:** testes direcionados de PDF/Relatórios **9/9 PASS** e testes pertinentes disponíveis **15/15 PASS**; suíte completa **243/244 PASS**, com uma falha de expectativa antiga em `tests/unit/App.test.tsx` para o título da Área Técnica. O mesmo teste falha no `origin/main` limpo anterior a esta alteração. `npm run typecheck` apresenta erro em `src/features/technical/TechnicalPage.tsx:417` (união string/número/boolean somada a número), também reproduzido no `origin/main` limpo anterior. Não foram alterados arquivos da Área TI nesta frente. `npm run build` **PASS**; `git diff --check` **PASS**. PDFs locais de teste dos quatro tipos, com conteúdo não clínico, foram abertos/renderizados: timbre integral legível, proporcional e sem sobreposição; segunda página também conferida; extração visual e textual confirmou indicadores `0` e rodapé. Isto não equivale à homologação com conta real no Pages.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / VALIDADO INTERNAMENTE / PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES**. PDFs já armazenados não são regravados por esta alteração. A pendência antiga de deploy descrita em 28.20 somente se encerra após gerar e abrir novos PDFs no sistema publicado.
