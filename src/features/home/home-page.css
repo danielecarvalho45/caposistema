@@ -644,3 +644,34 @@
     margin-top: 13px;
   }
 }
+
+
+/* CAPO — padrão cromático compartilhado dos atalhos principais */
+.home-profile-card.quick-blue { color:#006bd9; background:rgb(232 246 255 / 82%); }
+.home-profile-card.quick-green { color:#008e50; background:rgb(235 251 241 / 84%); }
+.home-profile-card.quick-pink { color:#e90059; background:rgb(255 240 245 / 86%); }
+.home-profile-card.quick-purple { color:#5a00d9; background:rgb(244 239 255 / 86%); }
+.home-profile-card.quick-yellow { color:#c98500; background:rgb(255 248 232 / 90%); }
+.home-profile-card.quick-mint { color:#008d4d; background:rgb(237 251 244 / 86%); }
+.home-profile-card.quick-slate { color:#405a75; background:rgb(242 246 250 / 88%); }
+.home-profile-card.quick-violet { color:#5c00d8; background:rgb(245 239 255 / 86%); }
+
+.home-profile-card.quick-blue span,
+.home-profile-card.quick-green span,
+.home-profile-card.quick-pink span,
+.home-profile-card.quick-purple span,
+.home-profile-card.quick-yellow span,
+.home-profile-card.quick-mint span,
+.home-profile-card.quick-slate span,
+.home-profile-card.quick-violet span {
+  color: currentColor;
+  opacity: .78;
+}
+
+.home-profile-card .home-profile-icon {
+  display:block;
+  margin:0 0 7px;
+  font-size:29px;
+  line-height:1;
+  opacity:1;
+}
