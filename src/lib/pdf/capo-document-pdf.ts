@@ -66,7 +66,7 @@ export function buildCapoDocumentPdf(
 
   pages.forEach((page, index) => {
     const stream = bytes(
-      `q\n505 0 0 168.333 45 650 cm\n/Logo Do\nQ\nBT\n/F1 ${fontSize} Tf\n45 625 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
+      `q\n505 0 0 90 45 738 cm\n/Logo Do\nQ\nBT\n/F1 ${fontSize} Tf\n45 716 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
     )
     const contentId = pageIds[index] + 1
     objects.push(
