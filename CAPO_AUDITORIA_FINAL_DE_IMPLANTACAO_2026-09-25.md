@@ -2295,3 +2295,43 @@ A partir desta seção, os agentes seguintes devem considerar como base oficial:
 **Classificação:** 🟡 **PENDÊNCIA DE HOMOLOGAÇÃO — TAREFA 2 EM ANDAMENTO.**
 
 **Importante:** esta Tarefa 2 de homologação não substitui nem reabre a Tarefa 2 técnica já concluída no histórico principal da auditoria. Trata-se da numeração operacional desta nova frente de conferência das telas.
+
+
+### 28.13 Frente de homologação — Tarefa 1 — revisão da tela Gestor/Titular (28/09/2026)
+
+**Definição expressa da responsável:** nesta nova frente de homologação, a **Tarefa 1** consiste na revisão manual da tela do **Gestor/Titular** no sistema publicado pela própria responsável do projeto.
+
+#### Método de execução
+
+1. A responsável acessa o sistema publicado com sua conta real de Gestor/Titular.
+2. Percorre as telas e funcionalidades visíveis do ambiente do Gestor/Titular.
+3. Sempre que encontrar algo que:
+   - não entenda;
+   - pareça incorreto;
+   - pareça diferente do fluxo esperado;
+   - apresente nomenclatura, comportamento, botão, informação ou navegação duvidosa;
+   deverá trazer o ponto isoladamente para análise.
+4. Cada situação será confrontada com:
+   - Projeto/Manual Estrutural vigente;
+   - Matriz Funcional vigente;
+   - Especificação Funcional Estrutural da Interface vigente;
+   - demais documentos normativos atuais aplicáveis ao ponto.
+5. Somente após esse confronto será classificado se o comportamento está:
+   - correto;
+   - apenas não compreendido;
+   - divergente e precisa de correção.
+6. Quando houver divergência comprovada, a correção será feita **pontualmente e de forma cirúrgica**, restrita àquela situação.
+7. Não reabrir automaticamente outros blocos, não refazer auditorias já concluídas e não alterar comportamento correto apenas para atender percepção visual sem base normativa.
+
+#### Objetivo
+
+Concluir a homologação do ambiente Gestor/Titular por inspeção real da responsável, transformando cada dúvida ou divergência em uma verificação documental específica e, quando necessário, em uma correção pontual.
+
+**Classificação:** 🟡 **TAREFA 1 — EM ANDAMENTO.**
+
+#### Relação com as demais tarefas desta frente
+
+- **Tarefa 1:** revisão manual da tela Gestor/Titular pela responsável + confronto documental + correções pontuais.
+- **Tarefa 2:** criação/configuração do login de homologação para conferência das telas dos demais perfis.
+
+Esta numeração pertence exclusivamente à **frente atual de homologação das telas** e não altera a numeração histórica das tarefas técnicas já concluídas no Documento Mestre.
