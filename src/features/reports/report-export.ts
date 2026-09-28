@@ -1,3 +1,5 @@
+import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
+
 export type ReportExport = Readonly<{
   scope: string
   from: string
@@ -52,17 +54,25 @@ export function buildReportPdf(report: ReportExport): Blob {
     if (current) result.push(current)
     return result
   })
-  const pages = Array.from({ length: Math.max(1, Math.ceil(lines.length / 47)) }, (_, index) => lines.slice(index * 47, (index + 1) * 47))
-  const pageIds = pages.map((_, index) => 4 + index * 2)
+  const linesPerPage = 36
+  const pages = Array.from({ length: Math.max(1, Math.ceil(lines.length / linesPerPage)) }, (_, index) => lines.slice(index * linesPerPage, (index + 1) * linesPerPage))
+  const pageIds = pages.map((_, index) => 5 + index * 2)
+  const logo = getCapoDocumentLogoJpeg()
+  const logoObject = join([
+    bytes(`<< /Type /XObject /Subtype /Image /Width ${CAPO_DOCUMENT_LOGO_WIDTH} /Height ${CAPO_DOCUMENT_LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n`),
+    logo,
+    bytes('\nendstream'),
+  ])
   const objects: Uint8Array[] = [
     bytes('<< /Type /Catalog /Pages 2 0 R >>'),
     bytes(`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pages.length} >>`),
     bytes('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'),
+    logoObject,
   ]
   pages.forEach((page, index) => {
-    const stream = bytes(`BT\n/F1 10 Tf\n45 795 Td\n15 TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`)
+    const stream = bytes(`q\n505 0 0 168 45 655 cm\n/Logo Do\nQ\nBT\n/F1 10 Tf\n45 625 Td\n15 TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`)
     const streamId = pageIds[index] + 1
-    objects.push(bytes(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${streamId} 0 R >>`))
+    objects.push(bytes(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> /XObject << /Logo 4 0 R >> >> /Contents ${streamId} 0 R >>`))
     objects.push(join([bytes(`<< /Length ${stream.length} >>\nstream\n`), stream, bytes('endstream')]))
   })
   const header = bytes('%PDF-1.4\n')
