@@ -2514,3 +2514,28 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Validação disponível nesta sessão:** inspeção física pós-alteração do arquivo e comparação de commits confirmaram o escopo restrito aos dois arquivos acima. Não há workflow de GitHub Actions disponível no repositório para executar automaticamente `npm test`, `npm run typecheck` e `npm run build` por esta conexão. Portanto, **não declarar PASS de suíte, typecheck, build ou homologação visual publicada nesta etapa**.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / ESCOPO CONFERIDO / AGUARDANDO SUÍTE COMPLETA E VALIDAÇÃO OPERACIONAL DA ÁREA TÉCNICA PUBLICADA**.
+
+
+### 28.21 Correção pontual — gestão da agenda pelo Gestor e governança Coordenação → Administrativo (28/09/2026)
+
+**Problemas observados:** (1) em **Gestor/Titular → Equipe e Agendas**, selecionar um profissional permitia editar cadastro, especialidades, papéis e permissões, mas não abria a configuração/horários reais da agenda desse profissional; (2) a Coordenação possuía a ação de **Efetivar alteração** depois da aprovação, misturando anuência com execução administrativa; (3) a Agenda Geral não apresentava ao Administrativo/Gestor autorizado as solicitações de alteração estrutural já aprovadas que aguardavam efetivação.
+
+**Fundamento funcional usado nesta correção:** os registros vigentes do projeto tratam **alteração própria/operacional** e **alteração estrutural sujeita à Coordenação** como fluxos distintos. O fluxo funcional consolidado fica: profissional/necessidade → Coordenação analisa e **aprova/devolve** → solicitação aprovada fica aguardando execução → **Administrativo autorizado** efetiva a mudança estrutural. Férias, mudança permanente de horário, mudança de turno, carga e demais alterações estruturais não são executadas pelo Coordenador. Gestor/Titular mantém capacidade gerencial de consultar a configuração real e executar os ajustes operacionais temporários já autorizados pelos contratos existentes.
+
+**Correção no Gestor/Titular:** `src/features/gestor/GestorTeamPage.tsx` passou a abrir, para o profissional selecionado, o gerenciador real de agenda reutilizando `OwnAgendaManager`. A consulta usa `getAgendaConfiguration(professionalId)`, portanto os horários/configurações exibidos vêm do backend e não são simulados. O Gestor pode registrar somente ajustes operacionais temporários suportados pelos contratos já existentes de bloqueio/exceção. A interface informa explicitamente que férias, mudança permanente de horário, turno ou carga seguem o fluxo Coordenação → anuência → efetivação administrativa.
+
+**Reuso do gerenciador:** `src/features/agenda/OwnAgendaManager.tsx` foi parametrizado para uso tanto na própria agenda do profissional quanto na agenda de um profissional selecionado pelo Gestor, sem duplicar lógica. Permanecem os mesmos contratos `getAgendaConfiguration`, `createAgendaBlock` e `createAgendaException`. Nenhuma nova RPC foi criada.
+
+**Correção na Coordenação:** `src/features/coordination/CoordinationDashboard.tsx` deixa de oferecer **Efetivar alteração**. A Coordenação continua podendo **Aprovar/Rejeitar** solicitações e **Aprovar/Devolver** decisões de equipe, inclusive férias e mudança de horário. Após aprovação, a interface informa **Aguardando efetivação administrativa**. A aprovação agora é apresentada explicitamente como anuência.
+
+**Correção na operação administrativa:** `src/features/agenda/AgendaPage.tsx` passou a consultar `getAgendaChangeRequests('aprovada', null, 50)` somente para contas com papel `administrador` ou `administrativo_operacional`. A Agenda Geral mostra **Alterações estruturais aprovadas** e permite **Efetivar alteração aprovada** por meio do contrato existente `applyAgendaChangeRequest(requestId)`. Depois da confirmação do banco, a lista é recarregada e a agenda é atualizada. Coordenador e profissional não recebem esse controle.
+
+**Arquivos alterados:** `src/features/agenda/AgendaPage.tsx`, `src/features/agenda/OwnAgendaManager.tsx`, `src/features/coordination/CoordinationDashboard.tsx` e `src/features/gestor/GestorTeamPage.tsx`. Comparação contra `ce439692a970c46462b6e397bf83a4a7ba71683b`: somente esses quatro arquivos foram modificados.
+
+**Commits da manutenção:** `fd44db71ac99a5cc5404e093fad4c7b54da360b2`, `97222cbf8bbc06d93e3921c0f6248f7e5aeb13b4`, `daa29b2e2225f9b312bdd223026019fdfab762ac`, `033ba8c41e788fdb6bac7340519599f4496d3140`, `ade1f336bcac53abcca214ab83c4f70f9a6ec8f9` e `b12ca6a4f7e803e86a806f0775c8bfcfd884fa61`.
+
+**Preservação técnica:** nenhuma migration, SQL, RPC, RLS, policy, trigger, permissão ou schema foi alterado. A correção apenas expõe e reorganiza na interface os contratos já existentes. Nenhum horário, férias, solicitação ou profissional fictício foi criado.
+
+**Validação nesta sessão:** leitura física pós-alteração e comparação de commits confirmaram o escopo restrito aos quatro arquivos acima. Não foi possível executar localmente `npm test`, `npm run typecheck` ou `npm run build` por esta conexão, portanto **não declarar PASS de suíte nem homologação operacional publicada**.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / FLUXO FUNCIONAL SEPARADO / HORÁRIOS DO PROFISSIONAL LIGADOS AO GESTOR / AGUARDANDO SUÍTE COMPLETA E TESTE OPERACIONAL PUBLICADO**.
