@@ -113,11 +113,6 @@ const links: Record<string, readonly DashboardLink[]> = {
       description: 'Consultar dia, semana e mês.',
     },
     {
-      path: '/atuacao',
-      label: 'Minha Atuação',
-      description: 'Abrir o contexto assistencial autorizado.',
-    },
-    {
       path: '/solicitacoes',
       label: 'Solicitações',
       description: 'Acompanhar solicitações profissionais.',
