@@ -207,16 +207,16 @@ export function ProfileDashboard({
 
   if (availableLinks.length === 0) return null
 
-  const useApprovedQuickLayout = ['administrador', 'administrativo_operacional', 'coordenador'].includes(primaryCode)
+  const useApprovedQuickLayout = ['administrador', 'administrativo_operacional'].includes(primaryCode)
 
   return (
     <section
-      className={`home-profile${useApprovedQuickLayout ? ' home-profile-gestor' : ''}`}
+      className={`home-profile${useApprovedQuickLayout ? ' home-profile-gestor' : ' home-profile-standard'}`}
       aria-labelledby="profile-panel-title"
       aria-label={primaryCode === 'administrador' ? 'Painel do Gestor / Titular do Sistema' : undefined}
     >
       <div>
-        {!useApprovedQuickLayout && <p className="eyebrow">Contexto principal</p>}
+        {!useApprovedQuickLayout && <p className="eyebrow">Acessos do perfil</p>}
         <h2 id="profile-panel-title">
           {titles[primaryCode] ?? 'Áreas autorizadas'}
         </h2>

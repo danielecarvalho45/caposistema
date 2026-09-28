@@ -7,6 +7,7 @@ import {
   type SocialFollowup,
 } from '../closures/closures-integration'
 import './social-page.css'
+import '../../styles/quick-access.css'
 import { Link } from 'react-router-dom'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
@@ -159,7 +160,7 @@ export function SocialPage({
         </div>
       </header>
 
-      <section className="social-quick-access" aria-labelledby="quick-title">
+      <section className="social-quick-access home-profile-standard" aria-labelledby="quick-title">
         <h2 id="quick-title">Acessos rápidos</h2>
         <div className="social-quick-grid">
           <a className="social-quick-card social-quick-card--agenda" href="#agenda"><span className="social-quick-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></a>

@@ -1,0 +1,71 @@
+/* Padrão visual aprovado para os acessos rápidos fora do Gestor e do AO. */
+.home-profile-standard {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-profile-standard > h2,
+.home-profile-standard > div > h2 {
+  margin: 0 0 12px;
+  color: #17365f;
+  font-size: 17px;
+  line-height: 1.2;
+}
+
+.home-profile-standard .home-profile-grid,
+.home-profile-standard .social-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 11px;
+  margin-top: 0;
+}
+
+.home-profile-standard .home-profile-card,
+.home-profile-standard .social-quick-card {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  align-items: center;
+  justify-items: center;
+  gap: 0;
+  min-width: 0;
+  min-height: 104px;
+  padding: 12px 8px 10px;
+  border: 1px solid rgb(110 155 200 / 18%);
+  border-radius: 9px;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 2px 9px rgb(31 67 104 / 2.5%);
+}
+
+.home-profile-standard .home-profile-card strong,
+.home-profile-standard .social-quick-card strong { font-size: 13px; line-height: 1.15; }
+.home-profile-standard .home-profile-card > span:last-child,
+.home-profile-standard .social-quick-card > span:last-child {
+  margin-top: 5px;
+  color: currentColor;
+  font-size: 10px;
+  line-height: 1.25;
+  opacity: .78;
+}
+.home-profile-standard .home-profile-icon,
+.home-profile-standard .social-quick-icon {
+  display: block;
+  margin: 0 0 7px;
+  color: currentColor;
+  font-size: 29px;
+  line-height: 1;
+  opacity: 1;
+}
+
+@media (max-width: 1250px) {
+  .home-profile-standard .home-profile-grid,
+  .home-profile-standard .social-quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .home-profile-standard .home-profile-grid,
+  .home-profile-standard .social-quick-grid { grid-template-columns: 1fr; }
+}

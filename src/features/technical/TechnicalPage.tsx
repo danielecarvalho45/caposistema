@@ -380,18 +380,23 @@ export function TechnicalPage({
         </div>
       </header>
 
-      <nav className="technical-tabs" aria-label="Módulos técnicos">
+      <nav className="technical-tabs technical-quick-access" aria-label="Módulos técnicos">
+        <h2>Acessos rápidos</h2>
+        <div className="technical-quick-grid">
         {tabs.map(([key, label]) => (
           <button
             key={key}
             type="button"
-            className={activeTab === key ? 'is-active' : undefined}
+            className={`technical-quick-card technical-quick-${key}${activeTab === key ? ' is-active' : ''}`}
             aria-current={activeTab === key ? 'page' : undefined}
             onClick={() => setActiveTab(key)}
           >
-            {label}
+            <span className="technical-quick-icon" aria-hidden="true">{{ painel: '▣', chamados: '▤', diagnostico: '◷', manutencao: '⚙' }[key]}</span>
+            <strong>{label}</strong>
+            <span>{{ painel: 'Estado do sistema', chamados: 'Receber e acompanhar', diagnostico: 'Conexão, integrações e logs', manutencao: 'Ferramentas e documentação' }[key]}</span>
           </button>
         ))}
+        </div>
       </nav>
 
       <StateMessage state={state} />
@@ -413,7 +418,7 @@ export function TechnicalPage({
           state.data.integrations.integrations.map((item) => item.status),
         )
         const recentIncidents = state.data.dashboard.runtime.recent_errors.length
-        const supportTotal = Object.values(state.data.dashboard.support).reduce(
+        const supportTotal = Object.values(state.data.dashboard.support).reduce<number>(
           (total, value) => total + Number(value || 0),
           0,
         )

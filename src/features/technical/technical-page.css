@@ -85,6 +85,43 @@
   color: #234d3c;
 }
 
+.technical-page .technical-quick-access {
+  display: block;
+  overflow: visible;
+  padding: 0;
+}
+.technical-quick-access h2 { margin: 0 0 12px; color: #17365f; font-size: 17px; }
+.technical-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 11px;
+}
+.technical-page .technical-quick-card {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: 0;
+  min-width: 0;
+  min-height: 104px;
+  padding: 12px 8px 10px;
+  border: 1px solid rgb(110 155 200 / 18%);
+  border-radius: 9px;
+  text-align: center;
+  white-space: normal;
+  box-shadow: 0 2px 9px rgb(31 67 104 / 2.5%);
+}
+.technical-quick-card strong { font-size: 13px; line-height: 1.15; }
+.technical-quick-card span:last-child { margin-top: 5px; font-size: 10px; line-height: 1.25; opacity: .78; }
+.technical-quick-card .technical-quick-icon { margin: 0 0 7px; font-size: 29px; line-height: 1; opacity: 1; }
+.technical-page .technical-quick-painel { color: #006bd9; background: rgb(232 246 255 / 82%); }
+.technical-page .technical-quick-chamados { color: #5a00d9; background: rgb(244 239 255 / 86%); }
+.technical-page .technical-quick-diagnostico { color: #c98500; background: rgb(255 248 232 / 90%); }
+.technical-page .technical-quick-manutencao { color: #008e50; background: rgb(235 251 241 / 84%); }
+.technical-page .technical-quick-card.is-active { outline: 2px solid currentColor; outline-offset: -3px; }
+@media (max-width: 1250px) { .technical-quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .technical-quick-grid { grid-template-columns: 1fr; } }
+
 .technical-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

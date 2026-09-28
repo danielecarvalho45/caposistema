@@ -4,6 +4,7 @@ import { getRpcService, loadingState, type AsyncState } from '../../lib/supabase
 import { canAccessAppRoute } from '../../app/route-access'
 import type { AccessContext } from '../../types/access'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
+import '../../styles/quick-access.css'
 
 type Row = Record<string, unknown>
 function rows(value: unknown): readonly Row[] {
@@ -28,18 +29,18 @@ function specialtyNames(row: Row) {
   }).join(', ') || '—'
 }
 const links = [
-  { path: '/pacientes', title: 'Pacientes em Acompanhamento', icon: '👥', tone: 'quick-blue' },
-  { path: '/agenda', title: 'Agenda Geral', icon: '▣', tone: 'quick-green' },
-  { path: '/fila', title: 'Filas e Pendências', icon: '≡', tone: 'quick-mint' },
-  { path: '/faltosos', title: 'Faltosos', icon: '◷', tone: 'quick-pink' },
-  { path: '/coordenacao/busca-ativa', title: 'Busca Ativa', icon: '⌕', tone: 'quick-violet' },
-  { path: '/solicitacoes', title: 'Solicitações', icon: '▤', tone: 'quick-purple' },
-  { path: '/encaminhamentos', title: 'Encaminhamentos', icon: '↗', tone: 'quick-yellow' },
-  { path: '/relatorios', title: 'Relatórios e Indicadores', icon: '▥', tone: 'quick-violet' },
-  { path: '/coordenacao/timeline', title: 'Linha do Tempo Operacional', icon: '◉', tone: 'quick-slate' },
-  { path: '/coordenacao/auditoria', title: 'Auditoria Operacional', icon: '✓', tone: 'quick-blue' },
-  { path: '/notificacoes', title: 'Notificações', icon: '●', tone: 'quick-yellow' },
-  { path: '/suporte', title: 'Suporte', icon: '?', tone: 'quick-mint' },
+  { path: '/pacientes', title: 'Pacientes em Acompanhamento', description: 'Consultar pacientes autorizados', icon: '👥', tone: 'quick-blue' },
+  { path: '/agenda', title: 'Agenda Geral', description: 'Visualizar agendas da equipe', icon: '▣', tone: 'quick-green' },
+  { path: '/fila', title: 'Filas e Pendências', description: 'Acompanhar demandas', icon: '≡', tone: 'quick-mint' },
+  { path: '/faltosos', title: 'Faltosos', description: 'Acompanhar o fluxo', icon: '◷', tone: 'quick-pink' },
+  { path: '/coordenacao/busca-ativa', title: 'Busca Ativa', description: 'Consultar o acompanhamento', icon: '⌕', tone: 'quick-violet' },
+  { path: '/solicitacoes', title: 'Solicitações', description: 'Analisar e encaminhar', icon: '▤', tone: 'quick-purple' },
+  { path: '/encaminhamentos', title: 'Encaminhamentos', description: 'Acompanhar os destinos', icon: '↗', tone: 'quick-yellow' },
+  { path: '/relatorios', title: 'Relatórios e Indicadores', description: 'Consultar resultados', icon: '▥', tone: 'quick-violet' },
+  { path: '/coordenacao/timeline', title: 'Linha do Tempo Operacional', description: 'Consultar o histórico', icon: '◉', tone: 'quick-slate' },
+  { path: '/coordenacao/auditoria', title: 'Auditoria Operacional', description: 'Verificar alterações', icon: '✓', tone: 'quick-blue' },
+  { path: '/notificacoes', title: 'Notificações', description: 'Ler avisos autorizados', icon: '●', tone: 'quick-yellow' },
+  { path: '/suporte', title: 'Suporte', description: 'Acompanhar chamados', icon: '?', tone: 'quick-mint' },
 ] as const
 function Panel({ title, state, fields }: { title: string; state: AsyncState<unknown>; fields: readonly string[] }) {
   return <article className="home-profile"><h2>{title}</h2>
@@ -98,7 +99,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     setBusy(false)
   }
   return <div className="home-page"><header className="home-welcome"><p className="eyebrow">Coordenação</p><h1>Painel da Coordenação</h1><p>Visão gerencial da equipe e dos fluxos autorizados.</p></header>
-    <section className="home-profile"><h2>Acessos rápidos</h2><div className="home-profile-grid">{links.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title, icon, tone }) => <Link className={`home-profile-card ${tone}`} to={path} key={path}><span className="home-profile-icon" aria-hidden="true">{icon}</span><strong>{title}</strong></Link>)}</div></section>
+    <section className="home-profile home-profile-standard"><h2>Acessos rápidos</h2><div className="home-profile-grid">{links.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title, description, icon, tone }) => <Link className={`home-profile-card ${tone}`} to={path} key={path}><span className="home-profile-icon" aria-hidden="true">{icon}</span><strong>{title}</strong><span>{description}</span></Link>)}</div></section>
     <section className="home-profile"><h2>Equipe e Profissionais</h2>
       {team.status === 'loading' && <p>Carregando…</p>}
       {team.status === 'error' && <p role="alert">{team.error.message}</p>}

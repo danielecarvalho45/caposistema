@@ -403,7 +403,7 @@ export function NutritionPage({
 ))}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<h3>Equipe CAPO</h3>{birthdays.data.team.length ? <ul>{birthdays.data.team.map((member) => <li key={member.professional_id}>{member.full_name}</li>)}</ul> : <p>Nenhum integrante da equipe faz aniversário hoje.</p>}</>}
           </section>
 
-          <nav className="home-profile" aria-label="Acessos rápidos da Nutrição">
+          <nav className="home-profile home-profile-standard" aria-label="Acessos rápidos da Nutrição">
             <h2>Acessos rápidos</h2>
             <div className="home-profile-grid">
               <a className="home-profile-card quick-green" href="#nutrition-plan-title"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Planejamento Alimentar</strong><span>Abrir o plano do paciente selecionado.</span></a>

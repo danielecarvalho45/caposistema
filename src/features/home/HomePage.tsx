@@ -13,6 +13,7 @@ import type { AccessContext } from '../../types/access'
 import { ProfileDashboard } from './ProfileDashboard'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import './home-page.css'
+import '../../styles/quick-access.css'
 
 function normalized(value: string | null | undefined) {
   const cleanValue = value?.trim()
