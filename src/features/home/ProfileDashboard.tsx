@@ -74,26 +74,36 @@ const links: Record<string, readonly DashboardLink[]> = {
       path: '/agenda',
       label: 'Agendas da Equipe',
       description: 'Consultar o período autorizado.',
+      icon: '▣',
+      tone: 'quick-green',
     },
     {
       path: '/faltosos',
       label: 'Faltosos',
       description: 'Acompanhar o fluxo operacional.',
+      icon: '◷',
+      tone: 'quick-pink',
     },
     {
       path: '/solicitacoes',
       label: 'Solicitações',
       description: 'Tratar demandas da coordenação.',
+      icon: '▤',
+      tone: 'quick-purple',
     },
     {
       path: '/encaminhamentos',
       label: 'Encaminhamentos',
       description: 'Acompanhar triagem e destino.',
+      icon: '↗',
+      tone: 'quick-mint',
     },
     {
       path: '/encerramentos',
       label: 'Encerramentos',
       description: 'Acompanhar ciclos autorizados.',
+      icon: '✓',
+      tone: 'quick-slate',
     },
   ],
   administrativo_operacional: [
@@ -111,21 +121,29 @@ const links: Record<string, readonly DashboardLink[]> = {
       path: '/agenda',
       label: 'Minha Agenda',
       description: 'Consultar dia, semana e mês.',
+      icon: '▣',
+      tone: 'quick-green',
     },
     {
       path: '/solicitacoes',
       label: 'Solicitações',
       description: 'Acompanhar solicitações profissionais.',
+      icon: '▤',
+      tone: 'quick-purple',
     },
     {
       path: '/encaminhamentos',
       label: 'Encaminhamentos',
       description: 'Enviar e receber encaminhamentos.',
+      icon: '↗',
+      tone: 'quick-mint',
     },
     {
       path: '/relatorios',
       label: 'Relatórios',
       description: 'Consultar resultados autorizados.',
+      icon: '▥',
+      tone: 'quick-violet',
     },
   ],
   nutricao: [
@@ -133,16 +151,22 @@ const links: Record<string, readonly DashboardLink[]> = {
       path: '/nutricao',
       label: 'Minha Agenda',
       description: 'Abrir a rotina da Nutrição.',
+      icon: '▣',
+      tone: 'quick-green',
     },
     {
       path: '/solicitacoes',
       label: 'Solicitações',
       description: 'Acompanhar demandas da própria atuação.',
+      icon: '▤',
+      tone: 'quick-purple',
     },
     {
       path: '/relatorios',
       label: 'Relatórios da Nutrição',
       description: 'Consultar indicadores autorizados.',
+      icon: '▥',
+      tone: 'quick-violet',
     },
   ],
   administrador_tecnico: [
@@ -150,11 +174,15 @@ const links: Record<string, readonly DashboardLink[]> = {
       path: '/tecnica',
       label: 'Painel Técnico',
       description: 'Estado, integrações, logs e suporte.',
+      icon: '⚙',
+      tone: 'quick-blue',
     },
     {
       path: '/notificacoes',
       label: 'Notificações',
       description: 'Abrir avisos do contexto técnico.',
+      icon: '●',
+      tone: 'quick-yellow',
     },
   ],
 }
@@ -196,13 +224,11 @@ export function ProfileDashboard({
       <div className="home-profile-grid">
         {availableLinks.map((item) => (
           <Link
-            className={`home-profile-card${
-              useApprovedQuickLayout ? ` ${item.tone ?? 'quick-blue'}` : ''
-            }`}
+            className={`home-profile-card${item.tone ? ` ${item.tone}` : ''}`}
             to={item.path}
             key={item.path}
           >
-            {useApprovedQuickLayout && item.icon && (
+            {item.icon && (
               <span className="home-profile-icon" aria-hidden="true">
                 {item.icon}
               </span>
