@@ -406,9 +406,9 @@ export function NutritionPage({
           <nav className="home-profile" aria-label="Acessos rápidos da Nutrição">
             <h2>Acessos rápidos</h2>
             <div className="home-profile-grid">
-              <a className="home-profile-card" href="#nutrition-plan-title"><strong>Planejamento Alimentar</strong><span>Abrir o plano do paciente selecionado.</span></a>
-              <Link className="home-profile-card" to="/solicitacoes"><strong>Solicitações</strong><span>Demandas da própria atuação.</span></Link>
-              <Link className="home-profile-card" to="/relatorios"><strong>Relatórios</strong><span>Indicadores autorizados da Nutrição.</span></Link>
+              <a className="home-profile-card quick-green" href="#nutrition-plan-title"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Planejamento Alimentar</strong><span>Abrir o plano do paciente selecionado.</span></a>
+              <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Demandas da própria atuação.</span></Link>
+              <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores autorizados da Nutrição.</span></Link>
             </div>
           </nav>
 
