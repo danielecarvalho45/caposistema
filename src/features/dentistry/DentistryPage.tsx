@@ -8,6 +8,7 @@ import {
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 import './dentistry-page.css'
 
 const DENTISTRY_CAPABILITY = 'emitir_encaminhamento_odontologico_externo'
@@ -105,9 +106,6 @@ function buildDentistryOfficialPdf(
 ) {
   const generatedAt = new Date()
   const lines = [
-    'CAPO - Centro de Acolhimento ao Paciente Oncológico',
-    'Pouso Alegre - MG',
-    '',
     'ENCAMINHAMENTO ODONTOLÓGICO',
     '',
     `Paciente: ${referral.patient_name}`,
@@ -121,21 +119,36 @@ function buildDentistryOfficialPdf(
     `Médico Clínico: ${referral.requesting_professional_name}`,
     `CRM: ${professionalRegistration ?? 'Não informado'}`,
     `Data da emissão: ${generatedAt.toLocaleString('pt-BR')}`,
-  ].flatMap((line) => dentistryPdfWrap(line)).slice(0, 48)
+  ].flatMap((line) => dentistryPdfWrap(line)).slice(0, 42)
 
   const stream =
-    'BT\n/F1 10 Tf\n50 792 Td\n14 TL\n' +
+    'q\n495 0 0 165 50 660 cm\n/Logo Do\nQ\nBT\n/F1 10 Tf\n50 625 Td\n14 TL\n' +
     lines.map((line) => `(${dentistryPdfEscape(line)}) Tj\nT*\n`).join('') +
     'ET\n'
   const streamBytes = dentistryPdfBytes(stream)
+  const logo = getCapoDocumentLogoJpeg()
   const objects = [
     dentistryPdfBytes('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
     dentistryPdfBytes('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'),
-    dentistryPdfBytes('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n'),
+    dentistryPdfBytes('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> /XObject << /Logo 5 0 R >> >> /Contents 6 0 R >>\nendobj\n'),
     dentistryPdfBytes('4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n'),
   ]
+  const logoObject = [
+    dentistryPdfBytes(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${CAPO_DOCUMENT_LOGO_WIDTH} /Height ${CAPO_DOCUMENT_LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n`),
+    logo,
+    dentistryPdfBytes('\nendstream\nendobj\n'),
+  ]
+  const logoLength = logoObject.reduce((total, part) => total + part.length, 0)
+  const logoContent = new Uint8Array(logoLength)
+  let logoOffset = 0
+  for (const part of logoObject) {
+    logoContent.set(part, logoOffset)
+    logoOffset += part.length
+  }
+  objects.push(logoContent)
+
   const contentObject = [
-    dentistryPdfBytes(`5 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`),
+    dentistryPdfBytes(`6 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`),
     streamBytes,
     dentistryPdfBytes('endstream\nendobj\n'),
   ]
@@ -159,9 +172,9 @@ function buildDentistryOfficialPdf(
   }
   const xrefOffset = offset
   const xref =
-    'xref\n0 6\n0000000000 65535 f \n' +
+    'xref\n0 7\n0000000000 65535 f \n' +
     offsets.slice(1).map((value) => `${String(value).padStart(10, '0')} 00000 n \n`).join('') +
-    `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
+    `trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
   parts.push(dentistryPdfBytes(xref))
   const total = parts.reduce((sum, part) => sum + part.length, 0)
   const bytes = new Uint8Array(total)
