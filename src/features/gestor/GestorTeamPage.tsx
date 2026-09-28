@@ -460,7 +460,7 @@ export function GestorTeamPage({ service: providedService }: Readonly<{ service?
         <OwnAgendaManager
           professionalId={selected.professionalId}
           title={`Agenda de ${selected.fullName}`}
-          description="Horários e ajustes operacionais temporários da agenda deste profissional. Férias, mudança permanente de horário, turno ou carga seguem o fluxo Coordenação → anuência → efetivação administrativa."
+          intro="Horários e ajustes operacionais temporários da agenda deste profissional. Férias, mudança permanente de horário, turno ou carga seguem o fluxo Coordenação → anuência → efetivação administrativa."
         />
       </section>
     )}
