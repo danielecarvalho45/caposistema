@@ -1,3 +1,5 @@
+import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
+
 import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
 
 export type ReportExport = Readonly<{
@@ -24,67 +26,21 @@ export function reportLines(report: ReportExport): string[] {
   ]
 }
 
-function bytes(value: string) {
-  return Uint8Array.from(value, (character) => {
-    const code = character.charCodeAt(0)
-    return code < 256 ? code : 63
-  })
-}
-
-function escape(value: string) {
-  return value.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)')
-}
-
-function join(parts: readonly Uint8Array[]) {
-  const result = new Uint8Array(parts.reduce((length, part) => length + part.length, 0))
-  let offset = 0
-  parts.forEach((part) => { result.set(part, offset); offset += part.length })
-  return result
-}
-
 export function buildReportPdf(report: ReportExport): Blob {
   const lines = reportLines(report).flatMap((line) => {
     if (line.length <= 94) return [line]
     const result: string[] = []
     let current = ''
     for (const word of line.split(' ')) {
-      if (current && `${current} ${word}`.length > 94) { result.push(current); current = word }
-      else current = current ? `${current} ${word}` : word
+      if (current && `${current} ${word}`.length > 94) {
+        result.push(current)
+        current = word
+      } else {
+        current = current ? `${current} ${word}` : word
+      }
     }
     if (current) result.push(current)
     return result
   })
-  const linesPerPage = 36
-  const pages = Array.from({ length: Math.max(1, Math.ceil(lines.length / linesPerPage)) }, (_, index) => lines.slice(index * linesPerPage, (index + 1) * linesPerPage))
-  const pageIds = pages.map((_, index) => 5 + index * 2)
-  const logo = getCapoDocumentLogoJpeg()
-  const logoObject = join([
-    bytes(`<< /Type /XObject /Subtype /Image /Width ${CAPO_DOCUMENT_LOGO_WIDTH} /Height ${CAPO_DOCUMENT_LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n`),
-    logo,
-    bytes('\nendstream'),
-  ])
-  const objects: Uint8Array[] = [
-    bytes('<< /Type /Catalog /Pages 2 0 R >>'),
-    bytes(`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pages.length} >>`),
-    bytes('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'),
-    logoObject,
-  ]
-  pages.forEach((page, index) => {
-    const stream = bytes(`q\n505 0 0 168 45 655 cm\n/Logo Do\nQ\nBT\n/F1 10 Tf\n45 625 Td\n15 TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`)
-    const streamId = pageIds[index] + 1
-    objects.push(bytes(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> /XObject << /Logo 4 0 R >> >> /Contents ${streamId} 0 R >>`))
-    objects.push(join([bytes(`<< /Length ${stream.length} >>\nstream\n`), stream, bytes('endstream')]))
-  })
-  const header = bytes('%PDF-1.4\n')
-  const parts: Uint8Array[] = [header]
-  const offsets = [0]
-  let offset = header.length
-  objects.forEach((object, index) => {
-    offsets.push(offset)
-    const piece = join([bytes(`${index + 1} 0 obj\n`), object, bytes('\nendobj\n')])
-    parts.push(piece)
-    offset += piece.length
-  })
-  parts.push(bytes(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((position) => `${String(position).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${offset}\n%%EOF\n`))
-  return new Blob([join(parts)], { type: 'application/pdf' })
+  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 15, linesPerPage: 40 })
 }
