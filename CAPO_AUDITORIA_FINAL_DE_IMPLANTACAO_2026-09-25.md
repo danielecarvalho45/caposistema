@@ -2672,3 +2672,23 @@ A sessão é preservada; após a seleção, o contexto efetivo é recarregado e 
 **Commits:** `dbbfa7fb6cbda073385608d291405f01ef3bfbdf`, `f7b904a4dfc97d613bc911880dc28aa003352477`, `f7246f68c0d39043bd4cbdfde3191dfd55876dd3`, `e5373d8161ded292f7a4e50bb65f999285a39a02`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO NOVA PUBLICAÇÃO E TESTE REAL DA TROCA DE PERFIL SEM REAUTENTICAÇÃO**.
+
+
+### 28.25 Correção — Relatórios/PDF no contexto Coordenador da conta de homologação (28/09/2026)
+
+**Falha observada:** ao utilizar a conta mestre `manuteste` no contexto simulado `coordenador`, a interface reconhecia o perfil da Coordenação, porém a RPC `get_reports_dashboard_for_interface()` negava o painel gerencial. A causa física era a autorização interna da RPC consultar somente os papéis reais em `user_roles`. Como `manuteste` possui papel real/base `administrador_tecnico`, o contexto efetivo de homologação `coordenador` era ignorado.
+
+**Correção cirúrgica no Supabase:** a RPC passou a reconhecer `coordenador` quando, simultaneamente:
+- a conta está ativa e marcada com `is_homologation_account = true`;
+- existe contexto de homologação habilitado;
+- o papel simulado ativo é `coordenador`.
+
+As verificações reais de `administrador` e `coordenador` permanecem preservadas para contas comuns. Nenhuma permissão de Gestor/Titular foi adicionada à conta `manuteste`.
+
+**Efeito esperado:** no contexto Coordenador, a rota `/relatorios` pode carregar os indicadores gerenciais reais e disponibilizar os controles já existentes de impressão e `Gerar / salvar PDF`, inclusive quando os indicadores válidos retornarem valor zero.
+
+**Persistência no repositório:** migration `supabase/migrations/20260928213500_allow_coordinator_homologation_reports.sql`.
+
+**Commit:** `6cf16143b6bd03f5c2a598c751c4a784ec94028b`.
+
+**Estado:** **CORRIGIDO NO SUPABASE E REGISTRADO NO GITHUB / AGUARDANDO TESTE REAL NO CONTEXTO COORDENADOR DA CONTA `manuteste`**.
