@@ -583,6 +583,7 @@ describe('camada de RPCs CAPO', () => {
       'renewal-id',
       'renewed',
       'Receita renovada e disponível para orientação administrativa.',
+      'Farmácia do CAPO',
     )
 
     expect(medicalTransport).toHaveBeenCalledWith(
@@ -591,6 +592,7 @@ describe('camada de RPCs CAPO', () => {
         p_request_id: 'renewal-id',
         p_action: 'renewed',
         p_operational_return: 'Receita renovada e disponível para orientação administrativa.',
+        p_pickup_location: 'Farmácia do CAPO',
       },
     )
     expect(medical).toMatchObject({
