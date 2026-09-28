@@ -2673,6 +2673,7 @@ export function createRpcService(transport: RpcTransport) {
       renewalId: string,
       action: 'start' | 'renewed' | 'needs_consult',
       operationalReturn: string | null = null,
+      pickupLocation: string | null = null,
     ) =>
       execute({
         transport,
@@ -2681,6 +2682,7 @@ export function createRpcService(transport: RpcTransport) {
           p_request_id: renewalId,
           p_action: action,
           p_operational_return: operationalReturn,
+          p_pickup_location: pickupLocation,
         },
         parse: parsePrescriptionRenewalMutation,
       }),
@@ -3699,6 +3701,10 @@ function createSupabaseTransport(
           p_operational_return:
             typeof args?.p_operational_return === 'string'
               ? args.p_operational_return
+              : null,
+          p_pickup_location:
+            typeof args?.p_pickup_location === 'string'
+              ? args.p_pickup_location
               : null,
         })
       case 'get_prescription_renewal_operational_context_for_interface':
