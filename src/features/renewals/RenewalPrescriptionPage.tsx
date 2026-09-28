@@ -56,6 +56,7 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   const canCreate = isAdministrative
   const canManageMedical = Boolean(accessContext.professional_id) && roleCodes.includes('profissional') && accessContext.capabilities.includes('renovacao_receita')
   const canManageAdmin = roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
+  const isMedicalExecutor = accessContext.primary_context.code === 'profissional' && canManageMedical
   const [status, setStatus] = useState('')
   const [items, setItems] = useState<readonly PrescriptionRenewal[]>([])
   const [doctors, setDoctors] = useState<readonly PrescriptionRenewalDoctor[]>([])
@@ -90,20 +91,26 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   useEffect(() => {
     if (!authorized) return
     let active = true
-    void Promise.all([
-      service.getPrescriptionRenewals(status || null, 100, 0),
-      service.getPrescriptionRenewalDoctors(),
-    ]).then(([renewals, availableDoctors]) => {
+    void service.getPrescriptionRenewals(status || null, 100, 0).then((renewals) => {
       if (!active) return
       if (renewals.status === 'success') setItems(renewals.data)
       else if (renewals.status === 'empty') setItems([])
       else setFeedback(errorMessage(renewals))
-      if (availableDoctors.status === 'success') setDoctors(availableDoctors.data)
-      else if (availableDoctors.status === 'error') setFeedback(availableDoctors.error.message)
       setLoading(false)
     })
     return () => { active = false }
   }, [authorized, service, status])
+
+  useEffect(() => {
+    if (!canCreate) return
+    let active = true
+    void service.getPrescriptionRenewalDoctors().then((availableDoctors) => {
+      if (!active) return
+      if (availableDoctors.status === 'success') setDoctors(availableDoctors.data)
+      else if (availableDoctors.status === 'error') setFeedback(availableDoctors.error.message)
+    })
+    return () => { active = false }
+  }, [canCreate, service])
 
   useEffect(() => {
     if (!authorized || !selectedId) {
@@ -161,6 +168,10 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
 
   async function actMedical(action: 'start' | 'renewed' | 'needs_consult') {
     if (!selected || busy) return
+    if (action === 'renewed' && pickupLocation.trim().length < 2) {
+      setFeedback('Informe onde o paciente deve retirar a receita.')
+      return
+    }
     if (action !== 'start' && note.trim().length < 3) {
       setFeedback('Informe o retorno operacional com pelo menos 3 caracteres.')
       return
@@ -170,14 +181,16 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
       selected.renewal_id,
       action,
       action === 'start' ? null : note.trim(),
+      action === 'renewed' ? pickupLocation.trim() : null,
     )
     if (result.status === 'success') {
       setNote('')
+      if (action === 'renewed') setPickupLocation('')
       setFeedback(
         action === 'start'
-          ? 'Avaliação médica iniciada.'
+          ? 'Solicitação aceita. A renovação está em execução.'
           : action === 'renewed'
-            ? 'Receita renovada no sistema oficial. Retorno enviado ao Administrativo.'
+            ? 'Receita marcada como pronta. Local de retirada enviado ao Administrativo.'
             : 'Necessidade de consulta registrada. Retorno enviado ao Administrativo para agendamento.',
       )
       await loadItems()
@@ -195,7 +208,7 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
     const result = await service.managePrescriptionRenewalAdmin({
       renewalId: selected.renewal_id,
       action: 'complete',
-      pickupLocation: pickupLocation.trim() || null,
+      pickupLocation: selected.pickup_location,
       finalAdminNote: note.trim() || null,
       patientContacted: true,
     })
@@ -247,9 +260,9 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
     <section className="renewals-page" aria-labelledby="renewal-title">
       <header className="renewals-header">
         <div>
-          <p className="eyebrow">Fluxo operacional</p>
-          <h1 id="renewal-title">Renovação de Receita</h1>
-          <p>Solicitação administrativa, avaliação médica e retorno registrado no CAPO.</p>
+          <p className="eyebrow">{isMedicalExecutor ? 'Tarefa médica recebida' : 'Fluxo operacional'}</p>
+          <h1 id="renewal-title">{isMedicalExecutor ? 'Renovação de Receita — Solicitações Recebidas' : 'Renovação de Receita'}</h1>
+          <p>{isMedicalExecutor ? 'Solicitações encaminhadas pelo Administrativo para execução pelo Médico Clínico.' : 'Solicitação administrativa, execução médica e retorno registrado no CAPO.'}</p>
         </div>
         <label>
           Situação
@@ -273,20 +286,21 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
       </section>}
       <div className="renewals-layout">
         <section className="renewals-card" aria-labelledby="renewal-list-title">
-          <h2 id="renewal-list-title">Solicitações</h2>
+          <h2 id="renewal-list-title">{isMedicalExecutor ? 'Solicitações recebidas' : 'Solicitações'}</h2>
           {loading && <p>Carregando solicitações...</p>}
-          {!loading && items.length === 0 && <p>Nenhuma solicitação encontrada neste contexto.</p>}
+          {!loading && items.length === 0 && <p>{isMedicalExecutor ? 'Nenhuma solicitação de renovação foi encaminhada para você.' : 'Nenhuma solicitação encontrada neste contexto.'}</p>}
           <div className="renewals-list">{items.map((item) => <button key={item.renewal_id} type="button" className={item.renewal_id === selectedId ? 'is-selected' : ''} onClick={() => setSelectedId(item.renewal_id)}><strong>{item.patient_name}</strong><span>{statusLabels[item.status] ?? item.status}</span><small>{item.doctor_name} · {dateTime(item.updated_at)}</small></button>)}</div>
         </section>
         <section className="renewals-card" aria-labelledby="renewal-detail-title">
           <h2 id="renewal-detail-title">Detalhes</h2>
           {!selected && <p>Selecione uma solicitação para consultar seus dados operacionais.</p>}
           {selected && <><dl className="renewal-summary"><div><dt>Paciente</dt><dd>{selected.patient_name}</dd></div><div><dt>Médico</dt><dd>{selected.doctor_name}</dd></div><div><dt>Situação</dt><dd>{statusLabels[selected.status] ?? selected.status}</dd></div><div><dt>Atualizada em</dt><dd>{dateTime(selected.updated_at)}</dd></div></dl><div className="renewal-text"><strong>Solicitação</strong><p>{selected.request_note ?? 'Sem observação registrada.'}</p></div>{selected.medical_feedback && <div className="renewal-text"><strong>Retorno médico</strong><p>{selected.medical_feedback}</p></div>}{selected.administrative_feedback && <div className="renewal-text"><strong>Retorno administrativo</strong><p>{selected.administrative_feedback}</p></div>}{(canManageMedical && ['awaiting_medical', 'medical_in_progress'].includes(selected.status)) || (canManageAdmin && !['completed', 'cancelled'].includes(selected.status)) ? <div className="renewal-actions">
-            {canManageMedical && selected.status === 'awaiting_medical' && <button type="button" onClick={() => void actMedical('start')} disabled={busy}>Iniciar avaliação médica</button>}
+            {canManageMedical && selected.status === 'awaiting_medical' && <button type="button" onClick={() => void actMedical('start')} disabled={busy}>Aceitar solicitação</button>}
             {canManageMedical && selected.status === 'medical_in_progress' && <>
-              <label>Retorno operacional<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
-              <p>Registre somente a devolutiva operacional. O conteúdo da prescrição permanece no sistema oficial.</p>
-              <button type="button" onClick={() => void actMedical('renewed')} disabled={busy || note.trim().length < 3}>Receita renovada</button>
+              <label>Observação operacional<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
+              <label>Local de retirada da receita *<input value={pickupLocation} onChange={(event) => setPickupLocation(event.target.value)} placeholder="Informe onde o paciente deverá retirar a receita" /></label>
+              <p>Registre somente a execução operacional. O conteúdo da prescrição permanece no sistema oficial.</p>
+              <button type="button" onClick={() => void actMedical('renewed')} disabled={busy || note.trim().length < 3 || pickupLocation.trim().length < 2}>Informar receita pronta</button>
               <button type="button" onClick={() => void actMedical('needs_consult')} disabled={busy || note.trim().length < 3}>Necessita consulta</button>
             </>}
             {canManageAdmin && selected.status === 'awaiting_admin' && <>
@@ -326,8 +340,8 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
                 </>
               ) : (
                 <>
-                  <p><strong>Decisão médica:</strong> receita renovada no sistema oficial.</p>
-                  <label>Local/orientação de retirada<input value={pickupLocation} onChange={(event) => setPickupLocation(event.target.value)} /></label>
+                  <p><strong>Decisão médica:</strong> receita pronta.</p>
+                  <p><strong>Local de retirada informado pelo Médico Clínico:</strong> {selected.pickup_location ?? 'Não informado'}</p>
                   <label>Observação administrativa final<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
                   <label><input type="checkbox" checked={patientContacted} onChange={(event) => setPatientContacted(event.target.checked)} /> Paciente contatado/orientado</label>
                   <button type="button" onClick={() => void completeAdministrative()} disabled={busy || !patientContacted}>Concluir retorno</button>
