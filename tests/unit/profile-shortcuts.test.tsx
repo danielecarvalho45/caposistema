@@ -42,7 +42,7 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
     }
     render(<MemoryRouter><ProfileShortcuts accessContext={titular} activePath="/" className="gestor-profile-button" profileLabel="Administrador" /></MemoryRouter>)
     await userEvent.click(screen.getByRole('button', { name: /Perfil: Administrador/ }))
-    expect(screen.getByRole('link', { name: 'Minha atuação' })).toHaveAttribute('href', '/atuacao')
+    expect(screen.getByRole('link', { name: 'Minha Agenda' })).toHaveAttribute('href', '/atuacao')
     expect(screen.queryByRole('link', { name: 'Coordenação' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Nutrição' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Assistência Social' })).not.toBeInTheDocument()
@@ -68,8 +68,8 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
   })
 
   it.each([
-    ['Clínica Geral', '/atuacao', 'Minha atuação'],
-    ['Psicologia', '/atuacao', 'Minha atuação'],
+    ['Clínica Geral', '/agenda', 'Minha Agenda'],
+    ['Psicologia', '/agenda', 'Minha Agenda'],
     ['Fonoaudiologia', '/atuacao', 'Minha atuação'],
     ['Nutrição', '/nutricao', 'Nutrição'],
     ['Assistência Social', '/assistencia-social', 'Assistência Social'],
