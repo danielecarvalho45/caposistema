@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   getRpcService,
   loadingState,
   type AsyncState,
   type BirthdayOverview,
+  type AgendaAppointment,
+  type PendingItem,
+  type NoShowFollowup,
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { ProfileDashboard } from './ProfileDashboard'
@@ -38,6 +42,12 @@ export function HomePage({
 }: HomePageProps) {
   const [birthdays, setBirthdays] =
     useState<AsyncState<BirthdayOverview>>(loadingState())
+  const [operationalAgenda, setOperationalAgenda] =
+    useState<AsyncState<readonly AgendaAppointment[]>>(loadingState())
+  const [operationalPending, setOperationalPending] =
+    useState<AsyncState<readonly PendingItem[]>>(loadingState())
+  const [operationalNoShows, setOperationalNoShows] =
+    useState<AsyncState<readonly NoShowFollowup[]>>(loadingState())
   const contextName =
     normalized(accessContext.primary_context.name) ?? 'Contexto autorizado'
   const functionTitle = normalized(accessContext.function_title)
@@ -62,9 +72,106 @@ export function HomePage({
     }
   }, [canViewBirthdays, loadBirthdays])
 
+  useEffect(() => {
+    if (!isAdministrativeOperational) return
+    let active = true
+    const today = new Date().toLocaleDateString('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+    })
+    const rpc = getRpcService()
+    void rpc.getAgenda(today, today).then((state) => {
+      if (active) setOperationalAgenda(state)
+    })
+    void rpc.getPendingItems(8, 0).then((state) => {
+      if (active) setOperationalPending(state)
+    })
+    void rpc.getNoShowFollowups(null, 8, 0).then((state) => {
+      if (active) setOperationalNoShows(state)
+    })
+    return () => {
+      active = false
+    }
+  }, [isAdministrativeOperational])
+
   return (
     <div className="home-page">
       <ProfileDashboard accessContext={accessContext} />
+
+      {isAdministrativeOperational && (
+        <section className="operational-dashboard-grid" aria-label="Rotina operacional do dia">
+          <article className="gestor-panel operational-agenda-panel">
+            <header className="gestor-panel-head">
+              <div>
+                <p className="eyebrow">Hoje</p>
+                <h2>Agenda do dia</h2>
+              </div>
+            </header>
+            {operationalAgenda.status === 'loading' && <p>Carregando agenda…</p>}
+            {operationalAgenda.status === 'error' && (
+              <p role="alert">Não foi possível carregar a agenda do dia.</p>
+            )}
+            {(operationalAgenda.status === 'empty' ||
+              (operationalAgenda.status === 'success' && operationalAgenda.data.length === 0)) && (
+              <div className="gestor-empty-state">Nenhum agendamento encontrado.</div>
+            )}
+            {operationalAgenda.status === 'success' && operationalAgenda.data.length > 0 && (
+              <div className="gestor-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Horário</th>
+                      <th>Paciente</th>
+                      <th>Profissional</th>
+                      <th>Especialidade</th>
+                      <th>Tipo</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {operationalAgenda.data.map((appointment) => (
+                      <tr key={appointment.appointment_id}>
+                        <td>{new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(appointment.appointment_date))}</td>
+                        <td>{appointment.patient_name}</td>
+                        <td>{appointment.professional_name}</td>
+                        <td>{appointment.specialty_name ?? '—'}</td>
+                        <td>{appointment.appointment_type}</td>
+                        <td>{appointment.attendance_status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <Link className="gestor-panel-foot" to="/agenda">Abrir Agenda Geral ›</Link>
+          </article>
+
+          <aside className="gestor-side-stack">
+            <article className="gestor-panel">
+              <header className="gestor-panel-head"><div><p className="eyebrow">Ação necessária</p><h2>Pendências do dia</h2></div></header>
+              {operationalPending.status === 'loading' && <p>Carregando pendências…</p>}
+              {operationalPending.status === 'error' && <p role="alert">Não foi possível carregar as pendências.</p>}
+              {(operationalPending.status === 'empty' || (operationalPending.status === 'success' && operationalPending.data.length === 0)) && <div className="gestor-empty-state">Nenhuma pendência encontrada.</div>}
+              {operationalPending.status === 'success' && operationalPending.data.length > 0 && (
+                <ul className="operational-compact-list">
+                  {operationalPending.data.slice(0, 5).map((item) => <li key={item.source_id}><strong>{item.title}</strong>{item.patient_name && <span>{item.patient_name}</span>}</li>)}
+                </ul>
+              )}
+            </article>
+            <article className="gestor-panel">
+              <header className="gestor-panel-head"><div><p className="eyebrow">Faltas</p><h2>Faltosos</h2></div></header>
+              {operationalNoShows.status === 'loading' && <p>Carregando faltosos…</p>}
+              {operationalNoShows.status === 'error' && <p role="alert">Não foi possível carregar faltosos.</p>}
+              {(operationalNoShows.status === 'empty' || (operationalNoShows.status === 'success' && operationalNoShows.data.length === 0)) && <div className="gestor-empty-state">Nenhum faltoso aguardando providência.</div>}
+              {operationalNoShows.status === 'success' && operationalNoShows.data.length > 0 && (
+                <ul className="operational-compact-list">
+                  {operationalNoShows.data.slice(0, 5).map((item) => <li key={item.followup_id}><strong>{item.patient_name}</strong><span>{item.active_search_status}</span></li>)}
+                </ul>
+              )}
+              <Link className="gestor-panel-foot" to="/faltosos">Abrir Faltosos ›</Link>
+            </article>
+          </aside>
+        </section>
+      )}
 
       {canViewBirthdays && (
         <section className="home-birthdays" aria-labelledby="birthdays-title">
@@ -144,40 +251,7 @@ export function HomePage({
         </section>
       )}
 
-      {isAdministrativeOperational && (
-        <section className="home-ops" aria-labelledby="operational-panel-title">
-          <div>
-            <p className="eyebrow">Operacional</p>
-            <h2 id="operational-panel-title">Painel Operacional</h2>
-          </div>
-
-          <div className="home-ops-grid">
-            <article className="home-metric">
-              <span className="home-metric-label">Contexto principal</span>
-              <strong>{contextName}</strong>
-            </article>
-            <article className="home-metric">
-              <span className="home-metric-label">Perfis ativos</span>
-              <strong>{accessContext.roles.length}</strong>
-            </article>
-            <article className="home-metric">
-              <span className="home-metric-label">Permissões</span>
-              <strong>{accessContext.capabilities.length}</strong>
-            </article>
-          </div>
-
-          <div className="home-capabilities">
-            <h3>Permissões vigentes</h3>
-            <ul>
-              {accessContext.capabilities.map((capability) => (
-                <li key={capability}>{capability}</li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      <section className="home-access" aria-labelledby="access-summary-title">
+      {!isAdministrativeOperational && <section className="home-access" aria-labelledby="access-summary-title">
         <div>
           <p className="eyebrow">Acesso atual</p>
           <h2 id="access-summary-title">Resumo do seu contexto</h2>
@@ -208,7 +282,7 @@ export function HomePage({
           A disponibilidade de cada módulo continuará sendo validada pelas
           regras de acesso do backend.
         </p>
-      </section>
+      </section>}
     </div>
   )
 }
