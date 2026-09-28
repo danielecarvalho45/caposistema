@@ -2539,3 +2539,18 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Validação nesta sessão:** leitura física pós-alteração e comparação de commits confirmaram o escopo restrito aos quatro arquivos acima. Não foi possível executar localmente `npm test`, `npm run typecheck` ou `npm run build` por esta conexão, portanto **não declarar PASS de suíte nem homologação operacional publicada**.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / FLUXO FUNCIONAL SEPARADO / HORÁRIOS DO PROFISSIONAL LIGADOS AO GESTOR / AGUARDANDO SUÍTE COMPLETA E TESTE OPERACIONAL PUBLICADO**.
+
+
+### 28.22 Reposicionamento da efetivação de alterações estruturais — Início do Gestor/Titular (28/09/2026)
+
+**Solicitação visual/funcional:** o bloco **Alterações estruturais aprovadas** não deve ocupar espaço dentro da **Agenda Geral**. A função deve aparecer separadamente na aba **Início** do Gestor/Titular, imediatamente depois de **Cadastro de Profissional**.
+
+**Correção aplicada:** o bloco completo foi removido de `src/features/agenda/AgendaPage.tsx`. A Agenda Geral volta a concentrar somente consulta de agenda, agendamento, remarcação e navegação Dia/Semana/Mês. O mesmo fluxo real de alterações aprovadas foi transferido para `src/features/gestor/GestorDashboard.tsx`, logo após o cartão **Cadastro de Profissional**, como área própria **Alterações estruturais aprovadas**.
+
+**Comportamento preservado:** o painel continua consultando `getAgendaChangeRequests('aprovada', null, 50)` e a ação **Efetivar alteração aprovada** continua utilizando `applyAgendaChangeRequest(requestId)`. Não foi criada RPC, regra de negócio ou persistência nova; houve somente reposicionamento da função na interface do Gestor/Titular.
+
+**Conferência física:** leitura da `main` após os commits confirmou que `GestorDashboard.tsx` contém **Alterações estruturais aprovadas** depois de **Cadastro de Profissional** e que `AgendaPage.tsx` não contém mais esse bloco.
+
+**Commits:** `547dc1abf3442a748637263f07712db5c1cbbba7` — remoção da Agenda Geral; `0d983f40f137e0a4757ceda9eff9119b3a115051` — inclusão no Início do Gestor/Titular.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / POSIÇÃO CONFERIDA NA MAIN / AGUARDANDO VALIDAÇÃO VISUAL PUBLICADA**.
