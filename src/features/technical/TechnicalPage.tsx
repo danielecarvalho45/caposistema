@@ -431,15 +431,21 @@ export function TechnicalPage({
             title: 'Banco',
             status: publicStatus(database?.status ?? 'desconhecido'),
             detail:
-              database?.detail ??
-              'A verificação do banco ainda não retornou uma explicação disponível.',
+              publicStatus(database?.status ?? 'desconhecido').label === 'Operacional'
+                ? 'O banco respondeu normalmente à verificação do sistema.'
+                : publicStatus(database?.status ?? 'desconhecido').label === 'Indisponível'
+                  ? 'O banco não respondeu à verificação e precisa de intervenção.'
+                  : 'A situação do banco precisa ser conferida em Diagnóstico.',
           },
           {
             title: 'Autenticação',
             status: publicStatus(auth?.status ?? 'desconhecido'),
             detail:
-              auth?.detail ??
-              'A verificação da autenticação ainda não retornou uma explicação disponível.',
+              publicStatus(auth?.status ?? 'desconhecido').label === 'Operacional'
+                ? 'O acesso e a autenticação responderam normalmente à verificação.'
+                : publicStatus(auth?.status ?? 'desconhecido').label === 'Indisponível'
+                  ? 'A autenticação não respondeu à verificação e precisa de intervenção.'
+                  : 'A situação da autenticação precisa ser conferida em Diagnóstico.',
           },
           {
             title: 'Integrações',
@@ -612,25 +618,10 @@ export function TechnicalPage({
           <div className="technical-maintenance-status">
             <h4>Correções / manutenções em andamento</h4>
             <p>
-              Esta área não cria atividades fictícias. As manutenções em andamento
-              devem refletir somente registros reais disponíveis nos contratos técnicos.
+              Nenhuma lista de manutenção em andamento é criada por estimativa.
+              Quando houver registro técnico real disponível, ele deve ser apresentado aqui.
             </p>
           </div>
-        </article>
-      )}
-
-      {state.status === 'success' && activeTab === 'manutencao' && (
-        <article className="technical-card">
-          <h3>Documentação técnica</h3>
-          <p>Documentação consultada conforme os registros técnicos disponíveis.</p>
-          <p className="technical-muted">Nenhum documento técnico retornado pelo inventário real.</p>
-        </article>
-      )}
-
-      {state.status === 'success' && activeTab === 'manutencao' && (
-        <article className="technical-card">
-          <h3>Ferramentas / atalhos</h3>
-          <p>Nenhuma ferramenta operacional disponível para execução nesta sessão.</p>
         </article>
       )}
 
