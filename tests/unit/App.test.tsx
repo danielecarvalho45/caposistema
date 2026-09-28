@@ -526,17 +526,13 @@ describe('App', () => {
     )
 
     expect(
-      screen.getByRole('heading', { name: 'Minha atuação assistencial' }),
-    ).toBeVisible()
-    expect(await screen.findByText('Psicologia')).toBeVisible()
+      screen.queryByRole('heading', { name: 'Minha atuação assistencial' }),
+    ).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Minha agenda' })).toBeVisible()
     expect(
       await screen.findByText('Nenhum agendamento encontrado no período.'),
     ).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Minha atuação' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
+    expect(screen.queryByRole('link', { name: 'Minha atuação' })).not.toBeInTheDocument()
   })
 
   it('integra a área técnica somente ao perfil autorizado', async () => {
