@@ -222,6 +222,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
   const [dashboardState, setDashboardState] = useState<AsyncState<unknown>>(loadingState)
   const [dashboardLoadedKey, setDashboardLoadedKey] = useState('')
   const [managerSpecialty, setManagerSpecialty] = useState('')
+  const [selectedManagerReport, setSelectedManagerReport] = useState('')
   const isProfessional =
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some(
@@ -282,15 +283,23 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
         ? dashboardSpecialties(dashboardState.data)
         : []
     const specialtyName = managerSpecialties.find((item) => item.id === managerSpecialty)?.name ?? (managerSpecialty ? 'Especialidade selecionada' : 'Todas')
-    const report: ReportExport | null = dashboardState.status === 'success' && dashboardLoadedKey === `${startDate}:${endDate}:${managerSpecialty}` ? {
+    const availableSections = dashboardState.status === 'success' ? dashboardSections(dashboardState.data) : []
+    const specialtyRows = dashboardState.status === 'success' ? dashboardSpecialtyRows(dashboardState.data) : []
+    const reportOptions = [
+      ...availableSections.filter(([, section]) => dashboardEntries(section).length > 0).map(([key]) => ({ key, label: dashboardLabel(key) })),
+      ...(specialtyRows.length ? [{ key: 'agenda_by_specialty', label: 'Agenda por especialidade' }] : []),
+    ]
+    const selectedOption = reportOptions.find((option) => option.key === selectedManagerReport)
+    const report: ReportExport | null = dashboardState.status === 'success' && dashboardLoadedKey === `${startDate}:${endDate}:${managerSpecialty}` && (!selectedManagerReport || selectedOption) && reportOptions.length > 0 ? {
       scope: accessContext.roles.some((role) => role.code === 'administrador') ? 'Gestor / Titular' : 'Coordenador',
       from: startDate,
       to: endDate,
       specialty: specialtyName,
+      reportType: selectedOption?.label ?? 'Visão geral',
       issuedAt: new Date().toLocaleString('pt-BR'),
       sections: [
-        ...dashboardSections(dashboardState.data).map(([key, section]) => ({ title: dashboardLabel(key), metrics: dashboardEntries(section).map(([metric, value]) => [dashboardLabel(metric), String(value)] as const) })),
-        ...(dashboardSpecialtyRows(dashboardState.data).length ? [{ title: 'Agenda por especialidade', metrics: dashboardSpecialtyRows(dashboardState.data).map((row) => [String(row.specialty_name ?? 'Sem especialidade'), `Válidos: ${row.valid_period ?? 0}; Realizados: ${row.realized_period ?? 0}; Faltas: ${row.no_show_period ?? 0}; Retornos: ${row.returns_period ?? 0}; Absenteísmo: ${row.absenteeism_rate_pct ?? 0}%`] as const) }] : []),
+        ...availableSections.filter(([key, section]) => (!selectedManagerReport || key === selectedManagerReport) && dashboardEntries(section).length > 0).map(([key, section]) => ({ title: dashboardLabel(key), metrics: dashboardEntries(section).map(([metric, value]) => [dashboardLabel(metric), String(value)] as const) })),
+        ...(specialtyRows.length && (!selectedManagerReport || selectedManagerReport === 'agenda_by_specialty') ? [{ title: 'Agenda por especialidade', metrics: specialtyRows.map((row) => [String(row.specialty_name ?? 'Sem especialidade'), `Válidos: ${row.valid_period ?? 0}; Realizados: ${row.realized_period ?? 0}; Faltas: ${row.no_show_period ?? 0}; Retornos: ${row.returns_period ?? 0}; Absenteísmo: ${row.absenteeism_rate_pct ?? 0}%`] as const) }] : []),
       ],
     } : null
     function downloadPdf() {
@@ -328,11 +337,18 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
                 ))}
               </select>
             </label>
+            <label>
+              Relatório para PDF
+              <select value={selectedManagerReport} onChange={(event) => setSelectedManagerReport(event.target.value)}>
+                <option value="">Visão geral — todos os relatórios</option>
+                {reportOptions.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}
+              </select>
+            </label>
           </div>
         </header>
         {report && <div className="reports-card reports-export-meta">
           <strong>CAPO — Relatórios Gerenciais</strong>
-          <span>Escopo: {report.scope} · Período: {report.from} a {report.to} · Especialidade: {report.specialty} · Emissão: {report.issuedAt}</span>
+          <span>Relatório: {report.reportType} · Escopo: {report.scope} · Período: {report.from} a {report.to} · Especialidade: {report.specialty} · Emissão: {report.issuedAt}</span>
         </div>}
         <div className="reports-card reports-export-actions">
           <button type="button" disabled={!report} onClick={() => window.print()}>Imprimir</button>

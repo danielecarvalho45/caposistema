@@ -50,3 +50,29 @@ it.each(['administrador', 'coordenador'])('oferece impressão e PDF do relatóri
   expect(loadDashboard).toHaveBeenCalledWith(expect.any(String), expect.any(String), 'nutrition')
   expect(await screen.findByText(/Especialidade: Nutrição/)).toBeVisible()
 })
+
+it('permite escolher uma seção real para o PDF sem alterar o painel nem os números', async () => {
+  const user = userEvent.setup()
+  const loadDashboard = vi.fn().mockResolvedValue({ status: 'success', data: {
+    patients: { total_current: 17 }, closures: { closed_period: 5 },
+  } })
+  const createUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:relatorio')
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+  try {
+    render(<ReportsPage accessContext={{ roles: [{ code: 'administrador' }], primary_context: { code: 'administrador' }, professional_id: null } as unknown as AccessContext} integration={{ loadDashboard, loadSpecialties: vi.fn(), loadReport: vi.fn() }} />)
+    await screen.findByRole('option', { name: 'Pacientes' })
+    expect(screen.getByRole('option', { name: 'Encerramentos' })).toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Relatório para PDF'), 'patients')
+    expect(screen.getByText(/Relatório: Pacientes/)).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Gerar / salvar PDF' }))
+    const pdf = createUrl.mock.calls[0][0] as Blob
+    const content = new TextDecoder('latin1').decode(await pdf.arrayBuffer())
+    expect(content).toContain('Total atual: 17')
+    expect(content).not.toContain('Encerrados no período: 5')
+    expect(screen.getByRole('region', { name: 'Encerramentos' })).toHaveTextContent('5')
+    await user.selectOptions(screen.getByLabelText('Relatório para PDF'), '')
+    await user.click(screen.getByRole('button', { name: 'Gerar / salvar PDF' }))
+    expect(new TextDecoder('latin1').decode(await (createUrl.mock.calls[1][0] as Blob).arrayBuffer())).toContain('Encerrados no período: 5')
+    expect(loadDashboard).toHaveBeenCalledTimes(1)
+  } finally { createUrl.mockRestore(); click.mockRestore() }
+})

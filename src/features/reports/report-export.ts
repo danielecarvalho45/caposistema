@@ -3,6 +3,7 @@ export type ReportExport = Readonly<{
   from: string
   to: string
   specialty: string
+  reportType?: string
   issuedAt: string
   sections: readonly Readonly<{ title: string; metrics: readonly (readonly [string, string])[] }>[]
 }>
@@ -14,6 +15,7 @@ export function reportLines(report: ReportExport): string[] {
     `Escopo: ${report.scope}`,
     `Período: ${report.from} a ${report.to}`,
     `Especialidade: ${report.specialty}`,
+    ...(report.reportType ? [`Relatório: ${report.reportType}`] : []),
     `Emitido em: ${report.issuedAt}`,
     '',
     ...report.sections.flatMap((section) => [section.title, ...section.metrics.map(([label, value]) => `${label}: ${value}`), '']),
