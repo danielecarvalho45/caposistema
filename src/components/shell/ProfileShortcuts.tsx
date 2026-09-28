@@ -1,21 +1,121 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
+import {
+  getRpcService,
+  type HomologationOptions,
+} from '../../lib/supabase/rpc'
 import { getProfileShortcuts } from './profile-shortcuts'
 import './profile-shortcuts.css'
+
+type HomologationService = Pick<
+  ReturnType<typeof getRpcService>,
+  'getHomologationOptions' | 'setHomologationContext' | 'clearHomologationContext'
+>
 
 type ProfileShortcutsProps = Readonly<{
   accessContext: AccessContext
   activePath: string
   className: string
   profileLabel: string
+  homologationService?: HomologationService
 }>
 
-export function ProfileShortcuts({ accessContext, activePath, className, profileLabel }: ProfileShortcutsProps) {
+type HomologationTarget = Readonly<{
+  key: string
+  label: string
+  roleCode: string | null
+  professionalName?: string
+  specialtyName?: string
+}>
+
+const homologationTargets: readonly HomologationTarget[] = [
+  {
+    key: 'administrador_tecnico',
+    label: 'TI / Manutenção',
+    roleCode: null,
+  },
+  {
+    key: 'coordenador',
+    label: 'Coordenador',
+    roleCode: 'coordenador',
+  },
+  {
+    key: 'administrativo_operacional',
+    label: 'Administrativo Operacional',
+    roleCode: 'administrativo_operacional',
+  },
+  {
+    key: 'medico',
+    label: 'Médico Clínico Geral',
+    roleCode: 'profissional',
+    professionalName: 'Homologação — Médico Clínico Geral',
+    specialtyName: 'Clínica Geral',
+  },
+  {
+    key: 'nutricao',
+    label: 'Nutrição',
+    roleCode: 'profissional',
+    professionalName: 'Homologação — Nutrição',
+    specialtyName: 'Nutrição',
+  },
+  {
+    key: 'assistencia_social',
+    label: 'Assistência Social',
+    roleCode: 'profissional',
+    professionalName: 'Homologação — Assistência Social',
+    specialtyName: 'Assistência Social',
+  },
+  {
+    key: 'psicologia',
+    label: 'Psicologia',
+    roleCode: 'profissional',
+    professionalName: 'Homologação — Psicologia',
+    specialtyName: 'Psicologia',
+  },
+  {
+    key: 'fisioterapia',
+    label: 'Fisioterapia',
+    roleCode: 'profissional',
+    professionalName: 'Homologação — Fisioterapia',
+    specialtyName: 'Fisioterapia',
+  },
+]
+
+function homologationTargetActive(
+  accessContext: AccessContext,
+  target: HomologationTarget,
+) {
+  const current = accessContext.homologation_context
+  if (target.roleCode === null) return !current?.enabled
+  if (!current?.enabled || current.role_code !== target.roleCode) return false
+  if (target.professionalName && current.professional_name !== target.professionalName) {
+    return false
+  }
+  if (target.specialtyName && current.specialty_name !== target.specialtyName) {
+    return false
+  }
+  return true
+}
+
+export function ProfileShortcuts({
+  accessContext,
+  activePath,
+  className,
+  profileLabel,
+  homologationService,
+}: ProfileShortcutsProps) {
   const [openedAtPath, setOpenedAtPath] = useState<string | null>(null)
+  const [homologationOptions, setHomologationOptions] =
+    useState<HomologationOptions | null>(null)
+  const [loadingHomologation, setLoadingHomologation] = useState(false)
+  const [switchingHomologation, setSwitchingHomologation] = useState(false)
+  const [homologationError, setHomologationError] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const shortcuts = getProfileShortcuts(accessContext)
   const open = openedAtPath === activePath
+  const isHomologation = accessContext.is_homologation_account
+  const service = homologationService ?? getRpcService()
 
   useEffect(() => {
     if (!open) return
@@ -36,7 +136,101 @@ export function ProfileShortcuts({ accessContext, activePath, className, profile
     }
   }, [open])
 
-  if (shortcuts.length === 0) {
+  async function loadHomologationOptions() {
+    if (!isHomologation || homologationOptions || loadingHomologation) return
+    setLoadingHomologation(true)
+    setHomologationError(null)
+    const result = await service.getHomologationOptions()
+    setLoadingHomologation(false)
+    if (result.status === 'success') {
+      setHomologationOptions(result.data)
+      return
+    }
+    setHomologationError('Não foi possível carregar os perfis de homologação.')
+  }
+
+  async function switchHomologation(target: HomologationTarget) {
+    if (switchingHomologation) return
+    setSwitchingHomologation(true)
+    setHomologationError(null)
+
+    if (target.roleCode === null) {
+      if (!accessContext.homologation_context?.enabled) {
+        window.location.assign('/')
+        return
+      }
+      const result = await service.clearHomologationContext(
+        'Retorno ao contexto técnico da conta de homologação.',
+      )
+      if (result.status === 'success') {
+        window.location.assign('/')
+        return
+      }
+      setSwitchingHomologation(false)
+      setHomologationError('Não foi possível retornar ao contexto de TI / Manutenção.')
+      return
+    }
+
+    let professionalId: string | null = null
+    let specialtyId: string | null = null
+
+    if (target.professionalName || target.specialtyName) {
+      if (!homologationOptions) {
+        setSwitchingHomologation(false)
+        setHomologationError('Os perfis profissionais ainda não foram carregados.')
+        return
+      }
+
+      if (target.professionalName) {
+        professionalId =
+          homologationOptions.professionals.find(
+            (professional) =>
+              professional.professional_name === target.professionalName,
+          )?.professional_id ?? null
+        if (!professionalId) {
+          setSwitchingHomologation(false)
+          setHomologationError(
+            `Perfil profissional de homologação não encontrado: ${target.label}.`,
+          )
+          return
+        }
+      }
+
+      if (target.specialtyName) {
+        specialtyId =
+          homologationOptions.specialties.find(
+            (specialty) => specialty.specialty_name === target.specialtyName,
+          )?.specialty_id ?? null
+        if (!specialtyId) {
+          setSwitchingHomologation(false)
+          setHomologationError(
+            `Especialidade de homologação não encontrada: ${target.label}.`,
+          )
+          return
+        }
+      }
+    }
+
+    const result = await service.setHomologationContext({
+      roleCode: target.roleCode,
+      professionalId,
+      specialtyId,
+      testPatientId: null,
+      reason: `Homologação controlada do perfil ${target.label}.`,
+    })
+
+    if (result.status === 'success') {
+      window.location.assign('/')
+      return
+    }
+
+    setSwitchingHomologation(false)
+    setHomologationError(
+      `Não foi possível abrir o perfil de homologação ${target.label}.`,
+    )
+  }
+
+  if (shortcuts.length === 0 && !isHomologation) {
     return <span className={`${className} profile-shortcuts-static`} title={profileLabel}>
       <span aria-hidden="true">👤</span><span>Perfil: {profileLabel}</span>
     </span>
@@ -48,13 +242,42 @@ export function ProfileShortcuts({ accessContext, activePath, className, profile
       type="button"
       aria-expanded={open}
       aria-controls="profile-shortcuts-menu"
-      onClick={() => setOpenedAtPath((value) => value === activePath ? null : activePath)}
+      onClick={() => {
+        const willOpen = !open
+        setOpenedAtPath(willOpen ? activePath : null)
+        if (willOpen) void loadHomologationOptions()
+      }}
     >
       <span aria-hidden="true">👤</span><span>Perfil: {profileLabel}</span><span aria-hidden="true">⌄</span>
     </button>
-    {open && <nav id="profile-shortcuts-menu" className="profile-shortcuts-menu" aria-label="Atalhos das funções autorizadas">
-      <Link to="/" onClick={() => setOpenedAtPath(null)}>Início — contexto principal</Link>
-      {shortcuts.map(({ path, label }) => <Link key={path} to={path} onClick={() => setOpenedAtPath(null)}>{label}</Link>)}
+    {open && <nav id="profile-shortcuts-menu" className="profile-shortcuts-menu" aria-label={isHomologation ? 'Perfis de homologação' : 'Atalhos das funções autorizadas'}>
+      {isHomologation ? (
+        <>
+          <p className="profile-shortcuts-heading">Perfis para conferência</p>
+          {homologationTargets.map((target) => {
+            const active = homologationTargetActive(accessContext, target)
+            return (
+              <button
+                type="button"
+                key={target.key}
+                disabled={switchingHomologation || loadingHomologation || active}
+                aria-current={active ? 'page' : undefined}
+                onClick={() => void switchHomologation(target)}
+              >
+                <span>{target.label}</span>
+                {active && <small>Atual</small>}
+              </button>
+            )
+          })}
+          {loadingHomologation && <p className="profile-shortcuts-state">Carregando perfis…</p>}
+          {homologationError && <p className="profile-shortcuts-error" role="alert">{homologationError}</p>}
+        </>
+      ) : (
+        <>
+          <Link to="/" onClick={() => setOpenedAtPath(null)}>Início — contexto principal</Link>
+          {shortcuts.map(({ path, label }) => <Link key={path} to={path} onClick={() => setOpenedAtPath(null)}>{label}</Link>)}
+        </>
+      )}
     </nav>}
   </div>
 }
