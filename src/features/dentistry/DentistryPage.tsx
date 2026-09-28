@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
   getRpcService,
   type AsyncState,
   type DentistryAccessContext,
@@ -9,7 +8,7 @@ import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { getSupabaseClient } from '../../lib/supabase/client'
-import { CAPO_DOCUMENT_LOGO_HEIGHT, CAPO_DOCUMENT_LOGO_WIDTH, getCapoDocumentLogoJpeg } from '../../lib/pdf/capo-document-brand'
+import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 import './dentistry-page.css'
 
 const DENTISTRY_CAPABILITY = 'emitir_encaminhamento_odontologico_externo'
