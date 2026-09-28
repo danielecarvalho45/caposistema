@@ -66,15 +66,15 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     void rpc.getAgendaChangeRequests(null, null, 50).then((result) => { if (active) setRequests(result) })
     return () => { active = false }
   }, [])
-  async function decide(requestId: string, action: 'aprovar' | 'rejeitar' | 'efetivar') {
+  async function decide(requestId: string, action: 'aprovar' | 'rejeitar') {
     if (!requestId || busy || (action === 'rejeitar' && reason.trim().length < 5)) return
     setBusy(true); setFeedback('')
     const rpc = getRpcService()
-    const result = action === 'efetivar' ? await rpc.applyAgendaChangeRequest(requestId) : await rpc.decideAgendaChangeRequest(requestId, action, reason.trim() || null)
+    const result = await rpc.decideAgendaChangeRequest(requestId, action, reason.trim() || null)
     if (result.status !== 'success') { setFeedback(result.status === 'error' ? result.error.message : 'O backend não confirmou a operação.'); setBusy(false); return }
     setRequests(loadingState())
     await reloadRequests()
-    setFeedback('Decisão confirmada pelo banco; solicitações recarregadas.')
+    setFeedback(action === 'aprovar' ? 'Anuência registrada. A alteração aguarda efetivação administrativa.' : 'Solicitação devolvida pela Coordenação.')
     setBusy(false)
   }
   async function register(decision: 'aprovar' | 'devolver') {
@@ -122,7 +122,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
         const status = value(row, 'status')
         return <li key={id + index}><strong>{value(row, 'professional_name', 'professional_id')}</strong> · {status} · {value(row, 'justification', 'reason', 'description')}
           {status === 'pendente' && <><button disabled={busy || id === '—'} onClick={() => void decide(id, 'aprovar')}>Aprovar</button><button disabled={busy || id === '—' || reason.trim().length < 5} onClick={() => void decide(id, 'rejeitar')}>Rejeitar</button></>}
-          {status === 'aprovada' && <button disabled={busy || id === '—'} onClick={() => void decide(id, 'efetivar')}>Efetivar alteração</button>}
+          {status === 'aprovada' && <span> · Aguardando efetivação administrativa</span>}
         </li>
       })}</ul> : <p>Nenhuma solicitação retornada.</p>)}
     </section>
