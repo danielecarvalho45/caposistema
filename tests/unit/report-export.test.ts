@@ -18,3 +18,36 @@ it('exporta apenas os indicadores e recortes recebidos, com cabeçalho e várias
   expect(content).toContain('Indicador 54: 54')
   expect(content).not.toContain('Dado inventado')
 })
+
+
+it('mantem indicadores zerados como dados validos no PDF gerencial', async () => {
+  const input = {
+    scope: 'Gestor / Titular',
+    from: '2026-09-01',
+    to: '2026-09-28',
+    specialty: 'Todas',
+    reportType: 'Visão geral',
+    issuedAt: '28/09/2026 14:35',
+    sections: [
+      {
+        title: 'Agenda',
+        metrics: [
+          ['Agendados no período', '0'],
+          ['Realizados no período', '0'],
+          ['Faltas no período', '0'],
+        ] as const,
+      },
+    ],
+  }
+  expect(reportLines(input)).toContain('Agendados no período: 0')
+  expect(reportLines(input)).toContain('Realizados no período: 0')
+  expect(reportLines(input)).toContain('Faltas no período: 0')
+  const pdf = buildReportPdf(input)
+  const data = await pdf.arrayBuffer()
+  const content = Array.from(new Uint8Array(data), (byte) => String.fromCharCode(byte)).join('')
+  expect(content).toContain('Agendados no período: 0')
+  expect(content).toContain('Realizados no período: 0')
+  expect(content).toContain('Faltas no período: 0')
+  expect(content).toContain('/ProcSet [/PDF /Text /ImageC]')
+  expect(content).toContain('CAPO | Secretaria Municipal de Saude | Prefeitura de Pouso Alegre')
+})
