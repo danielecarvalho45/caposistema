@@ -2452,3 +2452,16 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Commits da alteração direta:** `8b7fa2c594826a5baca4b7dea3c83d98eccb290f`, `582e32f1226c364ad24ed0123b9e386f2f39269a`, `d50f524d0295c1b0c0e3433bd097da33ae7d2eb3`, `fe3135ebff61407c308c259268e84f69a48acd3b`, `a3aca830069a2d9222366fa9c278b216918b6e67`, `6948fe204a8647b832169c963128e360a75ad471`, `6ffb10c598e83539b73d5a1221e93b9a61a4d035`, `458aef5e6b1bef55d888e44e2d9211d15fb0a07e`, `a9130a4e414944780915a5665bf6aa39f210c9d3`, `2341f40f85e326b5837d719e61a8a336c84f1609` e `b63480c0d75131010e9b16fa6d48f7b6ae77841b`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / IDENTIDADE INSTITUCIONAL CENTRALIZADA / AGUARDANDO SUÍTE COMPLETA E VALIDAÇÃO VISUAL DOS PDFs PUBLICADOS**. Não declarar homologação visual final até abrir ao menos um PDF de cada fluxo após a publicação.
+
+
+### 28.20 Retificação da validação publicada — PDFs de Relatórios (28/09/2026)
+
+**Evidência operacional apresentada pela Titular:** após abrir os PDFs gerados em **Relatórios Gerenciais** no sistema publicado, foi confirmado visualmente que **nenhuma alteração institucional estava presente no arquivo efetivamente baixado**. Portanto, a etapa 28.19 não pode ser considerada homologada no ambiente publicado.
+
+**Confronto físico do `main`:** o código corrente em `src/features/reports/report-export.ts` chama `buildCapoDocumentPdf()`, e o gerador compartilhado `src/lib/pdf/capo-document-pdf.ts` incorpora a imagem institucional proveniente de `src/lib/pdf/capo-document-brand.ts`. Assim, existe divergência entre o código-fonte atual do `main` e o comportamento observado pela Titular no PDF entregue pelo sistema publicado.
+
+**Classificação atual:** **FAIL OPERACIONAL NA PUBLICAÇÃO / INVESTIGAÇÃO NECESSÁRIA**. Não declarar a identidade institucional dos PDFs como concluída. Antes de alterar novamente a composição do PDF, deve-se confirmar se o Pages publicado contém o build correspondente ao `main` atual e, em seguida, gerar e abrir fisicamente um novo PDF de Relatórios. Se o build publicado estiver atualizado e o cabeçalho continuar ausente, tratar como falha real do gerador/renderização do PDF e corrigir o código.
+
+**Demais documentos:** Transporte, Nutrição e Odontologia permanecem igualmente **não homologados visualmente** até que seus PDFs publicados sejam efetivamente gerados e abertos.
+
+**Estado:** 🔴 **PDF DE RELATÓRIOS — NÃO HOMOLOGADO / PUBLICADO SEM ALTERAÇÃO VISÍVEL SEGUNDO TESTE REAL DA TITULAR.**
