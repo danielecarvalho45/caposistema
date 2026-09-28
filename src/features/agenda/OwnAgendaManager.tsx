@@ -30,6 +30,8 @@ function booleanValue(value: unknown) {
 
 type Props = Readonly<{
   professionalId: string
+  title?: string
+  description?: string
 }>
 
 type PendingConfirmation = Readonly<{
@@ -38,7 +40,11 @@ type PendingConfirmation = Readonly<{
   conflict: boolean
 }>
 
-export function OwnAgendaManager({ professionalId }: Props) {
+export function OwnAgendaManager({
+  professionalId,
+  title = 'Gerenciar minha agenda',
+  description = 'Ajustes temporários da própria disponibilidade. Mudanças estruturais de jornada, carga ou disponibilidade devem ser solicitadas ao Coordenador.',
+}: Props) {
   const rpc = useMemo(() => getRpcService(), [])
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
   const [configId, setConfigId] = useState('')
@@ -126,7 +132,7 @@ export function OwnAgendaManager({ professionalId }: Props) {
               'Existe conflito nessa data. Confirme para registrar a exceção.',
           )
         } else {
-          setFeedback('Exceção temporária registrada na própria agenda.')
+          setFeedback('Exceção temporária registrada na agenda.')
           resetForm()
         }
       } else if (result.status === 'error') {
@@ -160,7 +166,7 @@ export function OwnAgendaManager({ professionalId }: Props) {
             'A operação exige confirmação adicional antes de ser registrada.',
         )
       } else {
-        setFeedback('Alteração temporária registrada na própria agenda.')
+        setFeedback('Alteração temporária registrada na agenda.')
         resetForm()
       }
     } else if (result.status === 'error') {
@@ -172,11 +178,8 @@ export function OwnAgendaManager({ professionalId }: Props) {
 
   return (
     <section className="agenda-own-management" aria-labelledby="own-agenda-title">
-      <h3 id="own-agenda-title">Gerenciar minha agenda</h3>
-      <p>
-        Ajustes temporários da própria disponibilidade. Mudanças estruturais de
-        jornada, carga ou disponibilidade devem ser solicitadas ao Coordenador.
-      </p>
+      <h3 id="own-agenda-title">{title}</h3>
+      <p>{description}</p>
 
       {configuration?.status === 'loading' && <p>Carregando configuração da agenda…</p>}
       {configuration?.status === 'error' && (
