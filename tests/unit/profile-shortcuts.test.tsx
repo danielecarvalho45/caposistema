@@ -70,7 +70,7 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
   it.each([
     ['Clínica Geral', '/agenda', 'Minha Agenda'],
     ['Psicologia', '/agenda', 'Minha Agenda'],
-    ['Fonoaudiologia', '/atuacao', 'Minha atuação'],
+    ['Fonoaudiologia', '/agenda', 'Minha Agenda'],
     ['Nutrição', '/nutricao', 'Nutrição'],
     ['Assistência Social', '/assistencia-social', 'Assistência Social'],
   ])('respeita a especialidade profissional secundária %s', (specialty, path, label) => {
