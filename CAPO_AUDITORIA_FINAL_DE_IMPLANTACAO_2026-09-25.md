@@ -2480,3 +2480,18 @@ Esta numeração pertence exclusivamente à **frente atual de homologação das 
 **Commits:** `605c92cf0c28ffef2d27a197982c773daaca841d` e `7035b55ecb4c74b80acbfcfd89d6296501a9301a`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO NOVA PUBLICAÇÃO E VALIDAÇÃO VISUAL DO PDF REAL**. O FAIL operacional de 28.20 só poderá ser encerrado após a Titular abrir um PDF novo gerado pelo build que contenha estes commits.
+
+
+### 28.22 Correção interna — logo dos Relatórios e preservação de indicadores zerados (28/09/2026)
+
+**Regra confirmada pela Titular:** valor `0` é dado válido e deve permanecer visível no relatório. Não bloquear geração de PDF nem omitir indicadores apenas porque todos os valores do período são zero.
+
+**Diagnóstico interno:** `ReportsPage.tsx` já preserva métricas numéricas zeradas porque `dashboardEntries()` aceita valores do tipo `number`, inclusive `0`, e `report-export.ts` converte esses valores para texto sem filtro por positividade. Portanto, a causa da ausência visual da logo não era a existência de indicadores zerados. O comportamento publicado continuava divergente do gerador atual do `main`.
+
+**Correção cirúrgica aplicada ao gerador compartilhado:** `src/lib/pdf/capo-document-pdf.ts` passou a declarar explicitamente `/ProcSet [/PDF /Text /ImageC]` nos recursos de cada página, mantendo o XObject JPEG institucional `/Logo`. Foi acrescentada uma identificação institucional textual mínima logo abaixo da faixa gráfica — `CAPO | Secretaria Municipal de Saude | Prefeitura de Pouso Alegre` — como marcador de renderização do novo gerador e fallback de identificação, sem substituir a logo. O cabeçalho gráfico continua estreito e posicionado no topo, conforme 28.21.
+
+**Proteção de regressão:** `tests/unit/report-export.test.ts` ganhou cenário específico com todos os indicadores iguais a `0`, verificando que `Agendados no período: 0`, `Realizados no período: 0` e `Faltas no período: 0` permanecem no conteúdo exportado. O mesmo teste verifica os recursos de imagem e o marcador institucional do gerador novo.
+
+**Commits:** `ac0cd00d90e05afea8b32a79117db8a8b8c4743f` e `7adeff750e305a2ad01537f9bcc5c9180a696450`.
+
+**Estado:** **CORRIGIDO INTERNAMENTE NO CÓDIGO / ZERO PRESERVADO COMO DADO / LOGO AINDA EXIGE VALIDAÇÃO NO BUILD PUBLICADO**. Se um novo PDF publicado não apresentar nem a logo nem o marcador textual institucional acima, fica comprovado que o ambiente publicado não está executando este build do `main`, e a próxima ação deve ser no processo de publicação/deploy, não no conteúdo do PDF.
