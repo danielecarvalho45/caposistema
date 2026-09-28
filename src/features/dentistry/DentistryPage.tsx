@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
   getRpcService,
   type AsyncState,
   type DentistryAccessContext,
@@ -58,25 +59,6 @@ function documentField(record: DentistryDocumentState | null, key: string) {
   return typeof value === 'string' && value.trim() ? value : null
 }
 
-function dentistryPdfSafe(value: string) {
-  return Array.from(value).map((character) => {
-    const code = character.charCodeAt(0)
-    if (code <= 255) return character
-    return ({ '–': '-', '—': '-', '“': '"', '”': '"', '‘': "'", '’': "'", '•': '*' } as Record<string, string>)[character] ?? '?'
-  }).join('')
-}
-
-function dentistryPdfEscape(value: string) {
-  return dentistryPdfSafe(value)
-    .replace(/\\/g, '\\\\')
-    .replace(/\(/g, '\\(')
-    .replace(/\)/g, '\\)')
-}
-
-function dentistryPdfBytes(value: string) {
-  return Uint8Array.from(Array.from(value).map((character) => character.charCodeAt(0) & 255))
-}
-
 function dentistryPdfWrap(value: string, width = 88) {
   const output: string[] = []
   for (const paragraph of value.replace(/\r/g, '').split('\n')) {
@@ -119,71 +101,9 @@ function buildDentistryOfficialPdf(
     `Médico Clínico: ${referral.requesting_professional_name}`,
     `CRM: ${professionalRegistration ?? 'Não informado'}`,
     `Data da emissão: ${generatedAt.toLocaleString('pt-BR')}`,
-  ].flatMap((line) => dentistryPdfWrap(line)).slice(0, 42)
+  ].flatMap((line) => dentistryPdfWrap(line))
 
-  const stream =
-    'q\n495 0 0 165 50 660 cm\n/Logo Do\nQ\nBT\n/F1 10 Tf\n50 625 Td\n14 TL\n' +
-    lines.map((line) => `(${dentistryPdfEscape(line)}) Tj\nT*\n`).join('') +
-    'ET\n'
-  const streamBytes = dentistryPdfBytes(stream)
-  const logo = getCapoDocumentLogoJpeg()
-  const objects = [
-    dentistryPdfBytes('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
-    dentistryPdfBytes('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'),
-    dentistryPdfBytes('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> /XObject << /Logo 5 0 R >> >> /Contents 6 0 R >>\nendobj\n'),
-    dentistryPdfBytes('4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n'),
-  ]
-  const logoObject = [
-    dentistryPdfBytes(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${CAPO_DOCUMENT_LOGO_WIDTH} /Height ${CAPO_DOCUMENT_LOGO_HEIGHT} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${logo.length} >>\nstream\n`),
-    logo,
-    dentistryPdfBytes('\nendstream\nendobj\n'),
-  ]
-  const logoLength = logoObject.reduce((total, part) => total + part.length, 0)
-  const logoContent = new Uint8Array(logoLength)
-  let logoOffset = 0
-  for (const part of logoObject) {
-    logoContent.set(part, logoOffset)
-    logoOffset += part.length
-  }
-  objects.push(logoContent)
-
-  const contentObject = [
-    dentistryPdfBytes(`6 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`),
-    streamBytes,
-    dentistryPdfBytes('endstream\nendobj\n'),
-  ]
-  const contentLength = contentObject.reduce((total, part) => total + part.length, 0)
-  const content = new Uint8Array(contentLength)
-  let contentOffset = 0
-  for (const part of contentObject) {
-    content.set(part, contentOffset)
-    contentOffset += part.length
-  }
-  objects.push(content)
-
-  const header = dentistryPdfBytes('%PDF-1.4\n')
-  const parts: Uint8Array[] = [header]
-  const offsets = [0]
-  let offset = header.length
-  for (const object of objects) {
-    offsets.push(offset)
-    parts.push(object)
-    offset += object.length
-  }
-  const xrefOffset = offset
-  const xref =
-    'xref\n0 7\n0000000000 65535 f \n' +
-    offsets.slice(1).map((value) => `${String(value).padStart(10, '0')} 00000 n \n`).join('') +
-    `trailer\n<< /Size 7 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`
-  parts.push(dentistryPdfBytes(xref))
-  const total = parts.reduce((sum, part) => sum + part.length, 0)
-  const bytes = new Uint8Array(total)
-  let at = 0
-  for (const part of parts) {
-    bytes.set(part, at)
-    at += part.length
-  }
-  return new Blob([bytes], { type: 'application/pdf' })
+  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40 })
 }
 
 export function DentistryPage({ accessContext, service }: Props) {
