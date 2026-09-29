@@ -23,7 +23,7 @@ export function PatientSearch({
 
   async function search() {
     const value = query.trim()
-    if (value.length < 2) {
+    if (value.length < 2 && !/^\d$/.test(value)) {
       setState({ status: 'empty' })
       return
     }
