@@ -182,7 +182,7 @@ export function AssistentialPage({
   }
 
   return (
-    <section className="assistential-page" aria-labelledby="assistential-title">
+    <section className="assistential-page home-mobile-standard" aria-labelledby="assistential-title">
       <section id="assistential-agenda" aria-labelledby="assistential-agenda-title">
         <h3
           id="assistential-agenda-title"
