@@ -87,6 +87,8 @@ export function QueuePage({
   const [queueNotes, setQueueNotes] = useState('')
   const [queueFeedback, setQueueFeedback] = useState<string | null>(null)
   const [queueBusy, setQueueBusy] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState<Readonly<{ id: string; kind: 'patient' | 'family'; label: string }> | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
 
   const isAdministrativeOperational = [
     'administrador',
@@ -270,6 +272,56 @@ export function QueuePage({
     setFamilyBusy(false)
   }
 
+
+  function prepareQueueCancellation(id: string, kind: 'patient' | 'family', label: string) {
+    setCancelTarget({ id, kind, label })
+    setCancelReason('')
+    if (kind === 'patient') setQueueFeedback(null)
+    else setFamilyFeedback(null)
+  }
+
+  async function cancelQueueEntry() {
+    if (!cancelTarget || queueBusy || familyBusy) return
+    const reason = cancelReason.trim()
+    if (reason.length < 5) return
+
+    if (cancelTarget.kind === 'patient') {
+      setQueueBusy(true)
+      const result = await getRpcService().updateWaitingListStatus(cancelTarget.id, 'cancel', reason)
+      if (result.status === 'success') {
+        const reloaded = await getRpcService().getWaitingList(null, 'waiting', 50, 0)
+        setPatientQueue(reloaded)
+        setQueueFeedback(
+          reloaded.status === 'error'
+            ? 'Fila cancelada, mas a atualização da lista falhou: ' + reloaded.error.message
+            : 'Paciente retirado da fila ativa com motivo registrado.',
+        )
+        setCancelTarget(null)
+        setCancelReason('')
+      } else {
+        setQueueFeedback(result.status === 'error' ? result.error.message : 'O cancelamento não foi confirmado.')
+      }
+      setQueueBusy(false)
+      return
+    }
+
+    setFamilyBusy(true)
+    const result = await getRpcService().updateFamilyWaitingListStatus(cancelTarget.id, 'cancel', reason)
+    if (result.status === 'success') {
+      const reloaded = await loadFamilyQueue()
+      setFamilyFeedback(
+        reloaded.status === 'error'
+          ? 'Fila do familiar cancelada, mas a atualização da lista falhou: ' + reloaded.error.message
+          : 'Familiar retirado da fila ativa com motivo registrado.',
+      )
+      setCancelTarget(null)
+      setCancelReason('')
+    } else {
+      setFamilyFeedback(result.status === 'error' ? result.error.message : 'O cancelamento não foi confirmado.')
+    }
+    setFamilyBusy(false)
+  }
+
   if (!isAdministrativeOperational && !isProfessionalQueue) {
     return (
       <section className="home-page" aria-labelledby="queue-blocked-title">
@@ -372,18 +424,31 @@ export function QueuePage({
                     <td>{row.status === 'waiting' ? 'Aguardando' : rowText(row, 'status')}</td>
                     <td>
                       {canScheduleFamily ? (
-                        <Link
-                          to="/agenda"
-                          state={{
-                            patientId: rowText(row, 'patient_id'),
-                            patientName: rowText(row, 'patient_name'),
-                            specialtyId: rowText(row, 'specialty_id'),
-                            waitingListId: rowText(row, 'waiting_list_id'),
-                            origin: 'waiting_list',
-                          }}
-                        >
-                          Agendar
-                        </Link>
+                        <div className="queue-row-actions">
+                          <Link
+                            to="/agenda"
+                            state={{
+                              patientId: rowText(row, 'patient_id'),
+                              patientName: rowText(row, 'patient_name'),
+                              specialtyId: rowText(row, 'specialty_id'),
+                              waitingListId: rowText(row, 'waiting_list_id'),
+                              origin: 'waiting_list',
+                            }}
+                          >
+                            Agendar
+                          </Link>
+                          <button
+                            type="button"
+                            disabled={queueBusy}
+                            onClick={() => prepareQueueCancellation(
+                              rowText(row, 'waiting_list_id'),
+                              'patient',
+                              rowText(row, 'patient_name'),
+                            )}
+                          >
+                            Cancelar da fila
+                          </button>
+                        </div>
                       ) : (
                         <span>Supervisão</span>
                       )}
@@ -392,6 +457,27 @@ export function QueuePage({
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {cancelTarget?.kind === 'patient' && (
+          <div className="queue-cancel-panel">
+            <strong>Cancelar da fila — {cancelTarget.label}</strong>
+            <p>O registro será retirado da fila ativa, mas permanecerá no histórico.</p>
+            <label>
+              Motivo do cancelamento *
+              <textarea
+                value={cancelReason}
+                minLength={5}
+                maxLength={500}
+                onChange={(event) => setCancelReason(event.target.value)}
+              />
+            </label>
+            <button type="button" disabled={queueBusy || cancelReason.trim().length < 5} onClick={() => void cancelQueueEntry()}>
+              Confirmar cancelamento
+            </button>
+            <button type="button" disabled={queueBusy} onClick={() => { setCancelTarget(null); setCancelReason('') }}>
+              Manter na fila
+            </button>
           </div>
         )}
       </div>
@@ -415,7 +501,7 @@ export function QueuePage({
         {familyQueue.status === 'success' && waitingRows(familyQueue.data).length > 0 && (
           <div className="queue-table-wrap">
             <table className="queue-table">
-              <thead><tr><th>Familiar</th><th>Paciente vinculado</th><th>Relação</th><th>Prioridade</th><th>Entrada</th></tr></thead>
+              <thead><tr><th>Familiar</th><th>Paciente vinculado</th><th>Relação</th><th>Prioridade</th><th>Entrada</th><th>Ação</th></tr></thead>
               <tbody>
                 {waitingRows(familyQueue.data).map((row, index) => (
                   <tr key={rowText(row, 'waiting_list_id') + index}>
@@ -424,6 +510,23 @@ export function QueuePage({
                     <td>{rowText(row, 'relationship')}</td>
                     <td>{rowText(row, 'priority')}</td>
                     <td>{formatDate(typeof row.entered_at === 'string' ? row.entered_at : null)}</td>
+                    <td>
+                      {canScheduleFamily ? (
+                        <button
+                          type="button"
+                          disabled={familyBusy}
+                          onClick={() => prepareQueueCancellation(
+                            rowText(row, 'waiting_list_id'),
+                            'family',
+                            rowText(row, 'family_name'),
+                          )}
+                        >
+                          Cancelar da fila
+                        </button>
+                      ) : (
+                        <span>Supervisão</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -512,6 +615,27 @@ export function QueuePage({
           </>
         )}
 
+        {cancelTarget?.kind === 'family' && (
+          <div className="queue-cancel-panel">
+            <strong>Cancelar da fila — {cancelTarget.label}</strong>
+            <p>O vínculo e o histórico do familiar serão preservados; apenas a entrada ativa da fila será cancelada.</p>
+            <label>
+              Motivo do cancelamento *
+              <textarea
+                value={cancelReason}
+                minLength={5}
+                maxLength={500}
+                onChange={(event) => setCancelReason(event.target.value)}
+              />
+            </label>
+            <button type="button" disabled={familyBusy || cancelReason.trim().length < 5} onClick={() => void cancelQueueEntry()}>
+              Confirmar cancelamento
+            </button>
+            <button type="button" disabled={familyBusy} onClick={() => { setCancelTarget(null); setCancelReason('') }}>
+              Manter na fila
+            </button>
+          </div>
+        )}
         {familyFeedback && <p role="status">{familyFeedback}</p>}
         {!canScheduleFamily && <p>Coordenação: consulta e cruzamento disponíveis; a efetivação do agendamento permanece no Administrativo Operacional.</p>}
       </div>
