@@ -34,6 +34,35 @@ const statusLabels: Record<string, string> = {
   cancelled: 'Cancelada',
 }
 
+const medicalFilterOptions = [
+  { value: 'awaiting_medical', label: 'Recebidas' },
+  { value: 'medical_in_progress', label: 'Em andamento' },
+  { value: 'history', label: 'Histórico' },
+] as const
+
+function medicalStatusLabel(status: string) {
+  if (status === 'awaiting_medical') return 'Recebida'
+  if (status === 'medical_in_progress') return 'Em andamento'
+  return 'Histórico'
+}
+
+function filterMedicalItems(
+  items: readonly PrescriptionRenewal[],
+  filter: string,
+) {
+  if (filter === 'history') {
+    return items.filter(
+      (item) =>
+        item.status !== 'awaiting_medical' &&
+        item.status !== 'medical_in_progress',
+    )
+  }
+  if (filter === 'awaiting_medical' || filter === 'medical_in_progress') {
+    return items.filter((item) => item.status === filter)
+  }
+  return items
+}
+
 function errorMessage<T>(state: AsyncState<T>) {
   return state.status === 'error' ? state.error.message : null
 }
@@ -59,7 +88,9 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   const canCreate = isAdministrativeContext
   const canManageMedical = isMedicalExecutor
   const canManageAdmin = isAdministrativeContext
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState(
+    isMedicalExecutor ? 'awaiting_medical' : '',
+  )
   const [items, setItems] = useState<readonly PrescriptionRenewal[]>([])
   const [doctors, setDoctors] = useState<readonly PrescriptionRenewalDoctor[]>([])
   const [patients, setPatients] = useState<readonly ReferralPatient[]>([])
@@ -79,10 +110,19 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
 
   async function loadItems() {
     setLoading(true)
-    const result = await service.getPrescriptionRenewals(status || null, 100, 0)
+    const backendStatus =
+      isMedicalExecutor && status === 'history' ? null : status || null
+    const result = await service.getPrescriptionRenewals(backendStatus, 100, 0)
     if (result.status === 'success') {
-      setItems(result.data)
-      setSelectedId((current) => current && result.data.some((item) => item.renewal_id === current) ? current : null)
+      const visibleItems = isMedicalExecutor
+        ? filterMedicalItems(result.data, status)
+        : result.data
+      setItems(visibleItems)
+      setSelectedId((current) =>
+        current && visibleItems.some((item) => item.renewal_id === current)
+          ? current
+          : null,
+      )
     } else if (result.status === 'empty') {
       setItems([])
       setSelectedId(null)
@@ -93,15 +133,22 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   useEffect(() => {
     if (!authorized) return
     let active = true
-    void service.getPrescriptionRenewals(status || null, 100, 0).then((renewals) => {
+    const backendStatus =
+      isMedicalExecutor && status === 'history' ? null : status || null
+    void service.getPrescriptionRenewals(backendStatus, 100, 0).then((renewals) => {
       if (!active) return
-      if (renewals.status === 'success') setItems(renewals.data)
-      else if (renewals.status === 'empty') setItems([])
+      if (renewals.status === 'success') {
+        setItems(
+          isMedicalExecutor
+            ? filterMedicalItems(renewals.data, status)
+            : renewals.data,
+        )
+      } else if (renewals.status === 'empty') setItems([])
       else setFeedback(errorMessage(renewals))
       setLoading(false)
     })
     return () => { active = false }
-  }, [authorized, service, status])
+  }, [authorized, isMedicalExecutor, service, status])
 
   useEffect(() => {
     if (!canCreate) return
@@ -115,7 +162,7 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   }, [canCreate, service])
 
   useEffect(() => {
-    if (!authorized || !selectedId) {
+    if (!canManageAdmin || !selectedId) {
       setOperationalContext(null)
       return
     }
@@ -136,7 +183,7 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
     return () => {
       active = false
     }
-  }, [authorized, selectedId, service])
+  }, [canManageAdmin, selectedId, service])
 
   async function searchPatients() {
     if (patientQuery.trim().length < 2) {
@@ -273,8 +320,20 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
         <label>
           Situação
           <select value={status} onChange={(event) => setStatus(event.target.value)}>
-            <option value="">Todas</option>
-            {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            {isMedicalExecutor ? (
+              medicalFilterOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="">Todas</option>
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </>
+            )}
           </select>
         </label>
       </header>
@@ -295,12 +354,12 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
           <h2 id="renewal-list-title">{isMedicalExecutor ? 'Solicitações recebidas' : 'Solicitações'}</h2>
           {loading && <p>Carregando solicitações...</p>}
           {!loading && items.length === 0 && <p>{isMedicalExecutor ? 'Nenhuma solicitação de renovação foi encaminhada para você.' : 'Nenhuma solicitação encontrada neste contexto.'}</p>}
-          <div className="renewals-list">{items.map((item) => <button key={item.renewal_id} type="button" className={item.renewal_id === selectedId ? 'is-selected' : ''} onClick={() => setSelectedId(item.renewal_id)}><strong>{item.patient_name}</strong><span>{statusLabels[item.status] ?? item.status}</span><small>{item.doctor_name} · {dateTime(item.updated_at)}</small></button>)}</div>
+          <div className="renewals-list">{items.map((item) => <button key={item.renewal_id} type="button" className={item.renewal_id === selectedId ? 'is-selected' : ''} onClick={() => setSelectedId(item.renewal_id)}><strong>{item.patient_name}</strong><span>{isMedicalExecutor ? medicalStatusLabel(item.status) : statusLabels[item.status] ?? item.status}</span><small>{item.doctor_name} · {dateTime(item.updated_at)}</small></button>)}</div>
         </section>
         <section className="renewals-card" aria-labelledby="renewal-detail-title">
           <h2 id="renewal-detail-title">Detalhes</h2>
           {!selected && <p>Selecione uma solicitação para consultar seus dados operacionais.</p>}
-          {selected && <><dl className="renewal-summary"><div><dt>Paciente</dt><dd>{selected.patient_name}</dd></div><div><dt>Médico</dt><dd>{selected.doctor_name}</dd></div><div><dt>Situação</dt><dd>{statusLabels[selected.status] ?? selected.status}</dd></div><div><dt>Atualizada em</dt><dd>{dateTime(selected.updated_at)}</dd></div></dl><div className="renewal-text"><strong>Solicitação</strong><p>{selected.request_note ?? 'Sem observação registrada.'}</p></div>{selected.medical_feedback && <div className="renewal-text"><strong>Retorno médico</strong><p>{selected.medical_feedback}</p></div>}{selected.administrative_feedback && <div className="renewal-text"><strong>Retorno administrativo</strong><p>{selected.administrative_feedback}</p></div>}{(canManageMedical && ['awaiting_medical', 'medical_in_progress'].includes(selected.status)) || (canManageAdmin && !['completed', 'cancelled'].includes(selected.status)) ? <div className="renewal-actions">
+          {selected && <><dl className="renewal-summary"><div><dt>Paciente</dt><dd>{selected.patient_name}</dd></div><div><dt>Médico</dt><dd>{selected.doctor_name}</dd></div><div><dt>Situação</dt><dd>{isMedicalExecutor ? medicalStatusLabel(selected.status) : statusLabels[selected.status] ?? selected.status}</dd></div><div><dt>Atualizada em</dt><dd>{dateTime(selected.updated_at)}</dd></div></dl><div className="renewal-text"><strong>Solicitação</strong><p>{selected.request_note ?? 'Sem observação registrada.'}</p></div>{selected.medical_feedback && <div className="renewal-text"><strong>Retorno médico</strong><p>{selected.medical_feedback}</p></div>}{canManageAdmin && selected.administrative_feedback && <div className="renewal-text"><strong>Retorno administrativo</strong><p>{selected.administrative_feedback}</p></div>}{(canManageMedical && ['awaiting_medical', 'medical_in_progress'].includes(selected.status)) || (canManageAdmin && !['completed', 'cancelled'].includes(selected.status)) ? <div className="renewal-actions">
             {canManageMedical && selected.status === 'awaiting_medical' && (
               <button type="button" onClick={() => void actMedical('start')} disabled={busy}>
                 Recebido
