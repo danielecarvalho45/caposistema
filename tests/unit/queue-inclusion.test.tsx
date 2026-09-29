@@ -182,3 +182,30 @@ it('cancela familiar da fila ativa com motivo e preserva o vínculo', async () =
   expect(await screen.findByText('Familiar retirado da fila ativa com motivo registrado.')).toBeVisible()
 })
 
+it('destaca o paciente sugerido ao abrir a fila pela notificação', async () => {
+  rpc.getWaitingList.mockResolvedValue({
+    status: 'success',
+    data: [{
+      waiting_list_id: 'waiting-1',
+      patient_id: 'patient-1',
+      patient_name: 'Paciente Sugerido',
+      specialty_id: 'specialty-1',
+      specialty_name: 'Nutrição',
+      priority: 1,
+      entered_at: '2026-09-29T12:00:00Z',
+      status: 'waiting',
+    }],
+  })
+  rpc.getFamilyWaitingList.mockResolvedValue({ status: 'empty' })
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+
+  render(
+    <MemoryRouter initialEntries={['/fila?waitingListId=waiting-1&queueKind=patient']}>
+      <QueuePage accessContext={context('administrador')} loadPendingItems={async () => ({ status: 'empty' })} />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByText(/paciente sugerido pelo CAPO está destacado/i)).toBeVisible()
+  expect(screen.getByText('Paciente Sugerido').closest('tr')).toHaveClass('queue-row-highlight')
+})
+
