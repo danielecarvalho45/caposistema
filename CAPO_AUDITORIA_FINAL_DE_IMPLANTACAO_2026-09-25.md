@@ -3352,3 +3352,26 @@ Cada horário é classificado como **Livre**, **Agendado** ou **Bloqueado**, sem
 **Conferência pós-correção:** a função foi relida no Supabase e contém tratamento explícito de `alteracao_horario`, `agenda_blocks` e `patient_appointments`. O frontend foi relido e as Home profissional/Gestor utilizam `getAgendaScheduleGrid`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / HORÁRIOS VAZIOS PASSAM A SER VISÍVEIS / DIA DA SEMANA EXIBIDO / GRADE SERVE COMO CONFERÊNCIA DAS ALTERAÇÕES / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.51 Equipe e Agendas — horário em HH:MM e inclusão excepcional de urgência (29/09/2026)
+
+**Solicitação da Titular:** na área **Equipe e Agendas**, os horários devem ser exibidos somente em **hora e minuto (HH:MM)**. Na **Gestão de Agenda**, deve existir uma opção para incluir um horário adicional quando houver necessidade de atendimento de urgência.
+
+**Contrato existente confirmado:** `create_agenda_exception_for_interface` já aceita `exception_type='atendimento_extra'`, com data, horário inicial e horário final. Portanto, não foi criada nova tabela, RPC ou fluxo paralelo.
+
+**Correção visual:** o seletor de configuração de agenda em `OwnAgendaManager` deixou de exibir data e horário com segundos e passou a mostrar apenas **HH:MM–HH:MM**.
+
+**Correção funcional:** incluída a ação **🚑 Horário de urgência — Abrir excepcionalmente um horário adicional para atendimento de urgência**. Quando usada, registra `atendimento_extra` na agenda do profissional selecionado, preservando a configuração permanente.
+
+**Escopo da autorização visual:** a ação de urgência foi habilitada apenas quando `OwnAgendaManager` é utilizado em **Gestor → Equipe e Agendas → Gestão de Agenda**. Na gestão da própria agenda do profissional, a ação permanece oculta por padrão. Isso evita ampliar automaticamente a autonomia profissional além do solicitado.
+
+**Preservação:** férias, mudança permanente de horário, turno ou carga continuam seguindo o fluxo estrutural de Coordenação/anuência/efetivação. O horário de urgência é uma inclusão excepcional em data e faixa horária específicas.
+
+**Arquivos alterados:** `src/features/agenda/OwnAgendaManager.tsx` e `src/features/gestor/GestorTeamPage.tsx`.
+
+**Commits:** `8b0696d3efa6cdb8b324557ca7db51f9d311bbec` e `4bfef18a7683e60669dc04c361720ad1fcb582bd`.
+
+**Conferência pós-correção:** o código foi relido e confirmou: ação `urgencia` mapeada para `atendimento_extra`; exibição da configuração em HH:MM; `allowEmergencySlot` ativado no Gestor e desativado por padrão nos demais usos.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / SEM NOVA MIGRATION / CONTRATO EXISTENTE DO SUPABASE REUTILIZADO / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
