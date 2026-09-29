@@ -3786,3 +3786,17 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Commit:** `15299ded6ee03b669a1a8250bcdcbb5be753ebce`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+### 28.66 Ajuste cirúrgico — Fluxos e Acompanhamentos do Gestor em atalhos visuais (29/09/2026)
+
+**Regra da Titular:** retirar a apresentação em lista da tela **Fluxos e Acompanhamentos** do Gestor/Titular e apresentar os mesmos módulos por ícones/atalhos.
+
+**Correção somente de interface:** a lista textual foi substituída por cards com ícone, título e descrição curta para Pendências e Operacional, Acompanhamento Social, Luto, Familiar/Cuidador, Transporte, Encaminhamentos, Odontologia e Renovação de Receita. As rotas e permissões existentes foram preservadas.
+
+**Responsividade:** 4 colunas em telas largas, 2 colunas em tamanhos intermediários e 1 coluna no celular.
+
+**Arquivos alterados:** `src/features/gestor/GestorManagementPage.tsx` e `src/features/gestor/gestor.css`.
+
+**Commits:** `7a45b63389434cb41e01837d2e7a1607dbb0b248` e `d1eaea29937f8ec683fae82d10d3b6b401af00a0`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / SEM ALTERAÇÃO DE BACKEND / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL**.
