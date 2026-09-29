@@ -4328,3 +4328,21 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / BACKEND CONFIRMADO / AUDITORIA CONFIRMADA / COMPORTAMENTO TRANSVERSAL CONFERIDO / TESTE DE REGRESSÃO ADICIONADO / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
 
+### 28.88 REGRA DE GOVERNANÇA DE FLUXO + CLARIFICAÇÃO FAMILIAR/CUIDADOR (29/09/2026)
+
+**Regra de governança reforçada pela Titular:** a existência de um módulo, tabela, RPC, função ou possibilidade técnica dentro do projeto CAPO **não autoriza criação de fluxo novo por interpretação do agente**. Antes de qualquer manutenção, deve-se consultar o Documento Mestre e os documentos normativos pertinentes, preservar o fluxo já aprovado e executar somente a correção cirúrgica necessária ao problema apresentado. Quando surgir proposta de alteração estrutural não prevista, ela deve ser apresentada à Titular como sugestão antes da implementação. Na ausência de nova decisão, prevalece o fluxo vigente do projeto. Em caso de conflito documental, prevalece a redação/decisão formal mais recente.
+
+**Clarificação funcional mais recente — Familiar/Cuidador e Psicologia:**
+- a **Fila de Familiares permanece separada da Fila de Pacientes**, conforme o projeto;
+- quando o familiar chega ao atendimento psicológico, ele passa a ocupar um horário **na mesma Agenda da Psicologia**, não em agenda paralela;
+- o familiar é tratado como pessoa atendida exclusivamente no contexto da Psicologia;
+- esse atendimento não o transforma em paciente geral das demais especialidades do CAPO;
+- o vínculo com o paciente de origem e o histórico próprio do familiar permanecem preservados;
+- não deve existir segunda agenda específica de familiares.
+
+**Correção desta continuidade:** foi identificada e imediatamente desfeita uma construção excedente de painel/agenda paralela de familiares iniciada durante a manutenção transversal. A interface voltou ao estado canônico anterior nesse ponto, e a função `get_agenda_schedule_grid_for_interface` foi restaurada no Supabase pela migração corretiva `restore_canonical_agenda_grid_after_family_flow_review`.
+
+**Preservado:** a Fila de Familiares, sua lógica própria de prioridade/incompatibilidade profissional, os contratos já existentes do projeto e as demais correções de cancelamento feitas nesta continuidade.
+
+**Estado:** **REGRA FUNCIONAL CLARIFICADA / CONSTRUÇÃO PARALELA DESFEITA / GRADE CANÔNICA RESTAURADA / CONTINUIDADE SOMENTE POR MANUTENÇÃO CIRÚRGICA**.
+
