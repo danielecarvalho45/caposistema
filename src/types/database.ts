@@ -287,6 +287,14 @@ export type Database = {
         Args: { p_patient_id: string; p_level: string }
         Returns: Json
       }
+      get_patient_discharge_proximity_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
+      set_patient_discharge_proximity_for_interface: {
+        Args: { p_patient_id: string; p_level: string }
+        Returns: Json
+      }
       get_nutrition_documents_for_management: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: Json
