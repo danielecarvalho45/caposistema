@@ -187,11 +187,17 @@ function errorMessage(result: AsyncState<unknown>): string | null {
   return result.status === 'error' ? result.error.message : null
 }
 
-export function GestorTeamPage({ service: providedService }: Readonly<{ service?: TeamManagementService }>) {
+export function GestorTeamPage({
+  service: providedService,
+  initialTab = 'cadastro',
+}: Readonly<{
+  service?: TeamManagementService
+  initialTab?: 'cadastro' | 'agenda'
+}>) {
   const service = useMemo(() => providedService ?? createTeamManagementService(), [providedService])
   const [context, setContext] = useState<unknown>(null)
   const [selected, setSelected] = useState<TeamMember | null>(null)
-  const [teamTab, setTeamTab] = useState<'cadastro' | 'agenda'>('cadastro')
+  const [teamTab, setTeamTab] = useState<'cadastro' | 'agenda'>(initialTab)
   const [profile, setProfile] = useState<TeamMemberProfileInput>(blankProfile)
   const [temporaryPassword, setTemporaryPassword] = useState('')
   const [initiallyActive, setInitiallyActive] = useState(true)
