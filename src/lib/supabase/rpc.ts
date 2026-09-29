@@ -3704,6 +3704,15 @@ function createSupabaseTransport(
               ? args.p_professional_id
               : undefined,
         })
+      case 'get_agenda_schedule_grid_for_interface':
+        return client.rpc(operation, {
+          p_start_date: String(args?.p_start_date ?? ''),
+          p_end_date: String(args?.p_end_date ?? ''),
+          p_professional_id:
+            typeof args?.p_professional_id === 'string'
+              ? args.p_professional_id
+              : null,
+        })
       case 'create_patient_for_interface':
         return client.rpc(operation, {
           p_full_name: String(args?.p_full_name ?? ''),
