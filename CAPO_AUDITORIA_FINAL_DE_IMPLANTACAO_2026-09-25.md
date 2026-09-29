@@ -3856,3 +3856,20 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Limitação de teste desta etapa:** o banco não possui atualmente ciclo aberto da Clínica Geral disponível para ensaio real sem criar dados. Portanto não foi criado paciente/ciclo/agendamento artificial para forçar teste. Validação operacional final permanece para paciente real autorizado quando houver contexto aplicável.
 
 **Estado:** **IMPLEMENTADO NO BANCO E INTERFACE / SEM ALTERAÇÃO DO FLUXO DE ALTA MÉDICA REAL / AGUARDANDO TESTE OPERACIONAL REAL**.
+
+
+### 28.69 Correção cirúrgica — falso bloqueio na vigência semanal da agenda (29/09/2026)
+
+**Evidência operacional:** ao alterar a agenda do Clínico com fim de vigência em **31/12/2026**, a interface bloqueou o salvamento com a mensagem de que a vigência não alcançava todos os dias da semana selecionados.
+
+**Causa física confirmada:** a validação criada no §28.63 interrompia a varredura assim que a quantidade de dias calendário percorridos coincidia com a quantidade de dias selecionados, mesmo quando esses dias percorridos não eram os dias efetivamente marcados. Isso podia produzir falso negativo em períodos longos e válidos.
+
+**Correção somente de interface:** a função `dateRangeIncludesSelectedWeekdays` agora contabiliza somente os dias da semana que realmente pertencem ao conjunto selecionado e continua verificando até encontrar todos ou atingir o fim da vigência.
+
+**Preservação:** nenhuma RPC, SQL, migration, configuração real, agendamento, bloqueio, intervalo, exceção ou dado de paciente foi alterado. A regra de impedir vigência realmente curta demais permanece válida.
+
+**Arquivo alterado:** `src/features/agenda/OwnAgendaManager.tsx`.
+
+**Commit:** `89540baa3b30ea468bda312f2d6090842ef101c9`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO TESTE OPERACIONAL REAL**.
