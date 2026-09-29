@@ -2934,3 +2934,26 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `2083fde3e14a5c275bb7525249111b787358e97b` e `5c9defcef97ff077ba893542bdb1c6661809afab`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / AUTONOMIA TEMPORÁRIA DO CLÍNICO PRESERVADA / ALTERAÇÕES PERMANENTES MANTIDAS NO FLUXO COORDENAÇÃO → ADMINISTRATIVO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.34 Correção de navegação e competência — Minha Agenda / Gerenciar minha agenda / Remarcação (28/09/2026)
+
+**Evidência de homologação:** no contexto do Médico Clínico, o acesso de agenda estava confundindo a visualização da própria agenda com o fluxo de remarcação de consulta, enquanto o acesso **Gerenciar minha agenda** não estava disponível de forma clara no Início nem na barra lateral.
+
+**Regra vigente confirmada pela Titular:** o profissional **consulta a própria agenda**, registra presença/falta, **agenda retorno** quando o atendimento permitir e gerencia diretamente os **ajustes temporários da própria disponibilidade**. A **remarcação de consulta** pertence ao Administrativo. Alterações permanentes de horário/jornada/carga continuam no fluxo Coordenação → anuência → efetivação administrativa.
+
+**Correção de navegação:** criada a rota profissional `/minha-agenda/gerenciar`, que abre diretamente `AgendaPage` com o `OwnAgendaManager` expandido. A barra lateral profissional passou a apresentar **Minha Agenda** para `/agenda` e **Gerenciar minha agenda** como item separado. No Início profissional, **Minha Agenda** passou a navegar para `/agenda` e foi incluído card próprio **Gerenciar minha agenda — Bloqueios e ajustes temporários**.
+
+**Correção na Agenda do profissional:** o título passou a ser **Minha Agenda**. O botão geral **Remarcar retorno** foi removido do contexto profissional. O botão **Gerenciar minha agenda** permanece dentro da própria Agenda e abre os ajustes temporários. O profissional continua podendo **Agendar retorno** a partir do atendimento confirmado; esse fluxo cria retorno novo e não executa remarcação de consulta existente.
+
+**Endurecimento de interface:** mesmo que algum estado antigo tente abrir o formulário de remarcação, `AgendaPage` não renderiza esse formulário no contexto profissional e a função de remarcação retorna orientação de que a operação pertence ao Administrativo.
+
+**Correção de autorização no Supabase oficial:** a regra anterior registrada em 26/09, que permitia ao profissional consultar/remarcar o próprio retorno, foi **superada por esta regra vigente**. Aplicada a migration `restrict_rescheduling_to_administrative_flow`, registrada no repositório como `supabase/migrations/20260928231500_restrict_rescheduling_to_administrative_flow.sql`. As funções `get_reschedulable_appointments` e `reschedule_appointment_for_interface` agora autorizam somente `administrador` e `administrativo_operacional`. Coordenador e profissional não executam remarcação.
+
+**Arquivos de interface alterados:** `src/app/route-access.ts`, `src/components/navigation/navigation-config.ts`, `src/app/App.tsx`, `src/features/agenda/AgendaPage.tsx` e `src/features/professional/AssistentialPage.tsx`.
+
+**Commits:** `7f515623da266b5abcb255ceabd4fbb97dad993a`, `a1cd828173af7870b6a87cce1aeaef7882be4e76`, `281740d66d484b2e7ea9b3fa6c4b047d81e0a7b5`, `a2f9cf26c45d24905810e7493e3a5acf06021c66`, `5214d52c5a8c87a6faf671ef9c57e6dca6a1b044`, `f69acbae09db2e9075a42d3cfdf7283667b8996c` e `d3ef897428baa047f91f5f5772f76060bcfd7623`.
+
+**Conferência física pós-correção:** `AgendaPage.tsx` contém **Gerenciar minha agenda**, não contém mais **Remarcar retorno** no contexto profissional e mantém **Remarcar** apenas na área administrativa. O Início profissional contém links separados para `/agenda` e `/minha-agenda/gerenciar`. A barra lateral contém o novo item. As duas RPCs de remarcação foram relidas no Supabase e não incluem mais autorização para `profissional`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / FLUXOS SEPARADOS / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
