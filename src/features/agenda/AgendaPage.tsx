@@ -213,6 +213,7 @@ function AgendaResults({
   onReturn,
   busyAppointmentId,
   patientSpecialties,
+  embeddedHome = false,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
   startDate: string
@@ -223,6 +224,7 @@ function AgendaResults({
   onReturn?: (appointment: AgendaAppointment) => void
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
+  embeddedHome?: boolean
 }>) {
   if (view === 'day') {
     return (
@@ -240,18 +242,41 @@ function AgendaResults({
   const days = datesBetween(startDate, endDate)
   if (view === 'week') {
     const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
-      weekday: 'long',
+      weekday: 'short',
       day: '2-digit',
       month: '2-digit',
     })
     return (
-      <div className="agenda-week" aria-label="Agenda da semana">
+      <div className={embeddedHome ? 'agenda-week agenda-week--home' : 'agenda-week'} aria-label="Agenda da semana">
         {days.map((day) => {
           const dayAppointments = appointmentsForDay(appointments, day)
           return (
             <article className="agenda-week-day" key={day}>
               <h3>{dateFormatter.format(localDate(day))}</h3>
-              {dayAppointments.length > 0 ? (
+              {embeddedHome ? (
+                dayAppointments.length > 0 ? (
+                  <div className="agenda-week-home-list">
+                    {dayAppointments.map((appointment) => (
+                      <div className="agenda-week-home-item" key={appointment.appointment_id}>
+                        <strong>{formatTimeRange(appointment)}</strong>
+                        <span>{appointment.patient_name}</span>
+                        <small>{appointment.appointment_type}</small>
+                        {onAttendance && (
+                          <div className="agenda-week-home-actions">
+                            <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')} aria-label={`Confirmar consulta de ${appointment.patient_name}`}>✓</button>
+                            <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')} aria-label={`Marcar falta de ${appointment.patient_name}`}>✕</button>
+                            {onReturn && appointment.attendance_status === 'confirmado' && (
+                              <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${appointment.patient_name}`}>↻</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="agenda-week-empty">Sem atendimento</p>
+                )
+              ) : dayAppointments.length > 0 ? (
                 <AppointmentTable
                   appointments={dayAppointments}
                   includeDate={false}
@@ -881,8 +906,8 @@ export function AgendaPage({
   }
 
   return (
-    <section className="assistential-page" aria-labelledby="agenda-title">
-      <div className="assistential-card">
+    <section className={embeddedHome ? 'assistential-page agenda-home-embedded' : 'assistential-page'} aria-labelledby="agenda-title">
+      <div className={embeddedHome ? 'assistential-card agenda-home-card' : 'assistential-card'}>
         <div className="assistential-heading">
           <div>
             <p className="eyebrow">
@@ -891,18 +916,19 @@ export function AgendaPage({
             <h2 id="agenda-title">
               {isProfessional
                 ? embeddedHome
-                  ? 'Agenda de atendimentos'
+                  ? 'Minha Agenda'
                   : 'Minha Agenda'
                 : 'Agenda Geral'}
             </h2>
             <p>
               {isProfessional
                 ? embeddedHome
-                  ? 'Pacientes agendados. Confirme a presença ou registre a falta diretamente na linha do atendimento.'
+                  ? 'Agenda própria com visualização por dia, semana e mês.'
                   : 'Seus atendimentos no período selecionado.'
                 : 'Atendimentos e movimentações autorizados no período selecionado.'}
             </p>
           </div>
+          {!embeddedHome && (
           <div className="assistential-filters">
             {!isProfessional && (
               <label>
@@ -950,6 +976,7 @@ export function AgendaPage({
               Atualizar
             </button>
           </div>
+          )}
         </div>
 
         {!isProfessional && (
@@ -1256,7 +1283,7 @@ export function AgendaPage({
           </strong>
         </div>
 
-        {isProfessional && (
+        {isProfessional && !embeddedHome && (
           <div className="agenda-attendance-notes">
             <label>Observação do atendimento<input value={attendanceNotes} onChange={(event) => setAttendanceNotes(event.target.value)} /></label>
             <label>Motivo da falta<input value={attendanceReason} onChange={(event) => setAttendanceReason(event.target.value)} /></label>
@@ -1288,6 +1315,7 @@ export function AgendaPage({
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
               busyAppointmentId={busyAppointmentId}
               patientSpecialties={isProfessional ? patientSpecialties : undefined}
+              embeddedHome={embeddedHome}
             />
           )}
         </div>
