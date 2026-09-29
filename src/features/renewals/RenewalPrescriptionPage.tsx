@@ -47,16 +47,19 @@ function dateTime(value: string) {
 
 export function RenewalPrescriptionPage({ accessContext, service = getRpcService() }: Props) {
   const roleCodes = useMemo(() => accessContext.roles.map((role) => role.code), [accessContext.roles])
-  const isAdministrative = roleCodes.some((role) =>
-    ['administrador', 'administrativo_operacional'].includes(role),
+  const isAdministrativeContext = ['administrador', 'administrativo_operacional'].includes(
+    accessContext.primary_context.code,
   )
-  const authorized =
-    isAdministrative ||
+  const isMedicalExecutor =
+    accessContext.primary_context.code === 'profissional' &&
+    Boolean(accessContext.professional_id) &&
     accessContext.capabilities.includes('renovacao_receita')
-  const canCreate = isAdministrative
-  const canManageMedical = Boolean(accessContext.professional_id) && roleCodes.includes('profissional') && accessContext.capabilities.includes('renovacao_receita')
-  const canManageAdmin = roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
-  const isMedicalExecutor = accessContext.primary_context.code === 'profissional' && canManageMedical
+  const authorized =
+    isAdministrativeContext ||
+    isMedicalExecutor
+  const canCreate = isAdministrativeContext
+  const canManageMedical = isMedicalExecutor
+  const canManageAdmin = isAdministrativeContext
   const [status, setStatus] = useState('')
   const [items, setItems] = useState<readonly PrescriptionRenewal[]>([])
   const [doctors, setDoctors] = useState<readonly PrescriptionRenewalDoctor[]>([])
@@ -172,15 +175,19 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
       setFeedback('Informe onde o paciente deve retirar a receita.')
       return
     }
-    if (action !== 'start' && note.trim().length < 3) {
-      setFeedback('Informe o retorno operacional com pelo menos 3 caracteres.')
+    if (action === 'needs_consult' && note.trim().length < 3) {
+      setFeedback('Informe o motivo da necessidade de consulta com pelo menos 3 caracteres.')
       return
     }
     setBusy(true)
     const result = await service.managePrescriptionRenewalMedical(
       selected.renewal_id,
       action,
-      action === 'start' ? null : note.trim(),
+      action === 'start'
+        ? null
+        : action === 'renewed'
+          ? (note.trim() || 'Receita pronta')
+          : note.trim(),
       action === 'renewed' ? pickupLocation.trim() : null,
     )
     if (result.status === 'success') {
@@ -188,9 +195,9 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
       if (action === 'renewed') setPickupLocation('')
       setFeedback(
         action === 'start'
-          ? 'Solicitação aceita. A renovação está em execução.'
+          ? 'Solicitação marcada como recebida. A renovação está em execução.'
           : action === 'renewed'
-            ? 'Receita marcada como pronta. Local de retirada enviado ao Administrativo.'
+            ? 'Receita marcada como pronta. O local de retirada foi enviado automaticamente ao Administrativo.'
             : 'Necessidade de consulta registrada. Retorno enviado ao Administrativo para agendamento.',
       )
       await loadItems()
@@ -295,13 +302,35 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
           <h2 id="renewal-detail-title">Detalhes</h2>
           {!selected && <p>Selecione uma solicitação para consultar seus dados operacionais.</p>}
           {selected && <><dl className="renewal-summary"><div><dt>Paciente</dt><dd>{selected.patient_name}</dd></div><div><dt>Médico</dt><dd>{selected.doctor_name}</dd></div><div><dt>Situação</dt><dd>{statusLabels[selected.status] ?? selected.status}</dd></div><div><dt>Atualizada em</dt><dd>{dateTime(selected.updated_at)}</dd></div></dl><div className="renewal-text"><strong>Solicitação</strong><p>{selected.request_note ?? 'Sem observação registrada.'}</p></div>{selected.medical_feedback && <div className="renewal-text"><strong>Retorno médico</strong><p>{selected.medical_feedback}</p></div>}{selected.administrative_feedback && <div className="renewal-text"><strong>Retorno administrativo</strong><p>{selected.administrative_feedback}</p></div>}{(canManageMedical && ['awaiting_medical', 'medical_in_progress'].includes(selected.status)) || (canManageAdmin && !['completed', 'cancelled'].includes(selected.status)) ? <div className="renewal-actions">
-            {canManageMedical && selected.status === 'awaiting_medical' && <button type="button" onClick={() => void actMedical('start')} disabled={busy}>Aceitar solicitação</button>}
+            {canManageMedical && selected.status === 'awaiting_medical' && (
+              <button type="button" onClick={() => void actMedical('start')} disabled={busy}>
+                Recebido
+              </button>
+            )}
             {canManageMedical && selected.status === 'medical_in_progress' && <>
-              <label>Observação operacional<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
-              <label>Local de retirada da receita *<input value={pickupLocation} onChange={(event) => setPickupLocation(event.target.value)} placeholder="Informe onde o paciente deverá retirar a receita" /></label>
-              <p>Registre somente a execução operacional. O conteúdo da prescrição permanece no sistema oficial.</p>
-              <button type="button" onClick={() => void actMedical('renewed')} disabled={busy || note.trim().length < 3 || pickupLocation.trim().length < 2}>Informar receita pronta</button>
-              <button type="button" onClick={() => void actMedical('needs_consult')} disabled={busy || note.trim().length < 3}>Necessita consulta</button>
+              <label>
+                Onde retirar a receita *
+                <input
+                  value={pickupLocation}
+                  onChange={(event) => setPickupLocation(event.target.value)}
+                  placeholder="Ex.: Recepção do CAPO"
+                />
+              </label>
+              <label>
+                Observação para o Administrativo (opcional)
+                <textarea
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Somente informação operacional; não registrar conteúdo da prescrição."
+                />
+              </label>
+              <p>Quando a receita estiver pronta, informe o local de retirada. Essa informação será enviada automaticamente ao Administrativo para orientar o paciente.</p>
+              <button type="button" onClick={() => void actMedical('renewed')} disabled={busy || pickupLocation.trim().length < 2}>
+                Receita pronta
+              </button>
+              <button type="button" onClick={() => void actMedical('needs_consult')} disabled={busy || note.trim().length < 3}>
+                Necessita consulta
+              </button>
             </>}
             {canManageAdmin && selected.status === 'awaiting_admin' && <>
               {operationalContext?.medical_outcome === 'needs_consult' ? (
