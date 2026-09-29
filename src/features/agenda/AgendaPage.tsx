@@ -697,8 +697,37 @@ export function AgendaPage({
       setAppointmentFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       return
     }
+
     const result = await getRpcService().searchReferralPatients(query, 20, 0)
-    setAppointmentPatients(result.status === 'success' ? result.data : [])
+    const patients = result.status === 'success' ? result.data : []
+    setAppointmentPatients(patients)
+
+    if (patients.length === 1) {
+      setAppointmentPatientId(patients[0].patient_id)
+      setAppointmentPatientQuery(patients[0].full_name)
+      setAppointmentFeedback(null)
+      return
+    }
+
+    setAppointmentPatientId('')
+    if (patients.length === 0) {
+      setAppointmentFeedback(
+        result.status === 'error' ? result.error.message : 'Nenhum paciente encontrado.',
+      )
+    } else {
+      setAppointmentFeedback('Selecione o paciente correto entre os resultados encontrados.')
+    }
+  }
+
+  function selectAppointmentPatient(patient: {
+    patient_id: string
+    full_name: string
+    patient_number: string | null
+    cms: string | null
+  }) {
+    setAppointmentPatientId(patient.patient_id)
+    setAppointmentPatientQuery(patient.full_name)
+    setAppointmentFeedback(null)
   }
 
   async function addSelectedPatientToQueue() {
@@ -1283,7 +1312,10 @@ export function AgendaPage({
                   value={appointmentPatientQuery}
                   onChange={(event) => {
                     setAppointmentPatientQuery(event.target.value)
-                    if (!isProfessional) setAppointmentPatientId('')
+                    if (!isProfessional) {
+                      setAppointmentPatientId('')
+                      setAppointmentPatients([])
+                    }
                   }}
                   onKeyDown={(event) => {
                     if (!isProfessional && event.key === 'Enter') {
@@ -1301,22 +1333,31 @@ export function AgendaPage({
                     Buscar paciente
                   </button>
                 )}
-                {!isProfessional && appointmentPatients.length > 0 && (
-                  <select
-                    value={appointmentPatientId}
-                    onChange={(event) => {
-                      setAppointmentPatientId(event.target.value)
-                      const patient = appointmentPatients.find((item) => item.patient_id === event.target.value)
-                      if (patient) setAppointmentPatientQuery(patient.full_name)
-                    }}
-                  >
-                    <option value="">Selecionar paciente encontrado</option>
+                {!isProfessional && appointmentPatients.length === 1 && appointmentPatientId && (
+                  <div className="agenda-patient-selected" role="status" aria-label="Paciente selecionado">
+                    <strong>{appointmentPatients[0].full_name}</strong>
+                    <span>
+                      Nº CAPO {appointmentPatients[0].patient_number ?? '—'} · CMS {appointmentPatients[0].cms ?? '—'}
+                    </span>
+                  </div>
+                )}
+                {!isProfessional && appointmentPatients.length > 1 && (
+                  <div className="agenda-patient-results" aria-label="Pacientes encontrados">
                     {appointmentPatients.map((patient) => (
-                      <option key={patient.patient_id} value={patient.patient_id}>
-                        {patient.full_name} · {patient.patient_number ?? patient.cms ?? 'Identificação disponível'}
-                      </option>
+                      <button
+                        key={patient.patient_id}
+                        type="button"
+                        className={appointmentPatientId === patient.patient_id ? 'is-selected' : ''}
+                        aria-pressed={appointmentPatientId === patient.patient_id}
+                        onClick={() => selectAppointmentPatient(patient)}
+                      >
+                        <strong>{patient.full_name}</strong>
+                        <span>
+                          Nº CAPO {patient.patient_number ?? '—'} · CMS {patient.cms ?? '—'}
+                        </span>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 )}
               </label>
               {isProfessional ? (
