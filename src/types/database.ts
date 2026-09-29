@@ -1171,6 +1171,24 @@ export type Database = {
         }
         Returns: Json
       }
+      save_agenda_recurring_interval_for_interface: {
+        Args: {
+          p_agenda_config_id: string
+          p_weekdays: number[]
+          p_start_time: string
+          p_end_time: string
+          p_block_type?: string
+          p_description?: string | null
+        }
+        Returns: Json
+      }
+      set_agenda_recurring_interval_status_for_interface: {
+        Args: {
+          p_block_id: string
+          p_is_active: boolean
+        }
+        Returns: Json
+      }
       get_my_specialty_operational_report_for_interface: {
         Args: {
           p_specialty_id: string
