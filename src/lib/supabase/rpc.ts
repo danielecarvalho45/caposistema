@@ -3260,6 +3260,23 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_patient_id: patientId, p_level: level },
         parse: parseConfirmedJson,
       }),
+    getPatientDischargeProximity: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'get_patient_discharge_proximity_for_interface',
+        args: { p_patient_id: patientId },
+        parse: parseConfirmedJson,
+      }),
+    setPatientDischargeProximity: (
+      patientId: string,
+      level: 'verde' | 'amarelo' | 'vermelho',
+    ) =>
+      execute({
+        transport,
+        operation: 'set_patient_discharge_proximity_for_interface',
+        args: { p_patient_id: patientId, p_level: level },
+        parse: parseConfirmedJson,
+      }),
     getNutritionContext: (patientId: string) =>
       execute({ transport, operation: 'get_nutrition_context_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     saveNutritionPlan: (args: ConfirmedJsonArgs) =>
