@@ -614,6 +614,10 @@ export function AgendaPage({
   }
 
   async function rescheduleAppointment() {
+    if (isProfessional) {
+      setAppointmentFeedback('Remarcações de consultas pertencem ao fluxo Administrativo.')
+      return
+    }
     if (!validReschedulableId || !rescheduleProfessionalId || !validRescheduleSlotStart || rescheduleReason.trim().length < 3) {
       setAppointmentFeedback('Selecione agendamento, novo horário e informe o motivo da remarcação.')
       return
@@ -1123,7 +1127,7 @@ export function AgendaPage({
           </section>
         )}
 
-        {showRescheduleForm && (
+        {showRescheduleForm && !isProfessional && (
           <section className="agenda-schedule-form" aria-labelledby="reschedule-title">
             <div className="agenda-section-heading">
               <p className="eyebrow">Atendimento e Acompanhamento</p>
