@@ -229,11 +229,11 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     useState<keyof AssistentialOperationalReport>('agenda')
   const [printGeneratedAt, setPrintGeneratedAt] = useState<Date | null>(null)
   const isProfessional =
-    Boolean(accessContext.professional_id) &&
-    accessContext.roles.some(
-      (role) => role.code === 'profissional',
-    )
-  const isManager = accessContext.roles.some((role) => ['administrador', 'coordenador'].includes(role.code))
+    accessContext.primary_context.code === 'profissional' &&
+    Boolean(accessContext.professional_id)
+  const isManager =
+    accessContext.primary_context.code === 'administrador' ||
+    accessContext.primary_context.code === 'coordenador'
 
   useEffect(() => {
     if (!isProfessional) return
@@ -267,20 +267,23 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
   }, [endDate, integration, isProfessional, selectedSpecialty, startDate])
 
   useEffect(() => {
-    const specialtyId = isManager
-      ? managerSpecialty || null
-      : isProfessional
-        ? selectedSpecialty || null
-        : null
-    if (!isManager && isProfessional && !specialtyId) return
-    if (!isManager && !isProfessional) return
+    if (!isManager) return
+    const specialtyId = managerSpecialty || null
     let active = true
-    const loadDashboard = integration.loadDashboard ?? ((from, to, specialty) => getRpcService().getReportsDashboard(from, to, specialty))
+    const loadDashboard =
+      integration.loadDashboard ??
+      ((from, to, specialty) =>
+        getRpcService().getReportsDashboard(from, to, specialty))
     void loadDashboard(startDate, endDate, specialtyId).then((nextState) => {
-      if (active) { setDashboardState(nextState); setDashboardLoadedKey(`${startDate}:${endDate}:${specialtyId ?? ''}`) }
+      if (active) {
+        setDashboardState(nextState)
+        setDashboardLoadedKey(`${startDate}:${endDate}:${specialtyId ?? ''}`)
+      }
     })
-    return () => { active = false }
-  }, [endDate, integration, isManager, isProfessional, managerSpecialty, selectedSpecialty, startDate])
+    return () => {
+      active = false
+    }
+  }, [endDate, integration, isManager, managerSpecialty, startDate])
 
   if (isManager) {
     const managerSpecialties =
@@ -515,7 +518,6 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
               })()}
             </>
           )}
-          <DashboardPanel state={dashboardState} />
         </article>
       )}
     </section>
