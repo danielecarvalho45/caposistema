@@ -160,16 +160,6 @@ export function SocialPage({
         </div>
       </header>
 
-      <section className="social-quick-access home-profile-standard" aria-labelledby="quick-title">
-        <h2 id="quick-title">Acessos rápidos</h2>
-        <div className="social-quick-grid">
-          <a className="social-quick-card social-quick-card--agenda" href="#agenda"><span className="social-quick-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></a>
-          <a className="social-quick-card social-quick-card--followup" href="#acompanhamento-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></a>
-          <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
-          <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
-        </div>
-      </section>
-
       <section
         id="agenda"
         className="social-agenda"
@@ -178,13 +168,22 @@ export function SocialPage({
         <div className="social-section-heading">
           <div>
             <p className="eyebrow">Atendimento</p>
-            <h2 id="agenda-title">Minha Agenda</h2>
+            <h2 id="agenda-title">Atendimentos de hoje</h2>
           </div>
           <span className="social-section-note">
-            Faltosos seguem fluxo próprio
+            ✓ Confirmar · ✕ Falta → fluxo administrativo de Faltosos
           </span>
         </div>
-        <AgendaPage accessContext={accessContext} onConfirmed={openConfirmedPatient} />
+        <AgendaPage accessContext={accessContext} onConfirmed={openConfirmedPatient} embeddedHome />
+      </section>
+
+      <section className="social-quick-access home-profile-standard" aria-labelledby="quick-title">
+        <h2 id="quick-title">Acessos rápidos</h2>
+        <div className="social-quick-grid">
+          <a className="social-quick-card social-quick-card--followup" href="#acompanhamento-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></a>
+          <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
+          <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
+        </div>
       </section>
 
       <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp className="social-birthdays" />
