@@ -194,30 +194,20 @@ export function ProfileShortcuts({
         return
       }
 
-      const candidates = homologationOptions.professionals
-        .filter(
-          (professional) =>
-            !professional.is_homologation_stub &&
-            professional.specialties.some(
-              (specialty) => specialty.specialty_id === specialtyId,
-            ),
-        )
-        .sort((left, right) => {
-          if (left.has_active_agenda !== right.has_active_agenda) {
-            return left.has_active_agenda ? -1 : 1
-          }
-          return left.professional_name.localeCompare(
-            right.professional_name,
-            'pt-BR',
-          )
-        })
+      const homologationProfessional = homologationOptions.professionals.find(
+        (professional) =>
+          professional.is_homologation_stub &&
+          professional.specialties.some(
+            (specialty) => specialty.specialty_id === specialtyId,
+          ),
+      )
 
-      professionalId = candidates[0]?.professional_id ?? null
+      professionalId = homologationProfessional?.professional_id ?? null
 
       if (!professionalId) {
         setSwitchingHomologation(false)
         setHomologationError(
-          `Não existe profissional real ativo cadastrado para ${target.label}. Cadastre/vincule o profissional antes de homologar esse perfil.`,
+          `Perfil técnico de homologação não encontrado para ${target.label}.`,
         )
         return
       }
