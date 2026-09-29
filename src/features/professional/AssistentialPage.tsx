@@ -190,6 +190,21 @@ export function AssistentialPage({
         >
           Atendimentos de hoje
         </h3>
+        {specialtiesState.status === 'loading' && (
+          <div className="assistential-card" aria-live="polite">
+            Carregando especialidades…
+          </div>
+        )}
+        {specialtiesState.status === 'empty' && (
+          <div className="assistential-card" role="status">
+            Nenhuma especialidade assistencial ativa foi encontrada.
+          </div>
+        )}
+        {specialtiesState.status === 'error' && (
+          <div className="assistential-card assistential-error" role="alert">
+            Não foi possível carregar as especialidades: {specialtiesState.error.message}
+          </div>
+        )}
         {specialtiesState.status === 'success' && specialtiesState.data.length > 1 && (
           <label className="assistential-specialty-selector">
             Especialidade
