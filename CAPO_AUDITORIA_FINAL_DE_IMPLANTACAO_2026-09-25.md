@@ -3538,3 +3538,33 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Conferência pós-correção:** leitura física confirmou que a grade é carregada quando `professionalId` existe; o botão Consultar chama a consulta completa; e a lista simples de agendamentos fica restrita ao estado sem profissional específico.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / CONSULTA INDIVIDUAL PASSA A MOSTRAR GRADE COMPLETA / SEM ALTERAÇÃO DE SUPABASE NESTA ETAPA / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.58 Regra transversal — consulta de agenda sempre mostra a grade efetiva completa (29/09/2026)
+
+**Regra funcional reafirmada pela Titular:** a correção da consulta individual de agenda não pertence apenas ao Gestor/Titular. Toda tela autorizada a consultar a agenda de um profissional deve apresentar a **forma real em que aquela agenda se encontra**, e não somente os pacientes já agendados.
+
+**Escopo transversal confirmado no código:**
+- **Gestor/Administrador** — pode selecionar profissional e consultar a grade completa;
+- **Coordenador** — pode selecionar profissional e consultar a grade completa;
+- **Administrativo Operacional** — pode selecionar profissional e consultar a grade completa;
+- **Profissional assistencial** — consulta a própria grade completa;
+- **Clínico Geral, Nutrição, Assistência Social e Profissional Assistencial Padrão** utilizam o mesmo componente compartilhado `AgendaPage` em suas Home/rotas de agenda.
+
+**Conteúdo obrigatório da consulta:** ao consultar um profissional específico, devem aparecer:
+- dia da semana e data;
+- horários configurados mesmo sem paciente;
+- horários **Livres**;
+- horários **Agendados**, com paciente;
+- horários **Bloqueados**;
+- formulação recorrente da agenda, com seu respectivo ícone/tipo;
+- dias sem configuração identificados como **Sem horário cadastrado**;
+- navegação Dia / Semana / Mês conforme a estrutura vigente.
+
+**Contrato central do Supabase:** `get_agenda_schedule_grid_for_interface` autoriza consulta geral para `administrador`, `administrativo_operacional` e `coordenador`, e consulta da própria agenda para o papel `profissional`. Assim, a mesma fonte de verdade é utilizada em todos os perfis autorizados.
+
+**Implementação compartilhada:** não foi criada uma versão da consulta para o Gestor e outra para os demais. `AgendaPage` é o ponto único da consulta; quando existe `professionalId`, ele utiliza a grade efetiva `getAgendaScheduleGrid`. A visão simples baseada apenas em agendamentos fica restrita ao estado agregado sem profissional específico.
+
+**Conferência física:** busca no repositório confirmou que as Home profissionais específicas de Clínico/Padrão, Nutrição e Assistência Social renderizam `AgendaPage`; a rota geral `/agenda` também utiliza o mesmo componente. `route-access.ts` autoriza `/agenda` para administrador, administrativo_operacional, coordenador e profissional com contexto ativo.
+
+**Estado:** **REGRA TRANSVERSAL CONFIRMADA / SEM NOVA ALTERAÇÃO DE BACKEND NECESSÁRIA / CONSULTA COMPLETA CENTRALIZADA EM UM ÚNICO COMPONENTE / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL POR PERFIL**.
