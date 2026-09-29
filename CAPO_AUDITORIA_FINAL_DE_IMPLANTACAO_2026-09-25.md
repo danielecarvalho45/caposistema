@@ -3824,21 +3824,35 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 
 **Origem:** nova solicitação apresentada após a estrutura original do CAPO.
 
-**Regra incorporada ao projeto:** criação de indicador transversal do paciente com três estados:
+**Regra incorporada:** indicador transversal do paciente com:
 - Verde — **Em acompanhamento**;
 - Amarelo — **Atenção**;
 - Vermelho — **Alta próxima**.
 
-**Responsável pela alteração nesta versão:** exclusivamente profissional ativo vinculado à especialidade **Clínica Geral**, por vínculo de especialidade no banco. É proibido amarrar a autorização ao nome, username ou function_title do profissional.
+**Autorização de alteração:** exclusivamente profissional ativo vinculado à especialidade canônica **Clínica Geral**, por vínculo real em `professional_specialties`/`specialties`. Não há amarração por nome, username ou `function_title`.
 
-**Alcance:** o indicador pertence ao paciente e deve ser visível nos contextos assistenciais autorizados que acompanhem esse paciente. Fora da Clínica Geral, a função é somente leitura.
+**Alcance de leitura:** indicador disponível aos contextos autorizados que acompanham o paciente. Na interface foi ligado ao componente assistencial compartilhado, à Nutrição e à Assistência Social. Nos perfis assistenciais padrão é somente leitura; Clínica Geral recebe a alteração.
 
-**Sem automação de encerramento nesta etapa:** Amarelo/Vermelho não criam fila, não abrem encerramento, não mudam ciclo, não notificam automaticamente e não geram solicitação. Eventual automação futura será manutenção específica.
+**Banco criado cirurgicamente:** `public.patient_discharge_proximity_indicators`, com histórico ativo/resolvido, um estado ativo por paciente, RLS RPC-only e auditoria por `capo_audit_trigger()`.
 
-**Referência visual:** mesma semântica de cores do sistema de vulnerabilidade, porém com contrato e persistência próprios; não reutilizar a tabela ou o significado da vulnerabilidade.
+**RPCs novas:**
+- `get_patient_discharge_proximity_for_interface(uuid)`;
+- `set_patient_discharge_proximity_for_interface(uuid,text)`.
 
-**Diretriz técnica aprovada para implementação:** persistência própria auditável, estado corrente único por paciente, histórico de mudanças, getter transversal restrito ao escopo autorizado do paciente e setter exclusivo da Clínica Geral. Ausência de registro deve ser interpretada como Verde/Em acompanhamento.
+**Sem automação de encerramento:** Amarelo/Vermelho não criam fila, não abrem encerramento, não alteram ciclo e não geram notificação nesta etapa.
 
-**Documentação:** regra adicionada ao Manual Técnico Integrado vigente e sua cópia física existente no repositório.
+**Proteção comprovada:** o fluxo já existente de alta médica efetiva em `clinical_records.medical_discharge` + trigger `trg_medical_discharge`/`handle_medical_discharge()` foi mantido intacto e separado.
 
-**Estado:** **REGRA ESTRUTURAL INCORPORADA / ANÁLISE DE BANCO E INTERFACE CONCLUÍDA / IMPLEMENTAÇÃO A EXECUTAR**.
+**Interface:** criado `src/components/patients/PatientDischargeProximityIndicator.tsx` com semântica Verde/Amarelo/Vermelho e responsividade. Integrado em:
+- `src/features/professional/AssistentialPage.tsx`;
+- `src/features/nutrition/NutritionPage.tsx`;
+- `src/features/social/SocialPage.tsx`.
+A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
+
+**Migração:** `20260929155154_add_patient_discharge_proximity_indicator.sql`.
+
+**Pós-checagem do Supabase:** tabela com RLS ativa; policy restritiva de acesso direto; RPCs sem EXECUTE para `anon`/`public` e com EXECUTE para `authenticated`; trigger de auditoria presente; tabela permaneceu com **0 registros** após a implantação. Advisors não apontaram achado novo relacionado a `patient_discharge_proximity`.
+
+**Limitação de teste desta etapa:** o banco não possui atualmente ciclo aberto da Clínica Geral disponível para ensaio real sem criar dados. Portanto não foi criado paciente/ciclo/agendamento artificial para forçar teste. Validação operacional final permanece para paciente real autorizado quando houver contexto aplicável.
+
+**Estado:** **IMPLEMENTADO NO BANCO E INTERFACE / SEM ALTERAÇÃO DO FLUXO DE ALTA MÉDICA REAL / AGUARDANDO TESTE OPERACIONAL REAL**.
