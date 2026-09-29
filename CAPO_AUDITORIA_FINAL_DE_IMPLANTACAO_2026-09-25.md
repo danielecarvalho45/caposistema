@@ -3999,3 +3999,26 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Verificação pós-correção:** a RPC foi executada sob contexto `authenticated` da conta administrativa real e retornou corretamente o paciente Nº CAPO `000001`, incluindo identificação, data de nascimento, CMS e status. Nenhum dado foi alterado nesse teste.
 
 **Estado:** **CACHE RECARREGADO / RPC CONFIRMADA FUNCIONAL COM PARÂMETRO / AGUARDANDO RETESTE OPERACIONAL DO BOTÃO EDITAR CADASTRO**.
+
+
+### 28.76 Pré-implantação — formato definitivo do Nº CAPO sem zeros à esquerda (29/09/2026)
+
+**Regra definida pela Titular:** o Nº CAPO deve ser uma sequência numérica simples e crescente, sem preenchimento com zeros à esquerda. Exemplo correto: `1, 2, 3, ... 10, 11, ... 20`.
+
+**Divergência confirmada:** a função `public.capo_generate_patient_number()` usava `lpad(..., 6, '0')`, produzindo valores como `000001`, `000002`.
+
+**Correção aplicada no banco:** removido o `lpad`. O gerador agora grava diretamente `nextval('public.capo_patient_number_seq')::text`.
+
+**Ajuste do primeiro paciente real:** o Nº CAPO do primeiro paciente real foi alterado de `000001` para `1`, preservando o mesmo `id`, cadastro e vínculos.
+
+**Sequência:** `capo_patient_number_seq` permanece em `1` com `is_called=true`; portanto o próximo paciente real deverá receber Nº CAPO `2`.
+
+**Preservação:** o paciente oficial de homologação continua separado como `TESTE-CAPO-0001`; nenhuma regra clínica, agenda, CMS, histórico ou autorização foi alterada.
+
+**Arquivo de migration:** `supabase/migrations/20260929191400_use_unpadded_real_patient_numbers.sql`.
+
+**Commit:** `a57d7754c21508850a911f60fa58881b57671b4b`.
+
+**Verificação pós-correção:** primeiro paciente real = Nº CAPO `1`; função geradora sem `lpad`; sequence em `last_value=1`, `is_called=true`.
+
+**Estado:** **CORRIGIDO NO BANCO E REGISTRADO / FORMATO DEFINITIVO 1, 2, 3... / PRÓXIMO Nº CAPO PREVISTO = 2 / AGUARDANDO TESTE OPERACIONAL DO PRÓXIMO CADASTRO**.
