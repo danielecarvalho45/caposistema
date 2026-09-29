@@ -1,0 +1,99 @@
+.discharge-proximity {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #dce7ef;
+  border-radius: 9px;
+  background: #fbfdff;
+}
+
+.discharge-proximity__heading,
+.discharge-proximity__options,
+.discharge-proximity__badge,
+.discharge-proximity__option {
+  display: flex;
+  align-items: center;
+}
+
+.discharge-proximity__heading {
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.discharge-proximity__badge,
+.discharge-proximity__option {
+  gap: 7px;
+  border-radius: 999px;
+}
+
+.discharge-proximity__badge {
+  padding: 5px 9px;
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+
+.discharge-proximity__options {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.discharge-proximity__option {
+  min-height: 38px;
+  padding: 7px 11px;
+  border: 1px solid currentColor;
+  font-weight: 800;
+}
+
+.discharge-proximity__option[aria-pressed='true'] {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.discharge-proximity__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.discharge-proximity .is-verde {
+  color: #22633a;
+  background: #edf8f1;
+}
+
+.discharge-proximity .is-amarelo {
+  color: #7a5a00;
+  background: #fff7d6;
+}
+
+.discharge-proximity .is-vermelho {
+  color: #8b2d2d;
+  background: #fff0f0;
+}
+
+.discharge-proximity__feedback,
+.discharge-proximity small,
+.discharge-proximity--loading {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+.discharge-proximity--error {
+  color: #8b2d2d;
+}
+
+@media (max-width: 520px) {
+  .discharge-proximity__options {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .discharge-proximity__option {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
