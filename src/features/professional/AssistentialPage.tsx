@@ -183,7 +183,8 @@ export function AssistentialPage({
       <nav className="assistential-card home-profile-standard" aria-label="Acessos rápidos do profissional">
         <h2 id="assistential-title">Acessos rápidos</h2>
         <div className="home-profile-grid">
-          <a className="home-profile-card quick-green" href="#assistential-agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Consultar dia, semana e mês</span></a>
+          <Link className="home-profile-card quick-green" to="/agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Consultar dia, semana e mês</span></Link>
+          <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true">⏱</span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
           <a className="home-profile-card quick-blue" href="#assistential-patients"><span className="home-profile-icon" aria-hidden="true">♙</span><strong>Pacientes</strong><span>Consultar pacientes vinculados</span></a>
           {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
           {canAccessAppRoute(accessContext, '/encaminhamentos') && accessContext.capabilities.includes('encaminhamento_interprofissional') && <Link className="home-profile-card quick-mint" to="/encaminhamentos"><span className="home-profile-icon" aria-hidden="true">↗</span><strong>Encaminhamentos</strong><span>Consultar e encaminhar</span></Link>}
