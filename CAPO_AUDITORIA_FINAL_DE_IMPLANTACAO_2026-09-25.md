@@ -3318,3 +3318,37 @@ Os atalhos aprovados do bloco principal são:
 **Conferência pós-correção:** a leitura física confirmou que Novo profissional e ações de conta/permissões estão condicionados ao modo Administração; a visão funcional e Gestão de Agenda pertencem ao modo Equipe; e as duas rotas deixam de retornar a mesma configuração visual/funcional.
 
 **Estado:** **CORRIGIDO NO CÓDIGO CONFORME INDEX ESTRUTURAL / MÓDULOS SEPARADOS / SEM ALTERAÇÃO DE BACKEND / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.50 Home Gestor e Home profissional — grade completa de horários cadastrados para conferência (29/09/2026)
+
+**Solicitação da Titular:** a seção de agenda da Home, tanto no Gestor/Titular quanto nos perfis profissionais, deve exibir **o dia da semana e todos os horários cadastrados**, inclusive os horários vazios. Essa área também será utilizada para conferir visualmente se ampliações, bloqueios e alterações de horário foram aplicados corretamente.
+
+**Causa física identificada:** as Home utilizavam `get_agenda_for_interface`, que retorna somente agendamentos existentes. A RPC `get_available_appointment_slots` também não era suficiente para esta finalidade, pois remove horários ocupados e bloqueados. Portanto, nenhuma das duas fornecia uma grade completa de conferência.
+
+**Novo contrato central:** criada e aplicada no Supabase a função `get_agenda_schedule_grid_for_interface(p_start_date, p_end_date, p_professional_id)`. Ela gera a grade efetiva a partir da configuração real de agenda, considerando:
+- dias da semana ativos da configuração;
+- horário-base e duração real das consultas;
+- alteração temporária de horário `alteracao_horario`;
+- janelas de atendimento extra;
+- bloqueios de agenda;
+- exceções de bloqueio/cancelamento/feriado;
+- agendamentos reais do período.
+
+Cada horário é classificado como **Livre**, **Agendado** ou **Bloqueado**, sem criar slots fictícios.
+
+**Home profissional:** `AgendaPage` no modo `embeddedHome` passou a carregar a grade efetiva pelo novo contrato. Dia, Semana e Mês mostram o nome do dia/data e os horários cadastrados mesmo quando estão vazios. Horários ocupados continuam exibindo paciente e preservam as ações Confirmar/Falta/Retorno. Dias sem configuração exibem explicitamente **Sem horário cadastrado**.
+
+**Home Gestor/Titular:** o card **Agenda do dia — Todos os profissionais** deixou de depender apenas dos agendamentos e passou a carregar a grade efetiva geral. O card mostra o dia da semana/data e cada horário cadastrado dos profissionais, indicando **Livre**, **Agendado** ou **Bloqueado**. Isso permite validar visualmente uma ampliação de horário mesmo antes de existir paciente naquele novo horário.
+
+**Isolamento de homologação:** quando o Gestor consulta a grade geral, os perfis técnicos de homologação continuam excluídos por `capo_professional_is_production`. Quando um profissional específico é consultado, a grade respeita o contexto autorizado daquele perfil.
+
+**Backend:** migration aplicada no projeto oficial e registrada em `supabase/migrations/20260929031000_agenda_schedule_grid_for_home_verification.sql`.
+
+**Arquivos alterados:** `src/lib/supabase/rpc.ts`, `src/features/agenda/AgendaPage.tsx`, `src/features/agenda/agenda-page.css`, `src/features/gestor/GestorDashboard.tsx`, `src/features/gestor/gestor.css`.
+
+**Commits:** `cc4ec9e85514daaeeb5ce7a94b31bdd89a09780a`, `9068ba45c3c03e8f2dacc47dad99fc7b9ef3d681`, `8780e093e72c30bec3f25083155474afe9190e54`, `2bb58f3f41b01c54de340a3e053449898bc5e3bd`, `8e5425d09e8de118cb9dc228094c32f29c8cfa1e` e `98e64ef9a4a09ceaf1c6599524c1e3013a3e9c05`.
+
+**Conferência pós-correção:** a função foi relida no Supabase e contém tratamento explícito de `alteracao_horario`, `agenda_blocks` e `patient_appointments`. O frontend foi relido e as Home profissional/Gestor utilizam `getAgendaScheduleGrid`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / HORÁRIOS VAZIOS PASSAM A SER VISÍVEIS / DIA DA SEMANA EXIBIDO / GRADE SERVE COMO CONFERÊNCIA DAS ALTERAÇÕES / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
