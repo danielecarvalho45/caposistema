@@ -30,3 +30,41 @@ it('aproveita paciente e especialidade já selecionados quando não há vaga', a
   expect(rpc.addPatientToWaitingList).toHaveBeenCalledWith('patient-1', 's1', 3, null)
   expect(await screen.findByText('Paciente incluído na fila de espera desta especialidade.')).toBeVisible()
 })
+
+
+it('abre o agendamento com o paciente da consulta mesmo antes de escolher especialidade', async () => {
+  rpc.getSchedulingCatalog.mockResolvedValue({
+    status: 'success',
+    data: [{
+      specialty_id: 's1',
+      specialty_name: 'Nutrição',
+      professional_id: 'p1',
+      professional_name: 'Profissional autorizado',
+    }],
+  })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'empty' })
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+  } as unknown as AccessContext
+
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: '/agenda',
+      state: {
+        patientId: 'patient-1',
+        patientName: 'Paciente selecionado',
+        origin: 'patient_record',
+      },
+    }]}>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+      />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByDisplayValue('Paciente selecionado')).toBeVisible()
+  expect(screen.getByLabelText('Especialidade *')).toBeVisible()
+})
