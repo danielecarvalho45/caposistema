@@ -3544,6 +3544,9 @@ function createSupabaseTransport(
       case 'register_coordination_team_decision_for_interface':
       case 'get_coordination_team_decisions_for_interface':
       case 'create_specialty_for_interface':
+      case 'get_patient_for_edit_for_interface':
+      case 'update_patient_for_interface':
+      case 'get_patient_contact_for_interface':
         return confirmedRpc(operation, args)
       case 'accept_legal_term':
         return client.rpc(operation, {
@@ -3992,9 +3995,6 @@ function createSupabaseTransport(
             typeof args?.p_reason === 'string' ? args.p_reason : null,
         })
       case 'complete_first_access':
-      case 'get_patient_for_edit_for_interface':
-      case 'update_patient_for_interface':
-      case 'get_patient_contact_for_interface':
       case 'get_birthdays_for_interface':
       case 'get_interprofessional_referral_specialties_for_interface':
       case 'get_my_assistential_specialties_for_interface':
