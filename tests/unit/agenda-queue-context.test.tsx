@@ -7,6 +7,7 @@ import type { AccessContext } from '../../src/types/access'
 
 const rpc = vi.hoisted(() => ({
   getSchedulingCatalog: vi.fn(), getAvailableAppointmentSlots: vi.fn(),
+  getAgendaScheduleGrid: vi.fn(), createAppointment: vi.fn(),
   searchReferralPatients: vi.fn(), addPatientToWaitingList: vi.fn(),
 }))
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => ({ ...(await importOriginal<typeof import('../../src/lib/supabase/rpc')>()), getRpcService: () => rpc }))
@@ -67,4 +68,99 @@ it('abre o agendamento com o paciente da consulta mesmo antes de escolher especi
 
   expect(await screen.findByDisplayValue('Paciente selecionado')).toBeVisible()
   expect(screen.getByLabelText('Especialidade *')).toBeVisible()
+})
+
+
+it('permite iniciar e concluir agendamento clicando no horário livre de paciente já cadastrado', async () => {
+  const slotStart = '2026-10-01T12:00:00.000Z'
+  rpc.getSchedulingCatalog.mockResolvedValue({
+    status: 'success',
+    data: [{
+      specialty_id: 's1',
+      specialty_name: 'Clínica Geral',
+      professional_id: 'p1',
+      professional_name: 'Profissional autorizado',
+    }],
+  })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'p1',
+      slot_date: '2026-10-01',
+      slot_time: '09:00:00',
+      slot_start: slotStart,
+      slot_end: '2026-10-01T12:30:00.000Z',
+      duration_minutes: 30,
+    }],
+  })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'p1',
+      professional_name: 'Profissional autorizado',
+      slot_date: '2026-10-01',
+      weekday: 4,
+      slot_start: slotStart,
+      slot_end: '2026-10-01T12:30:00.000Z',
+      duration_minutes: 30,
+      slot_status: 'livre',
+      appointment_id: null,
+      patient_id: null,
+      patient_name: null,
+      appointment_type: null,
+      block_type: null,
+    }],
+  })
+  rpc.createAppointment.mockResolvedValue({
+    status: 'success',
+    data: {
+      appointment_id: 'appointment-1',
+      patient_id: 'patient-1',
+      professional_id: 'p1',
+      appointment_date: slotStart,
+    },
+  })
+
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+  } as unknown as AccessContext
+  const user = userEvent.setup()
+
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: '/agenda',
+      state: {
+        patientId: 'patient-1',
+        patientName: 'Paciente já cadastrado',
+        specialtyId: 's1',
+        professionalId: 'p1',
+        origin: 'patient_record',
+      },
+    }]}>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+      />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByDisplayValue('Paciente já cadastrado')).toBeVisible()
+  const freeSlotButton = await screen.findByRole('button', { name: 'Agendar' })
+  await user.click(freeSlotButton)
+
+  await user.selectOptions(screen.getByLabelText('Tipo *'), 'Primeiro atendimento na especialidade')
+  const confirm = screen.getByRole('button', { name: 'Confirmar agendamento' })
+  expect(confirm).toBeEnabled()
+  await user.click(confirm)
+
+  expect(rpc.createAppointment).toHaveBeenCalledWith({
+    patientId: 'patient-1',
+    professionalId: 'p1',
+    slotStart,
+    appointmentType: 'Primeiro atendimento na especialidade',
+    generalNotes: null,
+    operationalOrigin: 'cadastro_paciente',
+  })
 })
