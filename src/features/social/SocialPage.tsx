@@ -142,7 +142,7 @@ export function SocialPage({
   if (!canOperateSocial) return <section className="social-page"><h1>Assistência Social indisponível</h1><p>É necessário vínculo profissional ativo com a especialidade Assistência Social autorizada.</p></section>
 
   return (
-    <section className="social-page" aria-labelledby="social-title">
+    <section className={mode === 'home' ? 'social-page home-mobile-standard' : 'social-page'} aria-labelledby="social-title">
       <header className="social-header">
         <div>
           <p className="eyebrow">Assistência Social</p>
