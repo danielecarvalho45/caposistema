@@ -2866,3 +2866,18 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `72650ed6c1d4d1229ec76ebae30867e9f19c5481`, `c26b6cd6c051abdcb405c54e611e09d9ecb9cf4d` e `a969d76a3ebe1231c44e6e09f1babdf6ed44aca1`.
 
 **Estado:** **REGRESSÃO CONFIRMADA E CORRIGIDA NO CÓDIGO / PADRÃO ESTRUTURAL RESTAURADO / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.30 Regressão de usabilidade — botões congelados na Busca Ativa administrativa (28/09/2026)
+
+**Evidência de homologação:** na Busca Ativa do Administrativo, os botões de operação aparentavam permanecer congelados/desabilitados durante o uso.
+
+**Confronto físico:** o Supabase oficial foi relido. As RPCs `get_active_searches_for_interface`, `register_active_search_attempt_for_interface`, `close_active_search_for_interface` e `search_patients_for_interface` reconhecem explicitamente o papel `administrativo_operacional` para consulta/operação, portanto não havia bloqueio de autorização no banco. O Index aprovado mantém validação de contexto antes da gravação, mas a implementação React havia transferido parte dessa validação para atributos `disabled`, fazendo o controle parecer congelado em vez de orientar o usuário.
+
+**Correção aplicada:** em `src/features/gestor/ActiveSearchPage.tsx`, os botões **Buscar**, **Registrar tentativa** e **Encerrar Busca Ativa** deixam de ser bloqueados por preenchimento incompleto. Permanecem desabilitados apenas enquanto existe mutation em andamento (`busy`), evitando duplicidade de gravação. Ao clicar com dados insuficientes, a própria tela informa o requisito: busca com pelo menos dois caracteres, seleção do paciente, resultado do contato com pelo menos dois caracteres ou motivo de encerramento com pelo menos cinco caracteres.
+
+**Regras de negócio preservadas:** o backend continua validando paciente ativo, não falecido, com histórico CAPO, meio de contato permitido, resultado mínimo, próximo contato futuro e motivo de encerramento. Nenhuma RPC, SQL, RLS, policy, trigger ou migration foi alterada.
+
+**Commit:** `8f430d2a1d91cdb801c543f71ba05aea71e663e6`.
+
+**Estado:** **REGRESSÃO DE INTERFACE CONFIRMADA E CORRIGIDA NO CÓDIGO / AUTORIZAÇÃO DO AO CONFIRMADA NO SUPABASE / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
