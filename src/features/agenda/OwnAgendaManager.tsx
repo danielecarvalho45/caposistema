@@ -43,6 +43,27 @@ function timeHHMM(value: unknown) {
   return /^\d{2}:\d{2}/.test(text) ? text.slice(0, 5) : text
 }
 
+function dateRangeIncludesSelectedWeekdays(
+  startDate: string,
+  endDate: string,
+  weekdays: readonly number[],
+) {
+  if (!startDate || !endDate || weekdays.length === 0) return true
+
+  const start = new Date(`${startDate}T12:00:00`)
+  const end = new Date(`${endDate}T12:00:00`)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return false
+
+  const covered = new Set<number>()
+  const cursor = new Date(start)
+  while (cursor <= end && covered.size < weekdays.length) {
+    covered.add(cursor.getDay())
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  return weekdays.every((weekday) => covered.has(weekday))
+}
+
 function weekdaySummary(value: unknown) {
   const labels: Readonly<Record<number, string>> = {
     0: 'Dom',
@@ -484,6 +505,20 @@ export function OwnAgendaManager({
 
   async function saveStructuralConfiguration() {
     if (
+      structuralEndDate &&
+      !dateRangeIncludesSelectedWeekdays(
+        structuralStartDate,
+        structuralEndDate,
+        structuralWeekdays,
+      )
+    ) {
+      setStructuralFeedback(
+        'A vigência informada não alcança todos os dias da semana selecionados. Ajuste o fim da vigência ou os dias marcados.',
+      )
+      return
+    }
+
+    if (
       structuralBusy ||
       !structuralStartDate ||
       !structuralStartTime ||
@@ -744,7 +779,12 @@ export function OwnAgendaManager({
             </label>
             <label>
               Fim da vigência
-              <input type="date" value={structuralEndDate} onChange={(event) => setStructuralEndDate(event.target.value)} />
+              <input
+                type="date"
+                min={structuralStartDate || undefined}
+                value={structuralEndDate}
+                onChange={(event) => setStructuralEndDate(event.target.value)}
+              />
             </label>
             <label>
               Horário inicial
