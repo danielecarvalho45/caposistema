@@ -26,6 +26,7 @@ const areas = [
   ['patient_care_cycles', 'Ciclos CAPO'],
   ['patient_care_cycle_specialties', 'Ciclos CAPO — Especialidades'],
   ['patient_care_closure_rounds', 'Ciclos CAPO — Encerramento Clínico'],
+  ['patient_discharge_proximity_indicators', 'Pacientes — Proximidade de Alta'],
   ['patient_family_links', 'Vínculos Familiares'],
   ['patient_reopening_requests', 'Reaberturas'],
   ['patient_timeline', 'Linha do Tempo'],
