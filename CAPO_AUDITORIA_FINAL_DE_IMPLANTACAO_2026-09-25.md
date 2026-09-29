@@ -3375,3 +3375,36 @@ Cada horário é classificado como **Livre**, **Agendado** ou **Bloqueado**, sem
 **Conferência pós-correção:** o código foi relido e confirmou: ação `urgencia` mapeada para `atendimento_extra`; exibição da configuração em HH:MM; `allowEmergencySlot` ativado no Gestor e desativado por padrão nos demais usos.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / SEM NOVA MIGRATION / CONTRATO EXISTENTE DO SUPABASE REUTILIZADO / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.52 Gestor/Titular — autonomia direta sobre a configuração-base das agendas (29/09/2026)
+
+**Regra funcional reafirmada pela Titular:** o Gestor/Titular é responsável por organizar o funcionamento global do CAPO e não pode depender de autorização intermediária para ajustar a agenda real dos profissionais quando houver mudança concreta de horário. Mudanças ocorridas desde a construção do sistema, como alteração de horário de profissionais já cadastrados, precisam ser operáveis diretamente em **Equipe e Agendas**.
+
+**Conferência física do backend:** `save_agenda_configuration_for_interface` já autoriza alteração estrutural direta para o papel `administrador`, utilizado pelo Gestor/Titular. A RPC permite editar configuração-base de agenda com vigência, horário inicial/final, duração e dias da semana. Portanto, a limitação encontrada estava na interface do Gestor, que expunha somente ações temporárias.
+
+**Correção aplicada na interface:** `OwnAgendaManager` recebeu o modo `allowStructuralEdit`, habilitado exclusivamente em **Gestor → Equipe e Agendas → Gestão de Agenda**. Nesse modo é exibido o editor **Configuração-base da agenda**, com:
+- início e fim da vigência;
+- horário inicial;
+- horário final;
+- duração da consulta em minutos;
+- dias da semana ativos;
+- observação da configuração;
+- justificativa quando necessária;
+- salvamento direto da configuração-base.
+
+**Autonomia do Titular:** a orientação exibida no módulo do Gestor foi corrigida. Ela não informa mais que mudanças permanentes dependem de Coordenação → anuência. O Gestor/Titular pode salvar diretamente a configuração-base do profissional pelo contrato oficial já existente.
+
+**Preservação de integridade:** permanecem somente as proteções técnicas do backend para concorrência e consultas futuras afetadas. Essas proteções não são autorização hierárquica; existem para impedir sobrescrita concorrente ou alteração silenciosa que deixe pacientes já marcados fora da nova grade.
+
+**Ações pontuais preservadas:** bloqueios, almoço, reunião, exceções, alteração provisória e horário de urgência continuam disponíveis como ações temporárias, separadas da edição-base.
+
+**Camada compartilhada:** foram adicionados ao transporte e à tipagem do frontend os contratos `save_agenda_configuration_for_interface` e `set_agenda_configuration_status_for_interface`, que já existiam fisicamente no Supabase.
+
+**Arquivos alterados:** `src/lib/supabase/rpc.ts`, `src/types/database.ts`, `src/features/agenda/OwnAgendaManager.tsx`, `src/features/agenda/agenda-page.css` e `src/features/gestor/GestorTeamPage.tsx`.
+
+**Commits:** `2ad06d53a2de8453f5bd38b8ce98c20463acb805`, `e275f80b9f12e672bcc57fd6743405d7fe969a9d`, `1c7c8a6910edf23669263954762790dc54689677`, `8ac2e80be21066cd9a58853ec55b925d0bc5290a` e `94c1bf580ccf30cb24c5f446606635f59e04f182`.
+
+**Conferência pós-correção:** relidos o editor, o roteamento do Gestor, o transporte RPC e a tipagem. O Gestor habilita `allowStructuralEdit`; a gestão do próprio profissional permanece sem esse modo por padrão; a RPC oficial de salvamento está exposta no frontend.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AUTONOMIA DIRETA DO GESTOR SOBRE A CONFIGURAÇÃO-BASE DA AGENDA / SEM ALTERAÇÃO DE AUTORIZAÇÃO NO SUPABASE PORQUE O CONTRATO JÁ AUTORIZAVA ADMINISTRADOR / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
