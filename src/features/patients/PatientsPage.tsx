@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { canAccessAppRoute } from '../../app/route-access'
 import { getRpcService, type AsyncState } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
@@ -38,6 +38,8 @@ function patientWhatsAppHref(phone: string | undefined) {
 export function PatientsPage({
   accessContext,
 }: Readonly<{ accessContext: AccessContext }>) {
+  const location = useLocation()
+  const notificationPatientId = new URLSearchParams(location.search).get('patientId') ?? ''
   const [activeView, setActiveView] = useState<'register' | 'search'>('register')
   const [patientName, setPatientName] = useState('')
   const [patientBirthDate, setPatientBirthDate] = useState('')
@@ -271,6 +273,12 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     }
     setEditBusy(false)
   }
+
+  useEffect(() => {
+    if (!notificationPatientId) return
+    setActiveView('search')
+    void openPatientEditor(notificationPatientId)
+  }, [notificationPatientId])
 
   async function savePatientEditor() {
     if (!editingPatientId || editBusy) return
