@@ -535,13 +535,17 @@ export function AgendaPage({
   } | null>(null)
   const [selectedRescheduleSlotStart, setSelectedRescheduleSlotStart] = useState('')
   const [anchorDate, setAnchorDate] = useState(() => dateInputValue(new Date()))
+  const [consultationStartDate, setConsultationStartDate] = useState(() => dateInputValue(new Date()))
+  const [consultationEndDate, setConsultationEndDate] = useState(() => dateInputValue(new Date()))
   const [state, setState] =
     useState<AsyncState<readonly AgendaAppointment[]>>(loadingState)
   const [scheduleGrid, setScheduleGrid] =
     useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [specialtyResult, setSpecialtyResult] = useState<{ agenda: AsyncState<readonly AgendaAppointment[]>; byPatient: Record<string, AsyncState<readonly { specialty_id: string; specialty_name: string }[]>> } | null>(null)
   const requestSequence = useRef(0)
-  const { startDate, endDate } = agendaBounds(anchorDate, view)
+  const automaticBounds = agendaBounds(anchorDate, view)
+  const startDate = embeddedHome ? automaticBounds.startDate : consultationStartDate
+  const endDate = embeddedHome ? automaticBounds.endDate : consultationEndDate
   const roleCodes = accessContext.roles.map((role) => role.code)
   const isProfessional =
     Boolean(accessContext.professional_id) &&
@@ -656,6 +660,19 @@ export function AgendaPage({
   const loadProfessionalConsultation = useCallback(async () => {
     await Promise.all([load(), loadScheduleGrid()])
   }, [load, loadScheduleGrid])
+
+  function moveConsultationRange(direction: -1 | 1) {
+    const start = localDate(consultationStartDate)
+    const end = localDate(consultationEndDate)
+    const spanDays = Math.max(
+      1,
+      Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1,
+    )
+    start.setDate(start.getDate() + spanDays * direction)
+    end.setDate(end.getDate() + spanDays * direction)
+    setConsultationStartDate(dateInputValue(start))
+    setConsultationEndDate(dateInputValue(end))
+  }
 
   async function searchAppointmentPatients() {
     const query = appointmentPatientQuery.trim()
@@ -1105,16 +1122,37 @@ export function AgendaPage({
               </label>
             )}
             <label>
-              Data de referência
+              Data inicial
               <input
                 type="date"
                 required
-                value={anchorDate}
+                max={consultationEndDate || undefined}
+                value={consultationStartDate}
                 onChange={(event) => {
                   if (event.target.value) {
+                    const nextStart = event.target.value
                     setState(loadingState())
                     setScheduleGrid(loadingState())
-                    setAnchorDate(event.target.value)
+                    setConsultationStartDate(nextStart)
+                    if (!consultationEndDate || consultationEndDate < nextStart) {
+                      setConsultationEndDate(nextStart)
+                    }
+                  }
+                }}
+              />
+            </label>
+            <label>
+              Data final
+              <input
+                type="date"
+                required
+                min={consultationStartDate || undefined}
+                value={consultationEndDate}
+                onChange={(event) => {
+                  if (event.target.value && event.target.value >= consultationStartDate) {
+                    setState(loadingState())
+                    setScheduleGrid(loadingState())
+                    setConsultationEndDate(event.target.value)
                   }
                 }}
               />
@@ -1415,7 +1453,11 @@ export function AgendaPage({
               onClick={() => {
                 setState(loadingState())
                 setScheduleGrid(loadingState())
-                setAnchorDate((date) => moveAnchor(date, view, -1))
+                if (embeddedHome) {
+                  setAnchorDate((date) => moveAnchor(date, view, -1))
+                } else {
+                  moveConsultationRange(-1)
+                }
               }}
             >
               Anterior
@@ -1425,7 +1467,13 @@ export function AgendaPage({
               onClick={() => {
                 setState(loadingState())
                 setScheduleGrid(loadingState())
-                setAnchorDate(dateInputValue(new Date()))
+                if (embeddedHome) {
+                  setAnchorDate(dateInputValue(new Date()))
+                } else {
+                  const today = dateInputValue(new Date())
+                  setConsultationStartDate(today)
+                  setConsultationEndDate(today)
+                }
               }}
             >
               Hoje
@@ -1436,7 +1484,11 @@ export function AgendaPage({
               onClick={() => {
                 setState(loadingState())
                 setScheduleGrid(loadingState())
-                setAnchorDate((date) => moveAnchor(date, view, 1))
+                if (embeddedHome) {
+                  setAnchorDate((date) => moveAnchor(date, view, 1))
+                } else {
+                  moveConsultationRange(1)
+                }
               }}
             >
               Próximo
