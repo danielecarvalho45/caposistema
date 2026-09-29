@@ -3568,3 +3568,28 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Conferência física:** busca no repositório confirmou que as Home profissionais específicas de Clínico/Padrão, Nutrição e Assistência Social renderizam `AgendaPage`; a rota geral `/agenda` também utiliza o mesmo componente. `route-access.ts` autoriza `/agenda` para administrador, administrativo_operacional, coordenador e profissional com contexto ativo.
 
 **Estado:** **REGRA TRANSVERSAL CONFIRMADA / SEM NOVA ALTERAÇÃO DE BACKEND NECESSÁRIA / CONSULTA COMPLETA CENTRALIZADA EM UM ÚNICO COMPONENTE / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL POR PERFIL**.
+
+
+### 28.58 Correção transversal da consulta de agenda — registro da RPC na camada CAPO (29/09/2026)
+
+**Evidência visual apresentada:** ao consultar a agenda em produção, a interface exibiu: **“Resposta inválida de get_agenda_schedule_grid_for_interface: RPC não cadastrada na camada CAPO.”**
+
+**Causa física confirmada:** a função `get_agenda_schedule_grid_for_interface` existia no Supabase e o serviço `getAgendaScheduleGrid` já chamava essa operação, porém o `switch` de `createSupabaseTransport` em `src/lib/supabase/rpc.ts` não possuía o `case` correspondente. A chamada caía no `default`, gerando exatamente a mensagem vista na tela. A RPC também não estava declarada em `src/types/database.ts`.
+
+**Correção aplicada:** registrada `get_agenda_schedule_grid_for_interface` na camada CAPO com os parâmetros `p_start_date`, `p_end_date` e `p_professional_id`; adicionada também a tipagem correspondente em `database.ts`.
+
+**Aplicação transversal confirmada:** a rota `/agenda` utiliza o mesmo `AgendaPage` para Gestor/Administrador, Coordenador, Administrativo Operacional e profissionais assistenciais autorizados. As Home de Clínico/Profissional Assistencial Padrão, Nutrição e Assistência Social também reutilizam esse mesmo componente. Portanto, a grade efetiva não é uma implementação exclusiva do Gestor.
+
+**Regra de visualização:** em qualquer contexto autorizado que consulte uma agenda profissional, a visualização individual usa a grade efetiva e deve mostrar:
+- dia da semana e data;
+- horários cadastrados;
+- **Livre**;
+- **Agendado** com paciente;
+- **Bloqueado** e o tipo da formulação/bloqueio;
+- **Sem horário cadastrado** quando o dia não possuir configuração.
+
+**Autorização preservada:** Administrador/Gestor, Coordenador e Administrativo Operacional utilizam a consulta geral/seleção de profissional conforme seus contratos vigentes. O profissional assistencial utiliza a própria agenda dentro de seu contexto profissional. A correção não criou exposição adicional de pacientes fora das permissões já existentes.
+
+**Commits:** `a86d6712860be0fcfb7730be3f6804075b612d64` e `7cac20c817138f8e7cdb9c0960e98325bab99584`.
+
+**Estado:** **ERRO DA IMAGEM CORRIGIDO NO CÓDIGO / RPC REGISTRADA NA CAMADA CAPO E TIPADA / CONSULTA DE GRADE É COMPARTILHADA ENTRE OS PERFIS AUTORIZADOS / SEM NOVA ALTERAÇÃO DE SUPABASE NESTA ETAPA / TESTES AUTOMATIZADOS NÃO EXECUTADOS / NECESSITA PUBLICAÇÃO PARA O ERRO DESAPARECER NO SITE AO VIVO**.
