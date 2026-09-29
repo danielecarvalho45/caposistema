@@ -252,14 +252,16 @@ function HomeScheduleGrid({
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
   )
-  const days = view === 'month'
-    ? datesBetween(startDate, endDate)
-    : datesBetween(startDate, endDate)
+  const days = [...new Set(slots.map((slot) => slot.slot_date))].sort()
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
     weekday: 'long',
     day: '2-digit',
     month: '2-digit',
   })
+
+  if (days.length === 0) {
+    return <p className="agenda-schedule-no-hours">Nenhum horário configurado neste período.</p>
+  }
 
   return (
     <div className={view === 'month' ? 'agenda-schedule-grid agenda-schedule-grid--month' : 'agenda-schedule-grid'} aria-label="Grade efetiva da agenda">
@@ -268,10 +270,7 @@ function HomeScheduleGrid({
         return (
           <article className="agenda-schedule-day" key={day}>
             <h3>{dateFormatter.format(localDate(day))}</h3>
-            {daySlots.length === 0 ? (
-              <p className="agenda-schedule-no-hours">Sem horário cadastrado</p>
-            ) : (
-              <div className="agenda-schedule-slots">
+            <div className="agenda-schedule-slots">
                 {daySlots.map((slot) => {
                   const appointment = slot.appointment_id
                     ? appointmentById.get(slot.appointment_id)
@@ -308,7 +307,6 @@ function HomeScheduleGrid({
                   )
                 })}
               </div>
-            )}
           </article>
         )
       })}
