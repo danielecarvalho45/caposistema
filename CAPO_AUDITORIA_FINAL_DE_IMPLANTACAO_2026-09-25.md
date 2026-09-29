@@ -2900,3 +2900,20 @@ Os atalhos aprovados do bloco principal são:
 **Commit:** `122b70e30425781ae83ef6a61b6411c9b0f4b955`.
 
 **Estado:** **REGRESSÃO DE INTERFACE CONFIRMADA E CORRIGIDA NO CÓDIGO / REGRAS DE AUTORIZAÇÃO PRESERVADAS / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.32 Padronização visual — Relatórios profissionais por cards/ícones (28/09/2026)
+
+**Solicitação:** substituir a apresentação sequencial/listada dos tipos de relatório profissional pelo mesmo padrão visual já utilizado nas demais telas profissionais: **cards com ícones**, preservando dados, filtros e contratos existentes.
+
+**Correção aplicada:** em `src/features/reports/ReportsPage.tsx`, os blocos profissionais de **Agenda**, **Retornos**, **Fila da especialidade**, **Solicitações**, **Encaminhamentos** e **Encerramentos** passaram a ser apresentados como cards icônicos selecionáveis. Ao selecionar um card, a tela exibe somente os indicadores daquele relatório, mantendo o período e a especialidade atualmente selecionados.
+
+**Padrão visual:** foram adicionados ícone, título, descrição curta, destaque do card selecionado, cores discretas por categoria e comportamento responsivo. Em telas menores, a grade se reorganiza sem transformar os relatórios novamente em lista textual.
+
+**Preservação funcional:** nenhuma RPC, SQL, RLS, policy, permissão, regra de cálculo, filtro, fonte de dados ou geração de PDF foi alterada. A mudança é exclusivamente de apresentação da área profissional de Relatórios.
+
+**Arquivos alterados:** `src/features/reports/ReportsPage.tsx` e `src/features/reports/reports-page.css`.
+
+**Commits:** `3c7277d617b21fb68491cd2d1409985788bcfd09` e `678173c80bc8c4db5af51ee6ae14d903a6d1a6f5`.
+
+**Estado:** **PADRONIZADO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
