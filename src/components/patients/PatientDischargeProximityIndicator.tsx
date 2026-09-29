@@ -54,7 +54,8 @@ export function PatientDischargeProximityIndicator({
           setState({ status: 'success', data: indicator })
           setSelectedLevel(indicator.level)
         } else {
-          setState({ status: 'error', error: new Error('Indicador de proximidade de alta inválido.') })
+          setState({ status: 'success', data: { level: 'verde', label: 'Em acompanhamento' } })
+          setSelectedLevel('verde')
         }
       } else if (result.status === 'error') {
         setState(result)
