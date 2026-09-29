@@ -186,14 +186,37 @@ export function ClosuresPage({
       ownReason.trim(),
     )
     if (result.status === 'success') {
-      setFeedback('Solicitação de encerramento da própria atuação registrada.')
-      setOwnPatientQuery('')
-      setOwnPatients([])
-      setOwnPatientId('')
-      setOwnReason('')
-      await reload()
+      const closureId =
+        typeof result.data.closure_id === 'string' ? result.data.closure_id : null
+      if (!closureId) {
+        setFeedback('O banco iniciou o encerramento, mas não devolveu o identificador necessário para concluí-lo.')
+        await reload()
+      } else {
+        const completed = await integration.closeClosure(closureId, ownReason.trim())
+        if (completed.status === 'success') {
+          const notified =
+            typeof completed.data.other_professionals_notified === 'number'
+              ? completed.data.other_professionals_notified
+              : null
+          setFeedback(
+            notified === null
+              ? 'Sua atuação foi encerrada. Os demais profissionais do paciente serão avisados conforme o vínculo atual.'
+              : `Sua atuação foi encerrada. ${notified} outro(s) profissional(is) do paciente foi/foram avisado(s).`,
+          )
+          setOwnPatientQuery('')
+          setOwnPatients([])
+          setOwnPatientId('')
+          setOwnReason('')
+        } else {
+          setFeedback(
+            errorOf(completed) ??
+              'O encerramento foi iniciado, mas o banco não confirmou a conclusão.',
+          )
+        }
+        await reload()
+      }
     } else {
-      setFeedback(errorOf(result) ?? 'O banco não confirmou a solicitação.')
+      setFeedback(errorOf(result) ?? 'O banco não confirmou o encerramento.')
     }
     setBusy(false)
   }
@@ -250,8 +273,9 @@ export function ClosuresPage({
           <p className="eyebrow">Continuidade do cuidado</p>
           <h1 id="closures-title">Encerramentos por especialidade</h1>
           <p>
-            Encerramento individualizado da própria atuação, acompanhamento
-            administrativo e reabertura com histórico preservado.
+            Cada profissional encerra somente a própria atuação, de forma independente.
+            Os demais profissionais do paciente são avisados, sem criar dependência entre os encerramentos.
+            A formalização do ciclo completo permanece com o Administrativo.
           </p>
         </div>
         <span className="closures-connection">Conexão — Disponível</span>
@@ -432,8 +456,9 @@ export function ClosuresPage({
         <section className="closures-request" aria-labelledby="own-closure-title">
           <h2 id="own-closure-title">Encerrar minha atuação</h2>
           <p>
-            A solicitação é limitada ao paciente e à especialidade em que o
-            profissional possui atuação efetiva.
+            Encerre somente a sua especialidade. Os demais profissionais que atendem
+            este paciente serão apenas avisados e continuarão com autonomia para encerrar
+            a própria atuação conforme sua programação.
           </p>
           <label>
             Paciente
@@ -485,7 +510,7 @@ export function ClosuresPage({
             disabled={busy}
             onClick={() => void requestOwnClosure()}
           >
-            Solicitar encerramento da própria atuação
+            Encerrar minha atuação
           </button>
         </section>
       )}
