@@ -3800,3 +3800,21 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Commits:** `7a45b63389434cb41e01837d2e7a1607dbb0b248` e `d1eaea29937f8ec683fae82d10d3b6b401af00a0`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / SEM ALTERAÇÃO DE BACKEND / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL**.
+
+### 28.67 Correção cirúrgica — consulta por Dia/Semana/Mês e datas retroativas/futuras (29/09/2026)
+
+**Regressão identificada após o §28.65:** os campos Data inicial/Data final passaram a comandar sempre o período, fazendo com que a aba Dia pudesse abrir vários dias e as abas Semana/Mês não recompusessem seus períodos próprios.
+
+**Correção de comportamento:** ao selecionar **Dia**, a consulta usa somente a data escolhida; ao selecionar **Semana**, recompõe a semana da data inicial; ao selecionar **Mês**, recompõe o mês correspondente. Anterior/Hoje/Próximo voltaram a respeitar a visualização escolhida.
+
+**Datas de consulta:** Data inicial e Data final aceitam datas retroativas e futuras. A única restrição mantida é Data final não ser anterior à Data inicial.
+
+**Apresentação:** Dia em lista vertical dos horários; Semana preserva o formato vigente; Mês usa grade de dias configurados. Dias sem configuração continuam ocultos conforme §28.64.
+
+**Arquivos alterados:** `src/features/agenda/AgendaPage.tsx` e `src/features/agenda/agenda-page.css`.
+
+**Commits:** `21d9f26cb020b7f9633c588dae7101a53d70a052`, `27a4a5e9562ff0a42d1c1a49c7a820a719d09235` e `6b6732d17f16d294c11afec7ce78a6e36898e670`.
+
+**Preservação:** nenhuma RPC, SQL, migration, RLS, dado real ou regra de configuração da agenda foi alterado.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
