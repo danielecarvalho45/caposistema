@@ -80,7 +80,7 @@ it('abre o cadastro completo e mantém as ações no paciente consultado', async
   )
 
   await user.click(screen.getByRole('button', { name: 'Consultar' }))
-  await user.type(screen.getByPlaceholderText('Digite ao menos 2 caracteres'), 'Eliana')
+  await user.type(screen.getByPlaceholderText('Nome, CMS ou Nº CAPO exato'), '1')
   await user.click(screen.getByRole('button', { name: 'Buscar' }))
 
   expect(await screen.findByRole('heading', { name: 'Eliana Teles Machado' })).toBeVisible()
