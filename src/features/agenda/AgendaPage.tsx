@@ -12,7 +12,6 @@ import {
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
-import { FamilyPsychologyAppointmentsPanel } from './FamilyPsychologyAppointmentsPanel'
 import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
@@ -226,7 +225,6 @@ function agendaBlockLabel(value: string | null) {
     case 'relatorio': return '📊 Relatório'
     case 'atividade': return '📋 Atividade interna'
     case 'bloqueio': return '⛔ Bloqueio'
-    case 'atendimento_familiar_psicologia': return '🧠 Atendimento familiar — Psicologia'
     default: return value ?? ''
   }
 }
@@ -1829,14 +1827,6 @@ export function AgendaPage({
               />
             )}
         </div>
-
-        <FamilyPsychologyAppointmentsPanel
-          accessContext={accessContext}
-          startDate={startDate}
-          endDate={endDate}
-          professionalId={professionalId}
-          onChanged={professionalId ? loadScheduleGrid : undefined}
-        />
       </div>
     </section>
   )
