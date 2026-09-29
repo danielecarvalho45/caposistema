@@ -874,3 +874,32 @@
     grid-column: 1;
   }
 }
+
+
+.agenda-structural-pattern-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.agenda-structural-pattern-picker > button {
+  min-height: 38px;
+}
+
+.agenda-structural-hint {
+  margin: -2px 0 2px;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .agenda-structural-pattern-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-structural-pattern-picker > button {
+    width: 100%;
+  }
+}
