@@ -622,3 +622,83 @@
     text-overflow: ellipsis;
   }
 }
+
+
+.agenda-schedule-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.agenda-schedule-day {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: #fbfdff;
+  padding: 10px;
+}
+
+.agenda-schedule-day h3 {
+  margin: 0 0 8px;
+  text-transform: capitalize;
+}
+
+.agenda-schedule-slots {
+  display: grid;
+  gap: 6px;
+}
+
+.agenda-schedule-slot {
+  display: grid;
+  grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #e4ebf1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.agenda-schedule-slot > strong {
+  grid-row: 1 / span 2;
+  color: var(--color-brand-blue);
+}
+
+.agenda-schedule-slot > small {
+  color: var(--color-muted);
+}
+
+.agenda-schedule-slot.is-livre {
+  background: #f7fcf9;
+}
+
+.agenda-schedule-slot.is-bloqueado {
+  background: #fff8f2;
+}
+
+.agenda-schedule-slot.is-agendado {
+  background: #f7faff;
+}
+
+.agenda-schedule-no-hours {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.84rem;
+}
+
+.agenda-schedule-grid--month {
+  grid-template-columns: repeat(7, minmax(125px, 1fr));
+  overflow-x: auto;
+}
+
+@media (max-width: 760px) {
+  .agenda-schedule-grid--month {
+    grid-template-columns: repeat(7, minmax(132px, 1fr));
+  }
+
+  .agenda-schedule-slot {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-schedule-slot > strong {
+    grid-row: auto;
+  }
+}
