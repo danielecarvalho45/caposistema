@@ -62,6 +62,10 @@ export function QueuePage({
   loadPendingItems?: PendingItemsLoader
 }>) {
   const location = useLocation()
+  const queueParams = new URLSearchParams(location.search)
+  const highlightedWaitingListId = queueParams.get('waitingListId') ?? ''
+  const highlightedQueueKind =
+    queueParams.get('queueKind') === 'family' ? 'family' : 'patient'
   const [state, setState] =
     useState<AsyncState<readonly PendingItem[]>>(loadingState)
   const [professionalQueue, setProfessionalQueue] =
@@ -385,6 +389,11 @@ export function QueuePage({
             Atualizar
           </button>
         </div>
+        {highlightedQueueKind === 'patient' && highlightedWaitingListId && (
+          <p className="queue-suggestion-note" role="status">
+            Vaga liberada: o paciente sugerido pelo CAPO está destacado abaixo.
+          </p>
+        )}
         {canAddPatient && <>
           <button type="button" onClick={() => void openQueueForm()} disabled={queueBusy}>Adicionar paciente à fila</button>
           {showQueueForm && <div className="queue-add-form">
@@ -416,7 +425,15 @@ export function QueuePage({
               <thead><tr><th>Paciente</th><th>Especialidade</th><th>Prioridade</th><th>Entrada</th><th>Situação</th><th>Ação</th></tr></thead>
               <tbody>
                 {waitingRows(patientQueue.data).map((row, index) => (
-                  <tr key={rowText(row, 'waiting_list_id') + index}>
+                  <tr
+                    key={rowText(row, 'waiting_list_id') + index}
+                    className={
+                      highlightedQueueKind === 'patient' &&
+                      rowText(row, 'waiting_list_id') === highlightedWaitingListId
+                        ? 'queue-row-highlight'
+                        : undefined
+                    }
+                  >
                     <td>{rowText(row, 'patient_name')}</td>
                     <td>{rowText(row, 'specialty_name')}</td>
                     <td>{rowText(row, 'priority')}</td>
@@ -494,6 +511,11 @@ export function QueuePage({
           </button>
         </div>
 
+        {highlightedQueueKind === 'family' && highlightedWaitingListId && (
+          <p className="queue-suggestion-note" role="status">
+            Vaga liberada: o familiar elegível sugerido pelo CAPO está destacado abaixo.
+          </p>
+        )}
         {familyQueue.status === 'loading' && <p>Carregando fila de familiares…</p>}
         {familyQueue.status === 'error' && <p role="alert">{familyQueue.error.message}</p>}
         {familyQueue.status === 'empty' && <p>Nenhum familiar aguardando.</p>}
@@ -504,7 +526,15 @@ export function QueuePage({
               <thead><tr><th>Familiar</th><th>Paciente vinculado</th><th>Relação</th><th>Prioridade</th><th>Entrada</th><th>Ação</th></tr></thead>
               <tbody>
                 {waitingRows(familyQueue.data).map((row, index) => (
-                  <tr key={rowText(row, 'waiting_list_id') + index}>
+                  <tr
+                    key={rowText(row, 'waiting_list_id') + index}
+                    className={
+                      highlightedQueueKind === 'family' &&
+                      rowText(row, 'waiting_list_id') === highlightedWaitingListId
+                        ? 'queue-row-highlight'
+                        : undefined
+                    }
+                  >
                     <td>{rowText(row, 'family_name')}</td>
                     <td>{rowText(row, 'source_patient_name')}</td>
                     <td>{rowText(row, 'relationship')}</td>
