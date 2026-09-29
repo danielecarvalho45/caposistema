@@ -35,6 +35,7 @@ import { GestorOperationalPage } from '../features/gestor/GestorOperationalPage'
 import { TechnicalSupportRequest } from '../components/forms/TechnicalSupportRequest'
 import { canAccessAppRoute, isKnownAppRoute, type AppRoute } from './route-access'
 import type { Notification } from '../features/notifications/notifications-integration'
+import '../styles/home-mobile-standard.css'
 
 function notificationContextHref(
   notification: Notification,
