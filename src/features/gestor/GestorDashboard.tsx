@@ -32,6 +32,21 @@ function agendaChangeText(row: AgendaChangeRow, ...keys: string[]) {
   return '—'
 }
 
+function agendaBlockLabel(value: string | null) {
+  switch (value) {
+    case 'intervalo': return '☕ Intervalo / Café'
+    case 'alimentacao': return '🍽️ Almoço'
+    case 'estudo_caso': return '📚 Estudo de caso'
+    case 'atendimento_online': return '💻 Atendimentos online'
+    case 'rotina_administrativa': return '📋 Rotinas administrativas'
+    case 'reuniao': return '👥 Reunião'
+    case 'relatorio': return '📊 Relatório'
+    case 'atividade': return '📋 Atividade interna'
+    case 'bloqueio': return '⛔ Bloqueio'
+    default: return value ?? ''
+  }
+}
+
 const quickAccess = [
   ['/pacientes', '👥', 'Pacientes', 'Cadastrar e consultar', 'blue'],
   ['/agenda', '▣', 'Agenda', 'Visualizar agendas', 'green'],
@@ -124,7 +139,7 @@ export function GestorDashboard() {
                     {slot.slot_status === 'livre'
                       ? 'Livre'
                       : slot.slot_status === 'bloqueado'
-                        ? `Bloqueado${slot.block_type ? ` · ${slot.block_type}` : ''}`
+                        ? `Bloqueado${slot.block_type ? ` · ${agendaBlockLabel(slot.block_type)}` : ''}`
                         : slot.patient_name ?? 'Agendado'}
                   </small>
                 </div>
