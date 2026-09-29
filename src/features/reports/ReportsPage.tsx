@@ -20,14 +20,14 @@ import { capoPdfFooter } from '../../lib/pdf/capo-document-pdf'
 const defaultIntegration = createReportsIntegration()
 
 const reportSections: ReadonlyArray<
-  readonly [keyof AssistentialOperationalReport, string]
+  readonly [keyof AssistentialOperationalReport, string, string, string]
 > = [
-  ['agenda', 'Agenda'],
-  ['retornos', 'Retornos'],
-  ['fila_especialidade', 'Fila da especialidade'],
-  ['solicitacoes', 'Solicitacoes'],
-  ['encaminhamentos', 'Encaminhamentos'],
-  ['encerramentos', 'Encerramentos'],
+  ['agenda', 'Agenda', '📅', 'Atendimentos e presença'],
+  ['retornos', 'Retornos', '↩', 'Retornos da especialidade'],
+  ['fila_especialidade', 'Fila da especialidade', '☷', 'Pacientes aguardando'],
+  ['solicitacoes', 'Solicitações', '▤', 'Solicitações do período'],
+  ['encaminhamentos', 'Encaminhamentos', '⇢', 'Encaminhamentos realizados'],
+  ['encerramentos', 'Encerramentos', '✓', 'Encerramentos e continuidade'],
 ]
 
 function dateInputValue(date: Date) {
@@ -225,6 +225,8 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
   const [dashboardLoadedKey, setDashboardLoadedKey] = useState('')
   const [managerSpecialty, setManagerSpecialty] = useState('')
   const [selectedManagerReport, setSelectedManagerReport] = useState('')
+  const [selectedProfessionalReport, setSelectedProfessionalReport] =
+    useState<keyof AssistentialOperationalReport>('agenda')
   const [printGeneratedAt, setPrintGeneratedAt] = useState<Date | null>(null)
   const isProfessional =
     Boolean(accessContext.professional_id) &&
@@ -456,14 +458,45 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
             </p>
           )}
           {reportState.status === 'success' && (
-            <div className="reports-metrics">
-              {reportSections.map(([key, label]) => {
-                const section = reportState.data[key]
-                if (typeof section !== 'object') return null
+            <>
+              <nav
+                className="reports-icon-grid"
+                aria-label="Tipos de relatório"
+              >
+                {reportSections.map(([key, label, icon, description], index) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="reports-icon-card"
+                    data-accent={String((index % 6) + 1)}
+                    aria-pressed={selectedProfessionalReport === key}
+                    onClick={() => setSelectedProfessionalReport(key)}
+                  >
+                    <span className="reports-icon" aria-hidden="true">{icon}</span>
+                    <strong>{label}</strong>
+                    <small>{description}</small>
+                  </button>
+                ))}
+              </nav>
+              {(() => {
+                const selected = reportSections.find(
+                  ([key]) => key === selectedProfessionalReport,
+                )
+                const section = reportState.data[selectedProfessionalReport]
+                if (!selected || typeof section !== 'object') {
+                  return (
+                    <div className="reports-card reports-selected-section">
+                      <p>Nenhum indicador disponível para este relatório.</p>
+                    </div>
+                  )
+                }
                 return (
-                  <section key={key} aria-label={label}>
-                    <h4>{label}</h4>
-                    <dl>
+                  <section
+                    className="reports-card reports-selected-section"
+                    aria-label={selected[1]}
+                  >
+                    <h4>{selected[1]}</h4>
+                    <dl className="reports-selected-metrics">
                       {sectionEntries(section).map(([metric, value]) => (
                         <div key={metric}>
                           <dt>{metricLabel(metric)}</dt>
@@ -471,7 +504,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
                             {typeof value === 'boolean'
                               ? value
                                 ? 'Sim'
-                                : 'Nao'
+                                : 'Não'
                               : value}
                           </dd>
                         </div>
@@ -479,8 +512,8 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
                     </dl>
                   </section>
                 )
-              })}
-            </div>
+              })()}
+            </>
           )}
           <DashboardPanel state={dashboardState} />
         </article>
