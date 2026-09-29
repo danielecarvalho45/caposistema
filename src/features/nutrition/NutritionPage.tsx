@@ -375,17 +375,16 @@ export function NutritionPage({
         <>
           <section className="home-welcome" aria-labelledby="nutrition-title">
             <p className="eyebrow">Nutrição</p>
-            <h1 id="nutrition-title">Minha Agenda</h1>
+            <h1 id="nutrition-title">Atendimentos de hoje</h1>
             <p>
-              A rotina de Nutrição abre diretamente na agenda profissional, com o
-              contexto da própria atuação e os registros da especialidade.
+              Os pacientes agendados aparecem diretamente na tela inicial. Confirme a presença ou registre a falta na própria linha do atendimento.
             </p>
             <p className="home-slogan">
               Agenda · pacientes vinculados · plano alimentar · relatórios
             </p>
           </section>
 
-          <AgendaPage accessContext={accessContext} showSpecialty={false} onConfirmed={(appointment) => void openConfirmedPatient(appointment)} />
+          <AgendaPage accessContext={accessContext} showSpecialty={false} onConfirmed={(appointment) => void openConfirmedPatient(appointment)} embeddedHome />
 
           <section className="home-profile" aria-labelledby="nutrition-birthdays-title">
             <h2 id="nutrition-birthdays-title">Aniversariantes de hoje</h2>
