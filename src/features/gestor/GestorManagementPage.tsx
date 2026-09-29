@@ -1,5 +1,5 @@
 import { ActiveSearchPage } from './ActiveSearchPage'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { GestorTeamPage } from './GestorTeamPage'
 import { OperationalTimeline } from './OperationalTimeline'
 import { AuditLogPage } from './AuditLogPage'
@@ -19,7 +19,9 @@ const content: Record<ManagementView, Readonly<{ kicker: string; title: string; 
 
 export function GestorManagementPage({ view, accessContext }: Readonly<{ view: ManagementView; accessContext: AccessContext }>) {
   const page = content[view]
-  if (view === 'equipe' || view === 'administracao') return <GestorTeamPage />
+  const location = useLocation()
+  const initialTeamTab = new URLSearchParams(location.search).get('aba') === 'agenda' ? 'agenda' : 'cadastro'
+  if (view === 'equipe' || view === 'administracao') return <GestorTeamPage initialTab={initialTeamTab} />
   if (view === 'timeline') return <OperationalTimeline />
   if (view === 'auditoria') return <AuditLogPage />
   if (view === 'busca-ativa') return <ActiveSearchPage accessContext={accessContext} />
