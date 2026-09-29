@@ -921,3 +921,65 @@
     width: 100%;
   }
 }
+
+
+/* CAPO — consulta da agenda: Dia em lista, Semana no formato vigente, Mês em grade */
+.agenda-schedule-grid--day {
+  grid-template-columns: 1fr;
+}
+
+.agenda-schedule-grid--day .agenda-schedule-day {
+  width: 100%;
+}
+
+.agenda-schedule-grid--day .agenda-schedule-slots {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.agenda-schedule-grid--week {
+  grid-template-columns: 1fr;
+}
+
+.agenda-schedule-grid--month {
+  grid-template-columns: repeat(7, minmax(125px, 1fr));
+  align-items: start;
+  overflow-x: auto;
+}
+
+.agenda-schedule-grid--month .agenda-schedule-day {
+  min-width: 125px;
+  min-height: 150px;
+}
+
+.agenda-schedule-grid--month .agenda-schedule-slot {
+  grid-template-columns: 1fr;
+}
+
+.agenda-schedule-grid--month .agenda-schedule-slot > strong {
+  grid-row: auto;
+}
+
+@media (max-width: 760px) {
+  .agenda-schedule-grid--month {
+    grid-template-columns: repeat(7, minmax(132px, 1fr));
+  }
+
+  .agenda-schedule-grid--day .agenda-schedule-slot {
+    grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
+  }
+
+  .agenda-schedule-grid--day .agenda-schedule-slot > strong {
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 440px) {
+  .agenda-schedule-grid--day .agenda-schedule-slot {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-schedule-grid--day .agenda-schedule-slot > strong {
+    grid-row: auto;
+  }
+}
