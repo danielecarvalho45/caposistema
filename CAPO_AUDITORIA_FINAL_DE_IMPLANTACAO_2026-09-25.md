@@ -4245,3 +4245,31 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Preservação anti-avalanche:** não foram alterados RPC, SQL, RLS, permissões, regras de vagas, configuração de agenda, paciente ou demais fluxos de Confirmar/Falta/Remarcação.
 
 **Estado:** **IMPLEMENTADO NO `main` / BACKEND PRESERVADO / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.85 PONTO FORMAL DE PARADA / CONTINUIDADE CONTROLADA — mudança de chat (29/09/2026)
+
+**Motivo:** a Titular solicitou a interrupção deste chat por limite de conversa e pediu o registro do ponto exato de continuidade.
+
+**Último bloco trabalhado:** cancelamento de agendamento na Agenda, já documentado no §28.84.
+
+**Estado físico no momento da parada:**
+- o último commit funcional/auditado antes deste registro era `dc0b5cfd423e4c980069cc096299cc633947649a`;
+- o Cloudflare Pages registrou esse commit como publicado com sucesso;
+- a correção do cancelamento já está no GitHub e publicada;
+- nenhuma alteração de backend foi necessária nesse bloco;
+- arquivos do bloco: `src/features/agenda/AgendaPage.tsx`, `src/features/agenda/agenda-page.css` e `tests/unit/agenda-queue-context.test.tsx`;
+- commits funcionais: `d2c2f4ff72067ce4d1ccdb12af2f6821395745b3`, `11ef26d77a99e8b0d2d36354f9df2057986c9df8`, `56269918310adadc68110e43f86eac1a5d4a1230`;
+- o teste unitário específico foi adicionado, mas não executado nesta sessão;
+- falta a homologação operacional real da Titular para o cancelamento publicado.
+
+**Preservar na continuidade:**
+- §28.82 — botão **Agendar** no horário livre da Home do Gestor;
+- §28.83 — resultado do paciente no Novo Agendamento com Nome + Nº CAPO + CMS;
+- §28.84 — **Cancelar agendamento** com motivo obrigatório usando o contrato já existente.
+
+**Regra de retomada:** não reiniciar a auditoria, não refazer §§28.82–28.84 e não reconstruir a Agenda. O próximo chat deve começar lendo este Documento Mestre e os manuais vigentes, e então continuar pelo teste operacional do cancelamento publicado ou pela próxima evidência apresentada pela Titular.
+
+**Ponto de retomada operacional:** na aplicação publicada, localizar um agendamento elegível, verificar a ação **Cancelar agendamento**, informar motivo com pelo menos 5 caracteres, confirmar e conferir o estado final e a atualização da vaga na agenda.
+
+**Estado:** **PARADO POR SOLICITAÇÃO DA TITULAR / §28.84 PUBLICADO / HOMOLOGAÇÃO OPERACIONAL DO CANCELAMENTO PENDENTE / AGUARDANDO NOVO CHAT**.
