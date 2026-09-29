@@ -48,8 +48,8 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
 
   async function searchPatients() {
     const clean = query.trim()
-    if (clean.length < 2) {
-      setFeedback('Informe nome, Nº CAPO ou CMS com pelo menos dois caracteres.')
+    if (clean.length < 2 && !/^\d$/.test(clean)) {
+      setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       return
     }
     const result = await getRpcService().searchReferralPatients(clean, 20, 0)
