@@ -8,6 +8,7 @@ import type { AccessContext } from '../../src/types/access'
 const rpc = vi.hoisted(() => ({
   getSchedulingCatalog: vi.fn(), getAvailableAppointmentSlots: vi.fn(),
   getAgendaScheduleGrid: vi.fn(), createAppointment: vi.fn(),
+  updateAppointmentAttendance: vi.fn(),
   searchReferralPatients: vi.fn(), addPatientToWaitingList: vi.fn(),
 }))
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => ({ ...(await importOriginal<typeof import('../../src/lib/supabase/rpc')>()), getRpcService: () => rpc }))
@@ -264,4 +265,65 @@ it('mostra resultados homônimos com Nome, Nº CAPO e CMS para escolha explícit
   const options = within(results).getAllByRole('button')
   await user.click(options[1])
   expect(options[1]).toHaveAttribute('aria-pressed', 'true')
+})
+
+
+it('cancela agendamento pela Agenda com motivo obrigatório e contrato existente', async () => {
+  const appointment = {
+    appointment_id: 'appointment-1',
+    patient_id: 'patient-1',
+    patient_name: 'Eliana Teles Machado',
+    patient_number: '1',
+    professional_id: 'p1',
+    professional_name: 'Ilton de Oliveira Filho',
+    specialty_name: 'Clínica Geral',
+    appointment_date: '2026-10-01T11:10:00.000Z',
+    appointment_end: '2026-10-01T12:10:00.000Z',
+    appointment_type: 'retorno',
+    attendance_status: 'agendado',
+    general_notes: null,
+    rescheduled_from_id: null,
+    reschedule_reason: null,
+    reschedule_origin: null,
+  }
+  const loadAgenda = vi.fn().mockResolvedValue({
+    status: 'success',
+    data: [appointment],
+  })
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.updateAppointmentAttendance.mockResolvedValue({
+    status: 'success',
+    data: {
+      appointment_id: 'appointment-1',
+      attendance_status: 'cancelado',
+    },
+  })
+
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+  } as unknown as AccessContext
+  const user = userEvent.setup()
+
+  render(
+    <MemoryRouter>
+      <AgendaPage accessContext={context} loadAgenda={loadAgenda} />
+    </MemoryRouter>,
+  )
+
+  const cancel = await screen.findByRole('button', { name: 'Cancelar agendamento' })
+  await user.click(cancel)
+  const reason = screen.getByLabelText('Motivo do cancelamento *')
+  await user.type(reason, 'Paciente solicitou cancelamento')
+  const confirm = screen.getByRole('button', { name: 'Confirmar cancelamento' })
+  expect(confirm).toBeEnabled()
+  await user.click(confirm)
+
+  expect(rpc.updateAppointmentAttendance).toHaveBeenCalledWith({
+    appointmentId: 'appointment-1',
+    action: 'cancelado',
+    notes: '',
+    reason: 'Paciente solicitou cancelamento',
+  })
 })
