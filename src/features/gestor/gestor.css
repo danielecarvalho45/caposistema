@@ -281,3 +281,58 @@
     grid-column: auto;
   }
 }
+
+
+/* CAPO — Fluxos e Acompanhamentos do Gestor em atalhos visuais */
+.gestor-flow-shortcuts{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.gestor-flow-shortcut{
+  display:grid;
+  min-height:118px;
+  align-content:center;
+  justify-items:center;
+  gap:6px;
+  padding:14px 10px;
+  border:1px solid #d7e4ef;
+  border-radius:9px;
+  background:#f8fbfd;
+  color:#17365f;
+  text-align:center;
+  text-decoration:none;
+}
+.gestor-flow-shortcut:hover,
+.gestor-flow-shortcut:focus-visible{
+  border-color:#0071dc;
+  background:#eef6fc;
+  outline:none;
+}
+.gestor-flow-shortcut-icon{
+  display:grid;
+  width:40px;
+  height:40px;
+  place-items:center;
+  border-radius:50%;
+  background:#e8f4ff;
+  color:#0071dc;
+  font-size:22px;
+  line-height:1;
+}
+.gestor-flow-shortcut strong{font-size:12px;line-height:1.2}
+.gestor-flow-shortcut small{color:#617b9c;font-size:10px;line-height:1.25}
+@media(max-width:1050px){
+  .gestor-flow-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+  .gestor-flow-shortcuts{grid-template-columns:1fr}
+  .gestor-flow-shortcut{
+    grid-template-columns:auto 1fr;
+    min-height:76px;
+    justify-items:start;
+    text-align:left;
+  }
+  .gestor-flow-shortcut-icon{grid-row:1 / span 2}
+}
