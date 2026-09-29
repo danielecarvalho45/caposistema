@@ -40,6 +40,57 @@ type PendingConfirmation = Readonly<{
   conflict: boolean
 }>
 
+const managementActions = [
+  {
+    value: 'horario_provisorio',
+    icon: '🕒',
+    label: 'Alterar horário do dia',
+    description: 'Mudar provisoriamente o início ou o fechamento da agenda.',
+  },
+  {
+    value: 'bloqueio',
+    icon: '⛔',
+    label: 'Bloquear período',
+    description: 'Fechar um intervalo específico da agenda.',
+  },
+  {
+    value: 'alimentacao',
+    icon: '🍽️',
+    label: 'Almoço',
+    description: 'Reservar temporariamente o horário de alimentação.',
+  },
+  {
+    value: 'intervalo',
+    icon: '☕',
+    label: 'Café / Intervalo',
+    description: 'Reservar um intervalo temporário.',
+  },
+  {
+    value: 'reuniao',
+    icon: '👥',
+    label: 'Reunião',
+    description: 'Bloquear horário para reunião.',
+  },
+  {
+    value: 'atividade',
+    icon: '📋',
+    label: 'Atividade interna',
+    description: 'Reservar período para atividade interna.',
+  },
+  {
+    value: 'relatorio',
+    icon: '📊',
+    label: 'Relatório',
+    description: 'Reservar período para elaboração de relatório.',
+  },
+  {
+    value: 'excecao',
+    icon: '📅',
+    label: 'Exceção de data',
+    description: 'Registrar um bloqueio excepcional em uma data.',
+  },
+] as const
+
 export function OwnAgendaManager({
   professionalId,
   title = 'Gerenciar minha agenda',
@@ -193,6 +244,34 @@ export function OwnAgendaManager({
         <p>Nenhuma configuração de agenda foi encontrada.</p>
       )}
 
+      <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
+        {managementActions.map((action) => (
+          <button
+            key={action.value}
+            type="button"
+            className="agenda-own-action-card"
+            aria-pressed={entryType === action.value}
+            disabled={configurations.length === 0 || busy}
+            onClick={() => {
+              setEntryType(action.value)
+              setPendingConfirmation(null)
+              setFeedback(null)
+            }}
+          >
+            <span className="agenda-own-action-icon" aria-hidden="true">{action.icon}</span>
+            <strong>{action.label}</strong>
+            <small>{action.description}</small>
+          </button>
+        ))}
+      </div>
+
+      {configuration?.status === 'success' && configurations.length === 0 && (
+        <p className="agenda-own-warning" role="alert">
+          Este contexto profissional não possui configuração de agenda ativa disponível.
+          Os ajustes temporários só podem ser registrados depois que existir uma agenda configurada para este profissional.
+        </p>
+      )}
+
       {configurations.length > 0 && (
         <>
           <label>
@@ -208,21 +287,13 @@ export function OwnAgendaManager({
           </label>
 
           <label>
-            Tipo
-            <select value={entryType} onChange={(event) => {
-              setEntryType(event.target.value)
-              setPendingConfirmation(null)
-            }}>
-              <option value="">Selecionar</option>
-              <option value="intervalo">Café / Intervalo</option>
-              <option value="alimentacao">Alimentação / Almoço</option>
-              <option value="reuniao">Reunião</option>
-              <option value="atividade">Atividade interna</option>
-              <option value="relatorio">Relatório</option>
-              <option value="bloqueio">Bloquear período</option>
-              <option value="horario_provisorio">Horário provisório — data específica</option>
-              <option value="excecao">Exceção de data / bloqueio</option>
-            </select>
+            Ação selecionada
+            <input
+              readOnly
+              value={
+                managementActions.find((action) => action.value === entryType)?.label ?? 'Selecione uma ação acima'
+              }
+            />
           </label>
 
           <label>
