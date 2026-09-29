@@ -84,3 +84,52 @@ it('permite PDF institucional quando a consulta retorna estado vazio', async () 
   expect(screen.getByRole('button', { name: 'Gerar / salvar PDF' })).toBeEnabled()
   expect(screen.getByText(/Relatório: Visão geral/)).toBeVisible()
 })
+
+
+it('profissional gera relatório da própria especialidade sem chamar dashboard gerencial', async () => {
+  const loadDashboard = vi.fn().mockResolvedValue({
+    status: 'error',
+    error: new Error('Perfil sem autorização para Relatórios gerenciais do CAPO.'),
+  })
+  const loadSpecialties = vi.fn().mockResolvedValue({
+    status: 'success',
+    data: [
+      {
+        specialty_id: 'clinica-geral',
+        specialty_name: 'Clínica Geral',
+        is_current_context: true,
+      },
+    ],
+  })
+  const loadReport = vi.fn().mockResolvedValue({
+    status: 'success',
+    data: {
+      agenda: { agendado: 0, confirmado: 0, realizado: 0, faltou: 0, cancelado: 0, remarcado: 0 },
+      retornos: { agendado: 0, confirmado: 0, realizado: 0, faltou: 0, cancelado: 0, remarcado: 0 },
+      fila_especialidade: { waiting: 0 },
+      solicitacoes: { pending: 0 },
+      encaminhamentos: { enabled: true, pending_approval: 0 },
+      encerramentos: { pendente: 0, encerrado: 0, reaberto: 0 },
+    },
+  })
+
+  render(
+    <ReportsPage
+      accessContext={{
+        roles: [
+          { code: 'profissional', name: 'Profissional' },
+          { code: 'administrador', name: 'Administrador' },
+        ],
+        primary_context: { code: 'profissional' },
+        professional_id: 'professional-id',
+      } as unknown as AccessContext}
+      integration={{ loadDashboard, loadSpecialties, loadReport }}
+    />,
+  )
+
+  expect(await screen.findByRole('heading', { name: 'Relatorio operacional' })).toBeVisible()
+  expect(await screen.findByRole('button', { name: /Agenda/ })).toBeVisible()
+  expect(loadReport).toHaveBeenCalledWith('clinica-geral', expect.any(String), expect.any(String))
+  expect(loadDashboard).not.toHaveBeenCalled()
+  expect(screen.queryByText(/Perfil sem autorização para Relatórios gerenciais do CAPO/)).not.toBeInTheDocument()
+})
