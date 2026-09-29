@@ -3249,3 +3249,34 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `0cb0e72c404275f41836c7b38aea7a05d0cc3929`, `ebf8f378aaa13d3412ea4552c746dcbd83914a51` e `7759fefdf20e7b3c8d864078c03f4366fc28a6b6`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO CONFORME INDEX ESTRUTURAL / SEM ALTERAÇÃO DE SUPABASE / AGENDA DA HOME PADRONIZADA EM DIA-SEMANA-MÊS / SEMANA COMPLETA COM 7 DIAS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.47 Padronização visual das telas Home no mobile conforme Gestor/Titular (29/09/2026)
+
+**Referência visual aprovada pela Titular:** a organização mobile da Home do Gestor/Titular foi definida como padrão visual para as demais telas iniciais. O objetivo é preservar a identidade funcional de cada perfil, mas utilizar a mesma linguagem de composição: leitura vertical, uma coluna, cards largos, espaçamento consistente, títulos claros, painéis sequenciais e rodapé ao final.
+
+**Escopo:** somente telas **Home/Início**. Não foi aplicada a mesma composição indiscriminadamente às telas internas de módulos, evitando alterar fluxos operacionais que possuem estrutura própria.
+
+**Implementação compartilhada:** criado `src/styles/home-mobile-standard.css` como padrão único para viewport até 620 px. O estilo centraliza largura, espaçamento, painéis, acessos rápidos, cards, títulos, agenda embutida, aniversariantes e demais blocos de Home, evitando correções independentes por perfil.
+
+**Perfis cobertos:**
+- Gestor/Titular — permanece como referência aprovada, sem redesenho;
+- Administrativo Operacional e demais contextos que usam `HomePage`;
+- Administrador Técnico/TI quando utiliza a Home geral;
+- Coordenador;
+- Clínico Geral;
+- Profissional Assistencial Padrão;
+- Nutrição;
+- Assistência Social, somente no modo `home` (a rota própria de Acompanhamento Social não recebe o padrão de Home).
+
+**Comportamento mobile compartilhado:** atalhos passam para uma coluna; cards ocupam toda a largura útil com altura e tipografia compatíveis com a referência do Gestor; painéis usam o mesmo raio, borda e sombra leve; blocos são empilhados com intervalo uniforme; agenda embutida e seus controles permanecem responsivos; aniversariantes e demais painéis ficam em sequência vertical.
+
+**Preservação funcional:** nenhuma função, permissão, RPC, SQL, dado, ordem funcional específica ou conteúdo de cada perfil foi alterado nesta padronização. Cada Home conserva seus módulos e particularidades; somente a organização visual mobile foi centralizada.
+
+**Arquivos alterados:** `src/styles/home-mobile-standard.css`, `src/app/App.tsx`, `src/features/home/HomePage.tsx`, `src/features/coordination/CoordinationDashboard.tsx`, `src/features/professional/AssistentialPage.tsx`, `src/features/nutrition/NutritionPage.tsx` e `src/features/social/SocialPage.tsx`.
+
+**Commits:** `0566a262a481c717f12c6334d7d49df7d52d8a17`, `317176d0b38b868ca39e2d455a3d44970f1cba8a`, `129529fcd889f215166f2dd8e39dee86e2fe1f7e`, `adbba75503ed65ec36f87f64ad65b1bdb3dbe48d`, `a9dd19c08e8ae38e01e9b56bd78ebcd335397ecc`, `6ebbdddd07fe3ae56dc4e90a5e1567bec48b96e3` e `0f2bebc61b29941cb235617492a6c303ced96b1b`.
+
+**Conferência pós-correção:** relidos os pontos de entrada. `App.tsx` importa o estilo compartilhado; Home geral, Coordenação, Assistencial, Nutrição e Social/Home estão marcadas com `home-mobile-standard`. O modo de Acompanhamento Social permanece fora dessa regra.
+
+**Estado:** **PADRONIZAÇÃO VISUAL MOBILE APLICADA NO CÓDIGO / HOME DO GESTOR PRESERVADA COMO REFERÊNCIA / SEM ALTERAÇÃO DE BACKEND / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL EM CELULAR**.
