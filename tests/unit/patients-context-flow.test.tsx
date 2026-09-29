@@ -149,3 +149,38 @@ it('corrige registro de óbito com motivo e preserva o fluxo compartilhado', asy
   expect(await screen.findByText(/status anterior foi restaurado/i)).toBeVisible()
 })
 
+it('abre diretamente o paciente recebido pela notificação administrativa', async () => {
+  rpc.getPatientForEdit.mockResolvedValue({
+    status: 'success',
+    data: [{
+      patient_id: 'patient-1',
+      patient_number: '1',
+      full_name: 'Paciente da Notificação',
+      birth_date: '1960-01-01',
+      cms: 'CMS-1',
+      sex: 'feminino',
+      phone: '35999999999',
+      phone_secondary: null,
+      address: null,
+      capo_start_date: '2026-09-29',
+      operational_notes: null,
+      origin: 'CAPO',
+      status: 'ativo',
+      deceased: true,
+    }],
+  })
+  rpc.getPatientDeathContext.mockResolvedValue({
+    status: 'success',
+    data: { deceased: true, death_date: '2026-09-29' },
+  })
+
+  render(
+    <MemoryRouter initialEntries={['/pacientes?patientId=patient-1']}>
+      <PatientsPage accessContext={context} />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByRole('heading', { name: 'Paciente da Notificação' })).toBeVisible()
+  expect(rpc.getPatientForEdit).toHaveBeenCalledWith('patient-1')
+})
+
