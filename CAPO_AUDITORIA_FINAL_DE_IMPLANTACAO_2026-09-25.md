@@ -3226,3 +3226,26 @@ Os atalhos aprovados do bloco principal são:
 **Commit:** `6f8f587538cc23ad3b36d4b6b8ac17f5952163af`.
 
 **Estado:** **CORRIGIDO NO SUPABASE E REGISTRADO NO REPOSITÓRIO / PERFIS DE HOMOLOGAÇÃO ISOLADOS DAS CONSULTAS PRODUTIVAS / CHAVE MESTRA PRESERVADA / TESTES AUTOMATIZADOS NÃO EXECUTADOS NESTA ETAPA / AGUARDANDO CONFERÊNCIA VISUAL NO COORDENADOR**.
+
+
+### 28.46 Home profissional — agenda no formato estrutural Dia / Semana / Mês (29/09/2026)
+
+**Evidência visual apresentada pela Titular:** o card **Agenda do dia** do Coordenador foi indicado como referência de organização visual. Para os profissionais, a agenda deve seguir o Projeto Estrutural próprio: card **Minha Agenda** na tela inicial, com as abas **Dia / Semana / Mês**, agenda exclusiva do profissional e pacientes agendados dentro do período correspondente.
+
+**Confronto físico com os Index aprovados:** o Index do Médico Clínico Geral `index(20260914-000000)_MEDICO_CLINICO_GERAL.html` possui na Home o card **📅 Minha Agenda**, abas Dia/Semana/Mês, navegação de período e visualizações específicas por dia, semana e mês. O Index aprovado da Assistência Social `index(20260913-103215).html` também usa as abas Dia/Semana/Mês; a semana estrutural renderiza os **sete dias**, e no mobile preserva os sete dias em grade horizontal rolável.
+
+**Divergência do React atual:** embora `AgendaPage` já possuísse os três modos, a apresentação embutida na Home estava visualmente distinta do estrutural. A visão semanal usava grandes blocos/tabelas por dia; no mobile os controles se empilhavam; os campos permanentes de observação/motivo apareciam na Home; quando não existiam agendamentos, Semana e Mês deixavam de ser desenhados e eram substituídos por uma mensagem vazia.
+
+**Correção aplicada no componente compartilhado:** o modo `embeddedHome` de `AgendaPage` passou a renderizar um card compacto **Minha Agenda**, com abas **Dia / Semana / Mês** no próprio card. A navegação Anterior/Hoje/Próximo e o período permanecem dentro do mesmo componente. Os filtros de data e os campos permanentes de observação/motivo ficam fora da Home e permanecem disponíveis apenas na agenda completa quando cabíveis.
+
+**Semana:** o modo semanal embutido agora apresenta **sete colunas/dias**, cada dia com horário, paciente, tipo e ações compactas de presença/retorno. No mobile, a sequência dos sete dias é preservada em grade horizontal rolável, conforme o padrão estrutural aprovado.
+
+**Mês:** o calendário mensal permanece em sete colunas, com os agendamentos dentro do respectivo dia e adaptação compacta no mobile.
+
+**Estados vazios:** na visão Dia, ausência de atendimento continua exibindo mensagem objetiva. Nas visões Semana e Mês, a estrutura completa permanece visível mesmo sem nenhum agendamento, evitando que a agenda desapareça justamente no estado vazio.
+
+**Aplicação transversal:** a alteração foi feita em `src/features/agenda/AgendaPage.tsx` e `src/features/agenda/agenda-page.css`, componentes compartilhados por Clínico Geral, Nutrição, Assistência Social e Profissional Assistencial Padrão na Home. Não foi criada uma versão de agenda por profissional.
+
+**Commits:** `0cb0e72c404275f41836c7b38aea7a05d0cc3929`, `ebf8f378aaa13d3412ea4552c746dcbd83914a51` e `7759fefdf20e7b3c8d864078c03f4366fc28a6b6`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO CONFORME INDEX ESTRUTURAL / SEM ALTERAÇÃO DE SUPABASE / AGENDA DA HOME PADRONIZADA EM DIA-SEMANA-MÊS / SEMANA COMPLETA COM 7 DIAS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
