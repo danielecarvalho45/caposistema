@@ -4,6 +4,7 @@ import {
   getRpcService,
   loadingState,
   type AgendaAppointment,
+  type AgendaScheduleSlot,
   type AvailableAppointmentSlot,
   type AsyncState,
   type ReschedulableAppointment,
@@ -199,6 +200,103 @@ function AppointmentTable({
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+
+function slotClock(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(date)
+}
+
+function HomeScheduleGrid({
+  slots,
+  startDate,
+  endDate,
+  view,
+  appointments,
+  onAttendance,
+  onReturn,
+  busyAppointmentId,
+}: Readonly<{
+  slots: readonly AgendaScheduleSlot[]
+  startDate: string
+  endDate: string
+  view: AgendaView
+  appointments: readonly AgendaAppointment[]
+  onAttendance?: (appointmentId: string, action: string) => void
+  onReturn?: (appointment: AgendaAppointment) => void
+  busyAppointmentId?: string | null
+}>) {
+  const appointmentById = new Map(
+    appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
+  )
+  const days = view === 'month'
+    ? datesBetween(startDate, endDate)
+    : datesBetween(startDate, endDate)
+  const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+  })
+
+  return (
+    <div className={view === 'month' ? 'agenda-schedule-grid agenda-schedule-grid--month' : 'agenda-schedule-grid'} aria-label="Grade efetiva da agenda">
+      {days.map((day) => {
+        const daySlots = slots.filter((slot) => slot.slot_date === day)
+        return (
+          <article className="agenda-schedule-day" key={day}>
+            <h3>{dateFormatter.format(localDate(day))}</h3>
+            {daySlots.length === 0 ? (
+              <p className="agenda-schedule-no-hours">Sem horário cadastrado</p>
+            ) : (
+              <div className="agenda-schedule-slots">
+                {daySlots.map((slot) => {
+                  const appointment = slot.appointment_id
+                    ? appointmentById.get(slot.appointment_id)
+                    : undefined
+                  return (
+                    <div
+                      className={`agenda-schedule-slot is-${slot.slot_status}`}
+                      key={`${slot.professional_id}:${slot.slot_start}`}
+                    >
+                      <strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong>
+                      <span className="agenda-schedule-status">
+                        {slot.slot_status === 'livre'
+                          ? 'Livre'
+                          : slot.slot_status === 'bloqueado'
+                            ? 'Bloqueado'
+                            : slot.patient_name ?? 'Agendado'}
+                      </span>
+                      {slot.slot_status === 'agendado' && slot.appointment_type && (
+                        <small>{slot.appointment_type}</small>
+                      )}
+                      {slot.slot_status === 'bloqueado' && slot.block_type && (
+                        <small>{slot.block_type}</small>
+                      )}
+                      {slot.slot_status === 'agendado' && slot.appointment_id && onAttendance && (
+                        <div className="agenda-week-home-actions">
+                          <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onAttendance(slot.appointment_id!, 'confirmado')} aria-label={`Confirmar consulta de ${slot.patient_name ?? 'paciente'}`}>✓</button>
+                          <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onAttendance(slot.appointment_id!, 'faltou')} aria-label={`Marcar falta de ${slot.patient_name ?? 'paciente'}`}>✕</button>
+                          {appointment && onReturn && appointment.attendance_status === 'confirmado' && (
+                            <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${slot.patient_name ?? 'paciente'}`}>↻</button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </article>
+        )
+      })}
     </div>
   )
 }
@@ -426,6 +524,8 @@ export function AgendaPage({
   const [anchorDate, setAnchorDate] = useState(() => dateInputValue(new Date()))
   const [state, setState] =
     useState<AsyncState<readonly AgendaAppointment[]>>(loadingState)
+  const [scheduleGrid, setScheduleGrid] =
+    useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [specialtyResult, setSpecialtyResult] = useState<{ agenda: AsyncState<readonly AgendaAppointment[]>; byPatient: Record<string, AsyncState<readonly { specialty_id: string; specialty_name: string }[]>> } | null>(null)
   const requestSequence = useRef(0)
   const { startDate, endDate } = agendaBounds(anchorDate, view)
@@ -725,6 +825,20 @@ export function AgendaPage({
     professionalId,
     startDate,
   ])
+
+  useEffect(() => {
+    if (!embeddedHome || !canAccess || !professionalId) return
+    let active = true
+    setScheduleGrid(loadingState())
+    void getRpcService()
+      .getAgendaScheduleGrid(startDate, endDate, professionalId)
+      .then((nextState) => {
+        if (active) setScheduleGrid(nextState)
+      })
+    return () => {
+      active = false
+    }
+  }, [canAccess, embeddedHome, endDate, professionalId, startDate])
 
   useEffect(() => {
     if (isProfessional) return
@@ -1291,8 +1405,26 @@ export function AgendaPage({
         )}
 
         <div aria-live="polite">
-          {state.status === 'loading' && <p>Carregando agenda…</p>}
-          {state.status === 'error' && (
+          {embeddedHome && scheduleGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
+          {embeddedHome && scheduleGrid.status === 'error' && (
+            <p className="assistential-error" role="alert">
+              Não foi possível carregar os horários cadastrados: {scheduleGrid.error.message}
+            </p>
+          )}
+          {embeddedHome && (scheduleGrid.status === 'empty' || scheduleGrid.status === 'success') && (
+            <HomeScheduleGrid
+              slots={scheduleGrid.status === 'success' ? scheduleGrid.data : []}
+              startDate={startDate}
+              endDate={endDate}
+              view={view}
+              appointments={state.status === 'success' ? state.data : []}
+              onAttendance={isProfessional ? updateAttendance : undefined}
+              onReturn={isProfessional ? prepareProfessionalReturn : undefined}
+              busyAppointmentId={busyAppointmentId}
+            />
+          )}
+          {!embeddedHome && state.status === 'loading' && <p>Carregando agenda…</p>}
+          {!embeddedHome && state.status === 'error' && (
             <div className="assistential-error" role="alert">
               <p>Não foi possível carregar a agenda: {state.error.message}</p>
               <button type="button" onClick={() => void load()}>
@@ -1300,12 +1432,12 @@ export function AgendaPage({
               </button>
             </div>
           )}
-          {(state.status === 'empty' ||
+          {!embeddedHome && (state.status === 'empty' ||
             (state.status === 'success' && state.data.length === 0)) &&
             view === 'day' && (
               <p>Nenhum atendimento agendado para este dia.</p>
             )}
-          {(state.status === 'empty' || state.status === 'success') &&
+          {!embeddedHome && (state.status === 'empty' || state.status === 'success') &&
             (view !== 'day' || (state.status === 'success' && state.data.length > 0)) && (
               <AgendaResults
                 appointments={state.status === 'success' ? state.data : []}
