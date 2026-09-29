@@ -860,6 +860,26 @@ export function AgendaPage({
     )
   }
 
+  if (isProfessional && professionalId && initialManageOpen) {
+    return (
+      <section className="assistential-page" aria-labelledby="manage-own-agenda-title">
+        <div className="assistential-card">
+          <div className="assistential-heading">
+            <div>
+              <p className="eyebrow">Disponibilidade profissional</p>
+              <h2 id="manage-own-agenda-title">Gerenciar minha agenda</h2>
+              <p>
+                Ajustes temporários da própria disponibilidade. Esta área não exibe
+                pacientes agendados nem substitui Minha Agenda.
+              </p>
+            </div>
+          </div>
+          <OwnAgendaManager professionalId={professionalId} />
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="assistential-page" aria-labelledby="agenda-title">
       <div className="assistential-card">
@@ -931,10 +951,6 @@ export function AgendaPage({
             </button>
           </div>
         </div>
-
-        {isProfessional && professionalId && initialManageOpen && (
-          <OwnAgendaManager professionalId={professionalId} />
-        )}
 
         {!isProfessional && (
           <>
