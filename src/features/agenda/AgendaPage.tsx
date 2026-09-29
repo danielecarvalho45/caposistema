@@ -182,8 +182,8 @@ function AppointmentTable({
               <td>{appointment.patient_name}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
               {onAttendance && (
                 <td>
-                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}>Confirmar</button>
-                  <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}>Falta</button>
+                  <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}><span aria-hidden="true">✓</span> Confirmar</button>
+                  <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}><span aria-hidden="true">✕</span> Falta</button>
                   {onReturn && appointment.attendance_status === 'confirmado' && (
                     <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>Agendar retorno</button>
                   )}
@@ -349,6 +349,7 @@ export function AgendaPage({
   onConfirmed,
   loadPatientSpecialties = defaultPatientSpecialtiesLoader,
   initialManageOpen = false,
+  embeddedHome = false,
 }: Readonly<{
   accessContext: AccessContext
   loadAgenda?: AgendaLoader
@@ -356,6 +357,7 @@ export function AgendaPage({
   onConfirmed?: (appointment: AgendaAppointment) => void
   loadPatientSpecialties?: (patientId: string) => Promise<AsyncState<unknown>>
   initialManageOpen?: boolean
+  embeddedHome?: boolean
 }>) {
   const location = useLocation()
   const [view, setView] = useState<AgendaView>('day')
@@ -645,10 +647,6 @@ export function AgendaPage({
 
   async function updateAttendance(appointmentId: string, action: string) {
     if (busyAppointmentId) return
-    if (action === 'faltou' && attendanceReason.trim().length < 3) {
-      setAppointmentFeedback('Informe o motivo da falta antes de registrar.')
-      return
-    }
     setBusyAppointmentId(appointmentId)
     setAppointmentFeedback('Atualizando atendimento no banco...')
     const result = await getRpcService().updateAppointmentAttendance({
@@ -872,11 +870,17 @@ export function AgendaPage({
               {isProfessional ? 'Operacional assistencial' : 'Operacional geral'}
             </p>
             <h2 id="agenda-title">
-              {isProfessional ? 'Minha Agenda' : 'Agenda Geral'}
+              {isProfessional
+                ? embeddedHome
+                  ? 'Agenda de atendimentos'
+                  : 'Minha Agenda'
+                : 'Agenda Geral'}
             </h2>
             <p>
               {isProfessional
-                ? 'Seus atendimentos no período selecionado.'
+                ? embeddedHome
+                  ? 'Pacientes agendados. Confirme a presença ou registre a falta diretamente na linha do atendimento.'
+                  : 'Seus atendimentos no período selecionado.'
                 : 'Atendimentos e movimentações autorizados no período selecionado.'}
             </p>
           </div>
@@ -929,7 +933,7 @@ export function AgendaPage({
           </div>
         </div>
 
-        {isProfessional && professionalId && (
+        {isProfessional && professionalId && !embeddedHome && (
           <div className="agenda-actions" aria-label="Operações da própria agenda">
             <button
               type="button"
@@ -942,7 +946,7 @@ export function AgendaPage({
           </div>
         )}
 
-        {isProfessional && professionalId && showOwnAgendaManager && (
+        {isProfessional && professionalId && !embeddedHome && showOwnAgendaManager && (
           <OwnAgendaManager professionalId={professionalId} />
         )}
 
