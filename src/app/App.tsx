@@ -51,6 +51,7 @@ function notificationContextHref(
     no_show_followups: '/faltosos',
     patient_no_show_followup: '/faltosos',
     waiting_list: '/fila',
+    family_psychology_waiting_list: '/fila',
     patient_care_closures: '/encerramentos',
     transport_requests: '/transporte',
     prescription_renewal_requests: '/receita',
@@ -65,7 +66,22 @@ function notificationContextHref(
       : notification.entity_type
         ? routeByEntityType[notification.entity_type]
         : undefined
-  return route && canAccessAppRoute(accessContext, route) ? route : null
+  if (!route || !canAccessAppRoute(accessContext, route)) return null
+
+  if (
+    route === '/fila' &&
+    notification.entity_id &&
+    (notification.entity_type === 'waiting_list' ||
+      notification.entity_type === 'family_psychology_waiting_list')
+  ) {
+    const kind =
+      notification.entity_type === 'family_psychology_waiting_list'
+        ? 'family'
+        : 'patient'
+    return `/fila?waitingListId=${encodeURIComponent(notification.entity_id)}&queueKind=${kind}`
+  }
+
+  return route
 }
 
 export function ConstructionPage({ path }: { path: string }) {
