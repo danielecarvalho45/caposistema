@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, expect, it, vi } from 'vitest'
 import { PatientsPage } from '../../src/features/patients/PatientsPage'
+import { RegisterPatientDeath } from '../../src/components/patients/RegisterPatientDeath'
 import type { AccessContext } from '../../src/types/access'
 
 const rpc = vi.hoisted(() => ({
@@ -12,7 +13,9 @@ const rpc = vi.hoisted(() => ({
   createPatient: vi.fn(),
   getInitialActiveSearches: vi.fn(),
   registerInitialActiveSearchAttempt: vi.fn(),
+  getPatientDeathContext: vi.fn(),
   registerPatientDeath: vi.fn(),
+  correctPatientDeath: vi.fn(),
 }))
 
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => ({
@@ -43,6 +46,10 @@ afterEach(() => {
 })
 
 it('abre o cadastro completo e mantém as ações no paciente consultado', async () => {
+  rpc.getPatientDeathContext.mockResolvedValue({
+    status: 'success',
+    data: { deceased: false },
+  })
   rpc.searchReferralPatients.mockResolvedValue({
     status: 'success',
     data: [{
@@ -96,3 +103,49 @@ it('abre o cadastro completo e mantém as ações no paciente consultado', async
   expect(screen.getByRole('link', { name: /Encerramentos/ })).toHaveAttribute('href', '/encerramentos')
   expect(screen.getByRole('button', { name: 'Registrar óbito' })).toBeVisible()
 })
+
+it('corrige registro de óbito com motivo e preserva o fluxo compartilhado', async () => {
+  rpc.getPatientDeathContext
+    .mockResolvedValueOnce({
+      status: 'success',
+      data: {
+        deceased: true,
+        death_date: '2026-09-29',
+        death_recorded_by_name: 'Gestor CAPO',
+      },
+    })
+    .mockResolvedValueOnce({
+      status: 'success',
+      data: { deceased: false },
+    })
+  rpc.correctPatientDeath.mockResolvedValue({
+    status: 'success',
+    data: {
+      success: true,
+      patient_id: 'patient-1',
+      deceased: false,
+      restored_status: 'ativo',
+    },
+  })
+
+  const user = userEvent.setup()
+  render(
+    <RegisterPatientDeath
+      patientId="patient-1"
+      patientName="Paciente Teste"
+    />,
+  )
+
+  expect(await screen.findByRole('button', { name: 'Corrigir registro de óbito' })).toBeDisabled()
+  await user.type(screen.getByLabelText('Motivo da correção *'), 'Registro realizado por engano')
+  const correct = screen.getByRole('button', { name: 'Corrigir registro de óbito' })
+  expect(correct).toBeEnabled()
+  await user.click(correct)
+
+  expect(rpc.correctPatientDeath).toHaveBeenCalledWith(
+    'patient-1',
+    'Registro realizado por engano',
+  )
+  expect(await screen.findByText(/status anterior foi restaurado/i)).toBeVisible()
+})
+
