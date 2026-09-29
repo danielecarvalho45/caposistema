@@ -449,6 +449,24 @@ export type AssistentialPatient = Readonly<{
   total_count: number
 }>
 
+export type FamilyPsychologyAppointment = Readonly<{
+  appointment_id: string
+  family_member_id: string
+  family_name: string
+  family_phone: string | null
+  source_patient_id: string
+  source_patient_name: string | null
+  source_patient_number: string | null
+  relationship: string
+  professional_id: string
+  professional_name: string
+  appointment_date: string
+  appointment_end: string
+  attendance_status: string
+  general_notes: string | null
+  waiting_list_id: string | null
+}>
+
 export type AgendaAppointment = Readonly<{
   appointment_id: string
   patient_id: string
@@ -1744,6 +1762,33 @@ function parseReschedulableAppointments(
   })
 }
 
+function parseFamilyPsychologyAppointments(
+  value: unknown,
+): readonly FamilyPsychologyAppointment[] {
+  const operation = 'get_family_psychology_appointments_for_interface'
+  if (!Array.isArray(value)) throw contractError(operation, 'lista esperada.')
+  return value.map((item) => {
+    if (!isRecord(item)) throw contractError(operation, 'linha inválida.')
+    return {
+      appointment_id: requiredString(item, 'appointment_id', operation),
+      family_member_id: requiredString(item, 'family_member_id', operation),
+      family_name: requiredString(item, 'family_name', operation),
+      family_phone: nullableString(item, 'family_phone', operation),
+      source_patient_id: requiredString(item, 'source_patient_id', operation),
+      source_patient_name: nullableString(item, 'source_patient_name', operation),
+      source_patient_number: nullableString(item, 'source_patient_number', operation),
+      relationship: requiredString(item, 'relationship', operation),
+      professional_id: requiredString(item, 'professional_id', operation),
+      professional_name: requiredString(item, 'professional_name', operation),
+      appointment_date: requiredString(item, 'appointment_date', operation),
+      appointment_end: requiredString(item, 'appointment_end', operation),
+      attendance_status: requiredString(item, 'attendance_status', operation),
+      general_notes: nullableString(item, 'general_notes', operation),
+      waiting_list_id: nullableString(item, 'waiting_list_id', operation),
+    }
+  })
+}
+
 function parseAgendaAppointments(value: unknown): readonly AgendaAppointment[] {
   const operation = 'get_agenda_for_interface'
   if (!Array.isArray(value)) throw contractError(operation, 'lista esperada.')
@@ -2489,6 +2534,38 @@ export function createRpcService(transport: RpcTransport) {
           p_professional_id: input.professionalId,
           p_slot_start: input.slotStart,
           p_general_notes: input.generalNotes,
+        },
+        parse: parseConfirmedJson,
+      }),
+    getFamilyPsychologyAppointments: (
+      startDate: string,
+      endDate: string,
+      professionalId: string | null = null,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_family_psychology_appointments_for_interface',
+        args: {
+          p_start_date: startDate,
+          p_end_date: endDate,
+          p_professional_id: professionalId,
+        },
+        parse: parseFamilyPsychologyAppointments,
+      }),
+    updateFamilyPsychologyAttendance: (
+      appointmentId: string,
+      action: 'confirmado' | 'realizado' | 'faltou' | 'cancelado',
+      reason: string | null = null,
+      notes: string | null = null,
+    ) =>
+      execute({
+        transport,
+        operation: 'update_family_psychology_attendance_for_interface',
+        args: {
+          p_appointment_id: appointmentId,
+          p_action: action,
+          p_reason: reason,
+          p_notes: notes,
         },
         parse: parseConfirmedJson,
       }),
@@ -3531,6 +3608,8 @@ function createSupabaseTransport(
       case 'set_professional_capability_for_interface':
       case 'remove_professional_capability_for_interface':
       case 'set_specialty_capability_status_for_interface':
+      case 'get_family_psychology_appointments_for_interface':
+      case 'update_family_psychology_attendance_for_interface':
       case 'get_family_psychology_request_context_for_interface':
       case 'add_family_to_waiting_list_for_interface':
       case 'get_family_waiting_list_for_interface':
