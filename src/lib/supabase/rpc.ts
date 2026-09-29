@@ -33,6 +33,13 @@ export type HomologationProfessionalOption = Readonly<{
   professional_id: string
   professional_name: string
   function_title: string | null
+  has_active_agenda: boolean
+  is_homologation_stub: boolean
+  specialties: readonly Readonly<{
+    specialty_id: string
+    specialty_name: string
+    is_primary: boolean
+  }>[]
 }>
 
 export type HomologationSpecialtyOption = Readonly<{
@@ -835,10 +842,25 @@ function parseHomologationOptions(value: unknown): HomologationOptions {
     }),
     professionals: optionArray(candidate, ['professionals', 'available_professionals'], operation).map((item) => {
       if (!isRecord(item)) throw contractError(operation, 'profissional inválido.')
+      const specialties = Array.isArray(item.specialties)
+        ? item.specialties.map((specialty) => {
+            if (!isRecord(specialty)) {
+              throw contractError(operation, 'especialidade do profissional inválida.')
+            }
+            return {
+              specialty_id: optionString(specialty, ['specialty_id', 'id'], operation),
+              specialty_name: optionString(specialty, ['specialty_name', 'name'], operation),
+              is_primary: specialty.is_primary === true,
+            }
+          })
+        : []
       return {
         professional_id: optionString(item, ['professional_id', 'id'], operation),
         professional_name: optionString(item, ['professional_name', 'full_name', 'name'], operation),
         function_title: typeof item.function_title === 'string' ? item.function_title : null,
+        has_active_agenda: item.has_active_agenda === true,
+        is_homologation_stub: item.is_homologation_stub === true,
+        specialties,
       }
     }),
     specialties: optionArray(candidate, ['specialties', 'available_specialties'], operation).map((item) => {
