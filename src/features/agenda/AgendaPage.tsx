@@ -940,21 +940,10 @@ export function AgendaPage({
       return
     }
 
-    if (!specialtyId && requestedProfessionalId) {
-      if (schedulingCatalog.status !== 'success') return
-      const row = schedulingCatalogRows(schedulingCatalog.data).find(
-        (item) => item.professional_id === requestedProfessionalId,
-      )
-      specialtyId = row?.specialty_id ?? ''
-    }
-    if (!specialtyId) return
-
     setShowScheduleForm(true)
     setShowRescheduleForm(false)
     setAppointmentPatientId(patientId)
     setAppointmentPatientQuery(patientName)
-    setSelectedSpecialtyId(specialtyId)
-    if (requestedProfessionalId) setSelectedProfessionalId(requestedProfessionalId)
     setPrefillWaitingListId(waitingListId)
     setPrefillRenewalId(renewalId)
     setAppointmentOrigin(
@@ -962,8 +951,21 @@ export function AgendaPage({
         ? 'fila_de_espera'
         : origin === 'prescription_renewal'
           ? 'renovacao_receita_consulta'
-          : '',
+          : origin === 'patient_record'
+            ? 'cadastro_paciente'
+            : '',
     )
+
+    if (!specialtyId && requestedProfessionalId) {
+      if (schedulingCatalog.status !== 'success') return
+      const row = schedulingCatalogRows(schedulingCatalog.data).find(
+        (item) => item.professional_id === requestedProfessionalId,
+      )
+      specialtyId = row?.specialty_id ?? ''
+    }
+
+    if (specialtyId) setSelectedSpecialtyId(specialtyId)
+    if (requestedProfessionalId) setSelectedProfessionalId(requestedProfessionalId)
     if (origin === 'prescription_renewal') setAppointmentType('Retorno')
   }, [isProfessional, location.state, schedulingCatalog])
 
