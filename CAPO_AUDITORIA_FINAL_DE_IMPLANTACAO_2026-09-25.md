@@ -3197,3 +3197,32 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `9b8f06cc8140a3d8a92c178b1b9f3506b87f9413` e `dcbff69b036df001b5b1f259574a41c3fc8b57f4`.
 
 **Estado:** **CORRIGIDO PONTUALMENTE NO CÓDIGO / DUPLICIDADE REMOVIDA / FLUXOS PRÓPRIOS CENTRALIZADOS NA BARRA LATERAL / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.45 Isolamento de homologação — perfis técnicos fora de relatórios e cadastros produtivos (29/09/2026)
+
+**Evidência de homologação:** no contexto do Coordenador, perfis técnicos **Homologação — ...** apareciam no resumo profissional como se fossem integrantes ativos reais da equipe. Esses registros existem exclusivamente para a chave mestra de manutenção/homologação e não devem contaminar indicadores, equipe ativa, aniversariantes, catálogo de agendamento ou seletores operacionais produtivos.
+
+**Causa física:** os cinco perfis técnicos estavam em `public.professionals` com `status='ativo'` e `is_professional=true`. Como não estavam diretamente vinculados à conta técnica por `user_accounts.professional_id`, o campo `is_homologation_account` da conta não bastava para filtrá-los.
+
+**Correção estrutural no banco:** adicionada a coluna `public.professionals.is_homologation_profile boolean not null default false`. Os cinco perfis técnicos atuais — Clínico Geral, Nutrição, Assistência Social, Psicologia e Fisioterapia — foram marcados com `is_homologation_profile=true`. Criada a função central `capo_professional_is_production(uuid)`, que identifica se um profissional pode participar das consultas produtivas.
+
+**Consultas produtivas filtradas:** passaram a excluir perfis de homologação:
+- `get_coordinator_team_overview_for_interface` — visão/resumo profissional do Coordenador;
+- `get_team_management_context_for_interface` — cadastro/listagem produtiva da equipe;
+- `get_scheduling_catalog` — profissionais disponíveis para agendamento geral;
+- `get_interprofessional_referral_targets_for_interface` — destinatários de encaminhamento;
+- `get_eligible_care_closure_professionals_for_interface_hom02_raw` — profissionais elegíveis para encerramento;
+- `get_birthdays_for_interface` — aniversariantes da equipe.
+
+**Homologação preservada:** `get_homologation_options_for_interface` continua enxergando os perfis técnicos e agora usa o marcador estrutural `is_homologation_profile`, em vez de inferir homologação pelo nome do profissional. Assim, a chave mestra de TI continua conseguindo abrir as telas estruturais sem que esses perfis sejam tratados como equipe produtiva.
+
+**Pacientes de teste:** o dashboard gerencial já excluía fisicamente `patients.is_test=true`; essa regra foi preservada. Portanto, pacientes de teste continuam fora dos indicadores gerenciais de produção.
+
+**Conferência pós-correção:** os cinco perfis técnicos foram relidos com `is_homologation_profile=true`. As seis RPCs produtivas acima foram relidas e todas contêm o filtro central `capo_professional_is_production`. O catálogo de agendamento, que não recebeu o filtro na primeira aplicação, foi corrigido em migration complementar e novamente conferido.
+
+**Migration no repositório:** `supabase/migrations/20260929024500_isolate_homologation_profiles_from_production.sql`.
+
+**Commit:** `6f8f587538cc23ad3b36d4b6b8ac17f5952163af`.
+
+**Estado:** **CORRIGIDO NO SUPABASE E REGISTRADO NO REPOSITÓRIO / PERFIS DE HOMOLOGAÇÃO ISOLADOS DAS CONSULTAS PRODUTIVAS / CHAVE MESTRA PRESERVADA / TESTES AUTOMATIZADOS NÃO EXECUTADOS NESTA ETAPA / AGUARDANDO CONFERÊNCIA VISUAL NO COORDENADOR**.
