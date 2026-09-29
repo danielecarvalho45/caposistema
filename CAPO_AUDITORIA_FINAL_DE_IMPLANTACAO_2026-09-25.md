@@ -2917,3 +2917,20 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `3c7277d617b21fb68491cd2d1409985788bcfd09` e `678173c80bc8c4db5af51ee6ae14d903a6d1a6f5`.
 
 **Estado:** **PADRONIZADO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.33 Correção funcional — autonomia temporária em “Gerenciar minha agenda” do Clínico (28/09/2026)
+
+**Regra funcional confirmada:** a área **Gerenciar minha agenda** pertence à autonomia temporária do próprio profissional. O Médico Clínico pode flexibilizar diretamente a própria agenda, sem depender do Administrativo, para ajustes temporários como **Café / Intervalo**, **Alimentação / Almoço**, **Reunião**, **Atividade interna**, **Relatório**, **Bloquear período**, **Exceção de data** e **Horário provisório em data específica**. Somente alterações permanentes/estruturais de jornada, turno, carga ou horário seguem **Coordenação → anuência → efetivação administrativa**.
+
+**Confronto estrutural:** o Index aprovado do Médico Clínico e o registro de auditoria já separam **autonomia temporária da própria disponibilidade** de **mudanças estruturais**. O componente vigente `OwnAgendaManager` já utilizava `getAgendaConfiguration`, `createAgendaBlock` e `createAgendaException`, mas a opção genérica de exceção era gravada apenas como bloqueio e o backend ainda tratava qualquer `alteracao_horario` como estrutural, mesmo sendo uma exceção de data específica.
+
+**Correção na interface:** `src/features/agenda/OwnAgendaManager.tsx` passou a explicitar a autonomia temporária sem dependência do Administrativo e ganhou a opção **Horário provisório — data específica**. Essa opção é registrada como `alteracao_horario` em `createAgendaException`. O botão **Registrar alteração temporária** deixou de ficar bloqueado por formulário incompleto e permanece desabilitado apenas durante gravação; a validação continua exibindo mensagem clara quando faltarem tipo, data, horário ou justificativa.
+
+**Correção no Supabase oficial:** aplicada a migration `allow_professional_temporary_own_schedule_time_exception`, registrada no repositório como `supabase/migrations/20260928223000_allow_professional_temporary_own_schedule_time_exception.sql`. A RPC `create_agenda_exception_for_interface` continua impedindo alteração em agenda de outro profissional e continua exigindo Administrativo Controlador para exceção retroativa, mas deixa de bloquear `alteracao_horario` quando é uma exceção da própria agenda em data específica.
+
+**Mudanças permanentes preservadas:** bloqueios recorrentes por dia da semana continuam restritos à Administração no contrato de `create_agenda_block_for_interface`; alterações permanentes de jornada/carga/turno continuam fora de `Gerenciar minha agenda` e seguem o fluxo de Coordenação e execução administrativa.
+
+**Commits:** `2083fde3e14a5c275bb7525249111b787358e97b` e `5c9defcef97ff077ba893542bdb1c6661809afab`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / AUTONOMIA TEMPORÁRIA DO CLÍNICO PRESERVADA / ALTERAÇÕES PERMANENTES MANTIDAS NO FLUXO COORDENAÇÃO → ADMINISTRATIVO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
