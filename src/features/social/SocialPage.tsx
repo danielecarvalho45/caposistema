@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
+import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
 
 const defaultIntegration = createClosuresIntegration()
 const defaultSpecialtiesLoader = () => getRpcService().getMyAssistentialSpecialties()
@@ -202,6 +203,7 @@ export function SocialPage({
           <div className="social-followup-form">
             <strong>Paciente confirmado na agenda: {selectedAppointment.patient_name}</strong>
             <PatientCareSpecialties key={selectedAppointment.patient_id} patientId={selectedAppointment.patient_id} />
+            <PatientDischargeProximityIndicator patientId={selectedAppointment.patient_id} />
             <RegisterPatientDeath key={selectedAppointment.patient_id} patientId={selectedAppointment.patient_id} patientName={selectedAppointment.patient_name} />
             <p>O acompanhamento será vinculado ao agendamento confirmado e ao ciclo CAPO correspondente.</p>
             <button type="button" disabled={busy} onClick={() => void startSocial()}>
