@@ -3484,3 +3484,27 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Commits:** `43f0aa37951f8e837b8202143122b895fed4e990`, `82634db30c428178337f107bfbe45f0d5cf823f7`, `642b3e2d57ae21bd3b4d19b7cef91464c315ea0a`, `477cb3e6bca5390f6488ab1bccee8403ac783afb` e `93b6836ef0deec0420f521b7caa9b77f253edb57`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / CINCO TIPOS ESTRUTURAIS INCLUÍDOS NA FORMULAÇÃO SEMANAL / ÍCONES PADRONIZADOS / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.56 Validação completa do banco — gravação, geração e proteção da agenda após alterações (29/09/2026)
+
+**Pergunta da Titular:** confirmar se o banco está preparado para gravar e gerar a agenda exatamente conforme a configuração estipulada ou posteriormente alterada.
+
+**Cadeia física validada:**
+- `save_agenda_configuration_for_interface` grava vigência, horário inicial/final, duração e dias ativos da semana;
+- `save_agenda_recurring_interval_for_interface` grava a formulação semanal recorrente com os cinco tipos estruturais;
+- `get_agenda_schedule_grid_for_interface` gera a grade efetiva considerando configuração-base, dias ativos, alteração temporária de horário, atendimento extra, bloqueios, exceções e consultas existentes;
+- `get_available_appointment_slots` oferece somente horários realmente disponíveis, excluindo agenda_blocks recorrentes/pontuais, exceções e consultas já ocupadas;
+- `create_appointment_for_interface` valida novamente o horário contra `get_available_appointment_slots` antes de criar o agendamento.
+
+**Lacuna encontrada durante a conferência:** a primeira versão da RPC de formulação recorrente verificava sobreposição com outros bloqueios, mas ainda não verificava consultas futuras já agendadas no mesmo dia/horário recorrente.
+
+**Correção aplicada:** `save_agenda_recurring_interval_for_interface` passou a contar consultas futuras do profissional dentro da vigência da configuração, nos dias da semana selecionados e no intervalo informado. Se houver pacientes afetados, a operação retorna `requires_affected_treatment=true` e não grava a nova formulação até que esses pacientes sejam tratados/remanejados.
+
+**Migration corretiva:** `supabase/migrations/20260929041000_protect_future_appointments_on_recurring_agenda_changes.sql`.
+
+**Commit:** `84ee8e6728663ef3607fba736d5bc1bd595078d8`.
+
+**Conclusão física:** após essa correção, o banco está estruturado para gravar a agenda-base, suas alterações permanentes e formulações recorrentes, gerar a grade efetiva correspondente, retirar dos slots disponíveis tudo que ficou ocupado/bloqueado e impedir criação de consulta fora da disponibilidade real.
+
+**Estado:** **CADEIA DE AGENDA VALIDADA E CORRIGIDA NO SUPABASE / GRAVAÇÃO + GERAÇÃO + DISPONIBILIDADE + PROTEÇÃO DE CONSULTAS FUTURAS FECHADAS / TESTES AUTOMATIZADOS AINDA NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL OPERACIONAL**.
