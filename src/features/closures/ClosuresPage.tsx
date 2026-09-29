@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import {
   getRpcService,
@@ -42,6 +43,7 @@ export function ClosuresPage({
   accessContext: AccessContext
   integration?: ClosuresIntegration
 }>) {
+  const location = useLocation()
   const [status, setStatus] = useState('')
   const [closures, setClosures] =
     useState<AsyncState<readonly CareClosure[]>>(loadingState)
@@ -74,6 +76,43 @@ export function ClosuresPage({
     Boolean(accessContext.professional_id) && hasRole('profissional')
 
   const closureId = selected ? textValue(selected, 'closure_id', 'id') : ''
+
+  useEffect(() => {
+    const stateValue =
+      location.state && typeof location.state === 'object'
+        ? location.state as Record<string, unknown>
+        : null
+    const patientId =
+      typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
+    const patientName =
+      typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
+    if (!patientId) return
+
+    if (canAdministrativeAction) {
+      const patient: ReferralPatient = {
+        patient_id: patientId,
+        full_name: patientName,
+        patient_number:
+          typeof stateValue?.patientNumber === 'string' && stateValue.patientNumber
+            ? stateValue.patientNumber
+            : null,
+        cms:
+          typeof stateValue?.cms === 'string' && stateValue.cms
+            ? stateValue.cms
+            : null,
+      }
+      setReturnPatientQuery(patientName)
+      setReturnPatients([patient])
+      setReturnPatientId(patientId)
+    }
+
+    if (closures.status === 'success') {
+      const match = closures.data.find(
+        (item) => textValue(item, 'patient_id') === patientId,
+      )
+      if (match) setSelected(match)
+    }
+  }, [canAdministrativeAction, closures, location.state])
 
   const reload = useCallback(async () => {
     const result = await integration.loadClosures(status || null)
