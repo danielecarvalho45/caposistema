@@ -193,6 +193,10 @@ export type Database = {
         Args: { p_document_id: string; p_storage_path: string }
         Returns: Json
       }
+      get_patient_death_context_for_interface: {
+        Args: { p_patient_id: string }
+        Returns: Json
+      }
       register_patient_death_for_interface: {
         Args: {
           p_patient_id: string
@@ -200,6 +204,13 @@ export type Database = {
           p_death_time?: string | null
           p_source?: string | null
           p_notes?: string | null
+        }
+        Returns: Json
+      }
+      correct_patient_death_for_interface: {
+        Args: {
+          p_patient_id: string
+          p_reason: string
         }
         Returns: Json
       }
