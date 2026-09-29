@@ -63,7 +63,15 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
   }
 
   async function registerAttempt() {
-    if (!selectedPatientId || contactResult.trim().length < 2 || busy) return
+    if (busy) return
+    if (!selectedPatientId) {
+      setFeedback('Selecione o paciente antes de registrar a tentativa.')
+      return
+    }
+    if (contactResult.trim().length < 2) {
+      setFeedback('Informe o resultado do contato com pelo menos dois caracteres.')
+      return
+    }
     setBusy(true)
     setFeedback('Registrando tentativa no banco…')
     const result = await getRpcService().registerActiveSearchAttempt({
@@ -121,7 +129,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
           <label>Paciente
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, Nº CAPO ou CMS" />
           </label>
-          <button type="button" onClick={() => void searchPatients()} disabled={query.trim().length < 2 || busy}>Buscar</button>
+          <button type="button" onClick={() => void searchPatients()} disabled={busy}>Buscar</button>
           {patientResults.length > 0 && (
             <label>Paciente encontrado
               <select value={selectedPatientId} onChange={(event) => setSelectedPatientId(event.target.value)}>
@@ -154,7 +162,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
           <label>Observação administrativa
             <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
           </label>
-          <button type="button" disabled={!selectedPatientId || contactResult.trim().length < 2 || busy} onClick={() => void registerAttempt()}>
+          <button type="button" disabled={busy} onClick={() => void registerAttempt()}>
             {busy ? 'Registrando…' : 'Registrar tentativa'}
           </button>
         </article>
@@ -186,7 +194,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                       <label>Motivo do encerramento
                         <input value={closureReason} onChange={(event) => setClosureReason(event.target.value)} />
                       </label>
-                      <button type="button" disabled={closureReason.trim().length < 5 || busy} onClick={() => void closeSearch(patientId)}>
+                      <button type="button" disabled={busy} onClick={() => void closeSearch(patientId)}>
                         Encerrar Busca Ativa
                       </button>
                     </div>
