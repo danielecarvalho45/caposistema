@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -11,7 +12,7 @@ const accessContext = {
 
 afterEach(() => cleanup())
 
-function renderPage(ui: React.ReactElement, initialEntries: Parameters<typeof MemoryRouter>[0]['initialEntries'] = ['/familiar-cuidador']) {
+function renderPage(ui: ReactElement, initialEntries: Parameters<typeof MemoryRouter>[0]['initialEntries'] = ['/familiar-cuidador']) {
   return render(<MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>)
 }
 
