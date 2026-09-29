@@ -3204,6 +3204,40 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: (value) => value,
       }),
+    saveAgendaRecurringInterval: (input: {
+      agendaConfigId: string
+      weekdays: readonly number[]
+      startTime: string
+      endTime: string
+      blockType: 'intervalo' | 'alimentacao'
+      description?: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'save_agenda_recurring_interval_for_interface',
+        args: {
+          p_agenda_config_id: input.agendaConfigId,
+          p_weekdays: [...input.weekdays],
+          p_start_time: input.startTime,
+          p_end_time: input.endTime,
+          p_block_type: input.blockType,
+          p_description: input.description ?? null,
+        },
+        parse: (value) => value,
+      }),
+    setAgendaRecurringIntervalStatus: (
+      blockId: string,
+      isActive: boolean,
+    ) =>
+      execute({
+        transport,
+        operation: 'set_agenda_recurring_interval_status_for_interface',
+        args: {
+          p_block_id: blockId,
+          p_is_active: isActive,
+        },
+        parse: (value) => value,
+      }),
     getSocialVulnerabilityIndicator: (patientId: string) =>
       execute({
         transport,
@@ -3793,6 +3827,23 @@ function createSupabaseTransport(
           p_justification: String(args?.p_justification ?? ''),
           p_expected_updated_at: String(args?.p_expected_updated_at ?? ''),
           p_urgent: args?.p_urgent === true,
+        })
+      case 'save_agenda_recurring_interval_for_interface':
+        return client.rpc(operation, {
+          p_agenda_config_id: String(args?.p_agenda_config_id ?? ''),
+          p_weekdays: Array.isArray(args?.p_weekdays)
+            ? args.p_weekdays.map(Number)
+            : [],
+          p_start_time: String(args?.p_start_time ?? ''),
+          p_end_time: String(args?.p_end_time ?? ''),
+          p_block_type: String(args?.p_block_type ?? 'intervalo'),
+          p_description:
+            typeof args?.p_description === 'string' ? args.p_description : null,
+        })
+      case 'set_agenda_recurring_interval_status_for_interface':
+        return client.rpc(operation, {
+          p_block_id: String(args?.p_block_id ?? ''),
+          p_is_active: args?.p_is_active === true,
         })
       case 'get_my_specialty_operational_report_for_interface':
         return client.rpc(operation, {
