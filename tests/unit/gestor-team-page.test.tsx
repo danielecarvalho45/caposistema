@@ -163,4 +163,73 @@ describe('GestorTeamPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buscar profissionais inativos' }))
     await waitFor(() => expect(getContext).toHaveBeenCalledWith(null, 'inativo', 50, 0))
   })
+
+
+  it('reflete a capacidade individual quando o backend retorna códigos escalares', async () => {
+    const professionalId = '67f1f8fb-cc4e-45be-a567-828186d56f76'
+    const getContext = vi.fn(async () => ({
+      status: 'success' as const,
+      data: {
+        team: [{
+          professional_id: professionalId,
+          user_account_id: 'account-id',
+          full_name: 'Profissional clínico',
+          username: 'profissional.clinico',
+          recovery_email: 'clinico@exemplo.org',
+          function_title: 'Médico Clínico',
+          status: 'ativo',
+          is_professional: true,
+          roles: [{ code: 'profissional' }],
+          specialties: [{ specialty_id: 'clinica-id', specialty_name: 'Clínica Geral' }],
+        }],
+        roles: [{ code: 'profissional', name: 'Profissional' }],
+        specialties: [{ specialty_id: 'clinica-id', name: 'Clínica Geral' }],
+      },
+    }))
+    const getCapabilities = vi.fn()
+      .mockResolvedValueOnce({ status: 'success' as const, data: [] })
+      .mockResolvedValue({ status: 'success' as const, data: ['encaminhamento_interprofissional'] })
+    const setCapability = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext,
+      create: success,
+      update: success,
+      setActive: success,
+      setPrimaryContext: success,
+      getCapabilities,
+      setCapability,
+      removeCapability: success,
+      setSpecialtyCapability: success,
+      getCapabilityCatalog: async () => ({
+        status: 'success' as const,
+        data: {
+          capabilities: [{
+            capability_code: 'encaminhamento_interprofissional',
+            individual_assignable: true,
+          }],
+          specialty_capabilities: [],
+        },
+      }),
+    }
+
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional clínico/ }))
+
+    const capability = await screen.findByRole('checkbox', {
+      name: 'encaminhamento_interprofissional',
+    })
+    expect(capability).not.toBeChecked()
+
+    fireEvent.click(capability)
+
+    await waitFor(() =>
+      expect(setCapability).toHaveBeenCalledWith(
+        professionalId,
+        'encaminhamento_interprofissional',
+        true,
+      ),
+    )
+    await waitFor(() => expect(capability).toBeChecked())
+  })
 })
