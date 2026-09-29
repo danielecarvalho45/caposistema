@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { FamilyCaregiverPage } from '../../src/features/social/FamilyCaregiverPage'
 import type { FamilyCaregiverService } from '../../src/features/social/family-caregiver-integration'
@@ -235,4 +235,113 @@ describe('FamilyCaregiverPage', () => {
     expect(screen.queryByText(/Registros confidenciais/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Integração oficial CAPO/i)).not.toBeInTheDocument()
   })
+
+  it('usa family_member_id real ao selecionar familiar existente e envia motivo na correção administrativa', async () => {
+    const createFamilyLink = vi.fn().mockResolvedValue({ status: 'success', data: {} })
+    const updateFamilyLinkOperational = vi.fn().mockResolvedValue({ status: 'success', data: {} })
+    const service: FamilyCaregiverService = {
+      getFamilyContext: async () => ({
+        status: 'success',
+        data: {
+          active_link: {
+            link_id: 'link-1',
+            full_name: 'Familiar Atual',
+            relationship: 'Filho',
+            linked_at: '2026-09-17',
+            psychological_interest: 'nao',
+          },
+          history: [],
+          can_admin_correct: true,
+          can_operate: true,
+        },
+      }),
+      createFamilyLink,
+      replaceFamilyLink: async () => ({ status: 'success', data: {} }),
+      closeFamilyLink: async () => ({ status: 'success', data: {} }),
+      updateFamilyLinkOperational,
+      searchFamilyMembers: async () => ({
+        status: 'success',
+        data: [{
+          family_member_id: 'family-member-1',
+          full_name: 'Familiar Existente',
+        }],
+      }),
+      createPsychologyRequest: async () => ({ status: 'success', data: {} }),
+      searchPatients: async () => ({
+        status: 'success',
+        data: [{
+          patient_id: 'patient-1',
+          full_name: 'Paciente Real',
+          cms: 'CMS-1',
+          patient_number: 'CAPO-1',
+        }],
+      }),
+    }
+
+    const user = (await import('@testing-library/user-event')).default.setup()
+    renderPage(<FamilyCaregiverPage accessContext={accessContext} service={service} />)
+
+    await user.type(screen.getByLabelText('Nome, CMS ou Nº CAPO'), 'Paciente real')
+    await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
+    await user.click(screen.getByRole('button', { name: /Paciente Real/ }))
+
+    await user.type(screen.getByLabelText('Buscar familiar existente'), 'Familiar')
+    await user.click(screen.getByRole('button', { name: 'Buscar familiar' }))
+    await user.click(await screen.findByRole('button', { name: 'Familiar Existente' }))
+
+    await user.clear(screen.getByLabelText('Relação'))
+    await user.type(screen.getByLabelText('Relação'), 'Irmã')
+    await user.selectOptions(screen.getByLabelText('Interesse psicológico'), 'avaliacao')
+    await user.type(screen.getByLabelText('Motivo da substituição/encerramento'), 'Correção cadastral autorizada')
+    await user.click(screen.getByRole('button', { name: 'Atualizar dados operacionais' }))
+
+    expect(updateFamilyLinkOperational).toHaveBeenCalledWith(expect.objectContaining({
+      p_link_id: 'link-1',
+      p_relationship: 'Irmã',
+      p_psychological_interest: 'avaliacao',
+      p_reason: 'Correção cadastral autorizada',
+    }))
+  })
+
+  it('não oferece valor de interesse psicológico rejeitado pelo backend', async () => {
+    const service: FamilyCaregiverService = {
+      getFamilyContext: async () => ({
+        status: 'success',
+        data: {
+          active_link: null,
+          history: [],
+          can_admin_correct: true,
+          can_operate: true,
+        },
+      }),
+      createFamilyLink: async () => ({ status: 'success', data: {} }),
+      replaceFamilyLink: async () => ({ status: 'success', data: {} }),
+      closeFamilyLink: async () => ({ status: 'success', data: {} }),
+      updateFamilyLinkOperational: async () => ({ status: 'success', data: {} }),
+      searchFamilyMembers: async () => ({ status: 'empty' }),
+      createPsychologyRequest: async () => ({ status: 'success', data: {} }),
+      searchPatients: async () => ({
+        status: 'success',
+        data: [{
+          patient_id: 'patient-1',
+          full_name: 'Paciente Real',
+          cms: 'CMS-1',
+          patient_number: 'CAPO-1',
+        }],
+      }),
+    }
+
+    const user = (await import('@testing-library/user-event')).default.setup()
+    renderPage(<FamilyCaregiverPage accessContext={accessContext} service={service} />)
+
+    await user.type(screen.getByLabelText('Nome, CMS ou Nº CAPO'), 'Paciente real')
+    await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
+    await user.click(screen.getByRole('button', { name: /Paciente Real/ }))
+
+    const select = screen.getByLabelText('Interesse psicológico')
+    expect(select).toHaveTextContent('Não')
+    expect(select).toHaveTextContent('Avaliação')
+    expect(select).not.toHaveTextContent('Sim')
+  })
+
 })
