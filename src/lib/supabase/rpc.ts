@@ -3209,7 +3209,12 @@ export function createRpcService(transport: RpcTransport) {
       weekdays: readonly number[]
       startTime: string
       endTime: string
-      blockType: 'intervalo' | 'alimentacao'
+      blockType:
+        | 'intervalo'
+        | 'alimentacao'
+        | 'estudo_caso'
+        | 'atendimento_online'
+        | 'rotina_administrativa'
       description?: string | null
     }) =>
       execute({
