@@ -3693,3 +3693,28 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Preservação:** nenhuma configuração de agenda foi alterada; nenhum paciente, agendamento, bloqueio ou intervalo real foi criado, excluído ou remanejado; nenhuma interface ou módulo fora da geração de grade/vagas foi modificado.
 
 **Estado:** **CORRIGIDO NO SUPABASE / TESTE FÍSICO PASS / MIGRATION REGISTRADA NO GITHUB / AGUARDANDO NOVA CONFERÊNCIA OPERACIONAL PUBLICADA**.
+
+
+### 28.61 Correção cirúrgica da interface — duração manual, padrões independentes e alteração pontual (29/09/2026)
+
+**Regra confirmada pela Titular:** a criação da agenda é manual e flexível por profissional. Cada padrão semanal pode possuir dias, horário inicial/final e duração de atendimento próprios. Criar ou editar um padrão não pode apagar os demais. Alterações de uma única data permanecem separadas das mudanças permanentes do padrão.
+
+**Divergência física encontrada na interface:** `OwnAgendaManager` ainda inicializava a duração com **30 minutos** e utilizava **30** como fallback. Isso podia levar a um novo padrão ser iniciado com duração não escolhida pela Titular. O atalho **Alterar horário do dia** existia no componente, porém ficava abaixo do editor estrutural do Gestor, reduzindo sua visibilidade operacional.
+
+**Correção aplicada somente na interface:**
+- removido o valor/fallback automático de 30 minutos;
+- o campo passou a ser **Duração do atendimento (minutos)** e inicia vazio em novo padrão, exigindo preenchimento manual;
+- o valor informado continua sendo enviado à RPC existente como `durationMinutes`;
+- o seletor de padrão deixa explícito que editar um padrão altera somente aquele grupo de dias e **Novo padrão semanal** cria outro sem apagar os anteriores;
+- o atalho **🕒 Alterar horário do dia** permanece no mesmo contrato existente e foi reposicionado para ficar visível antes do editor estrutural no contexto do Gestor;
+- o texto do atalho esclarece que a alteração é somente de uma data, sem modificar o padrão semanal;
+- incluído **Desativar padrão selecionado**, reutilizando `setAgendaConfigurationStatus`, para retirar somente o padrão escolhido sem apagar os demais;
+- nenhum contrato, RPC, tabela, RLS, trigger, migration ou dado real do Supabase foi alterado nesta correção.
+
+**Arquivos alterados:** `src/features/agenda/OwnAgendaManager.tsx` e `tests/unit/OwnAgendaManager.test.tsx`.
+
+**Commits:** `dec3f3521832daf8b52b9d4f7fbcead67c5beed6` e `155d92ef6908f8400e460f2414b4d7bb019d8ff1`.
+
+**Conferência física pós-correção:** o componente não contém mais `useState(30)`, `setStructuralDuration(30)` nem fallback `appointment_duration_minutes, 30`; permanecem presentes **Novo padrão semanal**, **Alterar horário do dia** e **Desativar padrão selecionado**.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / SEM ALTERAÇÃO DE BACKEND / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
