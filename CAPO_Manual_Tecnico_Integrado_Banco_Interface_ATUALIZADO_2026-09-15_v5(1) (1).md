@@ -127,3 +127,22 @@ O padrão visual deve seguir a semântica de cores já utilizada no sistema de v
 Na interface da Clínica Geral, o controle deve permitir a alteração do indicador no contexto do paciente autorizado. Nas demais telas assistenciais autorizadas, o mesmo indicador deve aparecer somente para leitura.
 
 Este indicador não substitui vulnerabilidade, situação administrativa, status do paciente, status da especialidade nem status do ciclo CAPO.
+
+
+### Implementação física do Indicador de Proximidade de Alta — 29/09/2026
+
+**Persistência:** `public.patient_discharge_proximity_indicators`.
+
+Campos estruturais: paciente, ciclo CAPO, profissional autor, nível, estado ativo/resolvido, ativação, resolução, criação e atualização. Há somente um indicador ativo por paciente; registros anteriores permanecem resolvidos como histórico.
+
+**Segurança:** tabela com RLS ativa e acesso direto negado a `anon` e `authenticated`. A interface utiliza exclusivamente:
+- `get_patient_discharge_proximity_for_interface(p_patient_id uuid)`;
+- `set_patient_discharge_proximity_for_interface(p_patient_id uuid, p_level text)`.
+
+A leitura exige sessão/termo e escopo autorizado do paciente. Para profissionais, exige atuação efetiva no ciclo do paciente. A alteração exige profissional ativo vinculado à especialidade canônica **Clínica Geral** e atuação efetiva dessa especialidade no ciclo do paciente.
+
+**Auditoria:** `trg_audit_patient_discharge_proximity_indicators` reutiliza `capo_audit_trigger()`.
+
+**Separação obrigatória:** a nova sinalização não utiliza nem modifica `clinical_records.medical_discharge`, `handle_medical_discharge()`, vulnerabilidade social/nutricional, fila ou encerramentos. O fluxo de alta médica efetiva permanece independente e inalterado.
+
+**Interface compartilhada:** `PatientDischargeProximityIndicator` apresenta Verde/Em acompanhamento, Amarelo/Atenção e Vermelho/Alta próxima. Clínica Geral recebe controles de alteração; Nutrição, Assistência Social e demais profissionais assistenciais recebem leitura no contexto do paciente autorizado.
