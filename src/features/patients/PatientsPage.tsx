@@ -66,6 +66,10 @@ export function PatientsPage({
 
   const patientAge = calculateAge(patientBirthDate)
 
+  const canEditPatient = accessContext.roles.some((role) =>
+    role.code === 'administrador' || role.code === 'administrativo_operacional',
+  )
+
   const whatsappDigits = patientPhone.replace(/\D/g, '')
   const whatsappNumber = whatsappDigits.startsWith('55')
     ? whatsappDigits
@@ -539,14 +543,18 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                   {patient.cms ? `CMS ${patient.cms}` : patient.cms === null ? 'CMS não informado' : ''}
                 </span>
                 <small>
-                  Contexto administrativo: consulta autorizada para o perfil {accessContext.primary_context.name ?? 'atual'}.
+                  {canEditPatient
+                    ? 'Cadastro disponível para consulta e edição conforme as permissões deste perfil.'
+                    : 'Cadastro disponível para consulta conforme as permissões deste perfil.'}
                 </small>
                 <div className="patients-card-actions" aria-label={`Ações para ${patient.full_name}`}>
                   <PatientWhatsAppButton patientId={patient.patient_id} />
                   <RegisterPatientDeath patientId={patient.patient_id} patientName={patient.full_name} />
-                  <button type="button" disabled={editBusy} onClick={() => void openPatientEditor(patient.patient_id)}>
-                    Editar cadastro
-                  </button>
+                  {canEditPatient && (
+                    <button type="button" disabled={editBusy} onClick={() => void openPatientEditor(patient.patient_id)}>
+                      Editar cadastro
+                    </button>
+                  )}
                   <Link to="/agenda">Agenda Geral</Link>
                   <Link to="/familiar-cuidador">Familiar / Cuidador</Link>
                   <Link to="/encerramentos">Encerramentos</Link>
