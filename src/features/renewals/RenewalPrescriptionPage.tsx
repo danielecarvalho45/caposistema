@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import {
@@ -46,7 +46,6 @@ function dateTime(value: string) {
 }
 
 export function RenewalPrescriptionPage({ accessContext, service = getRpcService() }: Props) {
-  const roleCodes = useMemo(() => accessContext.roles.map((role) => role.code), [accessContext.roles])
   const isAdministrativeContext = ['administrador', 'administrativo_operacional'].includes(
     accessContext.primary_context.code,
   )
