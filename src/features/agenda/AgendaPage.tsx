@@ -146,6 +146,7 @@ function AppointmentTable({
   showSpecialty = true,
   onAttendance,
   onReturn,
+  onCancel,
   busyAppointmentId,
   patientSpecialties,
 }: Readonly<{
@@ -154,6 +155,7 @@ function AppointmentTable({
   showSpecialty?: boolean
   onAttendance?: (appointmentId: string, action: string) => void
   onReturn?: (appointment: AgendaAppointment) => void
+  onCancel?: (appointmentId: string) => void
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
 }>) {
@@ -165,7 +167,7 @@ function AppointmentTable({
           <tr>
             <th scope="col">{includeDate ? 'Data e hora' : 'Horário'}</th>
             <th scope="col">Paciente</th>
-            {onAttendance && <th scope="col">Ações</th>}
+            {(onAttendance || onCancel) && <th scope="col">Ações</th>}
             <th scope="col">Profissional</th>
             {showSpecialty && <th scope="col">Especialidade</th>}
             <th scope="col">Tipo</th>
@@ -181,12 +183,19 @@ function AppointmentTable({
                   : formatTimeRange(appointment)}
               </td>
               <td data-label="Paciente">{appointment.patient_name}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
-              {onAttendance && (
+              {(onAttendance || onCancel) && (
                 <td data-label="Ações" className="agenda-attendance-actions">
-                  <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}><span aria-hidden="true">✓</span> Confirmar</button>
-                  <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}><span aria-hidden="true">✕</span> Falta</button>
+                  {onAttendance && (
+                    <>
+                      <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}><span aria-hidden="true">✓</span> Confirmar</button>
+                      <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}><span aria-hidden="true">✕</span> Falta</button>
+                    </>
+                  )}
                   {onReturn && appointment.attendance_status === 'confirmado' && (
                     <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>Agendar retorno</button>
+                  )}
+                  {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
+                    <button type="button" className="agenda-cancel-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onCancel(appointment.appointment_id)}>Cancelar agendamento</button>
                   )}
                 </td>
               )}
@@ -238,6 +247,7 @@ function HomeScheduleGrid({
   appointments,
   onAttendance,
   onReturn,
+  onCancel,
   onSchedule,
   busyAppointmentId,
 }: Readonly<{
@@ -248,6 +258,7 @@ function HomeScheduleGrid({
   appointments: readonly AgendaAppointment[]
   onAttendance?: (appointmentId: string, action: string) => void
   onReturn?: (appointment: AgendaAppointment) => void
+  onCancel?: (appointmentId: string) => void
   onSchedule?: (slot: AgendaScheduleSlot) => void
   busyAppointmentId?: string | null
 }>) {
@@ -322,6 +333,16 @@ function HomeScheduleGrid({
                           )}
                         </div>
                       )}
+                      {slot.slot_status === 'agendado' && slot.appointment_id && onCancel && (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
+                        <button
+                          type="button"
+                          className="agenda-cancel-button"
+                          disabled={busyAppointmentId === slot.appointment_id}
+                          onClick={() => onCancel(slot.appointment_id!)}
+                        >
+                          Cancelar agendamento
+                        </button>
+                      )}
                     </div>
                   )
                 })}
@@ -341,6 +362,7 @@ function AgendaResults({
   showSpecialty,
   onAttendance,
   onReturn,
+  onCancel,
   busyAppointmentId,
   patientSpecialties,
   embeddedHome = false,
@@ -352,6 +374,7 @@ function AgendaResults({
   showSpecialty: boolean
   onAttendance?: (appointmentId: string, action: string) => void
   onReturn?: (appointment: AgendaAppointment) => void
+  onCancel?: (appointmentId: string) => void
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
   embeddedHome?: boolean
@@ -363,6 +386,7 @@ function AgendaResults({
         showSpecialty={showSpecialty}
         onAttendance={onAttendance}
         onReturn={onReturn}
+        onCancel={onCancel}
         busyAppointmentId={busyAppointmentId}
         patientSpecialties={patientSpecialties}
       />
@@ -398,6 +422,9 @@ function AgendaResults({
                             {onReturn && appointment.attendance_status === 'confirmado' && (
                               <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${appointment.patient_name}`}>↻</button>
                             )}
+                            {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
+                              <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onCancel(appointment.appointment_id)} aria-label={`Cancelar agendamento de ${appointment.patient_name}`}>Cancelar</button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -413,6 +440,7 @@ function AgendaResults({
                   showSpecialty={showSpecialty}
                   onAttendance={onAttendance}
                   onReturn={onReturn}
+                  onCancel={onCancel}
                   busyAppointmentId={busyAppointmentId}
                   patientSpecialties={patientSpecialties}
                 />
@@ -465,6 +493,16 @@ function AgendaResults({
                     ? appointment.specialty_name ?? appointment.appointment_type
                     : appointment.appointment_type}
                 </small>
+                {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
+                  <button
+                    type="button"
+                    className="agenda-cancel-button agenda-cancel-button--month"
+                    disabled={busyAppointmentId === appointment.appointment_id}
+                    onClick={() => onCancel(appointment.appointment_id)}
+                  >
+                    Cancelar
+                  </button>
+                )}
               </div>
             ))}
           </article>
@@ -540,6 +578,8 @@ export function AgendaPage({
   const [prefillRenewalId, setPrefillRenewalId] = useState('')
   const [attendanceNotes, setAttendanceNotes] = useState('')
   const [attendanceReason, setAttendanceReason] = useState('')
+  const [cancelAppointmentId, setCancelAppointmentId] = useState('')
+  const [cancelReason, setCancelReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
   const [showRescheduleForm, setShowRescheduleForm] = useState(false)
   const [reschedulableResult, setReschedulableResult] = useState<{ key: string; rows: readonly ReschedulableAppointment[] } | null>(null)
@@ -882,7 +922,46 @@ export function AgendaPage({
     } else if (result.status === 'error') setAppointmentFeedback(result.error.message)
   }
 
-  async function updateAttendance(appointmentId: string, action: string) {
+  function prepareCancellation(appointmentId: string) {
+    setCancelAppointmentId(appointmentId)
+    setCancelReason('')
+    setAppointmentFeedback(null)
+  }
+
+  async function cancelAppointment() {
+    if (!cancelAppointmentId || busyAppointmentId) return
+    const reason = cancelReason.trim()
+    if (reason.length < 5) {
+      setAppointmentFeedback('Informe o motivo do cancelamento com pelo menos 5 caracteres.')
+      return
+    }
+
+    setBusyAppointmentId(cancelAppointmentId)
+    setAppointmentFeedback('Cancelando agendamento no banco...')
+    const result = await getRpcService().updateAppointmentAttendance({
+      appointmentId: cancelAppointmentId,
+      action: 'cancelado',
+      notes: '',
+      reason,
+    })
+
+    if (result.status === 'success') {
+      setCancelAppointmentId('')
+      setCancelReason('')
+      setAppointmentFeedback('Agendamento cancelado. Agenda recarregada do banco.')
+      if (professionalId) await loadProfessionalConsultation()
+      else await load()
+    } else {
+      setAppointmentFeedback(
+        result.status === 'error'
+          ? result.error.message
+          : 'O cancelamento não retornou confirmação.',
+      )
+    }
+    setBusyAppointmentId(null)
+  }
+
+    async function updateAttendance(appointmentId: string, action: string) {
     if (busyAppointmentId) return
     setBusyAppointmentId(appointmentId)
     setAppointmentFeedback('Atualizando atendimento no banco...')
@@ -1635,6 +1714,44 @@ export function AgendaPage({
           </div>
         )}
 
+        {cancelAppointmentId && (
+          <section className="agenda-cancel-panel" aria-labelledby="agenda-cancel-title">
+            <div>
+              <h3 id="agenda-cancel-title">Cancelar agendamento</h3>
+              <p>O cancelamento exige motivo e mantém o registro para auditoria.</p>
+            </div>
+            <label>
+              Motivo do cancelamento *
+              <textarea
+                rows={2}
+                maxLength={500}
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+              />
+            </label>
+            <div className="agenda-cancel-actions">
+              <button
+                type="button"
+                className="agenda-cancel-confirm"
+                disabled={busyAppointmentId === cancelAppointmentId || cancelReason.trim().length < 5}
+                onClick={() => void cancelAppointment()}
+              >
+                {busyAppointmentId === cancelAppointmentId ? 'Cancelando…' : 'Confirmar cancelamento'}
+              </button>
+              <button
+                type="button"
+                disabled={busyAppointmentId === cancelAppointmentId}
+                onClick={() => {
+                  setCancelAppointmentId('')
+                  setCancelReason('')
+                }}
+              >
+                Manter agendamento
+              </button>
+            </div>
+          </section>
+        )}
+
         <div aria-live="polite">
           {professionalId && scheduleGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
           {professionalId && scheduleGrid.status === 'error' && (
@@ -1651,6 +1768,7 @@ export function AgendaPage({
               appointments={state.status === 'success' ? state.data : []}
               onAttendance={isProfessional ? updateAttendance : undefined}
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
+              onCancel={prepareCancellation}
               onSchedule={
                 !isProfessional &&
                 roleCodes.some((role) =>
@@ -1685,6 +1803,8 @@ export function AgendaPage({
                 endDate={endDate}
                 view={view}
                 showSpecialty={shouldShowSpecialty}
+                onCancel={prepareCancellation}
+                busyAppointmentId={busyAppointmentId}
               />
             )}
         </div>
