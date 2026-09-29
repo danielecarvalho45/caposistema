@@ -1038,3 +1038,60 @@
     width: 100%;
   }
 }
+
+
+/* CAPO — busca de paciente no Novo Agendamento: resultado identificável sem seletor genérico */
+.agenda-patient-selected {
+  display: grid;
+  gap: 3px;
+  margin-top: 7px;
+  padding: 9px 10px;
+  border: 1px solid #b9d7ee;
+  border-radius: 8px;
+  background: #f6fbff;
+  color: #17365f;
+}
+
+.agenda-patient-selected strong,
+.agenda-patient-results strong {
+  font-size: 12px;
+}
+
+.agenda-patient-selected span,
+.agenda-patient-results span {
+  color: #617b9c;
+  font-size: 10px;
+}
+
+.agenda-patient-results {
+  display: grid;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.agenda-patient-results > button {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #d7e4ef;
+  border-radius: 8px;
+  background: #fff;
+  color: #17365f;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agenda-patient-results > button:hover,
+.agenda-patient-results > button:focus-visible,
+.agenda-patient-results > button.is-selected {
+  border-color: #0071dc;
+  background: #eef7ff;
+}
+
+@media (max-width: 620px) {
+  .agenda-patient-selected,
+  .agenda-patient-results > button {
+    min-height: 44px;
+  }
+}
