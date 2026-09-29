@@ -405,3 +405,220 @@
     min-height: 104px;
   }
 }
+
+
+.agenda-home-embedded {
+  gap: 0;
+}
+
+.agenda-home-card {
+  padding: 16px;
+}
+
+.agenda-home-card .assistential-heading {
+  align-items: flex-start;
+}
+
+.agenda-home-card .assistential-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.agenda-home-card .assistential-heading h2::before {
+  content: '▣';
+  color: var(--color-brand-blue);
+  font-size: 1rem;
+}
+
+.agenda-home-card .agenda-toolbar {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  margin: 12px 0;
+  border: 0;
+  background: transparent;
+}
+
+.agenda-home-card .agenda-tabs {
+  gap: 6px;
+}
+
+.agenda-home-card .agenda-tabs button {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 800;
+}
+
+.agenda-home-card .agenda-tabs button[aria-selected='true'] {
+  background: #eef6fc;
+  border-color: #c5ddf0;
+  color: var(--color-brand-blue);
+}
+
+.agenda-home-card .agenda-navigation {
+  gap: 6px;
+}
+
+.agenda-home-card .agenda-navigation button {
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+.agenda-home-card .agenda-period {
+  justify-self: end;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.agenda-week--home {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(110px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.agenda-week--home .agenda-week-day {
+  min-width: 110px;
+  min-height: 160px;
+  padding: 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: #fbfdff;
+}
+
+.agenda-week--home .agenda-week-day h3 {
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.agenda-week-home-list {
+  display: grid;
+  gap: 7px;
+}
+
+.agenda-week-home-item {
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e6edf2;
+  font-size: 0.74rem;
+}
+
+.agenda-week-home-item > strong {
+  color: var(--color-brand-blue);
+}
+
+.agenda-week-home-item > span {
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.agenda-week-home-item > small {
+  color: var(--color-muted);
+}
+
+.agenda-week-home-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.agenda-week-home-actions button {
+  min-width: 30px;
+  min-height: 30px;
+  padding: 4px 7px;
+  border-radius: 7px;
+}
+
+.agenda-week-empty {
+  margin: 0;
+  padding: 10px 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.agenda-home-card .agenda-month {
+  min-width: 46rem;
+  border-radius: 10px;
+}
+
+.agenda-home-card .agenda-month-day {
+  min-height: 5.7rem;
+}
+
+.agenda-home-card .agenda-month-appointment {
+  padding: 5px;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 760px) {
+  .agenda-home-card {
+    padding: 12px;
+  }
+
+  .agenda-home-card .agenda-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-home-card .agenda-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .agenda-home-card .agenda-tabs button {
+    width: 100%;
+  }
+
+  .agenda-home-card .agenda-navigation {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .agenda-home-card .agenda-period {
+    justify-self: start;
+  }
+
+  .agenda-week--home {
+    grid-template-columns: repeat(7, minmax(118px, 1fr));
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .agenda-week--home .agenda-week-day {
+    min-width: 118px;
+    scroll-snap-align: start;
+  }
+
+  .agenda-home-card .agenda-month {
+    grid-template-columns: repeat(7, minmax(48px, 1fr));
+    min-width: 350px;
+    overflow-x: auto;
+  }
+
+  .agenda-home-card .agenda-month-day {
+    min-height: 58px;
+    padding: 5px;
+  }
+
+  .agenda-home-card .agenda-month-appointment {
+    display: block;
+    overflow: hidden;
+    padding: 3px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
