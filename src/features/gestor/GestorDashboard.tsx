@@ -142,6 +142,20 @@ export function GestorDashboard() {
                         ? `Bloqueado${slot.block_type ? ` · ${agendaBlockLabel(slot.block_type)}` : ''}`
                         : slot.patient_name ?? 'Agendado'}
                   </small>
+                  {slot.slot_status === 'livre' && (
+                    <Link
+                      className="gestor-agenda-slot-action"
+                      to="/agenda"
+                      state={{
+                        origin: 'home_free_slot',
+                        professionalId: slot.professional_id,
+                        slotDate: slot.slot_date,
+                        slotStart: slot.slot_start,
+                      }}
+                    >
+                      Agendar
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
