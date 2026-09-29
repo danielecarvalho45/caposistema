@@ -67,6 +67,20 @@ const weekdayLabels: Readonly<Record<number, string>> = {
   6: 'Sábado',
 }
 
+const recurringAgendaTypes = [
+  { value: 'intervalo', label: '☕ Intervalo / Café' },
+  { value: 'alimentacao', label: '🍽️ Almoço' },
+  { value: 'estudo_caso', label: '📚 Estudo de caso' },
+  { value: 'atendimento_online', label: '💻 Atendimentos online' },
+  { value: 'rotina_administrativa', label: '📋 Rotinas administrativas' },
+] as const
+
+type RecurringAgendaType = (typeof recurringAgendaTypes)[number]['value']
+
+function recurringAgendaTypeLabel(value: unknown) {
+  return recurringAgendaTypes.find((item) => item.value === value)?.label ?? stringValue(value)
+}
+
 const managementActions = [
   {
     value: 'horario_provisorio',
@@ -156,7 +170,7 @@ export function OwnAgendaManager({
   const [structuralJustification, setStructuralJustification] = useState('')
   const [structuralFeedback, setStructuralFeedback] = useState<string | null>(null)
   const [structuralBusy, setStructuralBusy] = useState(false)
-  const [recurringType, setRecurringType] = useState<'intervalo' | 'alimentacao'>('intervalo')
+  const [recurringType, setRecurringType] = useState<RecurringAgendaType>('intervalo')
   const [recurringStartTime, setRecurringStartTime] = useState('')
   const [recurringEndTime, setRecurringEndTime] = useState('')
   const [recurringWeekdays, setRecurringWeekdays] = useState<number[]>([])
@@ -182,7 +196,7 @@ export function OwnAgendaManager({
           weekday >= 0 &&
           weekday <= 6 &&
           !stringValue(item.specific_date) &&
-          ['intervalo', 'alimentacao'].includes(stringValue(item.block_type))
+          recurringAgendaTypes.some((type) => type.value === stringValue(item.block_type))
         )
       })
     : []
@@ -613,8 +627,9 @@ export function OwnAgendaManager({
               <div>
                 <h5 id="agenda-recurring-title">Intervalos semanais recorrentes</h5>
                 <p>
-                  Defina almoço ou intervalo para um, vários ou todos os dias ativos.
-                  Esses períodos passam a fazer parte da agenda semanal permanente.
+                  Defina Intervalo / Café, Almoço, Estudo de caso, Atendimentos online
+                  ou Rotinas administrativas para um, vários ou todos os dias ativos.
+                  Esses períodos passam a fazer parte da formulação semanal permanente.
                 </p>
               </div>
               <button
@@ -631,10 +646,11 @@ export function OwnAgendaManager({
                 Tipo
                 <select
                   value={recurringType}
-                  onChange={(event) => setRecurringType(event.target.value as 'intervalo' | 'alimentacao')}
+                  onChange={(event) => setRecurringType(event.target.value as RecurringAgendaType)}
                 >
-                  <option value="intervalo">☕ Intervalo</option>
-                  <option value="alimentacao">🍽️ Almoço / Alimentação</option>
+                  {recurringAgendaTypes.map((type) => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
                 </select>
               </label>
               <label>
@@ -697,7 +713,7 @@ export function OwnAgendaManager({
                   return (
                     <div className="agenda-recurring-row" key={blockId}>
                       <span>{weekdayLabels[weekday] ?? 'Dia'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}</span>
-                      <small>{stringValue(item.block_type) === 'alimentacao' ? '🍽️ Almoço / Alimentação' : '☕ Intervalo'}</small>
+                      <small>{recurringAgendaTypeLabel(item.block_type)}</small>
                       <button type="button" disabled={recurringBusy} onClick={() => void removeRecurringInterval(blockId)}>
                         Remover
                       </button>
