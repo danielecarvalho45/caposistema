@@ -71,3 +71,59 @@
 
 
 > A versão DOCX/PDF contém o detalhamento completo, migrations, hashes, inventário e protocolo conjunto.
+
+
+---
+
+## ADENDO ESTRUTURAL — INDICADOR DE PROXIMIDADE DE ALTA
+
+### Regra funcional incorporada após apresentação do projeto
+
+O CAPO passa a possuir um **Indicador de Proximidade de Alta** vinculado ao paciente e ao seu ciclo de acompanhamento. Esta funcionalidade é distinta da vulnerabilidade social/nutricional, embora utilize o mesmo padrão de leitura visual por cores.
+
+### Estados canônicos
+
+- **Verde — Em acompanhamento:** paciente permanece em acompanhamento regular no CAPO, sem indicação de alta próxima.
+- **Amarelo — Atenção:** a Clínica Geral identifica que o paciente está se aproximando da alta.
+- **Vermelho — Alta próxima:** a Clínica Geral identifica proximidade efetiva de alta e necessidade de atenção para futura preparação do encerramento.
+
+### Responsabilidade de alteração
+
+Nesta versão, a alteração do indicador é exclusiva da **especialidade Clínica Geral**. A autorização deve ser vinculada à especialidade cadastrada no banco e nunca ao nome, username, function_title ou identidade nominal do profissional.
+
+Não criar, nesta etapa, capability genérica para outros perfis. Caso a responsabilidade seja ampliada no futuro, a mudança deverá ser tratada por manutenção cirúrgica própria.
+
+### Alcance de leitura
+
+O indicador é do paciente, e não de uma tela. Portanto, deve ser visível nos contextos assistenciais autorizados em que o paciente esteja efetivamente em acompanhamento, respeitando os contratos de acesso e escopo do paciente existentes no CAPO.
+
+Apenas a Clínica Geral pode alterar o indicador nesta versão. Os demais contextos autorizados somente o visualizam.
+
+### Comportamento
+
+A mudança entre Verde, Amarelo e Vermelho é apenas uma **sinalização de acompanhamento**. Nesta etapa:
+- não cria fila;
+- não inicia encerramento automaticamente;
+- não altera o estado do ciclo assistencial;
+- não cria solicitação administrativa;
+- não gera fechamento de especialidade;
+- não executa automação de alta.
+
+Qualquer integração futura com fila ou fluxo de encerramento exige manutenção específica e nova validação.
+
+### Persistência e auditoria
+
+O indicador deve possuir persistência própria, histórico das alterações e auditoria. O estado corrente deve ser recuperável de forma única por paciente, preservando autoria profissional, data/hora de ativação e encerramento do estado anterior.
+
+O nível **Verde** é o estado funcional padrão de leitura quando ainda não houver sinalização persistida para o paciente.
+
+### Interface
+
+O padrão visual deve seguir a semântica de cores já utilizada no sistema de vulnerabilidade:
+- verde;
+- amarelo;
+- vermelho.
+
+Na interface da Clínica Geral, o controle deve permitir a alteração do indicador no contexto do paciente autorizado. Nas demais telas assistenciais autorizadas, o mesmo indicador deve aparecer somente para leitura.
+
+Este indicador não substitui vulnerabilidade, situação administrativa, status do paciente, status da especialidade nem status do ciclo CAPO.
