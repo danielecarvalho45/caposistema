@@ -99,7 +99,7 @@ const managementActions = [
     value: 'horario_provisorio',
     icon: '🕒',
     label: 'Alterar horário do dia',
-    description: 'Mudar provisoriamente o início ou o fechamento da agenda.',
+    description: 'Mudar somente uma data, sem alterar o padrão semanal.',
   },
   {
     value: 'bloqueio',
@@ -177,7 +177,7 @@ export function OwnAgendaManager({
   const [structuralEndDate, setStructuralEndDate] = useState('')
   const [structuralStartTime, setStructuralStartTime] = useState('')
   const [structuralEndTime, setStructuralEndTime] = useState('')
-  const [structuralDuration, setStructuralDuration] = useState(30)
+  const [structuralDuration, setStructuralDuration] = useState('')
   const [structuralWeekdays, setStructuralWeekdays] = useState<number[]>([])
   const [structuralNotes, setStructuralNotes] = useState('')
   const [structuralJustification, setStructuralJustification] = useState('')
@@ -232,7 +232,7 @@ export function OwnAgendaManager({
           setStructuralEndDate(stringValue(activeConfig.end_date))
           setStructuralStartTime(timeHHMM(activeConfig.start_time))
           setStructuralEndTime(timeHHMM(activeConfig.end_time))
-          setStructuralDuration(numberValue(activeConfig.appointment_duration_minutes, 30))
+          setStructuralDuration(String(numberValue(activeConfig.appointment_duration_minutes, 0) || ''))
           setStructuralWeekdays([...weekdayValues(activeConfig.weekdays)])
           setStructuralNotes(stringValue(activeConfig.notes))
         } else if (allowStructuralEdit) {
@@ -248,7 +248,7 @@ export function OwnAgendaManager({
           setStructuralEndDate('')
           setStructuralStartTime('')
           setStructuralEndTime('')
-          setStructuralDuration(30)
+          setStructuralDuration('')
           setStructuralWeekdays([])
           setStructuralNotes('')
         }
@@ -282,7 +282,7 @@ export function OwnAgendaManager({
     setStructuralEndDate('')
     setStructuralStartTime('')
     setStructuralEndTime('')
-    setStructuralDuration(30)
+    setStructuralDuration('')
     setStructuralWeekdays([])
     setStructuralNotes('')
     setStructuralJustification('')
@@ -311,7 +311,7 @@ export function OwnAgendaManager({
     setStructuralEndDate(stringValue(selected.end_date))
     setStructuralStartTime(timeHHMM(selected.start_time))
     setStructuralEndTime(timeHHMM(selected.end_time))
-    setStructuralDuration(numberValue(selected.appointment_duration_minutes, 30))
+    setStructuralDuration(String(numberValue(selected.appointment_duration_minutes, 0) || ''))
     setStructuralWeekdays([...weekdayValues(selected.weekdays)])
     setStructuralNotes(stringValue(selected.notes))
     setRecurringWeekdays([])
@@ -415,6 +415,73 @@ export function OwnAgendaManager({
     setRecurringBusy(false)
   }
 
+  async function deactivateSelectedStructuralConfiguration() {
+    if (
+      structuralBusy ||
+      !structuralConfigId ||
+      !structuralExpectedUpdatedAt
+    ) {
+      setStructuralFeedback('Selecione o padrão semanal que deseja desativar.')
+      return
+    }
+
+    if (structuralJustification.trim().length < 5) {
+      setStructuralFeedback('Informe a justificativa antes de desativar o padrão selecionado.')
+      return
+    }
+
+    const today = new Date()
+    const effectiveDate = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-')
+
+    setStructuralBusy(true)
+    setStructuralFeedback(null)
+    const result = await rpc.setAgendaConfigurationStatus({
+      configId: structuralConfigId,
+      isActive: false,
+      effectiveDate,
+      justification: structuralJustification.trim(),
+      expectedUpdatedAt: structuralExpectedUpdatedAt,
+    })
+
+    if (result.status === 'error') {
+      setStructuralFeedback(result.error.message)
+      setStructuralBusy(false)
+      return
+    }
+
+    const payload = record(result.data)
+    if (payload?.success === false) {
+      setStructuralFeedback(
+        stringValue(payload.message) ||
+          'O padrão não foi desativado porque existem atendimentos que precisam ser tratados.',
+      )
+      setStructuralBusy(false)
+      return
+    }
+
+    const refreshed = await rpc.getAgendaConfiguration(professionalId)
+    setConfiguration(refreshed)
+    setStructuralJustification('')
+    if (refreshed.status === 'success') {
+      const nextActive = rows(refreshed.data, 'configurations').find(
+        (item) => booleanValue(item.is_active),
+      )
+      if (nextActive) {
+        selectStructuralConfiguration(stringValue(nextActive.config_id))
+        setConfigId(stringValue(nextActive.config_id))
+      } else {
+        startNewStructuralConfiguration()
+        setConfigId('')
+      }
+    }
+    setStructuralFeedback('Padrão semanal desativado sem alterar os demais padrões.')
+    setStructuralBusy(false)
+  }
+
   async function saveStructuralConfiguration() {
     if (
       structuralBusy ||
@@ -422,7 +489,7 @@ export function OwnAgendaManager({
       !structuralStartTime ||
       !structuralEndTime ||
       structuralEndTime <= structuralStartTime ||
-      structuralDuration <= 0 ||
+      Number(structuralDuration) <= 0 ||
       structuralWeekdays.length === 0
     ) {
       setStructuralFeedback('Informe vigência, dias da semana, horário inicial/final e duração válida.')
@@ -438,7 +505,7 @@ export function OwnAgendaManager({
       endDate: structuralEndDate || null,
       startTime: structuralStartTime,
       endTime: structuralEndTime,
-      durationMinutes: structuralDuration,
+      durationMinutes: Number(structuralDuration),
       weekdays: structuralWeekdays,
       notes: structuralNotes.trim() || null,
       expectedUpdatedAt: structuralConfigId ? structuralExpectedUpdatedAt || null : null,
@@ -486,7 +553,7 @@ export function OwnAgendaManager({
         setStructuralEndDate(stringValue(savedConfig.end_date))
         setStructuralStartTime(timeHHMM(savedConfig.start_time))
         setStructuralEndTime(timeHHMM(savedConfig.end_time))
-        setStructuralDuration(numberValue(savedConfig.appointment_duration_minutes, 30))
+        setStructuralDuration(String(numberValue(savedConfig.appointment_duration_minutes, 0) || ''))
         setStructuralWeekdays([...weekdayValues(savedConfig.weekdays)])
         setStructuralNotes(stringValue(savedConfig.notes))
       }
@@ -603,6 +670,29 @@ export function OwnAgendaManager({
         <p>Nenhuma configuração de agenda foi encontrada.</p>
       )}
 
+      <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
+        {managementActions
+          .filter((action) => action.value !== 'urgencia' || allowEmergencySlot)
+          .map((action) => (
+          <button
+            key={action.value}
+            type="button"
+            className="agenda-own-action-card"
+            aria-pressed={entryType === action.value}
+            disabled={configurations.length === 0 || busy}
+            onClick={() => {
+              setEntryType(action.value)
+              setPendingConfirmation(null)
+              setFeedback(null)
+            }}
+          >
+            <span className="agenda-own-action-icon" aria-hidden="true">{action.icon}</span>
+            <strong>{action.label}</strong>
+            <small>{action.description}</small>
+          </button>
+        ))}
+      </div>
+
       {allowStructuralEdit && configuration?.status === 'success' && (
         <section className="agenda-structural-editor" aria-labelledby="agenda-structural-title">
           <div className="agenda-structural-heading">
@@ -638,8 +728,9 @@ export function OwnAgendaManager({
             </button>
           </div>
           <p className="agenda-structural-hint">
-            Cada padrão pode ter dias, horários e intervalos próprios. Salvar um novo
-            padrão não substitui os dias configurados nos outros padrões.
+            Selecione um padrão existente para alterar somente aquele grupo de dias.
+            Use “Novo padrão semanal” para criar outro horário sem apagar os anteriores.
+            A duração do atendimento é manual e pertence ao padrão selecionado.
           </p>
 
           <div className="agenda-structural-grid">
@@ -660,8 +751,16 @@ export function OwnAgendaManager({
               <input type="time" value={structuralEndTime} onChange={(event) => setStructuralEndTime(event.target.value)} />
             </label>
             <label>
-              Duração da consulta (minutos)
-              <input type="number" min="1" step="1" value={structuralDuration} onChange={(event) => setStructuralDuration(Number(event.target.value))} />
+              Duração do atendimento (minutos)
+              <input
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                placeholder="Informe o tempo"
+                value={structuralDuration}
+                onChange={(event) => setStructuralDuration(event.target.value)}
+              />
             </label>
           </div>
 
@@ -808,35 +907,19 @@ export function OwnAgendaManager({
             <textarea rows={2} value={structuralJustification} onChange={(event) => setStructuralJustification(event.target.value)} />
           </label>
 
-          <button type="button" className="agenda-structural-save" disabled={structuralBusy} onClick={() => void saveStructuralConfiguration()}>
-            {structuralBusy ? 'Salvando…' : 'Salvar configuração-base'}
-          </button>
+          <div className="agenda-structural-pattern-picker">
+            <button type="button" className="agenda-structural-save" disabled={structuralBusy} onClick={() => void saveStructuralConfiguration()}>
+              {structuralBusy ? 'Salvando…' : structuralConfigId ? 'Salvar alterações deste padrão' : 'Salvar novo padrão semanal'}
+            </button>
+            {structuralConfigId && (
+              <button type="button" disabled={structuralBusy} onClick={() => void deactivateSelectedStructuralConfiguration()}>
+                Desativar padrão selecionado
+              </button>
+            )}
+          </div>
           {structuralFeedback && <p role="status">{structuralFeedback}</p>}
         </section>
       )}
-
-      <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
-        {managementActions
-          .filter((action) => action.value !== 'urgencia' || allowEmergencySlot)
-          .map((action) => (
-          <button
-            key={action.value}
-            type="button"
-            className="agenda-own-action-card"
-            aria-pressed={entryType === action.value}
-            disabled={configurations.length === 0 || busy}
-            onClick={() => {
-              setEntryType(action.value)
-              setPendingConfirmation(null)
-              setFeedback(null)
-            }}
-          >
-            <span className="agenda-own-action-icon" aria-hidden="true">{action.icon}</span>
-            <strong>{action.label}</strong>
-            <small>{action.description}</small>
-          </button>
-        ))}
-      </div>
 
       {configuration?.status === 'success' && configurations.length === 0 && (
         <p className="agenda-own-warning" role="alert">
