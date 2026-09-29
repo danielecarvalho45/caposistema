@@ -28,7 +28,6 @@ function openFamilyWhatsApp(phone: string, fullName: string) {
 }
 
 export function FamilyCaregiverPage({
-  accessContext,
   service = createFamilyCaregiverService(),
 }: Readonly<{
   accessContext: AccessContext
