@@ -1051,6 +1051,10 @@ export function AgendaPage({
       typeof stateValue?.professionalId === 'string'
         ? stateValue.professionalId
         : ''
+    const requestedAppointmentId =
+      typeof stateValue?.appointmentId === 'string'
+        ? stateValue.appointmentId
+        : ''
     const waitingListId =
       typeof stateValue?.waitingListId === 'string' ? stateValue.waitingListId : ''
     const renewalId =
@@ -1060,6 +1064,24 @@ export function AgendaPage({
       typeof stateValue?.slotDate === 'string' ? stateValue.slotDate : ''
     const requestedSlotStart =
       typeof stateValue?.slotStart === 'string' ? stateValue.slotStart : ''
+
+    if (
+      origin === 'home_cancel_appointment' &&
+      requestedAppointmentId &&
+      requestedProfessionalId &&
+      requestedSlotDate
+    ) {
+      setShowScheduleForm(false)
+      setShowRescheduleForm(false)
+      setSelectedProfessionalId(requestedProfessionalId)
+      setConsultationStartDate(requestedSlotDate)
+      setConsultationEndDate(requestedSlotDate)
+      setAnchorDate(requestedSlotDate)
+      setCancelAppointmentId(requestedAppointmentId)
+      setCancelReason('')
+      setAppointmentFeedback(null)
+      return
+    }
 
     if (
       origin === 'home_free_slot' &&
@@ -1090,10 +1112,7 @@ export function AgendaPage({
     if (!patientId) return
 
     if (origin === 'no_show_reschedule') {
-      const sourceAppointmentId =
-        typeof stateValue?.appointmentId === 'string'
-          ? stateValue.appointmentId
-          : ''
+      const sourceAppointmentId = requestedAppointmentId
       if (!requestedProfessionalId || !sourceAppointmentId) return
       setShowScheduleForm(false)
       setShowRescheduleForm(true)
