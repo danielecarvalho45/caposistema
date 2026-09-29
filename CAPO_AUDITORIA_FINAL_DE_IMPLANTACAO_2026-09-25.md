@@ -2881,3 +2881,22 @@ Os atalhos aprovados do bloco principal são:
 **Commit:** `8f430d2a1d91cdb801c543f71ba05aea71e663e6`.
 
 **Estado:** **REGRESSÃO DE INTERFACE CONFIRMADA E CORRIGIDA NO CÓDIGO / AUTORIZAÇÃO DO AO CONFIRMADA NO SUPABASE / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.31 Regressão de usabilidade — controles congelados em Encerramentos (28/09/2026)
+
+**Evidência de homologação:** na tela **Encerramentos**, os controles de operação permaneciam visualmente congelados/desabilitados até que todos os campos exigidos estivessem previamente preenchidos.
+
+**Confronto com a auditoria vigente:** a seção 7.13 do Documento Mestre já determina que a autorização real das ações de Encerramentos vem do backend e dos campos retornados pelo próprio contrato, especialmente `can_close`, `can_reopen`, status da pendência e elegibilidade de profissional. Portanto, a interface deve respeitar essas autorizações, mas não precisa transformar validações de preenchimento em botões permanentemente desabilitados.
+
+**Correção aplicada:** em `src/features/closures/ClosuresPage.tsx`, os botões de **Buscar paciente**, **Concluir meu encerramento**, **Reabrir encerramento**, **Atribuir profissional**, **Solicitar encerramento da própria atuação** e **Abrir ciclo de retorno** deixaram de ser bloqueados por formulário incompleto. Permanecem desabilitados apenas durante operação em andamento (`busy`) para impedir gravação duplicada.
+
+**Validação orientada:** quando faltar informação obrigatória, o botão responde com mensagem clara na própria tela, por exemplo: selecionar paciente, selecionar especialidade, escolher profissional elegível ou informar motivo/observação com pelo menos cinco caracteres.
+
+**Governança preservada:** as ações continuam aparecendo somente quando autorizadas pelo contexto e pelo retorno do backend. Profissional continua limitado ao próprio encerramento; Administrativo/Administrador mantêm apenas as ações administrativas previstas; Coordenador permanece sem ações que o backend não autoriza.
+
+**Backend preservado:** nenhuma RPC, SQL, RLS, policy, trigger, migration ou permissão foi alterada.
+
+**Commit:** `122b70e30425781ae83ef6a61b6411c9b0f4b955`.
+
+**Estado:** **REGRESSÃO DE INTERFACE CONFIRMADA E CORRIGIDA NO CÓDIGO / REGRAS DE AUTORIZAÇÃO PRESERVADAS / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
