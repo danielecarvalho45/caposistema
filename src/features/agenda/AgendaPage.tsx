@@ -661,17 +661,15 @@ export function AgendaPage({
     await Promise.all([load(), loadScheduleGrid()])
   }, [load, loadScheduleGrid])
 
+  function setConsultationRangeForView(anchor: string, nextView: AgendaView) {
+    const bounds = agendaBounds(anchor, nextView)
+    setConsultationStartDate(bounds.startDate)
+    setConsultationEndDate(bounds.endDate)
+  }
+
   function moveConsultationRange(direction: -1 | 1) {
-    const start = localDate(consultationStartDate)
-    const end = localDate(consultationEndDate)
-    const spanDays = Math.max(
-      1,
-      Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1,
-    )
-    start.setDate(start.getDate() + spanDays * direction)
-    end.setDate(end.getDate() + spanDays * direction)
-    setConsultationStartDate(dateInputValue(start))
-    setConsultationEndDate(dateInputValue(end))
+    const nextAnchor = moveAnchor(consultationStartDate, view, direction)
+    setConsultationRangeForView(nextAnchor, view)
   }
 
   async function searchAppointmentPatients() {
@@ -1126,7 +1124,6 @@ export function AgendaPage({
               <input
                 type="date"
                 required
-                max={consultationEndDate || undefined}
                 value={consultationStartDate}
                 onChange={(event) => {
                   if (event.target.value) {
@@ -1440,6 +1437,9 @@ export function AgendaPage({
                   setState(loadingState())
                   setScheduleGrid(loadingState())
                   setView(option)
+                  if (!embeddedHome) {
+                    setConsultationRangeForView(consultationStartDate, option)
+                  }
                 }}
               >
                 {{ day: 'Dia', week: 'Semana', month: 'Mês' }[option]}
@@ -1471,8 +1471,7 @@ export function AgendaPage({
                   setAnchorDate(dateInputValue(new Date()))
                 } else {
                   const today = dateInputValue(new Date())
-                  setConsultationStartDate(today)
-                  setConsultationEndDate(today)
+                  setConsultationRangeForView(today, view)
                 }
               }}
             >
