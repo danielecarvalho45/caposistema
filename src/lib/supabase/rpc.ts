@@ -487,6 +487,22 @@ export type AvailableAppointmentSlot = Readonly<{
   duration_minutes: number
 }>
 
+export type AgendaScheduleSlot = Readonly<{
+  professional_id: string
+  professional_name: string
+  slot_date: string
+  weekday: number
+  slot_start: string
+  slot_end: string
+  duration_minutes: number
+  slot_status: 'livre' | 'agendado' | 'bloqueado'
+  appointment_id: string | null
+  patient_id: string | null
+  patient_name: string | null
+  appointment_type: string | null
+  block_type: string | null
+}>
+
 export type ReschedulableAppointment = Readonly<{
   appointment_id: string
   patient_id: string
@@ -1671,6 +1687,35 @@ function parseAvailableAppointmentSlots(
       slot_start: requiredString(item, 'slot_start', operation),
       slot_end: requiredString(item, 'slot_end', operation),
       duration_minutes: requiredNumber(item, 'duration_minutes', operation),
+    }
+  })
+}
+
+function parseAgendaScheduleGrid(
+  value: unknown,
+): readonly AgendaScheduleSlot[] {
+  const operation = 'get_agenda_schedule_grid_for_interface'
+  if (!Array.isArray(value)) throw contractError(operation, 'lista esperada.')
+  return value.map((item) => {
+    if (!isRecord(item)) throw contractError(operation, 'linha inválida.')
+    const status = requiredString(item, 'slot_status', operation)
+    if (!['livre', 'agendado', 'bloqueado'].includes(status)) {
+      throw contractError(operation, 'slot_status inválido.')
+    }
+    return {
+      professional_id: requiredString(item, 'professional_id', operation),
+      professional_name: requiredString(item, 'professional_name', operation),
+      slot_date: requiredString(item, 'slot_date', operation),
+      weekday: requiredNumber(item, 'weekday', operation),
+      slot_start: requiredString(item, 'slot_start', operation),
+      slot_end: requiredString(item, 'slot_end', operation),
+      duration_minutes: requiredNumber(item, 'duration_minutes', operation),
+      slot_status: status as AgendaScheduleSlot['slot_status'],
+      appointment_id: nullableString(item, 'appointment_id', operation),
+      patient_id: nullableString(item, 'patient_id', operation),
+      patient_name: nullableString(item, 'patient_name', operation),
+      appointment_type: nullableString(item, 'appointment_type', operation),
+      block_type: nullableString(item, 'block_type', operation),
     }
   })
 }
@@ -2928,6 +2973,21 @@ export function createRpcService(transport: RpcTransport) {
           p_professional_id: professionalId,
         },
         parse: parseAgendaAppointments,
+      }),
+    getAgendaScheduleGrid: (
+      startDate: string,
+      endDate: string,
+      professionalId: string | null = null,
+    ) =>
+      execute({
+        transport,
+        operation: 'get_agenda_schedule_grid_for_interface',
+        args: {
+          p_start_date: startDate,
+          p_end_date: endDate,
+          p_professional_id: professionalId,
+        },
+        parse: parseAgendaScheduleGrid,
       }),
     createPatient: (input: {
       fullName: string
