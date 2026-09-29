@@ -1,5 +1,6 @@
 import type { AccessContext } from '../../types/access'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
+import { resolveProfessionalScreenKind } from '../../features/professional/professional-screen'
 
 export type NavigationItem = Readonly<{
   path: AppRoute
@@ -36,20 +37,17 @@ export function authorizedNavigationItems(
   accessContext: AccessContext,
   group?: NavigationItem['group'],
 ) {
-  const specialtyNames = (accessContext.specialties ?? [])
-    .map((specialty) => specialty.specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase())
-  if (accessContext.primary_specialty_name) {
-    specialtyNames.push(accessContext.primary_specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase())
-  }
-  const hasNutrition = specialtyNames.includes('nutricao')
-  const hasSocial = specialtyNames.includes('assistencia social')
-  const hasGeneralAssistentialSpecialty = specialtyNames.some((name) => name !== 'nutricao' && name !== 'assistencia social')
+  const professionalScreen = resolveProfessionalScreenKind(accessContext)
 
   return navigationItems.filter(
     (item) => {
       if (group !== undefined && item.group !== group) return false
       if (!canAccessAppRoute(accessContext, item.path)) return false
-      if (item.path === '/atuacao' && (hasNutrition || hasSocial) && !hasGeneralAssistentialSpecialty) return false
+      if (
+        item.path === '/atuacao' &&
+        (professionalScreen === 'nutricao' ||
+          professionalScreen === 'assistencia_social')
+      ) return false
       if (
         item.path === '/encaminhamentos' &&
         accessContext.roles.some((role) => role.code === 'profissional') &&
