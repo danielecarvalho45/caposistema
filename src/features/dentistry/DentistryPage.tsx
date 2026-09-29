@@ -139,11 +139,20 @@ export function DentistryPage({ accessContext, service }: Props) {
 
   const localCapabilityAuthorized =
     accessContext.capabilities.includes(DENTISTRY_CAPABILITY)
-  const backendAuthorized = Boolean(backendAccess?.can_issue)
-  const canManage = Boolean(backendAccess?.can_manage)
+  const isClinicalContext = accessContext.primary_context.code === 'profissional'
+  const isAdministrativeContext = ['administrador', 'administrativo_operacional'].includes(
+    accessContext.primary_context.code,
+  )
+  const canIssue =
+    isClinicalContext &&
+    Boolean(backendAccess?.can_issue) &&
+    localCapabilityAuthorized
+  const canManage =
+    isAdministrativeContext &&
+    Boolean(backendAccess?.can_manage)
   const authorized = backendAccess
-    ? backendAuthorized || canManage
-    : loading && localCapabilityAuthorized
+    ? canIssue || canManage
+    : loading && (isClinicalContext ? localCapabilityAuthorized : isAdministrativeContext)
 
   const loadReferrals = async () => {
     const result = await rpcService.getDentistryReferralsForInterface(
@@ -186,7 +195,7 @@ export function DentistryPage({ accessContext, service }: Props) {
   }, [rpcService])
 
   useEffect(() => {
-    if (!backendAccess?.can_issue && !backendAccess?.can_manage) return
+    if (!canIssue && !canManage) return
     let active = true
     void rpcService
       .getDentistryReferralsForInterface(
@@ -213,7 +222,7 @@ export function DentistryPage({ accessContext, service }: Props) {
     return () => {
       active = false
     }
-  }, [backendAccess, rpcService, statusFilter])
+  }, [canIssue, canManage, rpcService, statusFilter])
 
   useEffect(() => {
     if (!selectedReferral || !rpcService.getDentistryReferralDocumentForInterface) {
@@ -317,7 +326,7 @@ export function DentistryPage({ accessContext, service }: Props) {
 
   async function generatePdf(referral: DentistryReferral) {
     if (
-      !backendAccess?.can_issue ||
+      !canIssue ||
       backendAccess.professional_id !== referral.requesting_professional_id ||
       !rpcService.registerDentistryPdfForInterface ||
       busy
@@ -409,7 +418,7 @@ export function DentistryPage({ accessContext, service }: Props) {
           <h1 id="dentistry-loading-title">
             Carregando contexto odontológico…
           </h1>
-          <p>Validando autorização e fluxo externo do backend CAPO.</p>
+          <p>Validando autorização do contexto atual.</p>
         </div>
       </section>
     )
@@ -423,7 +432,9 @@ export function DentistryPage({ accessContext, service }: Props) {
           <h1 id="dentistry-blocked-title">Odontologia indisponível</h1>
           <p>
             {feedback ??
-              'O contexto atual não possui autorização para emitir encaminhamento odontológico externo.'}
+              (isClinicalContext
+                ? 'O contexto atual não possui autorização para emitir encaminhamento odontológico externo.'
+                : 'O contexto atual não possui autorização para a etapa administrativa de Odontologia.')}
           </p>
         </div>
       </section>
@@ -433,18 +444,22 @@ export function DentistryPage({ accessContext, service }: Props) {
   return (
     <section className="dentistry-page" aria-labelledby="dentistry-title">
       <header className="home-welcome">
-        <p className="eyebrow">Continuidade do cuidado</p>
-        <h1 id="dentistry-title">Encaminhamento odontológico externo</h1>
+        <p className="eyebrow">{isClinicalContext ? 'Atuação médica' : 'Providência administrativa'}</p>
+        <h1 id="dentistry-title">
+          {isClinicalContext ? 'Encaminhamento odontológico externo' : 'Odontologia — Encaminhamentos recebidos'}
+        </h1>
         <p>
-          Fluxo de emissão e acompanhamento controlado pelo backend do CAPO.
-          {backendAccess?.professional_name
+          {isClinicalContext
+            ? 'Preencha o encaminhamento, gere o PDF oficial e acompanhe o histórico da sua emissão.'
+            : 'Receba o encaminhamento odontológico, consulte o PDF oficial e registre a providência administrativa.'}
+          {isClinicalContext && backendAccess?.professional_name
             ? ` Emissor atual: ${backendAccess.professional_name}.`
             : ''}
         </p>
       </header>
 
       <div className="dentistry-layout">
-        {backendAccess?.can_issue && <div className="dentistry-panel">
+        {canIssue && <div className="dentistry-panel">
           <h2>Nova emissão</h2>
           <label htmlFor="dentistry-patient-search">Buscar paciente</label>
           <div className="dentistry-search">
@@ -510,7 +525,7 @@ export function DentistryPage({ accessContext, service }: Props) {
         </div>}
 
         <div className="dentistry-panel">
-          <h2>Histórico e acompanhamento</h2>
+          <h2>{isClinicalContext ? 'Histórico' : 'Encaminhamentos recebidos'}</h2>
           <label htmlFor="dentistry-status">Status</label>
           <select
             id="dentistry-status"
@@ -612,8 +627,8 @@ export function DentistryPage({ accessContext, service }: Props) {
                   Baixar PDF
                 </button>
               </div>
-            ) : backendAccess?.can_issue &&
-              backendAccess.professional_id === selectedReferral.requesting_professional_id &&
+            ) : canIssue &&
+              backendAccess?.professional_id === selectedReferral.requesting_professional_id &&
               ['pending_approval', 'in_progress'].includes(selectedReferral.status) ? (
               <button type="button" disabled={busy} onClick={() => void generatePdf(selectedReferral)}>
                 Gerar PDF oficial
