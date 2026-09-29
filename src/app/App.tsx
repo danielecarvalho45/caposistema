@@ -198,7 +198,7 @@ export function App() {
   ) : location.pathname === '/coordenacao/busca-ativa' || location.pathname === '/busca-ativa' ? (
     <ActiveSearchPage accessContext={accessContext} />
   ) : location.pathname === '/gestor/familiares' ? (
-    <GestorFamilyPage />
+    <GestorFamilyPage accessContext={accessContext} />
   ) : location.pathname === '/gestor/operacional' ? (
     <GestorOperationalPage />
   ) : gestorRoute ? (
