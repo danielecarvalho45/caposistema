@@ -28,10 +28,16 @@ function booleanValue(value: unknown) {
   return value === true
 }
 
+function timeHHMM(value: unknown) {
+  const text = stringValue(value)
+  return /^\d{2}:\d{2}/.test(text) ? text.slice(0, 5) : text
+}
+
 type Props = Readonly<{
   professionalId: string
   title?: string
   intro?: string
+  allowEmergencySlot?: boolean
 }>
 
 type PendingConfirmation = Readonly<{
@@ -89,12 +95,19 @@ const managementActions = [
     label: 'Exceção de data',
     description: 'Registrar um bloqueio excepcional em uma data.',
   },
+  {
+    value: 'urgencia',
+    icon: '🚑',
+    label: 'Horário de urgência',
+    description: 'Abrir excepcionalmente um horário adicional para atendimento de urgência.',
+  },
 ] as const
 
 export function OwnAgendaManager({
   professionalId,
   title = 'Gerenciar minha agenda',
   intro = 'Você pode flexibilizar temporariamente sua própria agenda sem depender do Administrativo: ajustar café/almoço, reunião, atividade interna, relatório, bloquear períodos e alterar provisoriamente o horário em uma data específica. Alterações permanentes de jornada, turno, carga ou horário seguem Coordenação → anuência → efetivação administrativa.',
+  allowEmergencySlot = false,
 }: Props) {
   const rpc = useMemo(() => getRpcService(), [])
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
@@ -164,11 +177,16 @@ export function OwnAgendaManager({
     setBusy(true)
     setFeedback(null)
 
-    if (entryType === 'excecao' || entryType === 'horario_provisorio') {
+    if (entryType === 'excecao' || entryType === 'horario_provisorio' || entryType === 'urgencia') {
       const result = await rpc.createAgendaException({
         agendaConfigId: configId,
         exceptionDate: date,
-        exceptionType: entryType === 'horario_provisorio' ? 'alteracao_horario' : 'bloqueio',
+        exceptionType:
+          entryType === 'horario_provisorio'
+            ? 'alteracao_horario'
+            : entryType === 'urgencia'
+              ? 'atendimento_extra'
+              : 'bloqueio',
         startTime,
         endTime,
         description: description.trim(),
@@ -186,7 +204,9 @@ export function OwnAgendaManager({
           setFeedback(
             entryType === 'horario_provisorio'
               ? 'Horário provisório registrado na própria agenda.'
-              : 'Exceção temporária registrada na agenda.',
+              : entryType === 'urgencia'
+                ? 'Horário adicional de urgência incluído na agenda.'
+                : 'Exceção temporária registrada na agenda.',
           )
           resetForm()
         }
@@ -245,7 +265,9 @@ export function OwnAgendaManager({
       )}
 
       <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
-        {managementActions.map((action) => (
+        {managementActions
+          .filter((action) => action.value !== 'urgencia' || allowEmergencySlot)
+          .map((action) => (
           <button
             key={action.value}
             type="button"
@@ -280,7 +302,7 @@ export function OwnAgendaManager({
               <option value="">Selecionar</option>
               {configurations.map((item) => (
                 <option key={stringValue(item.config_id)} value={stringValue(item.config_id)}>
-                  {stringValue(item.start_date)} · {stringValue(item.start_time)}–{stringValue(item.end_time)}
+                  {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
                 </option>
               ))}
             </select>
@@ -319,7 +341,7 @@ export function OwnAgendaManager({
             />
           </label>
 
-          {entryType !== 'excecao' && entryType !== 'horario_provisorio' && (
+          {entryType !== 'excecao' && entryType !== 'horario_provisorio' && entryType !== 'urgencia' && (
             <label>
               Orientação de remanejamento, se houver paciente afetado
               <textarea
