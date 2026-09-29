@@ -210,20 +210,71 @@ describe('RenewalPrescriptionPage', () => {
     expect(service.getPrescriptionRenewalDoctors).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: /Paciente real/ }))
     await user.type(
-      screen.getByLabelText('Observação operacional'),
-      'Receita renovada conforme avaliação',
-    )
-    await user.type(
-      screen.getByLabelText('Local de retirada da receita *'),
+      screen.getByLabelText('Onde retirar a receita *'),
       'Farmácia do CAPO',
     )
-    await user.click(screen.getByRole('button', { name: 'Informar receita pronta' }))
+    await user.click(screen.getByRole('button', { name: 'Receita pronta' }))
 
     expect(service.managePrescriptionRenewalMedical).toHaveBeenCalledWith(
       'renewal-id',
       'renewed',
-      'Receita renovada conforme avaliação',
+      'Receita pronta',
       'Farmácia do CAPO',
     )
   })
+
+  it('não expõe controles administrativos no contexto profissional com papel administrativo acumulado', async () => {
+    const user = userEvent.setup()
+    const service = renewalService({
+      status: 'success',
+      data: [
+        {
+          renewal_id: 'renewal-id',
+          patient_id: 'patient-id',
+          patient_name: 'Paciente real',
+          patient_number: 'CAPO-10',
+          cms: null,
+          doctor_id: 'doctor-id',
+          doctor_name: 'Dr. José Silva',
+          specialty_name: 'Clínica Geral',
+          status: 'awaiting_medical',
+          request_note: 'Continuidade de tratamento',
+          medical_feedback: null,
+          administrative_feedback: null,
+          created_at: '2026-09-17T12:00:00Z',
+          updated_at: '2026-09-17T12:00:00Z',
+          reviewed_at: null,
+          completed_at: null,
+          cancelled_at: null,
+          total_count: 1,
+        },
+      ],
+    })
+    const mixedContext: AccessContext = {
+      ...professionalContext,
+      roles: [
+        { code: 'profissional', name: 'Profissional' },
+        { code: 'administrativo_operacional', name: 'Administrativo Operacional' },
+      ],
+      primary_context: {
+        ...professionalContext.primary_context,
+        code: 'profissional',
+        name: 'Profissional',
+      },
+    }
+
+    render(
+      <RenewalPrescriptionPage
+        accessContext={mixedContext}
+        service={service}
+      />,
+    )
+
+    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    expect(screen.getByRole('button', { name: 'Recebido' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Nova solicitação' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar solicitação' })).not.toBeInTheDocument()
+    expect(service.getPrescriptionRenewalDoctors).not.toHaveBeenCalled()
+  })
+
 })
