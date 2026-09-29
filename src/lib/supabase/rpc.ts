@@ -3150,6 +3150,60 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_professional_id: professionalId },
         parse: (value) => value,
       }),
+    saveAgendaConfiguration: (input: {
+      configId: string | null
+      professionalId: string
+      startDate: string
+      endDate: string | null
+      startTime: string
+      endTime: string
+      durationMinutes: number
+      weekdays: readonly number[]
+      notes: string | null
+      expectedUpdatedAt: string | null
+      confirmAffected?: boolean
+      justification?: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'save_agenda_configuration_for_interface',
+        args: {
+          p_config_id: input.configId,
+          p_professional_id: input.professionalId,
+          p_start_date: input.startDate,
+          p_end_date: input.endDate,
+          p_start_time: input.startTime,
+          p_end_time: input.endTime,
+          p_duration_minutes: input.durationMinutes,
+          p_weekdays: [...input.weekdays],
+          p_notes: input.notes,
+          p_expected_updated_at: input.expectedUpdatedAt,
+          p_confirm_affected: input.confirmAffected === true,
+          p_justification: input.justification ?? null,
+        },
+        parse: (value) => value,
+      }),
+    setAgendaConfigurationStatus: (input: {
+      configId: string
+      isActive: boolean
+      effectiveDate: string
+      justification: string
+      expectedUpdatedAt: string
+      urgent?: boolean
+    }) =>
+      execute({
+        transport,
+        operation: 'set_agenda_configuration_status_for_interface',
+        args: {
+          p_config_id: input.configId,
+          p_is_active: input.isActive,
+          p_effective_date: input.effectiveDate,
+          p_justification: input.justification,
+          p_expected_updated_at: input.expectedUpdatedAt,
+          p_urgent: input.urgent === true,
+        },
+        parse: (value) => value,
+      }),
     getSocialVulnerabilityIndicator: (patientId: string) =>
       execute({
         transport,
@@ -3702,6 +3756,43 @@ function createSupabaseTransport(
       case 'get_agenda_configuration_for_interface':
         return client.rpc(operation, {
           p_professional_id: String(args?.p_professional_id ?? ''),
+        })
+      case 'save_agenda_configuration_for_interface':
+        return client.rpc(operation, {
+          p_config_id:
+            typeof args?.p_config_id === 'string' ? args.p_config_id : null,
+          p_professional_id: String(args?.p_professional_id ?? ''),
+          p_start_date: String(args?.p_start_date ?? ''),
+          p_end_date:
+            typeof args?.p_end_date === 'string' && args.p_end_date
+              ? args.p_end_date
+              : null,
+          p_start_time: String(args?.p_start_time ?? ''),
+          p_end_time: String(args?.p_end_time ?? ''),
+          p_duration_minutes: Number(args?.p_duration_minutes ?? 0),
+          p_weekdays: Array.isArray(args?.p_weekdays)
+            ? args.p_weekdays.map(Number)
+            : [],
+          p_notes:
+            typeof args?.p_notes === 'string' ? args.p_notes : null,
+          p_expected_updated_at:
+            typeof args?.p_expected_updated_at === 'string'
+              ? args.p_expected_updated_at
+              : null,
+          p_confirm_affected: args?.p_confirm_affected === true,
+          p_justification:
+            typeof args?.p_justification === 'string'
+              ? args.p_justification
+              : null,
+        })
+      case 'set_agenda_configuration_status_for_interface':
+        return client.rpc(operation, {
+          p_config_id: String(args?.p_config_id ?? ''),
+          p_is_active: args?.p_is_active === true,
+          p_effective_date: String(args?.p_effective_date ?? ''),
+          p_justification: String(args?.p_justification ?? ''),
+          p_expected_updated_at: String(args?.p_expected_updated_at ?? ''),
+          p_urgent: args?.p_urgent === true,
         })
       case 'get_my_specialty_operational_report_for_interface':
         return client.rpc(operation, {
