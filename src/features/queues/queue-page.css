@@ -144,3 +144,17 @@
   }
 }
 
+.queue-row-highlight {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+  font-weight: 700;
+}
+
+.queue-suggestion-note {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-medium);
+  font-weight: 700;
+}
+
