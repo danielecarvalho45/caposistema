@@ -3919,3 +3919,26 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Estado do Ilton após esta etapa:** identidade profissional preservada e estrutura preparada para refazer a criação/vinculação da conta pelo fluxo oficial, sem duplicar o profissional. A conta de acesso ainda não foi criada nesta intervenção porque a senha provisória não deve ser recuperada nem inventada fora do fluxo de cadastro.
 
 **Estado:** **CAUSA CONFIRMADA / CORREÇÃO DE BACKEND APLICADA E VERIFICADA / PROFISSIONAL LEGADO PRESERVADO / AGUARDANDO NOVA CRIAÇÃO DA CONTA DO ILTON PELO FLUXO OFICIAL E TESTE REAL DE LOGIN**.
+
+
+### 28.72 Pré-implantação — varredura dos demais profissionais legados sem conta (29/09/2026)
+
+**Objetivo:** verificar se o mesmo erro estrutural identificado no vínculo da conta de Ilton afetava os demais profissionais previamente existentes no banco legado.
+
+**Resultado da varredura física do banco:** entre os profissionais reais não marcados como perfil de homologação, somente **Daniele Carvalho** possui atualmente `user_accounts` vinculado a `auth.users`. Permanecem sem conta de acesso vinculada: **Ilton de Oliveira Filho**, **Danilo Paiva**, **Jaqueline Almeida**, **Juliana Rios**, **Sheila** e **Dalila Aguiar** (esta última inativa).
+
+**Confronto do mesmo defeito:** a falha de backend confirmada no §28.71 — ausência de `SELECT` em `public.professionals` para `service_role` durante o fluxo de vínculo de profissional existente — era sistêmica e poderia atingir qualquer profissional legado ao acionar `create-team-member` com `existingProfessionalId`. A migration `20260929181258_grant_service_role_select_professionals_for_legacy_account_link` corrige esse bloqueio de forma global, portanto não é necessário aplicar uma correção individual por profissional.
+
+**Situação individual atual para criação de acesso:**
+- **Ilton de Oliveira Filho:** cadastro ativo, Clínica Geral principal, usuário e e-mail preenchidos; **pronto para nova tentativa de criação/vínculo de conta pelo fluxo oficial**.
+- **Danilo Paiva:** ativo, Fisioterapia principal; cadastro legado ainda sem e-mail de recuperação e sem função preenchida, portanto não deve receber conta até esses dados serem informados no sistema.
+- **Jaqueline Almeida:** ativa, Psicologia principal; cadastro legado ainda sem e-mail de recuperação e sem função preenchida.
+- **Juliana Rios:** ativa, Nutrição principal; função preenchida, porém sem e-mail de recuperação.
+- **Sheila:** ativa, Psicologia principal; função preenchida, porém sem e-mail de recuperação.
+- **Dalila Aguiar:** inativa, Assistência Social principal; sem conta de acesso e sem e-mail de recuperação. A condição inativa foi preservada.
+
+**Perfis de homologação:** os registros artificiais de homologação existentes no banco não foram tratados como profissionais reais para criação de conta nesta varredura e não foram alterados.
+
+**Preservação:** nenhuma identidade profissional, especialidade, agenda, histórico, status, capacidade ou dado clínico foi modificado. Não foram criados `auth.users` nem senhas para profissionais sem dados completos, evitando inventar credenciais ou duplicar identidades.
+
+**Estado:** **ERRO SISTÊMICO DE VÍNCULO CORRIGIDO GLOBALMENTE / PROFISSIONAIS LEGADOS INVENTARIADOS / DADOS INCOMPLETOS PRESERVADOS PARA COMPLEMENTAÇÃO PELO FLUXO OFICIAL / AGUARDANDO CRIAÇÃO DAS CONTAS E TESTE REAL DE LOGIN PROFISSIONAL A PROFISSIONAL**.
