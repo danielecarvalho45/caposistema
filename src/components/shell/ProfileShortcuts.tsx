@@ -27,7 +27,6 @@ type HomologationTarget = Readonly<{
   key: string
   label: string
   roleCode: string | null
-  professionalName?: string
   specialtyName?: string
 }>
 
@@ -51,35 +50,30 @@ const homologationTargets: readonly HomologationTarget[] = [
     key: 'medico',
     label: 'Médico Clínico Geral',
     roleCode: 'profissional',
-    professionalName: 'Homologação — Médico Clínico Geral',
     specialtyName: 'Clínica Geral',
   },
   {
     key: 'nutricao',
     label: 'Nutrição',
     roleCode: 'profissional',
-    professionalName: 'Homologação — Nutrição',
     specialtyName: 'Nutrição',
   },
   {
     key: 'assistencia_social',
     label: 'Assistência Social',
     roleCode: 'profissional',
-    professionalName: 'Homologação — Assistência Social',
     specialtyName: 'Assistência Social',
   },
   {
     key: 'psicologia',
     label: 'Psicologia',
     roleCode: 'profissional',
-    professionalName: 'Homologação — Psicologia',
     specialtyName: 'Psicologia',
   },
   {
     key: 'fisioterapia',
     label: 'Fisioterapia',
     roleCode: 'profissional',
-    professionalName: 'Homologação — Fisioterapia',
     specialtyName: 'Fisioterapia',
   },
 ]
@@ -91,9 +85,6 @@ function homologationTargetActive(
   const current = accessContext.homologation_context
   if (target.roleCode === null) return !current?.enabled
   if (!current?.enabled || current.role_code !== target.roleCode) return false
-  if (target.professionalName && current.professional_name !== target.professionalName) {
-    return false
-  }
   if (target.specialtyName && current.specialty_name !== target.specialtyName) {
     return false
   }
@@ -183,40 +174,52 @@ export function ProfileShortcuts({
     let professionalId: string | null = null
     let specialtyId: string | null = null
 
-    if (target.professionalName || target.specialtyName) {
+    if (target.specialtyName) {
       if (!homologationOptions) {
         setSwitchingHomologation(false)
         setHomologationError('Os perfis profissionais ainda não foram carregados.')
         return
       }
 
-      if (target.professionalName) {
-        professionalId =
-          homologationOptions.professionals.find(
-            (professional) =>
-              professional.professional_name === target.professionalName,
-          )?.professional_id ?? null
-        if (!professionalId) {
-          setSwitchingHomologation(false)
-          setHomologationError(
-            `Perfil profissional de homologação não encontrado: ${target.label}.`,
-          )
-          return
-        }
+      specialtyId =
+        homologationOptions.specialties.find(
+          (specialty) => specialty.specialty_name === target.specialtyName,
+        )?.specialty_id ?? null
+
+      if (!specialtyId) {
+        setSwitchingHomologation(false)
+        setHomologationError(
+          `Especialidade de homologação não encontrada: ${target.label}.`,
+        )
+        return
       }
 
-      if (target.specialtyName) {
-        specialtyId =
-          homologationOptions.specialties.find(
-            (specialty) => specialty.specialty_name === target.specialtyName,
-          )?.specialty_id ?? null
-        if (!specialtyId) {
-          setSwitchingHomologation(false)
-          setHomologationError(
-            `Especialidade de homologação não encontrada: ${target.label}.`,
+      const candidates = homologationOptions.professionals
+        .filter(
+          (professional) =>
+            !professional.is_homologation_stub &&
+            professional.specialties.some(
+              (specialty) => specialty.specialty_id === specialtyId,
+            ),
+        )
+        .sort((left, right) => {
+          if (left.has_active_agenda !== right.has_active_agenda) {
+            return left.has_active_agenda ? -1 : 1
+          }
+          return left.professional_name.localeCompare(
+            right.professional_name,
+            'pt-BR',
           )
-          return
-        }
+        })
+
+      professionalId = candidates[0]?.professional_id ?? null
+
+      if (!professionalId) {
+        setSwitchingHomologation(false)
+        setHomologationError(
+          `Não existe profissional real ativo cadastrado para ${target.label}. Cadastre/vincule o profissional antes de homologar esse perfil.`,
+        )
+        return
       }
     }
 
