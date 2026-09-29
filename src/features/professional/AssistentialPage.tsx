@@ -106,7 +106,7 @@ export function AssistentialPage({
     accessContext.roles.some((role) => role.code === 'profissional')
   const canEditDischargeProximity =
     profileKind === 'clinico_geral' &&
-    accessContext.specialties.some(
+    (accessContext.specialties ?? []).some(
       (specialty) =>
         specialty.specialty_name
           .normalize('NFD')
