@@ -3408,3 +3408,38 @@ Cada horário é classificado como **Livre**, **Agendado** ou **Bloqueado**, sem
 **Conferência pós-correção:** relidos o editor, o roteamento do Gestor, o transporte RPC e a tipagem. O Gestor habilita `allowStructuralEdit`; a gestão do próprio profissional permanece sem esse modo por padrão; a RPC oficial de salvamento está exposta no frontend.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AUTONOMIA DIRETA DO GESTOR SOBRE A CONFIGURAÇÃO-BASE DA AGENDA / SEM ALTERAÇÃO DE AUTORIZAÇÃO NO SUPABASE PORQUE O CONTRATO JÁ AUTORIZAVA ADMINISTRADOR / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.53 Gestor/Titular — intervalos semanais recorrentes na configuração permanente da agenda (29/09/2026)
+
+**Divergência observada:** a edição permanente da agenda permitia alterar dias da semana, horário inicial/final, duração e vigência, porém os intervalos continuavam disponíveis apenas como ação pontual por data específica. Isso impedia registrar almoço/intervalo como parte da rotina semanal permanente.
+
+**Conferência física do banco:** `public.agenda_blocks` já possui suporte estrutural para bloqueio recorrente por `weekday` com `specific_date=null`. A RPC `create_agenda_block_for_interface` também reconhece esse modelo, mas a interface não o expunha na configuração-base.
+
+**Correção de backend:** foram criadas as RPCs:
+- `save_agenda_recurring_interval_for_interface` — registra **Intervalo** ou **Almoço/Alimentação** em um ou vários dias ativos da configuração-base;
+- `set_agenda_recurring_interval_status_for_interface` — ativa/desativa um intervalo semanal recorrente já existente.
+
+As funções são restritas ao papel `administrador`, compatível com o Gestor/Titular, e não alteram a autonomia do profissional comum.
+
+**Correção da interface:** dentro de **Gestor → Equipe e Agendas → Gestão de Agenda → Configuração-base da agenda** foi incluída a seção **Intervalos semanais recorrentes**. O Gestor pode:
+- escolher tipo **Intervalo** ou **Almoço / Alimentação**;
+- informar horário inicial e final;
+- selecionar um, vários ou todos os dias ativos da agenda;
+- usar o botão **Usar todos os dias ativos** para aplicar o mesmo intervalo à semana inteira configurada;
+- visualizar os intervalos semanais ativos;
+- remover um intervalo recorrente da grade ativa.
+
+**Regra de consistência:** intervalos só podem ser aplicados em dias que estejam ativos na própria configuração de agenda. Sobreposição com outro bloqueio recorrente é recusada para evitar duplicidade/confusão da grade.
+
+**Integração com a Home:** como a grade efetiva da Home já considera `agenda_blocks`, esses intervalos passam automaticamente a aparecer como **Bloqueado** nos dias e horários recorrentes correspondentes, permitindo conferência visual imediata após a alteração.
+
+**Migration:** `supabase/migrations/20260929034000_manage_recurring_weekly_agenda_intervals.sql`.
+
+**Arquivos alterados:** `src/lib/supabase/rpc.ts`, `src/types/database.ts`, `src/features/agenda/OwnAgendaManager.tsx` e `src/features/agenda/agenda-page.css`.
+
+**Commits:** `4d33f2d974e839ab88856d017f315bcb3f4f73df`, `6ddc1bb12395f4fc4bdd13ab20a3c1a9ffc21939`, `2001dd182477fea6f124d880d6efd48fd61787e0`, `2c894dbe86f1d4044ae80bd2653af4bff47edf40` e `5f8a00416584a3c6e47cbb8189ece0d3a408f5ac`.
+
+**Conferência pós-correção:** as duas novas RPCs existem fisicamente no Supabase; o frontend contém cadastro em múltiplos dias, botão de todos os dias ativos, listagem e remoção de intervalos recorrentes; o modo estrutural continua habilitado apenas no Gestor/Titular.
+
+**Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / INTERVALOS PODEM SER PERMANENTES NA SEMANA / UM OU VÁRIOS DIAS / APLICAÇÃO EM TODOS OS DIAS ATIVOS / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
