@@ -3593,3 +3593,43 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Commits:** `a86d6712860be0fcfb7730be3f6804075b612d64` e `7cac20c817138f8e7cdb9c0960e98325bab99584`.
 
 **Estado:** **ERRO DA IMAGEM CORRIGIDO NO CÓDIGO / RPC REGISTRADA NA CAMADA CAPO E TIPADA / CONSULTA DE GRADE É COMPARTILHADA ENTRE OS PERFIS AUTORIZADOS / SEM NOVA ALTERAÇÃO DE SUPABASE NESTA ETAPA / TESTES AUTOMATIZADOS NÃO EXECUTADOS / NECESSITA PUBLICAÇÃO PARA O ERRO DESAPARECER NO SITE AO VIVO**.
+
+
+### 28.59 Correção estrutural — múltiplos padrões semanais simultâneos por profissional (29/09/2026)
+
+**Falha operacional confirmada pela Titular:** ao salvar um grupo de dias com determinado horário e depois configurar outro grupo de dias com horário diferente, a segunda gravação substituía/invalidava a primeira. Exemplo real de uso: segunda/terça 08:00–11:00 e quarta/quinta/sexta 08:00–17:00 não conseguiam coexistir.
+
+**Causa física confirmada:** `agenda_configs` já permite múltiplos registros por profissional, porém `save_agenda_configuration_for_interface` recusava qualquer segunda configuração ativa com vigência sobreposta, independentemente dos dias da semana. Além disso, as rotinas de disponibilidade, grade, visão da Coordenação e cálculo automático de duração selecionavam apenas a configuração mais recente do período antes de conferir o dia da semana.
+
+**Correção cirúrgica de backend:**
+- duas configurações podem coexistir na mesma vigência quando seus dias ativos não se sobrepõem;
+- sobreposição continua recusada quando duas configurações ativas tentam usar o mesmo dia da semana dentro da mesma vigência;
+- `get_available_appointment_slots` escolhe a configuração aplicável ao dia consultado;
+- `get_agenda_schedule_grid_for_interface` escolhe a configuração aplicável a cada data;
+- `get_coordinator_agenda_overview_for_interface` utiliza a configuração correspondente ao dia;
+- os triggers de duração de consulta e de agenda de familiar/psicologia usam o padrão do dia do agendamento;
+- impacto de edição/desativação fica restrito aos dias que pertencem à configuração alterada, sem considerar consultas de outro padrão semanal do mesmo profissional;
+- a efetivação de alteração estrutural aprovada segue a mesma regra de coexistência por dias distintos.
+
+**Correção cirúrgica da interface:** `OwnAgendaManager` passou a oferecer **Novo padrão semanal**. Cada padrão mostra seus dias e horário no seletor, por exemplo `Seg, Ter · 08:00–11:00` e `Qua, Qui, Sex · 08:00–17:00`. Criar um novo padrão envia `configId=null` e não edita o padrão previamente salvo. Após o salvamento, a própria configuração criada permanece selecionada para receber seus intervalos recorrentes.
+
+**Formulação semanal preservada:** Café / Intervalo, Almoço, Estudo de caso, Atendimentos online e Rotinas administrativas continuam vinculados à configuração selecionada e somente aos dias ativos daquele padrão. Portanto, grupos semanais diferentes podem ter formulações recorrentes diferentes.
+
+**Migrations aplicadas no Supabase e registradas no repositório:**
+- `20260929044543_allow_disjoint_weekday_agenda_patterns.sql`;
+- `20260929044606_select_agenda_pattern_by_weekday_in_appointment_triggers.sql`;
+- `20260929044720_scope_agenda_config_status_to_its_weekdays.sql`;
+- `20260929044745_allow_disjoint_weekdays_in_approved_agenda_changes.sql`.
+
+**Arquivos de interface/teste alterados:**
+- `src/features/agenda/OwnAgendaManager.tsx`;
+- `src/features/agenda/agenda-page.css`;
+- `tests/unit/OwnAgendaManager.test.tsx`.
+
+**Commits:** `835141acfcb6da4d066243a03794541692718795`, `627f102ffdefbf9c8e15ae40e3aaefa622a1252f`, `794a5a985cebb3abdfb0e0e008b8521811201c46`, `49d45a4934b6d83652f5cb167f7fc93f355df59d`, `64df35a86b58cc7d2f2353ddfaefa287558fa413`, `dedd085e273e8371e3febdb3077695ec08ef1267`, `b642dd8f3551ca147c288500814341bfe0d04ede` e `cc768f1ae2f005f3a58024780db389824452341c`.
+
+**Teste físico do banco:** executado teste transacional reversível usando dois padrões simultâneos no perfil de homologação: segunda/terça com duração de 30 minutos e quarta/quinta/sexta com duração de 60 minutos. A seleção retornou o padrão correto para segunda e quarta; a transação foi revertida e a conferência posterior confirmou **0 registros de teste persistidos**.
+
+**Verificação pós-correção:** as funções do Supabase foram relidas e contêm seleção por `agenda_weekdays` nos contratos de vagas, grade, Coordenação e triggers. O teste unitário de interface foi incluído para proteger o cenário em que um novo grupo de dias é criado sem editar o grupo já existente. Não há workflow GitHub Actions configurado no repositório, portanto a suíte frontend não foi executada nesta sessão.
+
+**Estado:** **CORRIGIDO NO SUPABASE E NO GITHUB / TESTE TRANSACIONAL DO BANCO PASS / SEM DADOS DE TESTE PERSISTIDOS / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL REAL**.
