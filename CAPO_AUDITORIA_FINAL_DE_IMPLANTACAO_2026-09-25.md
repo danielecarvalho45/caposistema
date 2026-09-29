@@ -3089,3 +3089,39 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `16ca9336c6eaa4e8851878d2bc9d6bb87dc54201`, `2e91d73104a3605b1fae98cc665a166a272ef304`, `f7e77e0f7d956f458f4eeac5f782db32778db3cd` e `1b8b2679c63e970bdba883b465a8814235aa5be2`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / HOMOLOGAÇÃO REUTILIZA PROFISSIONAIS REAIS / PERFIS TÉCNICOS NÃO SÃO MAIS PRIORIZADOS / ASSISTÊNCIA SOCIAL AINDA SEM PROFISSIONAL REAL CADASTRADO / TESTE AUTOMATIZADO ATUALIZADO, NÃO EXECUTADO NESTA ETAPA**.
+
+
+### 28.41 Consolidação estrutural — uma única tela por especialidade/perfil funcional (29/09/2026)
+
+**Correção de interpretação da manutenção anterior:** a seção 28.40 registrou corretamente que a homologação não deveria criar profissionais funcionais novos, porém foi longe demais ao fazer o seletor técnico depender de um **profissional real já cadastrado com agenda**. Essa dependência não corresponde ao Projeto Estrutural e fica **EXPRESSAMENTE SUPERADA por esta seção**. Não reutilizar a regra de 28.40 que condicionava a abertura da tela à existência de profissional real.
+
+**Regra estrutural vigente:** a estrutura visual e funcional da interface profissional pertence ao **perfil funcional/especialidade**, e não ao indivíduo cadastrado. O cadastro individual apenas fornece identidade e dados operacionais: nome, registro profissional, agenda individual, vínculos, permissões e autoria. Portanto:
+- **Clínico Geral** → mesma tela estrutural e mesmas particularidades para qualquer Clínico Geral;
+- **Nutrição** → mesma tela estrutural e mesmas particularidades para qualquer Nutricionista;
+- **Assistência Social** → mesma tela estrutural e mesmas particularidades para qualquer Assistente Social;
+- **Profissional Assistencial Padrão** → mesma base para Psicologia, Fisioterapia e demais especialidades sem particularidade estrutural própria;
+- permissões/capacidades acumuladas continuam independentes da escolha da estrutura-base e apenas habilitam funções autorizadas.
+
+**Princípio de implantação:** cadastrar um novo profissional NÃO pode exigir manutenção em HTML, CSS, RPC, SQL ou criação de uma nova versão de tela. Ao vincular o profissional à especialidade e às permissões, ele deve receber automaticamente a estrutura já homologada daquela categoria.
+
+**Chave mestra TI / homologação:** a conta técnica existe para abrir e conferir antecipadamente a **mesma implementação estrutural** que será usada pelos profissionais. Para isso, pode utilizar uma identidade técnica de homologação vinculada à especialidade, mas essa identidade **não define nem altera o desenho da tela** e não deve consumir o cadastro de um profissional real para escolher qual interface abrir.
+
+**Correção arquitetural aplicada:** foi criado `src/features/professional/professional-screen.ts` como resolvedor único do tipo estrutural da tela profissional. A classificação aceita somente quatro variantes de interface: `clinico_geral`, `nutricao`, `assistencia_social` e `assistencial_padrao`. A especialidade efetiva do contexto — inclusive o contexto técnico de homologação — determina a variante.
+
+**Roteamento unificado:** `src/app/App.tsx` deixou de repetir comparações manuais de especialidade e passou a utilizar o resolvedor único. Nutrição abre `NutritionPage`; Assistência Social abre `SocialPage`; Clínica Geral e especialidades padrão usam a base assistencial compartilhada, recebendo a variante estrutural apropriada. A existência ou o nome de um profissional específico não escolhe mais o desenho da tela.
+
+**Particularidade do Clínico preservada sem duplicação:** `src/features/professional/AssistentialPage.tsx` passou a receber a variante estrutural. A função específica de Clínica Geral, como Renovação de Receita, é decidida por `profileKind='clinico_geral'`, não pelo nome do profissional cadastrado. Assim, qualquer novo Clínico recebe a mesma particularidade automaticamente.
+
+**Navegação unificada:** `src/components/navigation/navigation-config.ts` passou a utilizar o mesmo resolvedor estrutural, eliminando uma segunda interpretação independente de Nutrição/Assistência Social/atuação padrão.
+
+**Homologação corrigida:** `src/components/shell/ProfileShortcuts.tsx` deixou de procurar um profissional real com agenda para abrir um perfil de homologação. Ele utiliza o perfil técnico da especialidade apenas como identidade segura de teste. O contexto ativo de Nutrição foi relido no Supabase e voltou a apontar para **Homologação — Nutrição**, com a especialidade Nutrição; a razão registrada explicita que a identidade técnica não define a tela.
+
+**Varredura de regressão:** busca física no código não encontrou outro componente profissional que escolha uma tela diferente com base em `is_homologation_account`, nome exato do profissional ou nome `Homologação — ...`. As ocorrências restantes de homologação pertencem ao shell/seletor técnico, testes ou documentação, não a uma segunda implementação de tela profissional.
+
+**Migration corretiva:** `supabase/migrations/20260929021000_homologation_structural_screen_independent_of_real_professional.sql`.
+
+**Arquivos alterados:** `src/features/professional/professional-screen.ts`, `src/app/App.tsx`, `src/features/professional/AssistentialPage.tsx`, `src/components/navigation/navigation-config.ts`, `src/components/shell/ProfileShortcuts.tsx`, `tests/unit/profile-shortcuts.test.tsx`.
+
+**Commits:** `2ebdacda0ad6ada71bda2b523cb9df9133daab9b`, `89dc1763675ce9489c182a1ae6406773b3e54f0a`, `125c4122d722ef7b5a75a5a248992f238e2112b4`, `63570f1ccf70cef45cc9452127acf8ca9844f8c6`, `f61895d599bc2a3829a570d2d7b6e4d1c760ce00`, `69c2286e6aeb99cf872ab5d7c88f526ac75e6658` e `d7e964620233b471aa14b530716a503465c1b370`.
+
+**Estado:** **REGRA ESTRUTURAL CONSOLIDADA NO CÓDIGO E NO SUPABASE / TELA DEFINIDA PELA ESPECIALIDADE-PERFIL / PROFISSIONAL INDIVIDUAL NÃO CRIA VARIANTE DE TELA / HOMOLOGAÇÃO USA A MESMA IMPLEMENTAÇÃO / TESTE AUTOMATIZADO ATUALIZADO, NÃO EXECUTADO NESTA ETAPA / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL FINAL**.
