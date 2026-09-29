@@ -983,3 +983,58 @@
     grid-row: auto;
   }
 }
+
+
+.agenda-patient-search-button {
+  min-height: 38px;
+  justify-self: start;
+  padding: 7px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background: #fff;
+  color: var(--color-brand-blue);
+  font-weight: 800;
+}
+
+.agenda-slot-schedule-button {
+  justify-self: start;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid var(--color-brand-blue);
+  border-radius: var(--radius-medium);
+  background: #fff;
+  color: var(--color-brand-blue);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.agenda-slot-schedule-button:hover,
+.agenda-slot-schedule-button:focus-visible {
+  color: #fff;
+  background: var(--color-brand-blue);
+}
+
+.agenda-schedule-slot.is-livre:has(.agenda-slot-schedule-button) {
+  grid-template-columns: minmax(90px, auto) minmax(0, 1fr) auto;
+}
+
+@media (max-width: 760px) {
+  .agenda-schedule-slot.is-livre:has(.agenda-slot-schedule-button) {
+    grid-template-columns: 1fr auto;
+  }
+
+  .agenda-schedule-slot.is-livre:has(.agenda-slot-schedule-button) > strong {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 440px) {
+  .agenda-schedule-slot.is-livre:has(.agenda-slot-schedule-button) {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-slot-schedule-button,
+  .agenda-patient-search-button {
+    width: 100%;
+  }
+}
