@@ -1143,6 +1143,34 @@ export type Database = {
         Args: { p_professional_id: string }
         Returns: Json
       }
+      save_agenda_configuration_for_interface: {
+        Args: {
+          p_config_id: string | null
+          p_professional_id: string
+          p_start_date: string
+          p_end_date: string | null
+          p_start_time: string
+          p_end_time: string
+          p_duration_minutes: number
+          p_weekdays: number[]
+          p_notes?: string | null
+          p_expected_updated_at?: string | null
+          p_confirm_affected?: boolean
+          p_justification?: string | null
+        }
+        Returns: Json
+      }
+      set_agenda_configuration_status_for_interface: {
+        Args: {
+          p_config_id: string
+          p_is_active: boolean
+          p_effective_date: string
+          p_justification: string
+          p_expected_updated_at: string
+          p_urgent?: boolean
+        }
+        Returns: Json
+      }
       get_my_specialty_operational_report_for_interface: {
         Args: {
           p_specialty_id: string
