@@ -3772,3 +3772,17 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Observação de precedência:** esta instrução direta mais recente substitui, apenas quanto à exibição de dias vazios, a regra anterior de mostrar `Sem horário cadastrado` para todo dia do período.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+### 28.65 Ajuste cirúrgico — consulta da agenda por período inicial/final (29/09/2026)
+
+**Regra da Titular:** a consulta da agenda não deve usar apenas uma Data de referência. Deve permitir informar **Data inicial** e **Data final**.
+
+**Correção somente de interface:** o filtro da consulta em `AgendaPage` passou a possuir os campos **Data inicial** e **Data final**. O período informado passa a comandar a leitura da agenda e da grade do profissional. O campo final não aceita data anterior à inicial. A navegação Anterior/Hoje/Próximo preserva o funcionamento, deslocando o período informado fora da home embutida.
+
+**Preservação:** nenhuma RPC, SQL, migration, RLS, dado real ou regra de configuração da agenda foi alterado.
+
+**Arquivo alterado:** `src/features/agenda/AgendaPage.tsx`.
+
+**Commit:** `15299ded6ee03b669a1a8250bcdcbb5be753ebce`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
