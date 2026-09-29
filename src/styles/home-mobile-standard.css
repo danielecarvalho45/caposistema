@@ -1,0 +1,198 @@
+/* CAPO — organização visual compartilhada das telas Home no mobile.
+   Referência: Home aprovada do Gestor/Titular.
+   Este arquivo altera somente composição visual; não muda conteúdo, permissões ou fluxos. */
+
+@media (max-width: 620px) {
+  .home-mobile-standard {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 13px;
+    align-content: start;
+  }
+
+  .home-mobile-standard > * {
+    min-width: 0;
+    width: 100%;
+    margin-inline: 0;
+  }
+
+  .home-mobile-standard .home-welcome,
+  .home-mobile-standard .home-profile,
+  .home-mobile-standard .home-birthdays,
+  .home-mobile-standard .assistential-card,
+  .home-mobile-standard .social-header,
+  .home-mobile-standard .social-agenda,
+  .home-mobile-standard .social-quick-access,
+  .home-mobile-standard .social-modules,
+  .home-mobile-standard .agenda-home-card {
+    border: 1px solid #d9e7f3;
+    border-radius: 9px;
+    background: rgb(255 255 255 / 80%);
+    box-shadow: 0 2px 10px rgb(31 67 104 / 2.5%);
+  }
+
+  .home-mobile-standard .home-welcome,
+  .home-mobile-standard .home-profile,
+  .home-mobile-standard .home-birthdays,
+  .home-mobile-standard .assistential-card,
+  .home-mobile-standard .social-header,
+  .home-mobile-standard .social-agenda,
+  .home-mobile-standard .social-quick-access,
+  .home-mobile-standard .social-modules {
+    padding: 13px;
+  }
+
+  .home-mobile-standard .home-profile-standard,
+  .home-mobile-standard .home-profile-standard.assistential-card,
+  .home-mobile-standard .home-profile-standard.social-quick-access {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .home-mobile-standard .home-profile-grid,
+  .home-mobile-standard .social-quick-grid,
+  .home-mobile-standard .technical-quick-grid,
+  .home-mobile-standard .assistential-metrics,
+  .home-mobile-standard .social-module-grid,
+  .home-mobile-standard .social-followup-list,
+  .home-mobile-standard .home-birthday-grid,
+  .home-mobile-standard .gestor-dashboard-grid,
+  .home-mobile-standard .gestor-summary-grid,
+  .home-mobile-standard .operational-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-mobile-standard .home-profile-grid,
+  .home-mobile-standard .social-quick-grid,
+  .home-mobile-standard .technical-quick-grid {
+    gap: 11px;
+  }
+
+  .home-mobile-standard .home-profile-card,
+  .home-mobile-standard .social-quick-card,
+  .home-mobile-standard .technical-quick-card {
+    width: 100%;
+    min-height: 138px;
+    padding: 16px 12px;
+    border-radius: 9px;
+  }
+
+  .home-mobile-standard .home-profile-icon,
+  .home-mobile-standard .social-quick-icon,
+  .home-mobile-standard .technical-quick-icon {
+    margin-bottom: 8px;
+    font-size: 30px;
+  }
+
+  .home-mobile-standard .home-profile-card strong,
+  .home-mobile-standard .social-quick-card strong,
+  .home-mobile-standard .technical-quick-card strong {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .home-mobile-standard .home-profile-card > span:last-child,
+  .home-mobile-standard .social-quick-card > span:last-child,
+  .home-mobile-standard .technical-quick-card > span:last-child {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .home-mobile-standard h1,
+  .home-mobile-standard h2,
+  .home-mobile-standard h3 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .home-mobile-standard .home-profile-standard > h2,
+  .home-mobile-standard .home-profile-standard > div > h2,
+  .home-mobile-standard .assistential-section-title,
+  .home-mobile-standard .social-quick-access > h2 {
+    margin: 0 0 10px;
+    color: #17365f;
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .home-mobile-standard .home-welcome {
+    padding: 16px 20px;
+  }
+
+  .home-mobile-standard .home-welcome h1 {
+    margin: 0;
+    color: #17365f;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.15;
+  }
+
+  .home-mobile-standard .home-welcome > p:not(.eyebrow):not(.home-slogan) {
+    margin: 5px 0 0;
+    color: #617b9c;
+    font-size: 14px;
+  }
+
+  .home-mobile-standard .home-birthdays,
+  .home-mobile-standard .birthday-panel {
+    min-height: 0;
+  }
+
+  .home-mobile-standard .home-birthday-grid {
+    gap: 10px;
+  }
+
+  .home-mobile-standard .home-birthday-grid article {
+    padding: 10px 0 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .home-mobile-standard .assistential-page,
+  .home-mobile-standard .agenda-home-embedded {
+    margin: 0;
+  }
+
+  .home-mobile-standard .social-section-heading,
+  .home-mobile-standard .assistential-heading {
+    align-items: flex-start;
+  }
+
+  .home-mobile-standard .social-section-note {
+    white-space: normal;
+  }
+
+  .home-mobile-standard .agenda-home-card {
+    padding: 13px;
+  }
+
+  .home-mobile-standard .agenda-home-card .agenda-toolbar {
+    margin-bottom: 10px;
+  }
+
+  .home-mobile-standard .agenda-home-card .agenda-tabs,
+  .home-mobile-standard .agenda-home-card .agenda-navigation {
+    width: 100%;
+  }
+
+  .home-mobile-standard .agenda-home-card .agenda-period {
+    width: 100%;
+    padding-top: 2px;
+  }
+
+  .home-mobile-standard .assistential-patients,
+  .home-mobile-standard .assistential-metrics,
+  .home-mobile-standard .social-followup-groups {
+    gap: 10px;
+  }
+
+  .home-mobile-standard .assistential-notice,
+  .home-mobile-standard .technical-notice {
+    width: 100%;
+    margin: 0;
+  }
+}
