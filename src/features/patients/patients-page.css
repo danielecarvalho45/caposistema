@@ -320,3 +320,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.patients-search-panel {
+  max-width: 760px;
+  padding: 0.85rem 1rem;
+}
+
+.patients-search-panel .home-profile-grid {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+@media (max-width: 600px) {
+  .patients-search-panel {
+    max-width: none;
+  }
+
+  .patients-search-panel .home-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
