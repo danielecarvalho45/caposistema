@@ -505,7 +505,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         </section>
       )}
 
-      {activeView === 'search' && <section className="home-profile" aria-labelledby="patients-search-title">
+      {activeView === 'search' && <section className="home-profile patients-search-panel" aria-labelledby="patients-search-title">
         <div>
           <p className="eyebrow">Pesquisa</p>
           <h2 id="patients-search-title">Buscar paciente</h2>
