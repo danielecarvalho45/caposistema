@@ -1139,6 +1139,14 @@ export type Database = {
         Args: Record<never, never>
         Returns: Json
       }
+      get_agenda_schedule_grid_for_interface: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+          p_professional_id?: string | null
+        }
+        Returns: Json
+      }
       get_agenda_configuration_for_interface: {
         Args: { p_professional_id: string }
         Returns: Json
