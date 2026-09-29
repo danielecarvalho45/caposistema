@@ -109,6 +109,7 @@ export function App() {
     : null
   const isPatientsRoute = location.pathname === '/pacientes'
   const isAgendaRoute = location.pathname === '/agenda'
+  const isManageOwnAgendaRoute = location.pathname === '/minha-agenda/gerenciar'
   const isAgendaChangeRequestRoute = location.pathname === '/minha-agenda/solicitar-alteracao'
   const isAssistentialRoute = location.pathname === '/atuacao'
   const isNutritionRoute = location.pathname === '/nutricao'
@@ -210,6 +211,8 @@ export function App() {
     <PatientsPage accessContext={accessContext} />
   ) : isAgendaRoute ? (
     <AgendaPage accessContext={accessContext} />
+  ) : isManageOwnAgendaRoute ? (
+    <AgendaPage accessContext={accessContext} initialManageOpen />
   ) : isAgendaChangeRequestRoute ? (
     <AgendaChangeRequestPage accessContext={accessContext} />
   ) : isAssistentialRoute ? (
