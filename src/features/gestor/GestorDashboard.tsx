@@ -156,6 +156,20 @@ export function GestorDashboard() {
                       Agendar
                     </Link>
                   )}
+                  {slot.slot_status === 'agendado' && slot.appointment_id && (
+                    <Link
+                      className="gestor-agenda-slot-action gestor-agenda-slot-cancel-action"
+                      to="/agenda"
+                      state={{
+                        origin: 'home_cancel_appointment',
+                        appointmentId: slot.appointment_id,
+                        professionalId: slot.professional_id,
+                        slotDate: slot.slot_date,
+                      }}
+                    >
+                      Cancelar
+                    </Link>
+                  )}
                 </div>
               ))}
             </div>
