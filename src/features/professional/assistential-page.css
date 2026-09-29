@@ -201,3 +201,81 @@
     flex-direction: column;
   }
 }
+
+
+.agenda-attendance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.agenda-attendance-confirm,
+.agenda-attendance-absence {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .assistential-table-wrap {
+    overflow-x: visible;
+  }
+
+  .assistential-table,
+  .assistential-table tbody,
+  .assistential-table tr,
+  .assistential-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .assistential-table thead {
+    display: none;
+  }
+
+  .assistential-table caption {
+    padding-bottom: 0.65rem;
+  }
+
+  .assistential-table tr {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-medium);
+    background: #fff;
+  }
+
+  .assistential-table td {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 7rem) minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: start;
+    padding: 0.42rem 0;
+    border: 0;
+  }
+
+  .assistential-table td::before {
+    content: attr(data-label);
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .assistential-table td[data-label='Paciente'] {
+    font-weight: 800;
+  }
+
+  .assistential-table td.agenda-attendance-actions {
+    display: flex;
+    padding-top: 0.65rem;
+  }
+
+  .assistential-table td.agenda-attendance-actions::before {
+    width: 100%;
+  }
+
+  .agenda-attendance-confirm,
+  .agenda-attendance-absence {
+    flex: 1 1 7rem;
+    min-height: 44px;
+  }
+}
