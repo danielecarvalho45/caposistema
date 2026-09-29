@@ -3280,3 +3280,20 @@ Os atalhos aprovados do bloco principal são:
 **Conferência pós-correção:** relidos os pontos de entrada. `App.tsx` importa o estilo compartilhado; Home geral, Coordenação, Assistencial, Nutrição e Social/Home estão marcadas com `home-mobile-standard`. O modo de Acompanhamento Social permanece fora dessa regra.
 
 **Estado:** **PADRONIZAÇÃO VISUAL MOBILE APLICADA NO CÓDIGO / HOME DO GESTOR PRESERVADA COMO REFERÊNCIA / SEM ALTERAÇÃO DE BACKEND / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL EM CELULAR**.
+
+
+### 28.48 Gestor/Titular — atalho para ampliar horário operacional da agenda (29/09/2026)
+
+**Solicitação da Titular:** a Home principal do Gestor/Titular deve possuir um botão/ícone próprio para abrir rapidamente a gestão de horário quando for necessário disponibilizar mais horário na agenda de um profissional.
+
+**Regra preservada:** o acesso não cria um segundo fluxo de agenda e não substitui a governança de alterações permanentes. Mudança estrutural/permanente de jornada, turno ou carga continua no fluxo Coordenação → anuência → efetivação administrativa. O novo atalho apenas leva diretamente à **Gestão de Agenda** já existente para ajustes operacionais suportados pelo gerenciador compartilhado.
+
+**Correção aplicada:** incluído no bloco **Acessos rápidos** do `GestorDashboard` o card **⏱ Ampliar horário**, com a descrição **Abrir horário adicional na agenda**. O link aponta para `/gestor/equipe?aba=agenda`.
+
+**Abertura direta:** `GestorManagementPage` passou a ler o parâmetro `aba=agenda` e abrir `GestorTeamPage` diretamente na aba **Gestão de Agenda**. `GestorTeamPage` recebeu a propriedade `initialTab`, preservando `cadastro` como padrão quando não há parâmetro.
+
+**Arquivos alterados:** `src/features/gestor/GestorDashboard.tsx`, `src/features/gestor/GestorManagementPage.tsx` e `src/features/gestor/GestorTeamPage.tsx`.
+
+**Commits:** `1f5c07cfe16b71887bbb38fcae72ebce6a1400e0`, `7c6a59b1cc8ef796f71aac7197e8f49fcf86d49c` e `36c623e4057c18e14cce8099830eddbd5b829ebd`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / ATALHO INCLUÍDO NA HOME DO GESTOR / ABERTURA DIRETA DA GESTÃO DE AGENDA / SEM ALTERAÇÃO DE SUPABASE / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
