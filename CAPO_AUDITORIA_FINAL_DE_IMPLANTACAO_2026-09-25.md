@@ -3633,3 +3633,27 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Verificação pós-correção:** as funções do Supabase foram relidas e contêm seleção por `agenda_weekdays` nos contratos de vagas, grade, Coordenação e triggers. O teste unitário de interface foi incluído para proteger o cenário em que um novo grupo de dias é criado sem editar o grupo já existente. Não há workflow GitHub Actions configurado no repositório, portanto a suíte frontend não foi executada nesta sessão.
 
 **Estado:** **CORRIGIDO NO SUPABASE E NO GITHUB / TESTE TRANSACIONAL DO BANCO PASS / SEM DADOS DE TESTE PERSISTIDOS / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL REAL**.
+
+
+### 28.58 Regressão residual — filtro de Renovação de Receita ainda expunha estados administrativos no contexto Clínico (29/09/2026)
+
+**Evidência visual:** na tela **Renovação de Receita — Solicitações Recebidas** aberta no contexto profissional do Médico Clínico, o seletor **Situação** ainda exibia **Aguardando processamento administrativo, Concluída e Cancelada**, apesar da correção registrada na seção 28.35.
+
+**Confronto com a regra vigente:** a seção 28.35 permanece válida: a tela clínica deve funcionar como **Recebidas / Em andamento / Histórico**, enquanto criação, processamento, conclusão e cancelamento administrativos pertencem ao Administrativo.
+
+**Causa física:** `RenewalPrescriptionPage.tsx` já separava as ações por `primary_context.code`, porém o seletor de situação continuava usando a lista global `statusLabels` para todos os contextos. Assim, os botões administrativos estavam ocultos, mas os estados internos administrativos continuavam visíveis ao Clínico.
+
+**Correção aplicada:**
+- contexto Médico Clínico passou a exibir somente **Recebidas**, **Em andamento** e **Histórico**;
+- `awaiting_admin`, `completed` e `cancelled` são agrupados visualmente em **Histórico** no contexto clínico, sem expor os nomes administrativos;
+- o contexto operacional administrativo deixou de ser carregado quando a tela está em modo médico;
+- **Retorno administrativo** deixou de ser exibido no detalhe clínico;
+- contexto Administrativo continua utilizando a lista completa de estados e suas ações próprias.
+
+**Teste de regressão atualizado:** o cenário de papel acumulado com `primary_context='profissional'` passou a verificar explicitamente que o filtro contém apenas **Recebidas / Em andamento / Histórico** e não contém os três estados administrativos. Também confirma que o contexto operacional administrativo não é carregado.
+
+**Arquivos alterados:** `src/features/renewals/RenewalPrescriptionPage.tsx` e `tests/unit/renewal-prescription-page.test.tsx`.
+
+**Commits:** `086889405b1ccf0c530a7ac502545af2da1686ad` e `d0d2779633abb07f1522012f917e7a2853d75804`.
+
+**Estado:** **REGRESSÃO RESIDUAL CORRIGIDA NO CÓDIGO / FLUXO CLÍNICO NOVAMENTE ISOLADO DOS ESTADOS ADMINISTRATIVOS / TESTE AUTOMATIZADO ATUALIZADO, NÃO EXECUTADO / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
