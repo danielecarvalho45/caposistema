@@ -174,8 +174,7 @@ export function FamilyCaregiverPage({
           <p className="eyebrow">Fluxo autorizado</p>
           <h1 id="family-caregiver-title">Familiar / Cuidador</h1>
           <p>
-            Consulta controlada do vínculo familiar, conforme os contratos e as
-            permissões disponíveis para o contexto atual.
+            Somente um familiar pode permanecer ativo por paciente; substituições preservam o histórico.
           </p>
         </div>
         <span className="family-caregiver-connection">
@@ -285,25 +284,18 @@ export function FamilyCaregiverPage({
             </>
           ) : (
             <>
-              <p>Nenhum registro real encontrado.</p>
+              <p>Nenhum familiar ativo para o paciente selecionado.</p>
               <span>
-                Selecione um paciente para consultar o vínculo oficial.
+                Selecione um paciente para consultar o familiar/cuidador vinculado.
               </span>
             </>
           )}
         </article>
         <article>
           <h2>Histórico de vínculos</h2>
-          <p>{context?.history.length ?? 0} registro(s) real(is)</p>
+          <p>{context?.history.length ?? 0} vínculo(s) encerrado(s)</p>
           <span>
-            Vínculos encerrados permanecem preservados pelo contrato oficial.
-          </span>
-        </article>
-        <article>
-          <h2>Registros confidenciais</h2>
-          <p>Não exibidos nesta tela.</p>
-          <span>
-            Não há transferência automática de acompanhamento entre familiares.
+            Vínculos anteriores permanecem preservados no histórico.
           </span>
         </article>
       </section>
@@ -459,13 +451,6 @@ export function FamilyCaregiverPage({
         </section>
       ) : null}
 
-      <footer className="family-caregiver-pending">
-        <strong>Integração oficial CAPO</strong>
-        <p>
-          O vínculo familiar e o fluxo de luto usam contratos distintos e auditáveis do Supabase.
-        </p>
-        <small>Contexto autorizado: {accessContext.primary_context.name}</small>
-      </footer>
     </section>
   )
 }
