@@ -3180,3 +3180,20 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `346b8a4a9ba53c745759a68733b05516c8f2bcb3`, `67246f00a533c673916d3cfc6ba0eb42a4f91dc4`, `0b18ce6f4f04987b84ed268479b19150aaa5970f` e `2c260a9683090b2feb2909a9812a88f91903228c`.
 
 **Estado:** **CORRIGIDO PONTUALMENTE NO CÓDIGO / FLUXOS SEPARADOS CONFORME INDEX ESTRUTURAL / SEM ALTERAÇÃO DE SUPABASE NESTA ETAPA / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.44 Assistência Social — fluxos próprios apenas na barra lateral, sem duplicidade (29/09/2026)
+
+**Regra funcional confirmada pela Titular:** módulos que possuem fluxo próprio não devem aparecer novamente dentro de **Acompanhamento Social**. Cada função deve ter um único acesso funcional, preferencialmente pela barra lateral, evitando duplicidade de navegação e manutenção.
+
+**Divergência encontrada:** `SocialPage.tsx` ainda continha o bloco **Fluxos autorizados** com acessos internos para **Luto, Transporte, Encaminhamentos e Relatórios**, embora Transporte, Encaminhamentos e Relatórios já existissem como módulos próprios na navegação principal. Luto possuía rota e autorização próprias, mas não estava listado na barra lateral.
+
+**Correção aplicada:** removido integralmente de `SocialPage.tsx` o bloco **Fluxos autorizados** e a lista `relatedModules`. A tela de Acompanhamento Social permanece focada apenas no acompanhamento social propriamente dito.
+
+**Barra lateral:** `navigation-config.ts` passou a exibir **Acompanhamento Social** como nome funcional da rota `/assistencia-social` e incluiu **Luto** como item próprio. **Transporte**, **Encaminhamentos** e **Relatórios** já estavam presentes e foram preservados. A autorização continua sendo decidida por `canAccessAppRoute`, portanto os itens só aparecem quando o perfil possui permissão/capacidade correspondente.
+
+**Conferência pós-correção:** `SocialPage.tsx` não contém mais `Fluxos autorizados`, `relatedModules` nem link interno de Transporte. A barra lateral contém separadamente **Acompanhamento Social, Luto, Transporte, Encaminhamentos e Relatórios** conforme as autorizações vigentes.
+
+**Commits:** `9b8f06cc8140a3d8a92c178b1b9f3506b87f9413` e `dcbff69b036df001b5b1f259574a41c3fc8b57f4`.
+
+**Estado:** **CORRIGIDO PONTUALMENTE NO CÓDIGO / DUPLICIDADE REMOVIDA / FLUXOS PRÓPRIOS CENTRALIZADOS NA BARRA LATERAL / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
