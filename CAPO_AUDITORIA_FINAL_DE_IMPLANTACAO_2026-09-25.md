@@ -3984,3 +3984,18 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Commit:** `e31fcc7226b902b606abe8db234fe83c528e37a7`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL DO CAMPO IDADE**.
+
+
+### 28.75 Pré-implantação — edição de paciente bloqueada por cache de schema do PostgREST (29/09/2026)
+
+**Evidência operacional:** ao selecionar **Editar cadastro** na busca de pacientes, a interface retornou erro informando que não encontrava `public.get_patient_for_edit_for_interface` com parâmetros no schema cache.
+
+**Conferência física:** a função `public.get_patient_for_edit_for_interface(p_patient_id uuid)` existe no Supabase, possui EXECUTE para `authenticated`, recebe corretamente `p_patient_id` e o frontend atual chama a RPC com `args: { p_patient_id: patientId }`.
+
+**Causa confirmada:** divergência temporária do cache de schema do PostgREST em relação à função já existente no banco, e não ausência da RPC nem erro do parâmetro enviado pela interface.
+
+**Correção aplicada:** executado `NOTIFY pgrst, 'reload schema'` para recarregar o schema cache do Data API.
+
+**Verificação pós-correção:** a RPC foi executada sob contexto `authenticated` da conta administrativa real e retornou corretamente o paciente Nº CAPO `000001`, incluindo identificação, data de nascimento, CMS e status. Nenhum dado foi alterado nesse teste.
+
+**Estado:** **CACHE RECARREGADO / RPC CONFIRMADA FUNCIONAL COM PARÂMETRO / AGUARDANDO RETESTE OPERACIONAL DO BOTÃO EDITAR CADASTRO**.
