@@ -3024,3 +3024,24 @@ Os atalhos aprovados do bloco principal são:
 **Conferência física pós-correção:** a função foi relida no Supabase e contém notificação individual por `auth_user_id`, preserva o aviso ao Administrativo e não modifica outras especialidades. A tela atual contém o texto de independência entre encerramentos e não contém mais o botão **Solicitar encerramento da própria atuação**.
 
 **Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / ENCERRAMENTOS INDIVIDUAIS E INDEPENDENTES / AVISO ENTRE PROFISSIONAIS IMPLEMENTADO / FORMALIZAÇÃO FINAL ADMINISTRATIVA PRESERVADA / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.38 Regressão de contexto — relatório profissional chamando dashboard gerencial (29/09/2026)
+
+**Evidência de homologação:** no contexto **Profissional / Médico Clínico**, a tela de Relatórios exibia corretamente os cards e indicadores da própria especialidade, mas também apresentava o erro **“Não foi possível carregar o dashboard: Perfil sem autorização para Relatórios gerenciais do CAPO.”**
+
+**Confronto estrutural e físico:** o Index aprovado do Médico Clínico define **Relatórios da Clínica Geral** como relatório operacional da própria atuação. No Supabase oficial, `get_my_specialty_operational_report_for_interface` autoriza o profissional autenticado a consultar indicadores da especialidade vinculada ao próprio profissional. Já `get_reports_dashboard_for_interface` é um contrato gerencial e autoriza somente Administrador/Coordenador; portanto, o erro exibido ao profissional era resultado de chamada indevida do dashboard gerencial, e não ausência de autorização para o relatório da própria especialidade.
+
+**Causa confirmada:** `src/features/reports/ReportsPage.tsx` tratava `isProfessional` e `isManager` a partir da lista acumulada de papéis e executava `loadDashboard` também no fluxo profissional. Além disso, o componente `DashboardPanel` era renderizado abaixo do relatório da especialidade.
+
+**Correção aplicada:** o contexto agora é determinado pelo `primary_context.code`. Contexto `profissional` carrega apenas `loadSpecialties` e `loadReport`, que usa o contrato `get_my_specialty_operational_report_for_interface`. O dashboard gerencial só é carregado quando o contexto principal é `administrador` ou `coordenador`. O `DashboardPanel` foi removido da renderização profissional.
+
+**Regra preservada:** cada profissional pode gerar/consultar o relatório operacional da própria especialidade. Isso não concede acesso aos Relatórios Gerenciais do CAPO. Contas com papéis acumulados continuam separadas pelo contexto principal aberto.
+
+**Backend preservado:** nenhuma RPC, SQL, RLS, policy, trigger ou migration foi alterada nesta correção, porque as permissões físicas das duas RPCs já estavam corretas.
+
+**Teste de regressão:** `tests/unit/reports-labels.test.tsx` ganhou cenário de conta com papéis `profissional` + `administrador`, mas contexto principal `profissional`, validando que `loadReport` é chamado para a especialidade e `loadDashboard` não é chamado. O teste foi alterado, mas a suíte não foi executada nesta etapa.
+
+**Commits:** `c98e07029849f32f6930e03dc23847b86f55ebe8` e `6eda93eeadd7d5a11f058dd623d32598445fc477`.
+
+**Estado:** **REGRESSÃO DE CONTEXTO CORRIGIDA NO CÓDIGO / RELATÓRIO DA PRÓPRIA ESPECIALIDADE PRESERVADO / DASHBOARD GERENCIAL ISOLADO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
