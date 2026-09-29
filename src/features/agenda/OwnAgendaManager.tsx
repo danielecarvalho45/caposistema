@@ -670,6 +670,10 @@ export function OwnAgendaManager({
         <p>Nenhuma configuração de agenda foi encontrada.</p>
       )}
 
+      <div className="agenda-operation-heading">
+        <h4>Ajustes pontuais de uma data</h4>
+        <p>Use estas ações quando a mudança valer somente para uma data específica. O padrão semanal permanece inalterado.</p>
+      </div>
       <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
         {managementActions
           .filter((action) => action.value !== 'urgencia' || allowEmergencySlot)
@@ -698,8 +702,8 @@ export function OwnAgendaManager({
           <div className="agenda-structural-heading">
             <div>
               <p className="eyebrow">Gestor / Titular</p>
-              <h4 id="agenda-structural-title">Configuração-base da agenda</h4>
-              <p>Edite diretamente a agenda permanente do profissional: dias, horário, duração e vigência.</p>
+              <h4 id="agenda-structural-title">Configuração semanal permanente</h4>
+              <p>Crie ou edite um padrão independente de dias, horário, duração do atendimento e vigência.</p>
             </div>
           </div>
 
@@ -792,8 +796,8 @@ export function OwnAgendaManager({
                 <h5 id="agenda-recurring-title">Intervalos semanais recorrentes</h5>
                 <p>
                   Defina Intervalo / Café, Almoço, Estudo de caso, Atendimentos online
-                  ou Rotinas administrativas para um, vários ou todos os dias ativos.
-                  Esses períodos passam a fazer parte da formulação semanal permanente.
+                  ou Rotinas administrativas para um, vários ou todos os dias ativos
+                  do padrão selecionado. Cada intervalo mantém seu próprio início e fim.
                 </p>
               </div>
               <button
