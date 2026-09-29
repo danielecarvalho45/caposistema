@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import { FamilyCaregiverPage } from '../../src/features/social/FamilyCaregiverPage'
 import type { FamilyCaregiverService } from '../../src/features/social/family-caregiver-integration'
 import type { AccessContext } from '../../src/types/access'
@@ -10,9 +11,13 @@ const accessContext = {
 
 afterEach(() => cleanup())
 
+function renderPage(ui: React.ReactElement, initialEntries: Parameters<typeof MemoryRouter>[0]['initialEntries'] = ['/familiar-cuidador']) {
+  return render(<MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>)
+}
+
 describe('FamilyCaregiverPage', () => {
   it('exibe estado vazio sem dados fictícios antes da seleção de paciente', () => {
-    render(<FamilyCaregiverPage accessContext={accessContext} />)
+    renderPage(<FamilyCaregiverPage accessContext={accessContext} />)
 
     expect(
       screen.getByRole('heading', { name: 'Familiar / Cuidador' }),
@@ -73,7 +78,7 @@ describe('FamilyCaregiverPage', () => {
     }
 
     const user = (await import('@testing-library/user-event')).default.setup()
-    render(
+    renderPage(
       <FamilyCaregiverPage accessContext={accessContext} service={service} />,
     )
     await user.type(
@@ -136,7 +141,7 @@ describe('FamilyCaregiverPage', () => {
     }
 
     const user = (await import('@testing-library/user-event')).default.setup()
-    render(
+    renderPage(
       <FamilyCaregiverPage accessContext={accessContext} service={service} />,
     )
     await user.type(
@@ -181,7 +186,7 @@ describe('FamilyCaregiverPage', () => {
     }
 
     const user = (await import('@testing-library/user-event')).default.setup()
-    render(<FamilyCaregiverPage accessContext={accessContext} service={service} />)
+    renderPage(<FamilyCaregiverPage accessContext={accessContext} service={service} />)
     await user.type(screen.getByLabelText('Nome, CMS ou Nº CAPO'), 'Paciente real')
     await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
     await user.click(screen.getByRole('button', { name: /Paciente Real/ }))
@@ -190,8 +195,40 @@ describe('FamilyCaregiverPage', () => {
     expect(screen.queryByRole('button', { name: 'Buscar familiar' })).not.toBeInTheDocument()
   })
 
+  it('abre diretamente o paciente recebido da consulta de pacientes', async () => {
+    const getFamilyContext = async () => ({
+      status: 'success' as const,
+      data: {
+        active_link: null,
+        history: [],
+        can_admin_correct: true,
+        can_operate: true,
+      },
+    })
+    const service: FamilyCaregiverService = {
+      getFamilyContext,
+      createFamilyLink: async () => ({ status: 'success', data: {} }),
+      replaceFamilyLink: async () => ({ status: 'success', data: {} }),
+      closeFamilyLink: async () => ({ status: 'success', data: {} }),
+      updateFamilyLinkOperational: async () => ({ status: 'success', data: {} }),
+      searchFamilyMembers: async () => ({ status: 'empty' }),
+      createPsychologyRequest: async () => ({ status: 'success', data: {} }),
+      searchPatients: async () => ({ status: 'empty' }),
+    }
+
+    renderPage(
+      <FamilyCaregiverPage accessContext={accessContext} service={service} />,
+      [{
+        pathname: '/familiar-cuidador',
+        state: { patientId: 'patient-1', patientName: 'Paciente Real' },
+      }],
+    )
+
+    expect(await screen.findByText('Paciente selecionado: Paciente Real')).toBeVisible()
+  })
+
   it('não expõe textos técnicos de integração ao usuário', () => {
-    render(<FamilyCaregiverPage accessContext={accessContext} />)
+    renderPage(<FamilyCaregiverPage accessContext={accessContext} />)
 
     expect(screen.queryByText(/Supabase/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Registros confidenciais/i)).not.toBeInTheDocument()
