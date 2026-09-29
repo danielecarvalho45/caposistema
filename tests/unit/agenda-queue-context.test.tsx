@@ -16,15 +16,17 @@ afterEach(() => { cleanup(); vi.clearAllMocks() })
 it('aproveita paciente e especialidade já selecionados quando não há vaga', async () => {
   rpc.getSchedulingCatalog.mockResolvedValue({ status: 'success', data: [{ specialty_id: 's1', specialty_name: 'Nutrição', professional_id: 'p1', professional_name: 'Profissional autorizado' }] })
   rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'empty' })
-  rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [{ patient_id: 'patient-1', full_name: 'Paciente encontrado', patient_number: null, cms: null }] })
+  rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [{ patient_id: 'patient-1', full_name: 'Paciente encontrado', patient_number: '1', cms: '87259' }] })
   rpc.addPatientToWaitingList.mockResolvedValue({ status: 'success', data: { success: true } })
   const context = { roles: [{ code: 'administrador' }], primary_context: { code: 'administrador' }, professional_id: null } as unknown as AccessContext
   const user = userEvent.setup()
   render(<MemoryRouter><AgendaPage accessContext={context} loadAgenda={async () => ({ status: 'empty' })} /></MemoryRouter>)
   await user.click(screen.getByRole('button', { name: 'Agendar' }))
   await user.type(screen.getByPlaceholderText('Nome, Nº CAPO ou CMS'), 'Paciente')
-  await user.tab()
-  await user.selectOptions((await screen.findByRole('option', { name: /Paciente encontrado/ })).closest('select')!, 'patient-1')
+  await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
+  expect(await screen.findByText('Paciente encontrado')).toBeVisible()
+  expect(screen.getByText('Nº CAPO 1 · CMS 87259')).toBeVisible()
+  expect(screen.queryByText('Selecionar paciente encontrado')).not.toBeInTheDocument()
   await user.selectOptions(screen.getByLabelText('Especialidade *'), 's1')
   await user.selectOptions(screen.getByLabelText('Profissional *'), 'p1')
   await user.click(await screen.findByRole('button', { name: 'Incluir na fila' }))
@@ -217,4 +219,49 @@ it('abre Novo Agendamento a partir de uma vaga livre da Home sem exigir paciente
   expect(screen.getByLabelText('Especialidade *')).toHaveValue('s1')
   expect(screen.getByLabelText('Profissional *')).toHaveValue('p1')
   expect(await screen.findByRole('option', { name: /09:00/ })).toBeVisible()
+})
+
+
+it('mostra resultados homônimos com Nome, Nº CAPO e CMS para escolha explícita', async () => {
+  rpc.getSchedulingCatalog.mockResolvedValue({
+    status: 'success',
+    data: [{
+      specialty_id: 's1',
+      specialty_name: 'Clínica Geral',
+      professional_id: 'p1',
+      professional_name: 'Profissional autorizado',
+    }],
+  })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'empty' })
+  rpc.searchReferralPatients.mockResolvedValue({
+    status: 'success',
+    data: [
+      { patient_id: 'patient-1', full_name: 'Maria Silva', patient_number: '2', cms: '11111' },
+      { patient_id: 'patient-2', full_name: 'Maria Silva', patient_number: '3', cms: '22222' },
+    ],
+  })
+
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+  } as unknown as AccessContext
+  const user = userEvent.setup()
+
+  render(
+    <MemoryRouter>
+      <AgendaPage accessContext={context} loadAgenda={async () => ({ status: 'empty' })} />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Agendar' }))
+  await user.type(screen.getByPlaceholderText('Nome, Nº CAPO ou CMS'), 'Maria')
+  await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
+
+  const results = await screen.findByLabelText('Pacientes encontrados')
+  expect(within(results).getByText('Nº CAPO 2 · CMS 11111')).toBeVisible()
+  expect(within(results).getByText('Nº CAPO 3 · CMS 22222')).toBeVisible()
+  const options = within(results).getAllByRole('button')
+  await user.click(options[1])
+  expect(options[1]).toHaveAttribute('aria-pressed', 'true')
 })
