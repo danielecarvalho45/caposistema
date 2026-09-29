@@ -21,6 +21,7 @@ import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
 import { canAccessAppRoute } from '../../app/route-access'
+import type { ProfessionalScreenKind } from './professional-screen'
 
 const defaultIntegration = createAssistentialIntegration()
 
@@ -81,9 +82,11 @@ function sectionEntries(section: OperationalReportSection) {
 
 export function AssistentialPage({
   accessContext,
+  profileKind = 'assistencial_padrao',
   integration = defaultIntegration,
 }: Readonly<{
   accessContext: AccessContext
+  profileKind?: Extract<ProfessionalScreenKind, 'clinico_geral' | 'assistencial_padrao'>
   integration?: CAPOProfissionalAssistencialIntegration
 }>) {
   const [specialtiesState, setSpecialtiesState] =
@@ -188,7 +191,7 @@ export function AssistentialPage({
           <a className="home-profile-card quick-blue" href="#assistential-patients"><span className="home-profile-icon" aria-hidden="true">♙</span><strong>Pacientes</strong><span>Consultar pacientes vinculados</span></a>
           {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
           {canAccessAppRoute(accessContext, '/encaminhamentos') && accessContext.capabilities.includes('encaminhamento_interprofissional') && <Link className="home-profile-card quick-mint" to="/encaminhamentos"><span className="home-profile-icon" aria-hidden="true">↗</span><strong>Encaminhamentos</strong><span>Consultar e encaminhar</span></Link>}
-          {accessContext.primary_specialty_name?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('clinica geral') && canAccessAppRoute(accessContext, '/receita') && <Link className="home-profile-card quick-yellow" to="/receita"><span className="home-profile-icon" aria-hidden="true">▰</span><strong>Renovação de Receita</strong><span>Solicitações recebidas</span></Link>}
+          {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/receita') && <Link className="home-profile-card quick-yellow" to="/receita"><span className="home-profile-icon" aria-hidden="true">▰</span><strong>Renovação de Receita</strong><span>Solicitações recebidas</span></Link>}
           <a className="home-profile-card quick-violet" href="#assistential-summary"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Resumo operacional</strong><span>Consultar a própria atuação</span></a>
         </div>
       </nav>
