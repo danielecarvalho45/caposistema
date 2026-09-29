@@ -174,14 +174,14 @@ function AppointmentTable({
         <tbody>
           {appointments.map((appointment) => (
             <tr key={appointment.appointment_id}>
-              <td>
+              <td data-label={includeDate ? 'Data e hora' : 'Horário'}>
                 {includeDate
                   ? formatDateTime(appointment.appointment_date)
                   : formatTimeRange(appointment)}
               </td>
-              <td>{appointment.patient_name}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
+              <td data-label="Paciente">{appointment.patient_name}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
               {onAttendance && (
-                <td>
+                <td data-label="Ações" className="agenda-attendance-actions">
                   <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}><span aria-hidden="true">✓</span> Confirmar</button>
                   <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}><span aria-hidden="true">✕</span> Falta</button>
                   {onReturn && appointment.attendance_status === 'confirmado' && (
@@ -189,12 +189,12 @@ function AppointmentTable({
                   )}
                 </td>
               )}
-              <td>{appointment.professional_name}</td>
+              <td data-label="Profissional">{appointment.professional_name}</td>
               {showSpecialty && (
-                <td>{appointment.specialty_name ?? 'Não informada'}</td>
+                <td data-label="Especialidade">{appointment.specialty_name ?? 'Não informada'}</td>
               )}
-              <td>{appointment.appointment_type}</td>
-              <td>{appointment.attendance_status}</td>
+              <td data-label="Tipo">{appointment.appointment_type}</td>
+              <td data-label="Situação">{appointment.attendance_status}</td>
             </tr>
           ))}
         </tbody>
