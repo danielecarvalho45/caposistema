@@ -106,3 +106,94 @@
   .reports-print-brand img { display: block; width: 100%; height: auto; max-height: 90px; object-fit: contain; }
   .reports-print-footer { display: block; position: fixed; bottom: 12px; left: 5%; width: 90%; font-size: 10px; }
 }
+
+
+.reports-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 11px;
+  margin: var(--space-4) 0;
+}
+
+.reports-icon-card {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 5px;
+  min-height: 112px;
+  padding: 12px 9px;
+  border: 1px solid rgb(110 155 200 / 18%);
+  border-radius: 10px;
+  background: #f7fbff;
+  color: #17365f;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 9px rgb(31 67 104 / 3%);
+}
+
+.reports-icon-card[data-accent='2'] { background: #f7fbf7; color: #2e6b43; }
+.reports-icon-card[data-accent='3'] { background: #fff9ef; color: #8a5b14; }
+.reports-icon-card[data-accent='4'] { background: #fff4f8; color: #8f315e; }
+.reports-icon-card[data-accent='5'] { background: #f5f4ff; color: #57488f; }
+.reports-icon-card[data-accent='6'] { background: #f4fbfb; color: #2b6870; }
+
+.reports-icon-card[aria-pressed='true'] {
+  border-color: currentColor;
+  box-shadow: 0 0 0 2px rgb(0 113 220 / 10%);
+}
+
+.reports-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.reports-icon-card strong {
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.reports-icon-card small {
+  color: currentColor;
+  font-size: 10px;
+  line-height: 1.25;
+  opacity: .76;
+}
+
+.reports-selected-section {
+  margin-top: 0;
+}
+
+.reports-selected-metrics {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.reports-selected-metrics div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.reports-selected-metrics div:last-child {
+  border-bottom: 0;
+}
+
+.reports-selected-metrics dt {
+  color: var(--color-muted);
+}
+
+.reports-selected-metrics dd {
+  margin: 0;
+  font-weight: 800;
+}
+
+@media (max-width: 1100px) {
+  .reports-icon-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .reports-icon-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
