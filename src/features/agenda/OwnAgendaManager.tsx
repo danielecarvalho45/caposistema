@@ -57,6 +57,16 @@ type PendingConfirmation = Readonly<{
   conflict: boolean
 }>
 
+const weekdayLabels: Readonly<Record<number, string>> = {
+  0: 'Domingo',
+  1: 'Segunda',
+  2: 'Terça',
+  3: 'Quarta',
+  4: 'Quinta',
+  5: 'Sexta',
+  6: 'Sábado',
+}
+
 const managementActions = [
   {
     value: 'horario_provisorio',
@@ -146,11 +156,36 @@ export function OwnAgendaManager({
   const [structuralJustification, setStructuralJustification] = useState('')
   const [structuralFeedback, setStructuralFeedback] = useState<string | null>(null)
   const [structuralBusy, setStructuralBusy] = useState(false)
+  const [recurringType, setRecurringType] = useState<'intervalo' | 'alimentacao'>('intervalo')
+  const [recurringStartTime, setRecurringStartTime] = useState('')
+  const [recurringEndTime, setRecurringEndTime] = useState('')
+  const [recurringWeekdays, setRecurringWeekdays] = useState<number[]>([])
+  const [recurringDescription, setRecurringDescription] = useState('')
+  const [recurringFeedback, setRecurringFeedback] = useState<string | null>(null)
+  const [recurringBusy, setRecurringBusy] = useState(false)
 
   const configurations =
     configuration?.status === 'success'
       ? rows(configuration.data, 'configurations')
       : []
+
+  const selectedStructuralConfiguration = configurations.find(
+    (item) => stringValue(item.config_id) === structuralConfigId,
+  )
+
+  const recurringIntervals = selectedStructuralConfiguration
+    ? rows(selectedStructuralConfiguration, 'blocks').filter((item) => {
+        const weekday = item.weekday
+        return (
+          booleanValue(item.is_active) &&
+          typeof weekday === 'number' &&
+          weekday >= 0 &&
+          weekday <= 6 &&
+          !stringValue(item.specific_date) &&
+          ['intervalo', 'alimentacao'].includes(stringValue(item.block_type))
+        )
+      })
+    : []
 
   useEffect(() => {
     let active = true
@@ -231,6 +266,95 @@ export function OwnAgendaManager({
         ? [...new Set([...current, weekday])].sort((a, b) => a - b)
         : current.filter((item) => item !== weekday),
     )
+  }
+
+  function toggleRecurringWeekday(weekday: number, checked: boolean) {
+    setRecurringWeekdays((current) =>
+      checked
+        ? [...new Set([...current, weekday])].sort((a, b) => a - b)
+        : current.filter((item) => item !== weekday),
+    )
+  }
+
+  async function refreshConfigurationAfterRecurringChange() {
+    const refreshed = await rpc.getAgendaConfiguration(professionalId)
+    setConfiguration(refreshed)
+    if (refreshed.status !== 'success') return
+    const list = rows(refreshed.data, 'configurations')
+    const selected =
+      list.find((item) => stringValue(item.config_id) === structuralConfigId) ??
+      list.find((item) => booleanValue(item.is_active))
+    if (!selected) return
+    setStructuralConfigId(stringValue(selected.config_id))
+    setStructuralExpectedUpdatedAt(stringValue(selected.updated_at))
+  }
+
+  async function saveRecurringInterval() {
+    if (
+      recurringBusy ||
+      !structuralConfigId ||
+      recurringWeekdays.length === 0 ||
+      !recurringStartTime ||
+      !recurringEndTime ||
+      recurringEndTime <= recurringStartTime
+    ) {
+      setRecurringFeedback('Selecione os dias e informe um intervalo de horário válido.')
+      return
+    }
+
+    if (recurringWeekdays.some((weekday) => !structuralWeekdays.includes(weekday))) {
+      setRecurringFeedback('O intervalo só pode ser aplicado aos dias ativos da agenda.')
+      return
+    }
+
+    setRecurringBusy(true)
+    setRecurringFeedback(null)
+    const result = await rpc.saveAgendaRecurringInterval({
+      agendaConfigId: structuralConfigId,
+      weekdays: recurringWeekdays,
+      startTime: recurringStartTime,
+      endTime: recurringEndTime,
+      blockType: recurringType,
+      description: recurringDescription.trim() || null,
+    })
+
+    if (result.status === 'error') {
+      setRecurringFeedback(result.error.message)
+      setRecurringBusy(false)
+      return
+    }
+
+    const payload = record(result.data)
+    if (payload?.success === false) {
+      setRecurringFeedback(
+        stringValue(payload.message) || 'O intervalo semanal não foi registrado.',
+      )
+      setRecurringBusy(false)
+      return
+    }
+
+    setRecurringFeedback('Intervalo semanal aplicado à configuração-base.')
+    setRecurringStartTime('')
+    setRecurringEndTime('')
+    setRecurringWeekdays([])
+    setRecurringDescription('')
+    await refreshConfigurationAfterRecurringChange()
+    setRecurringBusy(false)
+  }
+
+  async function removeRecurringInterval(blockId: string) {
+    if (!blockId || recurringBusy) return
+    setRecurringBusy(true)
+    setRecurringFeedback(null)
+    const result = await rpc.setAgendaRecurringIntervalStatus(blockId, false)
+    if (result.status === 'error') {
+      setRecurringFeedback(result.error.message)
+      setRecurringBusy(false)
+      return
+    }
+    setRecurringFeedback('Intervalo semanal removido da grade ativa.')
+    await refreshConfigurationAfterRecurringChange()
+    setRecurringBusy(false)
   }
 
   async function saveStructuralConfiguration() {
@@ -483,6 +607,108 @@ export function OwnAgendaManager({
               </label>
             ))}
           </fieldset>
+
+          <section className="agenda-recurring-intervals" aria-labelledby="agenda-recurring-title">
+            <div className="agenda-recurring-heading">
+              <div>
+                <h5 id="agenda-recurring-title">Intervalos semanais recorrentes</h5>
+                <p>
+                  Defina almoço ou intervalo para um, vários ou todos os dias ativos.
+                  Esses períodos passam a fazer parte da agenda semanal permanente.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRecurringWeekdays([...structuralWeekdays])}
+                disabled={structuralWeekdays.length === 0 || recurringBusy}
+              >
+                Usar todos os dias ativos
+              </button>
+            </div>
+
+            <div className="agenda-recurring-grid">
+              <label>
+                Tipo
+                <select
+                  value={recurringType}
+                  onChange={(event) => setRecurringType(event.target.value as 'intervalo' | 'alimentacao')}
+                >
+                  <option value="intervalo">Intervalo</option>
+                  <option value="alimentacao">Almoço / Alimentação</option>
+                </select>
+              </label>
+              <label>
+                Início
+                <input type="time" value={recurringStartTime} onChange={(event) => setRecurringStartTime(event.target.value)} />
+              </label>
+              <label>
+                Fim
+                <input type="time" value={recurringEndTime} onChange={(event) => setRecurringEndTime(event.target.value)} />
+              </label>
+            </div>
+
+            <fieldset className="agenda-structural-weekdays">
+              <legend>Aplicar nos dias</legend>
+              {[
+                [1, 'Segunda'],
+                [2, 'Terça'],
+                [3, 'Quarta'],
+                [4, 'Quinta'],
+                [5, 'Sexta'],
+                [6, 'Sábado'],
+                [0, 'Domingo'],
+              ].map(([weekday, label]) => {
+                const day = Number(weekday)
+                const active = structuralWeekdays.includes(day)
+                return (
+                  <label key={day}>
+                    <input
+                      type="checkbox"
+                      checked={recurringWeekdays.includes(day)}
+                      disabled={!active || recurringBusy}
+                      onChange={(event) => toggleRecurringWeekday(day, event.target.checked)}
+                    />
+                    {label}
+                  </label>
+                )
+              })}
+            </fieldset>
+
+            <label>
+              Observação do intervalo
+              <input value={recurringDescription} onChange={(event) => setRecurringDescription(event.target.value)} />
+            </label>
+
+            <button
+              type="button"
+              className="agenda-structural-save"
+              disabled={recurringBusy || !structuralConfigId}
+              onClick={() => void saveRecurringInterval()}
+            >
+              {recurringBusy ? 'Salvando…' : 'Adicionar intervalo semanal'}
+            </button>
+
+            {recurringIntervals.length > 0 && (
+              <div className="agenda-recurring-list" aria-label="Intervalos semanais ativos">
+                <strong>Intervalos ativos</strong>
+                {recurringIntervals.map((item) => {
+                  const weekday = numberValue(item.weekday, -1)
+                  const blockId = stringValue(item.id)
+                  return (
+                    <div className="agenda-recurring-row" key={blockId}>
+                      <span>{weekdayLabels[weekday] ?? 'Dia'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}</span>
+                      <small>{stringValue(item.block_type) === 'alimentacao' ? 'Almoço / Alimentação' : 'Intervalo'}</small>
+                      <button type="button" disabled={recurringBusy} onClick={() => void removeRecurringInterval(blockId)}>
+                        Remover
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {recurringFeedback && <p role="status">{recurringFeedback}</p>}
+          </section>
 
           <label>
             Observação da configuração
