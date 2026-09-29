@@ -38,6 +38,36 @@ it.each(['administrador', 'administrativo_operacional'])('%s inclui na fila úni
   expect(rpc.getWaitingList).toHaveBeenCalledWith(null, 'waiting', 50, 0)
 })
 
+it('recebe o paciente já selecionado pela consulta sem exigir nova busca', async () => {
+  rpc.getWaitingList.mockResolvedValue({ status: 'empty' })
+  rpc.getFamilyWaitingList.mockResolvedValue({ status: 'empty' })
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.getReferralSpecialties.mockResolvedValue({
+    status: 'success',
+    data: [{ specialty_id: 'specialty-id', specialty_name: 'Nutrição' }],
+  })
+
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: '/fila',
+      state: {
+        patientId: 'patient-id',
+        patientName: 'Paciente selecionado',
+        patientNumber: '1',
+        cms: 'CMS-1',
+      },
+    }]}>
+      <QueuePage
+        accessContext={context('administrador')}
+        loadPendingItems={async () => ({ status: 'empty' })}
+      />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByText(/Paciente selecionado:/)).toHaveTextContent('Paciente selecionado')
+  expect(screen.getByLabelText('Especialidade')).toBeVisible()
+})
+
 it('não oferece inclusão ao Coordenador ou profissional', async () => {
   rpc.getWaitingList.mockResolvedValue({ status: 'empty' })
   rpc.getFamilyWaitingList.mockResolvedValue({ status: 'empty' })
