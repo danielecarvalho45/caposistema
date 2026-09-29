@@ -3066,3 +3066,26 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `e1a8f7eb649a363023392a670ae3e4d8dc296c34` e `2c639e763b240c320aeda911d82931ac9742a236`.
 
 **Estado:** **INTERFACE CORRIGIDA / CAUSA DA HOMOLOGAÇÃO CONFIRMADA NO BANCO / CONTEXTO DE NUTRIÇÃO SEM AGENDA ATIVA / AGUARDANDO CONFIGURAÇÃO REAL DA AGENDA E PUBLICAÇÃO PARA TESTE OPERACIONAL**.
+
+
+### 28.40 Homologação profissional — reutilizar perfis reais já cadastrados (29/09/2026)
+
+**Regra funcional confirmada pela Titular:** a manutenção/homologação técnica deve se comportar como habilitação de um contexto de acesso sobre os **profissionais reais já cadastrados**, e não como criação de um novo profissional técnico vazio. Os perfis profissionais de homologação devem reutilizar especialidade, agenda e vínculos reais existentes.
+
+**Causa confirmada:** `src/components/shell/ProfileShortcuts.tsx` possuía nomes fixos como **Homologação — Médico Clínico Geral**, **Homologação — Nutrição**, **Homologação — Assistência Social**, **Homologação — Psicologia** e **Homologação — Fisioterapia**. Ao trocar de contexto, o seletor procurava esses registros técnicos e os passava para `set_homologation_context_for_interface`. Esses registros técnicos não possuíam agenda ativa, fazendo o sistema se comportar como se um profissional novo tivesse acabado de ser habilitado.
+
+**Correção de contrato:** `get_homologation_options_for_interface` passou a devolver, para cada profissional ativo, as especialidades vinculadas, indicação de agenda ativa e identificação de registro técnico de homologação. O seletor passa a escolher dinamicamente um **profissional real ativo da especialidade**, priorizando candidato com agenda ativa e ignorando registros cujo nome técnico começa por `Homologação —`.
+
+**Correção do contexto ativo:** contextos de homologação habilitados que ainda apontavam para perfil técnico foram realinhados automaticamente para profissional real da mesma especialidade quando existe candidato válido. O contexto ativo de Nutrição foi fisicamente conferido após a correção e passou a utilizar profissional real da especialidade com agenda ativa.
+
+**Especialidades sem profissional real:** se não existir profissional real ativo cadastrado na especialidade, o seletor não utiliza silenciosamente o perfil técnico. A interface informa que é necessário cadastrar/vincular um profissional real antes de homologar esse perfil. Na conferência física atual, Assistência Social ainda não possui profissional real ativo além do registro técnico de homologação.
+
+**Preservação:** nenhum profissional real, agenda, horário, especialidade ou paciente foi criado/copied artificialmente. A homologação apenas referencia estruturas reais já existentes.
+
+**Migration:** `supabase/migrations/20260929015000_homologation_use_real_registered_professional_profiles.sql`.
+
+**Arquivos alterados:** `src/lib/supabase/rpc.ts`, `src/components/shell/ProfileShortcuts.tsx` e `tests/unit/profile-shortcuts.test.tsx`.
+
+**Commits:** `16ca9336c6eaa4e8851878d2bc9d6bb87dc54201`, `2e91d73104a3605b1fae98cc665a166a272ef304`, `f7e77e0f7d956f458f4eeac5f782db32778db3cd` e `1b8b2679c63e970bdba883b465a8814235aa5be2`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / HOMOLOGAÇÃO REUTILIZA PROFISSIONAIS REAIS / PERFIS TÉCNICOS NÃO SÃO MAIS PRIORIZADOS / ASSISTÊNCIA SOCIAL AINDA SEM PROFISSIONAL REAL CADASTRADO / TESTE AUTOMATIZADO ATUALIZADO, NÃO EXECUTADO NESTA ETAPA**.
