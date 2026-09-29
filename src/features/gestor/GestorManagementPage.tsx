@@ -21,7 +21,8 @@ export function GestorManagementPage({ view, accessContext }: Readonly<{ view: M
   const page = content[view]
   const location = useLocation()
   const initialTeamTab = new URLSearchParams(location.search).get('aba') === 'agenda' ? 'agenda' : 'cadastro'
-  if (view === 'equipe' || view === 'administracao') return <GestorTeamPage initialTab={initialTeamTab} />
+  if (view === 'equipe') return <GestorTeamPage mode="equipe" initialTab={initialTeamTab} />
+  if (view === 'administracao') return <GestorTeamPage mode="administracao" />
   if (view === 'timeline') return <OperationalTimeline />
   if (view === 'auditoria') return <AuditLogPage />
   if (view === 'busca-ativa') return <ActiveSearchPage accessContext={accessContext} />
