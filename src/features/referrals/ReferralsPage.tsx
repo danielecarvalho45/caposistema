@@ -192,12 +192,13 @@ export function ReferralsPage({
   }, [canManage, selected?.requested_specialty_id, selected?.status, service])
 
   async function searchPatients() {
-    if (patientQuery.trim().length < 2) {
-      setFeedback('Informe ao menos dois caracteres para buscar o paciente.')
+    const cleanQuery = patientQuery.trim()
+    if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
+      setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       return
     }
     const result = await service.searchReferralPatients(
-      patientQuery.trim(),
+      cleanQuery,
       20,
       0,
     )
