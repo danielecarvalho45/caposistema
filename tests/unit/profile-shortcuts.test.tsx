@@ -192,4 +192,99 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
     expect(screen.queryByText(/Titular/i)).not.toBeInTheDocument()
   })
 
+
+  it('homologação profissional usa cadastro real da especialidade e ignora perfil técnico Homologação', async () => {
+    const calls: unknown[] = []
+    const homologationContext: AccessContext = {
+      ...context,
+      username: 'manuteste',
+      professional_id: null,
+      full_name: null,
+      roles: [{ code: 'administrador_tecnico', name: 'Administrador Técnico' }],
+      primary_context: {
+        ...context.primary_context,
+        code: 'administrador_tecnico',
+        name: 'Administrador Técnico',
+      },
+      is_homologation_account: true,
+      homologation_context: {
+        enabled: false,
+        role_code: null,
+        role_name: null,
+        professional_id: null,
+        professional_name: null,
+        specialty_id: null,
+        specialty_name: null,
+        test_patient_id: null,
+        test_patient_name: null,
+        reason: null,
+        started_at: null,
+      },
+    }
+    const homologationService = {
+      getHomologationOptions: async () => ({
+        status: 'success' as const,
+        data: {
+          roles: [],
+          specialties: [
+            { specialty_id: 'nutrition-id', specialty_name: 'Nutrição', professional_id: null },
+          ],
+          professionals: [
+            {
+              professional_id: 'stub-id',
+              professional_name: 'Homologação — Nutrição',
+              function_title: 'Nutrição',
+              has_active_agenda: false,
+              is_homologation_stub: true,
+              specialties: [
+                { specialty_id: 'nutrition-id', specialty_name: 'Nutrição', is_primary: true },
+              ],
+            },
+            {
+              professional_id: 'real-id',
+              professional_name: 'Profissional real',
+              function_title: 'Nutricionista',
+              has_active_agenda: true,
+              is_homologation_stub: false,
+              specialties: [
+                { specialty_id: 'nutrition-id', specialty_name: 'Nutrição', is_primary: true },
+              ],
+            },
+          ],
+        },
+      }),
+      setHomologationContext: async (args: unknown) => {
+        calls.push(args)
+        return { status: 'success' as const, data: {} }
+      },
+      clearHomologationContext: async () => ({
+        status: 'success' as const,
+        data: {},
+      }),
+    }
+
+    render(
+      <MemoryRouter>
+        <ProfileShortcuts
+          accessContext={homologationContext}
+          activePath="/"
+          className="app-profile-button"
+          profileLabel="Administrador Técnico"
+          homologationService={homologationService}
+        />
+      </MemoryRouter>,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /Perfil: Administrador Técnico/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Nutrição' }))
+
+    expect(calls).toEqual([
+      expect.objectContaining({
+        roleCode: 'profissional',
+        professionalId: 'real-id',
+        specialtyId: 'nutrition-id',
+      }),
+    ])
+  })
+
 })
