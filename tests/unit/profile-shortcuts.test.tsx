@@ -193,7 +193,7 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
   })
 
 
-  it('homologação profissional usa cadastro real da especialidade e ignora perfil técnico Homologação', async () => {
+  it('homologação profissional usa perfil técnico da especialidade sem depender de profissional real', async () => {
     const calls: unknown[] = []
     const homologationContext: AccessContext = {
       ...context,
@@ -281,7 +281,7 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
     expect(calls).toEqual([
       expect.objectContaining({
         roleCode: 'profissional',
-        professionalId: 'real-id',
+        professionalId: 'stub-id',
         specialtyId: 'nutrition-id',
       }),
     ])
