@@ -3508,3 +3508,33 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Conclusão física:** após essa correção, o banco está estruturado para gravar a agenda-base, suas alterações permanentes e formulações recorrentes, gerar a grade efetiva correspondente, retirar dos slots disponíveis tudo que ficou ocupado/bloqueado e impedir criação de consulta fora da disponibilidade real.
 
 **Estado:** **CADEIA DE AGENDA VALIDADA E CORRIGIDA NO SUPABASE / GRAVAÇÃO + GERAÇÃO + DISPONIBILIDADE + PROTEÇÃO DE CONSULTAS FUTURAS FECHADAS / TESTES AUTOMATIZADOS AINDA NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL OPERACIONAL**.
+
+
+### 28.57 Consulta individual de agenda — grade completa do profissional selecionado (29/09/2026)
+
+**Divergência observada:** na consulta de agenda, mesmo após selecionar um profissional cadastrado, a tela continuava usando somente `get_agenda_for_interface`, exibindo apenas pacientes já agendados. Horários livres, bloqueados e dias sem configuração não apareciam.
+
+**Causa física:** `AgendaPage` já possuía integração com `getAgendaScheduleGrid`, porém essa grade era carregada apenas quando `embeddedHome=true`. A consulta individual fora da Home permanecia no modo de lista de agendamentos.
+
+**Correção aplicada:** sempre que existe um profissional específico selecionado, `AgendaPage` passa a carregar e renderizar a grade efetiva de `get_agenda_schedule_grid_for_interface`, independentemente de estar ou não na Home.
+
+**Comportamento após a correção:** ao selecionar o profissional e consultar:
+- aparece o dia da semana/data;
+- aparecem todos os horários configurados;
+- horário vazio aparece como **Livre**;
+- horário ocupado mostra o paciente/agendamento;
+- horário bloqueado aparece como **Bloqueado**, incluindo o tipo da formulação quando aplicável;
+- dia sem configuração mostra **Sem horário cadastrado**;
+- Dia/Semana/Mês continuam utilizando a mesma grade efetiva.
+
+**Botão Consultar:** deixou de ser inerte e passou a executar a carga conjunta dos agendamentos e da grade efetiva do profissional selecionado.
+
+**Visão geral:** quando nenhum profissional específico está selecionado, a tela mantém a visão agregada de agendamentos, evitando montar simultaneamente grades completas de toda a equipe.
+
+**Arquivo alterado:** `src/features/agenda/AgendaPage.tsx`.
+
+**Commit:** `d9ffc3c87fcf163232b34c00600a3945a8b5959d`.
+
+**Conferência pós-correção:** leitura física confirmou que a grade é carregada quando `professionalId` existe; o botão Consultar chama a consulta completa; e a lista simples de agendamentos fica restrita ao estado sem profissional específico.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / CONSULTA INDIVIDUAL PASSA A MOSTRAR GRADE COMPLETA / SEM ALTERAÇÃO DE SUPABASE NESTA ETAPA / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
