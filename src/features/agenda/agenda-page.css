@@ -1189,3 +1189,28 @@
     min-height: 44px;
   }
 }
+
+.agenda-family-psychology {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.agenda-family-psychology td small {
+  display: block;
+  margin-top: 4px;
+}
+
+@media (max-width: 620px) {
+  .agenda-family-psychology .agenda-attendance-actions {
+    display: grid;
+    gap: 6px;
+  }
+
+  .agenda-family-psychology .agenda-attendance-actions button {
+    width: 100%;
+  }
+}
+
