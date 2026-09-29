@@ -4162,3 +4162,33 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Reclassificação do §28.75:** o reload de schema executado anteriormente foi válido como tentativa diagnóstica, porém a evidência HTTP publicada posterior demonstra que o bloqueio persistente não era ausência da função nem schema cache: era descarte de argumentos na camada de transporte frontend. Este §28.81 passa a ser a causa confirmada para o erro `without parameters` observado em produção.
 
 **Estado:** **CAUSA CONFIRMADA / CORREÇÃO CIRÚRGICA NO TRANSPORTE / BACKEND PRESERVADO / TESTE DE REGRESSÃO ESPECÍFICO ADICIONADO / DEPLOY CLOUDFLARE EM ANDAMENTO NO MOMENTO DO REGISTRO / AGUARDANDO RETESTE OPERACIONAL DA TITULAR**.
+
+### 28.82 Manutenção cirúrgica — botão Agendar no horário livre da Home do Gestor (29/09/2026)
+
+**Solicitação operacional:** na tela Home/Painel Geral do Gestor, dentro de **Agenda do dia — Todos os profissionais**, cada horário livre do profissional deve permitir iniciar diretamente o agendamento, sem obrigar o usuário a abrir primeiro a Agenda Geral.
+
+**Confronto documental:** o Manual da Interface, seção 13.1, estabelece que horários livres são clicáveis para o Administrativo autorizado iniciar um agendamento. O §28.79 já havia aplicado essa regra na `AgendaPage`, porém a Home do Gestor permaneceu apenas exibindo o texto `Livre`.
+
+**Diagnóstico físico antes da alteração:** `GestorDashboard.tsx` carregava a grade real por `getAgendaScheduleGrid` e mostrava corretamente horário, profissional e estado `livre/bloqueado/agendado`, mas não possuía ação no `slot_status='livre'`. A Agenda Geral já possuía o fluxo funcional de agendamento por vaga.
+
+**Correção cirúrgica aplicada:**
+- na Home do Gestor, somente vagas `livre` recebem botão **Agendar**;
+- o botão navega para `/agenda` levando apenas o contexto real da vaga: `professionalId`, `slotDate` e `slotStart`;
+- `AgendaPage` passou a reconhecer `origin='home_free_slot'` e abrir **Novo Agendamento** mesmo sem paciente pré-selecionado;
+- a vaga mantém profissional, data e horário; quando o profissional possui uma única especialidade no catálogo real, ela é pré-selecionada;
+- o campo de paciente permanece vazio para o Administrativo localizar Nome, CMS ou Nº CAPO conforme o fluxo canônico;
+- nenhuma RPC, configuração de agenda, horário, paciente, permissão, RLS ou regra de backend foi alterada.
+
+**Arquivos alterados:**
+- `src/features/gestor/GestorDashboard.tsx`;
+- `src/features/agenda/AgendaPage.tsx`;
+- `src/features/gestor/gestor.css`;
+- `tests/unit/agenda-queue-context.test.tsx`.
+
+**Commits:** `27fca5c21fc28fd5a252156f14437788b7910bb8`, `8667ee3ff761c44dcfb3252ecfdd6afa8216700b`, `05d3ad05e7f96dafaedb0918301e276c179303bb`, `802bcf38fd4cfe5dfc6ba6d742025df9bf646759`.
+
+**Proteção de regressão:** incluído cenário específico em que a navegação parte de uma vaga livre da Home sem paciente pré-selecionado e verifica abertura do formulário com especialidade/profissional/vaga preservados.
+
+**Preservação anti-avalanche:** não foi reaberta a formulação de agendas dos §§28.59–28.69 nem o fluxo geral do §28.79. A intervenção foi limitada à ligação da Home com o fluxo já existente.
+
+**Estado:** **IMPLEMENTADO NO `main` / BACKEND PRESERVADO / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL NA HOME DO GESTOR**.
