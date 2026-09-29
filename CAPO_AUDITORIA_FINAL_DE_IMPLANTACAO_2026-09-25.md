@@ -4133,3 +4133,32 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Regra anti-avalanche aplicada:** não foram reabertos módulos estáveis nem alteradas permissões; a intervenção ficou limitada ao contrato de busca afetado diretamente pela mudança de formato do Nº CAPO.
 
 **Estado:** **CAUSA CONFIRMADA / BACKEND CORRIGIDO E TESTADO COM Nº CAPO 1 / VALIDAÇÕES DE INTERFACE HARMONIZADAS / AGUARDANDO PUBLICAÇÃO E RETESTE OPERACIONAL**.
+
+### 28.81 Pré-implantação — correção da camada de transporte das RPCs de paciente (29/09/2026)
+
+**Regra de continuidade aplicada antes da alteração:** foram relidos o Documento Mestre (§§28.75, 28.77, 28.78, 28.79 e 28.80), o Manual da Interface de Cadastro/Edição de Pacientes, o Documento Base Mestre Consolidado e o Manual Técnico Supabase/SQL. Todos confirmam o contrato canônico: pesquisa por `search_patients_for_interface`, carregamento seguro por `get_patient_for_edit_for_interface(p_patient_id)`, atualização por `update_patient_for_interface(...)` e contato contextual por `get_patient_contact_for_interface(p_patient_id)`, sem gravação direta em `patients`.
+
+**Nova evidência física mais forte que a hipótese anterior de cache:** os logs publicados do Supabase mostraram POSTs reais para `/rpc/get_patient_for_edit_for_interface` com `request.headers.content_length = 2`, isto é, corpo `{}`. O PostgREST respondeu PGRST202 procurando a função **sem parâmetros**. Portanto, a chamada publicada não estava enviando `p_patient_id`.
+
+**Causa confirmada no código:** `createRpcService().getPatientForEdit(patientId)` montava corretamente `args: { p_patient_id: patientId }`, porém `createSupabaseTransport()` classificava `get_patient_for_edit_for_interface`, `update_patient_for_interface` e `get_patient_contact_for_interface` no grupo de RPCs sem argumentos e executava `client.rpc(operation)`, descartando os argumentos montados. A mesma falha estrutural afetava carregar cadastro, salvar edição e o contato contextual quando esses contratos passavam pelo transporte central.
+
+**Comparação histórica:** o commit de publicação `511e043` ainda não continha esses três contratos no grupo final sem argumentos. A integração posterior de consulta/edição do paciente adicionou os contratos ao transporte, porém de forma incorreta, o que explica por que testes de camada de serviço podiam passar enquanto a chamada HTTP real falhava.
+
+**Correção cirúrgica:** os três contratos foram retirados do grupo sem argumentos e movidos para o caminho `confirmedRpc(operation, args)`, que preserva exatamente os argumentos já produzidos pela camada de serviço. Nenhuma RPC do banco, tabela, RLS, policy, permissão, tela ou regra funcional foi alterada.
+
+**Arquivo alterado:** `src/lib/supabase/rpc.ts`.
+
+**Commit de correção:** `e80f78956c4e2cfe6ce6832d5409baf56a8290b8`.
+
+**Proteção de regressão:** criado `tests/unit/patient-rpc-transport.test.ts` para verificar fisicamente no adaptador central que:
+- `get_patient_for_edit_for_interface` recebe `p_patient_id`;
+- `update_patient_for_interface` recebe o conjunto de argumentos do paciente;
+- `get_patient_contact_for_interface` recebe `p_patient_id`.
+
+**Commit do teste:** `aa555eaf83550db401d64586bd603ab499903477`.
+
+**Conferência pós-alteração no `main`:** cada um dos três contratos aparece uma única vez no switch do transporte e todos retornam por `confirmedRpc(operation, args)`. A função física `get_patient_for_edit_for_interface(uuid)` permanece existente e íntegra no Supabase.
+
+**Reclassificação do §28.75:** o reload de schema executado anteriormente foi válido como tentativa diagnóstica, porém a evidência HTTP publicada posterior demonstra que o bloqueio persistente não era ausência da função nem schema cache: era descarte de argumentos na camada de transporte frontend. Este §28.81 passa a ser a causa confirmada para o erro `without parameters` observado em produção.
+
+**Estado:** **CAUSA CONFIRMADA / CORREÇÃO CIRÚRGICA NO TRANSPORTE / BACKEND PRESERVADO / TESTE DE REGRESSÃO ESPECÍFICO ADICIONADO / DEPLOY CLOUDFLARE EM ANDAMENTO NO MOMENTO DO REGISTRO / AGUARDANDO RETESTE OPERACIONAL DA TITULAR**.
