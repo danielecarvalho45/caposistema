@@ -1095,3 +1095,97 @@
     min-height: 44px;
   }
 }
+
+
+/* CAPO — cancelamento de agendamento conforme Manual da Interface */
+.agenda-cancel-button {
+  padding: 6px 9px;
+  border: 1px solid #c73b4d;
+  border-radius: 7px;
+  background: #fff;
+  color: #a92739;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.agenda-cancel-button:hover,
+.agenda-cancel-button:focus-visible {
+  background: #fff3f5;
+}
+
+.agenda-cancel-button--month {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.agenda-cancel-panel {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #e4b7bd;
+  border-radius: 9px;
+  background: #fff8f9;
+}
+
+.agenda-cancel-panel h3 {
+  margin: 0;
+  color: #7e2130;
+  font-size: 15px;
+}
+
+.agenda-cancel-panel p {
+  margin: 3px 0 0;
+  color: #6d5260;
+  font-size: 11px;
+}
+
+.agenda-cancel-panel label {
+  display: grid;
+  gap: 5px;
+  color: #4b3440;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.agenda-cancel-panel textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 9px;
+  border: 1px solid #d9b8bf;
+  border-radius: 7px;
+  background: #fff;
+  color: #17365f;
+  font: inherit;
+  resize: vertical;
+}
+
+.agenda-cancel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agenda-cancel-actions button {
+  min-height: 36px;
+  padding: 7px 11px;
+}
+
+.agenda-cancel-confirm {
+  border-color: #a92739 !important;
+  background: #a92739 !important;
+  color: #fff !important;
+}
+
+@media (max-width: 620px) {
+  .agenda-cancel-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-cancel-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
