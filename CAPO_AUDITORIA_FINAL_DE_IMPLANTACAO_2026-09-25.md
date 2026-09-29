@@ -4346,3 +4346,25 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 
 **Estado:** **REGRA FUNCIONAL CLARIFICADA / CONSTRUÇÃO PARALELA DESFEITA / GRADE CANÔNICA RESTAURADA / CONTINUIDADE SOMENTE POR MANUTENÇÃO CIRÚRGICA**.
 
+### 28.89 GESTOR/TITULAR — FLUXO COMPLETO DE FAMILIAR/CUIDADOR NA INTERFACE (29/09/2026)
+
+**Evidência apresentada pela Titular:** apesar de o backend autorizar Administrador/Gestor a operar vínculo de Familiar/Cuidador, a função não era encontrada no perfil real.
+
+**Causa física confirmada:** a rota `/gestor/familiares` abria `GestorFamilyPage`, componente próprio que somente consultava o contexto do familiar e informava se havia vínculo ativo/histórico. Essa tela não expunha as ações já existentes do projeto para vincular, substituir, encerrar ou corrigir administrativamente o Familiar/Cuidador.
+
+**Correção cirúrgica aplicada:** `GestorFamilyPage` passou a reutilizar diretamente `FamilyCaregiverPage`, o fluxo funcional já existente e integrado ao backend. A rota do Gestor recebe o `accessContext` real e não cria segunda implementação.
+
+**Resultado funcional esperado no Gestor/Titular:** localizar paciente e operar, conforme autorização física existente, vínculo de Familiar/Cuidador, substituição com histórico preservado, encerramento de vínculo, correções administrativas, consulta do familiar ativo/histórico e ações já previstas pelo módulo.
+
+**Preservado:** nenhuma RPC, SQL, RLS, policy, trigger, migration ou regra de permissão foi alterada. Permanecem os contratos físicos `get_family_context_for_interface`, `create_family_link_for_interface`, `replace_family_link_for_interface`, `close_family_link_for_interface` e `update_family_link_operational_for_interface`.
+
+**Arquivos alterados:**
+- `src/features/gestor/GestorFamilyPage.tsx`;
+- `src/app/App.tsx`.
+
+**Commits funcionais:**
+- `551fbba5fbf00c76be0f6142a2a68b7f4ededb4b`;
+- `938407b70f37f10106e9f0eea77a0e7f5bb91c92`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / FLUXO ÚNICO REUTILIZADO / BACKEND PRESERVADO / AGUARDANDO HOMOLOGAÇÃO OPERACIONAL EXTERNA**.
+
