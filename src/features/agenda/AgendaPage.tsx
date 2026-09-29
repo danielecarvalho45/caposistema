@@ -387,7 +387,6 @@ export function AgendaPage({
   const [attendanceReason, setAttendanceReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
   const [showRescheduleForm, setShowRescheduleForm] = useState(false)
-  const [showOwnAgendaManager, setShowOwnAgendaManager] = useState(initialManageOpen)
   const [reschedulableResult, setReschedulableResult] = useState<{ key: string; rows: readonly ReschedulableAppointment[] } | null>(null)
   const [selectedReschedulableId, setSelectedReschedulableId] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
@@ -933,20 +932,7 @@ export function AgendaPage({
           </div>
         </div>
 
-        {isProfessional && professionalId && !embeddedHome && (
-          <div className="agenda-actions" aria-label="Operações da própria agenda">
-            <button
-              type="button"
-              aria-expanded={showOwnAgendaManager}
-              onClick={() => setShowOwnAgendaManager((current) => !current)}
-            >
-              Gerenciar minha agenda
-            </button>
-
-          </div>
-        )}
-
-        {isProfessional && professionalId && !embeddedHome && showOwnAgendaManager && (
+        {isProfessional && professionalId && initialManageOpen && (
           <OwnAgendaManager professionalId={professionalId} />
         )}
 
