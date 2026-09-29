@@ -370,7 +370,7 @@ export function NutritionPage({
   }
 
   return (
-    <section className="home-page" aria-labelledby="nutrition-title">
+    <section className="home-page home-mobile-standard" aria-labelledby="nutrition-title">
       {isNutritionProfessional && (
         <>
           <section className="home-welcome" aria-labelledby="nutrition-title">
