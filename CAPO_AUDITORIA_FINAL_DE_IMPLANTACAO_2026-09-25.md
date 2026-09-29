@@ -4440,3 +4440,34 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 
 **Estado:** **FLUXO DE CANCELAMENTO/REMARCAÇÃO CONFIRMADO / CONTEXTO DA NOTIFICAÇÃO CORRIGIDO / CANDIDATO SINALIZADO NA FILA / BAIXA DA FILA CONFIRMADA PELO CONTRATO / NOVA VAGA POR ATENDIMENTO_EXTRA PASSOU A NOTIFICAR AUTOMATICAMENTE / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
 
+### 28.92 NOTIFICAÇÕES AUTOMÁTICAS — ESPELHAMENTO ADMINISTRATIVO NO GESTOR/TITULAR (29/09/2026)
+
+**Confronto documental:** Matriz Funcional §§18.1, 18.2 e 18.15 determina que o Gestor/Administrador, quando acumula capacidade administrativa, deve receber o mesmo fluxo funcional do Auxiliar Administrativo, incluindo avisos, notificações de mudança de estado, sinalizações de fila, automações e encaminhamento da próxima ação.
+
+**Backend físico confirmado:** `get_my_notifications_for_interface` permite que contas com papel `administrador` leiam as notificações autorizadas independentemente do `target_role`, além das notificações diretamente destinadas aos seus papéis/usuário. Portanto, as automações que notificam `administrativo_operacional` também ficam disponíveis ao Gestor/Titular com papel Administrador.
+
+**Automações administrativas físicas conferidas:** óbito/correção de óbito; alta médica; vaga de fila de pacientes; vaga de fila de familiares; encerramentos; solicitações administrativas novas/reenviadas; faltosos; encaminhamentos operacionais/odontológicos; Renovação de Receita; entrega de documentos de Nutrição; Transporte, além dos respectivos contextos já existentes.
+
+**Interface do Gestor confirmada:** `GestorShell` possui acesso a `/notificacoes`, botão `Avisos` e contador de não lidas pela mesma RPC/serviço utilizado pelo shell administrativo. Não foi encontrada redução funcional do contador/central em relação ao Administrativo.
+
+**Lacunas de continuidade encontradas:**
+1. notificações com `entity_type='patients'` (óbito e correção de óbito) chegavam ao Gestor, mas não possuíam rota de `Abrir contexto`;
+2. notificações de alta médica com `entity_type='clinical_records'` chegavam ao Gestor, mas não possuíam destino contextual.
+
+**Correção cirúrgica:**
+- `patients` e `patient` passam a abrir `/pacientes`;
+- quando a notificação contém o ID do paciente, o link passa a usar `/pacientes?patientId=<id>`;
+- `PatientsPage` lê esse contexto e abre diretamente o cadastro do paciente pelo contrato real `getPatientForEdit`, sem exigir nova busca;
+- `clinical_records` passa a abrir `/encerramentos`, coerente com a mensagem automática de alta médica que determina acompanhamento dos encerramentos das especialidades.
+
+**Preservado:** nenhuma regra de destinatário, trigger ou RPC de criação de notificação foi alterada. A correção foi somente de continuidade/navegação da interface do Gestor.
+
+**Arquivos alterados:**
+- `src/app/App.tsx`;
+- `src/features/patients/PatientsPage.tsx`;
+- `tests/unit/patients-context-flow.test.tsx`.
+
+**Commits:** `c0c43bc34f445de8652cdf8cdf2f5dfe98131581`, `8428cbf2991b49364e31ccd52062be910d481418`.
+
+**Estado:** **ESPelhamento DOCUMENTAL CONFIRMADO / BACKEND CONFIRMADO / CENTRAL E CONTADOR DO GESTOR CONFIRMADOS / CONTEXTOS DE ÓBITO E ALTA MÉDICA CORRIGIDOS / TESTE DE REGRESSÃO ADICIONADO / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
+
