@@ -3873,3 +3873,24 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Commit:** `89540baa3b30ea468bda312f2d6090842ef101c9`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO TESTE OPERACIONAL REAL**.
+
+
+### 28.70 Correção cirúrgica — capacidade individual de Encaminhamento Interprofissional não refletia no checkbox (29/09/2026)
+
+**Evidência operacional:** em Cadastro de Profissional → Permissões do profissional, ao marcar `encaminhamento_interprofissional`, o controle visual permanecia desmarcado e dava a impressão de que a permissão não havia sido aplicada.
+
+**Confronto físico com o banco:** a gravação individual foi efetivamente realizada em `professional_capabilities`, com `is_enabled=true`, e o INSERT foi registrado em `audit_logs`. As capacidades automáticas por especialidade permanecem desabilitadas para `encaminhamento_interprofissional`, conforme regra vigente.
+
+**Causa confirmada na interface:** `get_effective_professional_capabilities(uuid)` retorna uma lista escalar de códigos de capacidade. `GestorTeamPage` tratava o retorno apenas como lista de objetos e descartava os códigos escalares. Assim, após a gravação correta no banco, `effectiveCapabilityCodes` continuava vazio e o checkbox não refletia a nova permissão.
+
+**Correção somente de interface:** criada normalização específica que aceita tanto códigos escalares quanto objetos retornados pelo contrato. A leitura inicial e a releitura após alteração passam a usar essa normalização.
+
+**Preservação:** nenhuma RPC, tabela, policy, capability, especialidade ou concessão automática foi alterada. A regra continua sendo: `encaminhamento_interprofissional` é uma capacidade individual delegável e não é concedida automaticamente por especialidade.
+
+**Arquivos alterados:** `src/features/gestor/GestorTeamPage.tsx` e `tests/unit/gestor-team-page.test.tsx`.
+
+**Commits:** `1704c38c8da2fcdb61bfa5006807fbacb89c7786` e `fb03817309f7eaccbf0f3fe3e5104e0beff7a9d4`.
+
+**Teste automatizado acrescentado:** cenário em que o backend retorna `['encaminhamento_interprofissional']`, validando que a marcação individual é refletida no checkbox após a atualização. A execução local não pôde ser iniciada neste ambiente por indisponibilidade de resolução de rede para clonar o repositório; a verificação física de código e contrato foi concluída.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / BANCO JÁ CONTINHA A CONCESSÃO INDIVIDUAL REGISTRADA / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL**.
