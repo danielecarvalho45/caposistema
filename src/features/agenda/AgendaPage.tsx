@@ -640,6 +640,25 @@ export function AgendaPage({
     return nextState
   }, [endDate, loadAgenda, professionalId, startDate])
 
+  const loadScheduleGrid = useCallback(async () => {
+    if (!professionalId) {
+      setScheduleGrid({ status: 'empty' })
+      return { status: 'empty' } as AsyncState<readonly AgendaScheduleSlot[]>
+    }
+    setScheduleGrid(loadingState())
+    const nextState = await getRpcService().getAgendaScheduleGrid(
+      startDate,
+      endDate,
+      professionalId,
+    )
+    setScheduleGrid(nextState)
+    return nextState
+  }, [endDate, professionalId, startDate])
+
+  const loadProfessionalConsultation = useCallback(async () => {
+    await Promise.all([load(), loadScheduleGrid()])
+  }, [load, loadScheduleGrid])
+
   async function searchAppointmentPatients() {
     const query = appointmentPatientQuery.trim()
     if (query.length < 2) return
@@ -842,7 +861,10 @@ export function AgendaPage({
   ])
 
   useEffect(() => {
-    if (!embeddedHome || !canAccess || !professionalId) return
+    if (!canAccess || !professionalId) {
+      setScheduleGrid({ status: 'empty' })
+      return
+    }
     let active = true
     setScheduleGrid(loadingState())
     void getRpcService()
@@ -853,7 +875,7 @@ export function AgendaPage({
     return () => {
       active = false
     }
-  }, [canAccess, embeddedHome, endDate, professionalId, startDate])
+  }, [canAccess, endDate, professionalId, startDate])
 
   useEffect(() => {
     if (isProfessional) return
@@ -1068,6 +1090,7 @@ export function AgendaPage({
                   onChange={(event) => {
                     setSelectedProfessionalId(event.target.value)
                     setState(loadingState())
+                    setScheduleGrid(loadingState())
                   }}
                 >
                   <option value="">
@@ -1092,6 +1115,7 @@ export function AgendaPage({
                 onChange={(event) => {
                   if (event.target.value) {
                     setState(loadingState())
+                    setScheduleGrid(loadingState())
                     setAnchorDate(event.target.value)
                   }
                 }}
@@ -1099,8 +1123,11 @@ export function AgendaPage({
             </label>
             <button
               type="button"
-              disabled={state.status === 'loading'}
-              onClick={() => void load()}
+              disabled={state.status === 'loading' || scheduleGrid.status === 'loading'}
+              onClick={() => {
+                if (professionalId) void loadProfessionalConsultation()
+                else void load()
+              }}
             >
               Atualizar
             </button>
@@ -1119,7 +1146,13 @@ export function AgendaPage({
               >
                 Agendar
               </button>
-              <button type="button">Consultar</button>
+              <button
+                type="button"
+                disabled={!selectedProfessionalId || scheduleGrid.status === 'loading'}
+                onClick={() => void loadProfessionalConsultation()}
+              >
+                Consultar
+              </button>
               <button type="button" aria-expanded={showRescheduleForm} onClick={() => setShowRescheduleForm((current) => !current)}>Remarcar</button>
             </div>
           </>
@@ -1369,6 +1402,7 @@ export function AgendaPage({
                 aria-selected={view === option}
                 onClick={() => {
                   setState(loadingState())
+                  setScheduleGrid(loadingState())
                   setView(option)
                 }}
               >
@@ -1382,6 +1416,7 @@ export function AgendaPage({
               aria-label="Período anterior"
               onClick={() => {
                 setState(loadingState())
+                setScheduleGrid(loadingState())
                 setAnchorDate((date) => moveAnchor(date, view, -1))
               }}
             >
@@ -1391,6 +1426,7 @@ export function AgendaPage({
               type="button"
               onClick={() => {
                 setState(loadingState())
+                setScheduleGrid(loadingState())
                 setAnchorDate(dateInputValue(new Date()))
               }}
             >
@@ -1401,6 +1437,7 @@ export function AgendaPage({
               aria-label="Próximo período"
               onClick={() => {
                 setState(loadingState())
+                setScheduleGrid(loadingState())
                 setAnchorDate((date) => moveAnchor(date, view, 1))
               }}
             >
@@ -1420,13 +1457,13 @@ export function AgendaPage({
         )}
 
         <div aria-live="polite">
-          {embeddedHome && scheduleGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
-          {embeddedHome && scheduleGrid.status === 'error' && (
+          {professionalId && scheduleGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
+          {professionalId && scheduleGrid.status === 'error' && (
             <p className="assistential-error" role="alert">
-              Não foi possível carregar os horários cadastrados: {scheduleGrid.error.message}
+              Não foi possível carregar a grade da agenda: {scheduleGrid.error.message}
             </p>
           )}
-          {embeddedHome && (scheduleGrid.status === 'empty' || scheduleGrid.status === 'success') && (
+          {professionalId && (scheduleGrid.status === 'empty' || scheduleGrid.status === 'success') && (
             <HomeScheduleGrid
               slots={scheduleGrid.status === 'success' ? scheduleGrid.data : []}
               startDate={startDate}
@@ -1438,8 +1475,9 @@ export function AgendaPage({
               busyAppointmentId={busyAppointmentId}
             />
           )}
-          {!embeddedHome && state.status === 'loading' && <p>Carregando agenda…</p>}
-          {!embeddedHome && state.status === 'error' && (
+
+          {!professionalId && state.status === 'loading' && <p>Carregando agenda…</p>}
+          {!professionalId && state.status === 'error' && (
             <div className="assistential-error" role="alert">
               <p>Não foi possível carregar a agenda: {state.error.message}</p>
               <button type="button" onClick={() => void load()}>
@@ -1447,12 +1485,12 @@ export function AgendaPage({
               </button>
             </div>
           )}
-          {!embeddedHome && (state.status === 'empty' ||
+          {!professionalId && (state.status === 'empty' ||
             (state.status === 'success' && state.data.length === 0)) &&
             view === 'day' && (
               <p>Nenhum atendimento agendado para este dia.</p>
             )}
-          {!embeddedHome && (state.status === 'empty' || state.status === 'success') &&
+          {!professionalId && (state.status === 'empty' || state.status === 'success') &&
             (view !== 'day' || (state.status === 'success' && state.data.length > 0)) && (
               <AgendaResults
                 appointments={state.status === 'success' ? state.data : []}
@@ -1460,11 +1498,6 @@ export function AgendaPage({
                 endDate={endDate}
                 view={view}
                 showSpecialty={shouldShowSpecialty}
-                onAttendance={isProfessional ? updateAttendance : undefined}
-                onReturn={isProfessional ? prepareProfessionalReturn : undefined}
-                busyAppointmentId={busyAppointmentId}
-                patientSpecialties={isProfessional ? patientSpecialties : undefined}
-                embeddedHome={embeddedHome}
               />
             )}
         </div>
