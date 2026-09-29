@@ -3894,3 +3894,28 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Teste automatizado acrescentado:** cenário em que o backend retorna `['encaminhamento_interprofissional']`, validando que a marcação individual é refletida no checkbox após a atualização. A execução local não pôde ser iniciada neste ambiente por indisponibilidade de resolução de rede para clonar o repositório; a verificação física de código e contrato foi concluída.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / BANCO JÁ CONTINHA A CONCESSÃO INDIVIDUAL REGISTRADA / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL**.
+
+
+### 28.71 Pré-implantação — profissionais legados e criação/vinculação de conta de acesso (Ilton) (29/09/2026)
+
+**Regra de continuidade entre agentes nesta fase:** a pré-implantação passa a considerar como concluído somente o fluxo comprovado de ponta a ponta — ação na interface, execução do backend, gravação no banco, releitura do estado e teste operacional real. O Documento Mestre permanece como fonte única de continuidade; não reiniciar auditorias nem reabrir blocos estáveis sem nova evidência física.
+
+**Evidência operacional:** ao preparar o acesso de **Ilton de Oliveira Filho**, profissional já existente no banco legado, o cadastro profissional foi preservado, mas a criação/vinculação da conta de acesso não foi concluída. O profissional permaneceu ativo, com usuário `ilton`, Clínica Geral principal, responsabilidade administrativa Coordenador e capacidade individual `encaminhamento_interprofissional`; porém não havia registro correspondente em `auth.users` nem em `public.user_accounts`.
+
+**Evidência física nos logs:** a chamada real à Edge Function `create-team-member` em 29/09/2026 terminou em HTTP 400. O log imediatamente anterior registrou `GET 403` sobre `public.professionals`, com erro PostgreSQL `42501 permission denied for table professionals` e indicação de ausência de `SELECT` para `service_role`.
+
+**Causa confirmada:** no fluxo específico de profissional já cadastrado, `create-team-member` usa o cliente administrativo para consultar o `status` do profissional antes de criar a identidade Auth. A `service_role` possuía `SELECT` em `user_accounts`, mas não em `professionals`; por isso o fluxo era interrompido antes da criação do usuário Auth. Esta falha atingia o vínculo de contas para profissionais legados e não era causada pela senha provisória.
+
+**Correção cirúrgica aplicada no Supabase:** concedido somente `SELECT` em `public.professionals` para `service_role`. Nenhuma permissão foi concedida a `anon` ou `authenticated`; nenhuma RLS, policy, papel funcional, especialidade, agenda, histórico do profissional ou capacidade foi alterada.
+
+**Migration aplicada:** `20260929181258_grant_service_role_select_professionals_for_legacy_account_link`.
+
+**Arquivo registrado no repositório:** `supabase/migrations/20260929181258_grant_service_role_select_professionals_for_legacy_account_link.sql`.
+
+**Commit da migration:** `7694d1d4ceff7a5e63a47b0bf1eee8e0a2de2b0b`.
+
+**Verificação pós-correção:** `has_table_privilege('service_role','public.professionals','select') = true`. Os advisors foram executados após a alteração; a concessão não criou novo alerta específico. Os avisos gerais já existentes do projeto permanecem fora do escopo desta correção.
+
+**Estado do Ilton após esta etapa:** identidade profissional preservada e estrutura preparada para refazer a criação/vinculação da conta pelo fluxo oficial, sem duplicar o profissional. A conta de acesso ainda não foi criada nesta intervenção porque a senha provisória não deve ser recuperada nem inventada fora do fluxo de cadastro.
+
+**Estado:** **CAUSA CONFIRMADA / CORREÇÃO DE BACKEND APLICADA E VERIFICADA / PROFISSIONAL LEGADO PRESERVADO / AGUARDANDO NOVA CRIAÇÃO DA CONTA DO ILTON PELO FLUXO OFICIAL E TESTE REAL DE LOGIN**.
