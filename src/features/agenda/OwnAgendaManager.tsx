@@ -43,6 +43,19 @@ function timeHHMM(value: unknown) {
   return /^\d{2}:\d{2}/.test(text) ? text.slice(0, 5) : text
 }
 
+function weekdaySummary(value: unknown) {
+  const labels: Readonly<Record<number, string>> = {
+    0: 'Dom',
+    1: 'Seg',
+    2: 'Ter',
+    3: 'Qua',
+    4: 'Qui',
+    5: 'Sex',
+    6: 'Sáb',
+  }
+  return weekdayValues(value).map((weekday) => labels[weekday]).join(', ')
+}
+
 type Props = Readonly<{
   professionalId: string
   title?: string
@@ -256,7 +269,36 @@ export function OwnAgendaManager({
     setPendingConfirmation(null)
   }
 
+  function startNewStructuralConfiguration() {
+    const today = new Date()
+    const local = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, '0'),
+      String(today.getDate()).padStart(2, '0'),
+    ].join('-')
+    setStructuralConfigId('')
+    setStructuralExpectedUpdatedAt('')
+    setStructuralStartDate(local)
+    setStructuralEndDate('')
+    setStructuralStartTime('')
+    setStructuralEndTime('')
+    setStructuralDuration(30)
+    setStructuralWeekdays([])
+    setStructuralNotes('')
+    setStructuralJustification('')
+    setRecurringWeekdays([])
+    setRecurringStartTime('')
+    setRecurringEndTime('')
+    setRecurringDescription('')
+    setRecurringFeedback(null)
+    setStructuralFeedback(null)
+  }
+
   function selectStructuralConfiguration(id: string) {
+    if (!id) {
+      startNewStructuralConfiguration()
+      return
+    }
     setStructuralConfigId(id)
     setStructuralFeedback(null)
     const selected = configurations.find((item) => stringValue(item.config_id) === id)
@@ -272,6 +314,8 @@ export function OwnAgendaManager({
     setStructuralDuration(numberValue(selected.appointment_duration_minutes, 30))
     setStructuralWeekdays([...weekdayValues(selected.weekdays)])
     setStructuralNotes(stringValue(selected.notes))
+    setRecurringWeekdays([])
+    setRecurringFeedback(null)
   }
 
   function toggleStructuralWeekday(weekday: number, checked: boolean) {
@@ -417,25 +461,34 @@ export function OwnAgendaManager({
       return
     }
 
-    setStructuralFeedback('Configuração-base da agenda atualizada.')
+    const savedConfigId = stringValue(payload?.config_id) || structuralConfigId
+    setStructuralFeedback(
+      structuralConfigId
+        ? 'Padrão semanal atualizado sem alterar os demais dias.'
+        : 'Novo padrão semanal adicionado sem alterar os padrões já existentes.',
+    )
     setStructuralJustification('')
     const refreshed = await rpc.getAgendaConfiguration(professionalId)
     setConfiguration(refreshed)
     if (refreshed.status === 'success') {
-      const activeConfig = rows(refreshed.data, 'configurations')
-        .find((item) => booleanValue(item.is_active))
-      if (activeConfig) {
-        const id = stringValue(activeConfig.config_id)
+      const refreshedConfigurations = rows(refreshed.data, 'configurations')
+      const savedConfig =
+        refreshedConfigurations.find(
+          (item) => stringValue(item.config_id) === savedConfigId,
+        ) ??
+        refreshedConfigurations.find((item) => booleanValue(item.is_active))
+      if (savedConfig) {
+        const id = stringValue(savedConfig.config_id)
         setConfigId(id)
-        selectStructuralConfiguration(id)
-        setStructuralExpectedUpdatedAt(stringValue(activeConfig.updated_at))
-        setStructuralStartDate(stringValue(activeConfig.start_date))
-        setStructuralEndDate(stringValue(activeConfig.end_date))
-        setStructuralStartTime(timeHHMM(activeConfig.start_time))
-        setStructuralEndTime(timeHHMM(activeConfig.end_time))
-        setStructuralDuration(numberValue(activeConfig.appointment_duration_minutes, 30))
-        setStructuralWeekdays([...weekdayValues(activeConfig.weekdays)])
-        setStructuralNotes(stringValue(activeConfig.notes))
+        setStructuralConfigId(id)
+        setStructuralExpectedUpdatedAt(stringValue(savedConfig.updated_at))
+        setStructuralStartDate(stringValue(savedConfig.start_date))
+        setStructuralEndDate(stringValue(savedConfig.end_date))
+        setStructuralStartTime(timeHHMM(savedConfig.start_time))
+        setStructuralEndTime(timeHHMM(savedConfig.end_time))
+        setStructuralDuration(numberValue(savedConfig.appointment_duration_minutes, 30))
+        setStructuralWeekdays([...weekdayValues(savedConfig.weekdays)])
+        setStructuralNotes(stringValue(savedConfig.notes))
       }
     }
     setStructuralBusy(false)
@@ -560,22 +613,34 @@ export function OwnAgendaManager({
             </div>
           </div>
 
-          {configurations.length > 0 && (
+          <div className="agenda-structural-pattern-picker">
             <label>
-              Configuração
+              Padrão semanal
               <select
                 value={structuralConfigId}
                 onChange={(event) => selectStructuralConfiguration(event.target.value)}
               >
+                <option value="">Adicionar novo padrão semanal</option>
                 {configurations.map((item) => (
                   <option key={stringValue(item.config_id)} value={stringValue(item.config_id)}>
-                    {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
-                    {booleanValue(item.is_active) ? ' · Ativa' : ' · Inativa'}
+                    {weekdaySummary(item.weekdays) || 'Sem dias'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
+                    {booleanValue(item.is_active) ? ' · Ativo' : ' · Inativo'}
                   </option>
                 ))}
               </select>
             </label>
-          )}
+            <button
+              type="button"
+              onClick={startNewStructuralConfiguration}
+              disabled={structuralBusy}
+            >
+              Novo padrão semanal
+            </button>
+          </div>
+          <p className="agenda-structural-hint">
+            Cada padrão pode ter dias, horários e intervalos próprios. Salvar um novo
+            padrão não substitui os dias configurados nos outros padrões.
+          </p>
 
           <div className="agenda-structural-grid">
             <label>
@@ -704,6 +769,13 @@ export function OwnAgendaManager({
               {recurringBusy ? 'Salvando…' : 'Adicionar intervalo semanal'}
             </button>
 
+            {!structuralConfigId && (
+              <p className="agenda-structural-hint">
+                Salve primeiro este padrão semanal para depois adicionar Café,
+                Almoço, Estudo de caso, Atendimentos online ou Rotinas administrativas.
+              </p>
+            )}
+
             {recurringIntervals.length > 0 && (
               <div className="agenda-recurring-list" aria-label="Intervalos semanais ativos">
                 <strong>Intervalos ativos</strong>
@@ -781,7 +853,7 @@ export function OwnAgendaManager({
               <option value="">Selecionar</option>
               {configurations.map((item) => (
                 <option key={stringValue(item.config_id)} value={stringValue(item.config_id)}>
-                  {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
+                  {weekdaySummary(item.weekdays) || 'Sem dias'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
                 </option>
               ))}
             </select>
