@@ -238,6 +238,7 @@ function HomeScheduleGrid({
   appointments,
   onAttendance,
   onReturn,
+  onSchedule,
   busyAppointmentId,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
@@ -247,6 +248,7 @@ function HomeScheduleGrid({
   appointments: readonly AgendaAppointment[]
   onAttendance?: (appointmentId: string, action: string) => void
   onReturn?: (appointment: AgendaAppointment) => void
+  onSchedule?: (slot: AgendaScheduleSlot) => void
   busyAppointmentId?: string | null
 }>) {
   const appointmentById = new Map(
@@ -296,6 +298,15 @@ function HomeScheduleGrid({
                             ? 'Bloqueado'
                             : slot.patient_name ?? 'Agendado'}
                       </span>
+                      {slot.slot_status === 'livre' && onSchedule && (
+                        <button
+                          type="button"
+                          className="agenda-slot-schedule-button"
+                          onClick={() => onSchedule(slot)}
+                        >
+                          Agendar
+                        </button>
+                      )}
                       {slot.slot_status === 'agendado' && slot.appointment_type && (
                         <small>{slot.appointment_type}</small>
                       )}
@@ -696,6 +707,21 @@ export function AgendaPage({
     setQueueInclusionBusy(false)
   }
 
+  function prepareSlotScheduling(slot: AgendaScheduleSlot) {
+    if (isProfessional) return
+    const catalogRow = catalogRows.find(
+      (item) => item.professional_id === slot.professional_id,
+    )
+
+    setShowRescheduleForm(false)
+    setShowScheduleForm(true)
+    setSelectedProfessionalId(slot.professional_id)
+    if (catalogRow) setSelectedSpecialtyId(catalogRow.specialty_id)
+    setAnchorDate(slot.slot_date)
+    setSelectedSlotStart(slot.slot_start)
+    setAppointmentFeedback(null)
+  }
+
   async function createAppointment() {
     if (!appointmentPatientId || !selectedSpecialtyId || !selectedProfessionalId || !validSlotStart || !appointmentType) {
       setAppointmentFeedback('Selecione paciente, especialidade, profissional, horário e tipo de atendimento.')
@@ -977,12 +1003,15 @@ export function AgendaPage({
       .getAvailableAppointmentSlots(selectedProfessionalId, anchorDate)
       .then((nextState) => {
         if (!active) return
+        const rows = nextState.status === 'success' ? nextState.data : []
         setSlotResult({
           key: `${selectedProfessionalId}:${anchorDate}`,
-          rows: nextState.status === 'success' ? nextState.data : [],
+          rows,
           status: nextState.status === 'error' ? 'error' : nextState.status === 'success' ? 'success' : 'empty',
         })
-        setSelectedSlotStart('')
+        setSelectedSlotStart((current) =>
+          rows.some((slot) => slot.slot_start === current) ? current : '',
+        )
       })
     return () => {
       active = false
@@ -1219,9 +1248,26 @@ export function AgendaPage({
                   readOnly={isProfessional}
                   placeholder="Nome, Nº CAPO ou CMS"
                   value={appointmentPatientQuery}
-                  onChange={(event) => setAppointmentPatientQuery(event.target.value)}
-                  onBlur={() => { if (!isProfessional) void searchAppointmentPatients() }}
+                  onChange={(event) => {
+                    setAppointmentPatientQuery(event.target.value)
+                    if (!isProfessional) setAppointmentPatientId('')
+                  }}
+                  onKeyDown={(event) => {
+                    if (!isProfessional && event.key === 'Enter') {
+                      event.preventDefault()
+                      void searchAppointmentPatients()
+                    }
+                  }}
                 />
+                {!isProfessional && (
+                  <button
+                    type="button"
+                    className="agenda-patient-search-button"
+                    onClick={() => void searchAppointmentPatients()}
+                  >
+                    Buscar paciente
+                  </button>
+                )}
                 {!isProfessional && appointmentPatients.length > 0 && (
                   <select
                     value={appointmentPatientId}
@@ -1531,6 +1577,14 @@ export function AgendaPage({
               appointments={state.status === 'success' ? state.data : []}
               onAttendance={isProfessional ? updateAttendance : undefined}
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
+              onSchedule={
+                !isProfessional &&
+                roleCodes.some((role) =>
+                  ['administrador', 'administrativo_operacional'].includes(role),
+                )
+                  ? prepareSlotScheduling
+                  : undefined
+              }
               busyAppointmentId={busyAppointmentId}
             />
           )}
