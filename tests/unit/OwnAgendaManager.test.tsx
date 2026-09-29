@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OwnAgendaManager } from '../../src/features/agenda/OwnAgendaManager'
@@ -87,16 +87,23 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
 
     await user.click(screen.getByRole('button', { name: 'Novo padrão semanal' }))
 
-    await user.clear(screen.getByLabelText('Início da vigência'))
-    await user.type(screen.getByLabelText('Início da vigência'), '2026-10-01')
-    await user.type(screen.getByLabelText('Horário inicial'), '08:00')
-    await user.type(screen.getByLabelText('Horário final'), '17:00')
-    await user.clear(screen.getByLabelText('Duração da consulta (minutos)'))
-    await user.type(screen.getByLabelText('Duração da consulta (minutos)'), '60')
+    fireEvent.change(screen.getByLabelText('Início da vigência'), {
+      target: { value: '2026-10-01' },
+    })
+    fireEvent.change(screen.getByLabelText('Horário inicial'), {
+      target: { value: '08:00' },
+    })
+    fireEvent.change(screen.getByLabelText('Horário final'), {
+      target: { value: '17:00' },
+    })
+    fireEvent.change(screen.getByLabelText('Duração da consulta (minutos)'), {
+      target: { value: '60' },
+    })
 
-    await user.click(screen.getByLabelText('Quarta'))
-    await user.click(screen.getByLabelText('Quinta'))
-    await user.click(screen.getByLabelText('Sexta'))
+    const weekdays = within(screen.getByRole('group', { name: 'Dias da semana' }))
+    await user.click(weekdays.getByLabelText('Quarta'))
+    await user.click(weekdays.getByLabelText('Quinta'))
+    await user.click(weekdays.getByLabelText('Sexta'))
 
     await user.click(screen.getByRole('button', { name: 'Salvar configuração-base' }))
 
