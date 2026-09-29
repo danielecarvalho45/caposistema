@@ -363,6 +363,17 @@
   color: #fff;
 }
 
+.gestor-agenda-slot-cancel-action {
+  border-color: #a43232;
+  color: #8f2424;
+}
+
+.gestor-agenda-slot-cancel-action:hover,
+.gestor-agenda-slot-cancel-action:focus-visible {
+  background: #8f2424;
+  color: #fff;
+}
+
 @media (max-width: 620px) {
   .gestor-agenda-slot:has(.gestor-agenda-slot-action) {
     grid-template-columns: 64px minmax(0, 1fr) auto;
