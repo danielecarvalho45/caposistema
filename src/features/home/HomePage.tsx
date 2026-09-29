@@ -95,7 +95,7 @@ export function HomePage({
   }, [isAdministrativeOperational])
 
   return (
-    <div className="home-page">
+    <div className="home-page home-mobile-standard">
       <ProfileDashboard accessContext={accessContext} />
 
       {isAdministrativeOperational && (
