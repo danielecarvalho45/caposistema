@@ -52,6 +52,9 @@ function notificationContextHref(
     patient_no_show_followup: '/faltosos',
     waiting_list: '/fila',
     family_psychology_waiting_list: '/fila',
+    patients: '/pacientes',
+    patient: '/pacientes',
+    clinical_records: '/encerramentos',
     patient_care_closures: '/encerramentos',
     transport_requests: '/transporte',
     prescription_renewal_requests: '/receita',
@@ -79,6 +82,15 @@ function notificationContextHref(
         ? 'family'
         : 'patient'
     return `/fila?waitingListId=${encodeURIComponent(notification.entity_id)}&queueKind=${kind}`
+  }
+
+  if (
+    route === '/pacientes' &&
+    notification.entity_id &&
+    (notification.entity_type === 'patients' ||
+      notification.entity_type === 'patient')
+  ) {
+    return `/pacientes?patientId=${encodeURIComponent(notification.entity_id)}`
   }
 
   return route
