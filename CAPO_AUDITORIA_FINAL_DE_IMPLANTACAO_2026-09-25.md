@@ -2957,3 +2957,26 @@ Os atalhos aprovados do bloco principal são:
 **Conferência física pós-correção:** `AgendaPage.tsx` contém **Gerenciar minha agenda**, não contém mais **Remarcar retorno** no contexto profissional e mantém **Remarcar** apenas na área administrativa. O Início profissional contém links separados para `/agenda` e `/minha-agenda/gerenciar`. A barra lateral contém o novo item. As duas RPCs de remarcação foram relidas no Supabase e não incluem mais autorização para `profissional`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / FLUXOS SEPARADOS / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.35 Correção de contexto — Renovação de Receita do Médico Clínico sem opções administrativas (28/09/2026)
+
+**Evidência de homologação:** na tela de Renovação de Receita aberta no contexto do Médico Clínico ainda apareciam opções administrativas quando a conta possuía papéis acumulados. Isso contrariava o fluxo já registrado na seção 28.28: **Administrativo solicita; Médico Clínico executa; Administrativo recebe a devolutiva e orienta o paciente**.
+
+**Confronto estrutural:** o Index aprovado do Médico Clínico organiza Renovação de Receita como fila de **Recebidas / Em andamento / Histórico**, com atuação médica sobre a solicitação recebida e devolução operacional ao Administrativo. A tela clínica não deve expor criação administrativa, seleção de médico destinatário, cancelamento administrativo ou conclusão administrativa.
+
+**Causa confirmada:** `RenewalPrescriptionPage.tsx` usava a lista acumulada de papéis da conta para definir `canCreate` e `canManageAdmin`. Assim, uma conta cujo contexto principal era `profissional`, mas que também possuía papel administrativo acumulado, podia receber simultaneamente controles clínicos e administrativos.
+
+**Correção aplicada:** a tela passa a usar o **contexto principal aberto**. Quando `primary_context.code='profissional'` e existe a capacidade `renovacao_receita`, o usuário é tratado exclusivamente como executor médico naquele módulo. Criação de nova solicitação e ações administrativas só aparecem quando o contexto principal é `administrador` ou `administrativo_operacional`.
+
+**Fluxo clínico simplificado:** para solicitação `awaiting_medical`, o botão passou a ser **Recebido**. Após o recebimento, no estado `medical_in_progress`, o Clínico informa **Onde retirar a receita** e pode registrar uma **Observação para o Administrativo (opcional)**. O botão principal passou a ser **Receita pronta**. A observação deixa de ser obrigatória para receita pronta; quando vazia, o frontend envia a devolutiva operacional neutra `Receita pronta`, preservando o contrato do backend. O fluxo secundário **Necessita consulta** permanece disponível e exige justificativa operacional.
+
+**Devolução automática preservada:** a RPC física `manage_prescription_renewal_medical_for_interface` foi relida no Supabase oficial e já registra `pickup_location`, move a solicitação para `awaiting_admin` e chama `capo_criar_notificacao` para o papel `administrativo_operacional` com o aviso **Receita pronta para retirada**. Portanto, não foi necessária nova alteração de banco nesta etapa.
+
+**Teste de regressão:** `tests/unit/renewal-prescription-page.test.tsx` foi atualizado para o novo fluxo **Receita pronta + local de retirada** e ganhou cenário específico em que a conta possui `profissional` e `administrativo_operacional`, mas está com contexto principal `profissional`; nesse caso, a tela deve exibir **Recebido** e não pode exibir **Nova solicitação** nem **Cancelar solicitação**.
+
+**Arquivos alterados:** `src/features/renewals/RenewalPrescriptionPage.tsx` e `tests/unit/renewal-prescription-page.test.tsx`.
+
+**Commits:** `efac69e4c0b81cc2e667beaa0e94c10ae9ece434`, `e62c3773a3c55771ac1eb9ceb2761ab6f7e5c00b` e `35dd2831681be7d52b528299707b48c6469c924a`.
+
+**Estado:** **REGRESSÃO DE CONTEXTO CONFIRMADA E CORRIGIDA NO CÓDIGO / DEVOLUÇÃO AUTOMÁTICA AO ADMINISTRATIVO CONFIRMADA NO SUPABASE / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
