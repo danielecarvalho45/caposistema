@@ -3942,3 +3942,26 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Preservação:** nenhuma identidade profissional, especialidade, agenda, histórico, status, capacidade ou dado clínico foi modificado. Não foram criados `auth.users` nem senhas para profissionais sem dados completos, evitando inventar credenciais ou duplicar identidades.
 
 **Estado:** **ERRO SISTÊMICO DE VÍNCULO CORRIGIDO GLOBALMENTE / PROFISSIONAIS LEGADOS INVENTARIADOS / DADOS INCOMPLETOS PRESERVADOS PARA COMPLEMENTAÇÃO PELO FLUXO OFICIAL / AGUARDANDO CRIAÇÃO DAS CONTAS E TESTE REAL DE LOGIN PROFISSIONAL A PROFISSIONAL**.
+
+
+### 28.73 Pré-implantação — correção da numeração inicial do Nº CAPO do primeiro paciente real (29/09/2026)
+
+**Evidência operacional:** o primeiro paciente real cadastrado na pré-implantação recebeu Nº CAPO `000021`, quando a numeração real deveria iniciar em `000001`.
+
+**Causa física confirmada:** a geração do Nº CAPO é feita pelo trigger `trg_capo_generate_patient_number`, que usa a sequence `public.capo_patient_number_seq`. A sequence estava em `last_value=21`, embora o banco contivesse apenas um paciente real atual. O único outro paciente existente é o registro oficial de homologação, identificado separadamente como `TESTE-CAPO-0001`. Portanto, a sequence havia sido consumida por operações anteriores de desenvolvimento/homologação e não refletia o início real da operação.
+
+**Correção aplicada:** o primeiro paciente real foi renumerado de `000021` para `000001`, preservando sua identidade `id`, cadastro e demais vínculos. A sequence foi reposicionada para `1` com `is_called=true`, fazendo com que o próximo paciente real receba `000002`.
+
+**Proteção da migration:** a correção somente executa quando existe exatamente um paciente real e quando `000001` ainda não está em uso, evitando renumeração acidental em ambiente já populado.
+
+**Preservação:** o paciente de homologação permanece com `TESTE-CAPO-0001`; nenhum paciente foi excluído; nenhum vínculo clínico, agenda, histórico, CMS ou dado cadastral foi alterado.
+
+**Migration aplicada:** `20260929185800_reset_real_patient_numbering_for_predeployment`.
+
+**Arquivo no repositório:** `supabase/migrations/20260929185800_reset_real_patient_numbering_for_predeployment.sql`.
+
+**Commit da migration:** `90ae664c95cae951ce184ff0655dcb972c5259c7`.
+
+**Verificação pós-correção:** paciente real atual com Nº CAPO `000001`; sequence em `last_value=1` e `is_called=true`.
+
+**Estado:** **CORRIGIDO NO BANCO E REGISTRADO / PRIMEIRO PACIENTE REAL = 000001 / PRÓXIMO NÚMERO PREVISTO = 000002 / AGUARDANDO CONTINUIDADE DOS TESTES REAIS DE PRÉ-IMPLANTAÇÃO**.
