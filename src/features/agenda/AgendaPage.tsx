@@ -693,7 +693,10 @@ export function AgendaPage({
 
   async function searchAppointmentPatients() {
     const query = appointmentPatientQuery.trim()
-    if (query.length < 2) return
+    if (query.length < 2 && !/^\d$/.test(query)) {
+      setAppointmentFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
+      return
+    }
     const result = await getRpcService().searchReferralPatients(query, 20, 0)
     setAppointmentPatients(result.status === 'success' ? result.data : [])
   }
