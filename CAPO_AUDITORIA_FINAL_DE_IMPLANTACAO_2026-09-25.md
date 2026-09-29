@@ -3125,3 +3125,34 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `2ebdacda0ad6ada71bda2b523cb9df9133daab9b`, `89dc1763675ce9489c182a1ae6406773b3e54f0a`, `125c4122d722ef7b5a75a5a248992f238e2112b4`, `63570f1ccf70cef45cc9452127acf8ca9844f8c6`, `f61895d599bc2a3829a570d2d7b6e4d1c760ce00`, `69c2286e6aeb99cf872ab5d7c88f526ac75e6658` e `d7e964620233b471aa14b530716a503465c1b370`.
 
 **Estado:** **REGRA ESTRUTURAL CONSOLIDADA NO CÓDIGO E NO SUPABASE / TELA DEFINIDA PELA ESPECIALIDADE-PERFIL / PROFISSIONAL INDIVIDUAL NÃO CRIA VARIANTE DE TELA / HOMOLOGAÇÃO USA A MESMA IMPLEMENTAÇÃO / TESTE AUTOMATIZADO ATUALIZADO, NÃO EXECUTADO NESTA ETAPA / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL FINAL**.
+
+
+### 28.42 Home profissional — agenda real do dia com Confirmar/Falta e abertura do atendimento (29/09/2026)
+
+**Regra estrutural aplicada:** ao entrar no perfil profissional, a tela **Início** deve mostrar diretamente os pacientes agendados, inclusive no mobile. A agenda operacional não deve ser substituída por um card/atalho “Minha Agenda”. Na linha do paciente devem existir as ações **Confirmar** e **Falta**. A confirmação abre o atendimento correspondente ao perfil/especialidade; a falta alimenta o fluxo administrativo de Faltosos.
+
+**Conferência física anterior à correção:** Nutrição já renderizava `AgendaPage` no início; Assistência Social e a base Assistencial/Clínico também possuíam a agenda embutida, porém depois dos atalhos rápidos. A base Assistencial e Assistência Social ainda mantinham card **Minha Agenda**, criando duplicidade visual e fazendo a Home parecer um painel de navegação em vez da tela operacional de atendimento.
+
+**Correção transversal:** `AgendaPage` recebeu modo `embeddedHome` para uso na tela inicial profissional. Nesse modo:
+- o título passa a ser **Agenda de atendimentos**;
+- a orientação informa que os pacientes agendados devem ser confirmados ou marcados como falta na própria linha;
+- o botão interno **Gerenciar minha agenda** não duplica a função na Home, permanecendo disponível pela função própria;
+- a mesma implementação de agenda continua sendo usada pela rota completa e pelas Home profissionais.
+
+**Ordem da Home:** a agenda real foi colocada antes dos atalhos rápidos em `AssistentialPage` e `SocialPage`. Nutrição já estava com a agenda antes dos demais blocos e foi alinhada ao mesmo modo `embeddedHome`. Os cards redundantes **Minha Agenda** foram removidos das Home profissionais.
+
+**Ações de presença:** os botões compartilhados passaram a exibir **✓ Confirmar** e **✕ Falta**. Foi removida a validação frontend que exigia digitação de motivo antes de marcar falta, porque a RPC física `update_appointment_attendance_for_interface` não exige motivo para `faltou`.
+
+**Fluxo de Faltosos confirmado fisicamente:** o Supabase possui o trigger `trg_patient_no_show` em `patient_appointments`, executando `handle_patient_no_show()`. Quando `attendance_status` muda para `faltou`, a função cria `patient_no_show_followups` com `active_search_status='pendente'`, evita duplicidade por `appointment_id` e registra a falta na timeline. Portanto, a Home profissional apenas registra a falta; a operação administrativa subsequente pertence ao módulo Faltosos.
+
+**Abertura do atendimento após confirmação:** o callback `onConfirmed` foi preservado por tela. Na base Assistencial/Clínico ele abre o paciente vinculado à atuação; em Nutrição seleciona o paciente para o atendimento nutricional; em Assistência Social seleciona o agendamento/paciente para o acompanhamento social. Assim, a ação comum de presença mantém a particularidade de atendimento definida por cada perfil.
+
+**Mobile:** a tabela de agenda recebeu atributos semânticos por célula e, em viewport até 760 px, passa a ser apresentada como blocos verticais por atendimento, sem depender de rolagem horizontal. Paciente e ações **Confirmar/Falta** permanecem visíveis no mesmo cartão.
+
+**Arquivos alterados:** `src/features/agenda/AgendaPage.tsx`, `src/features/professional/AssistentialPage.tsx`, `src/features/nutrition/NutritionPage.tsx`, `src/features/social/SocialPage.tsx`, `src/features/professional/assistential-page.css`.
+
+**Commits:** `ed086693129e47c421c269a2397b99d5d78900bb`, `9fd7fec334af67931c06ecaa6e201017ac06965c`, `340b9f789a54b8edd080c9ded59c0d6c72efb430`, `6c4deb7ea95aebfd9a6f54236e51d753541864ef`, `a72b937f6bfdebf3619c3fd786607c70862d07ee`, `08c80afa049562961d7a4563f7a20cccd0c8a4f2` e `d1953ee2b08fe0fdb282e560dff2231a86687dc5`.
+
+**Conferência pós-correção:** as três Home específicas e a base assistencial foram relidas. Em todas, `AgendaPage` aparece antes de **Acessos rápidos**, não há card rápido **Minha Agenda** e o modo `embeddedHome` está ativo. O componente compartilhado contém os botões ✓ Confirmar e ✕ Falta e não contém mais a exigência de motivo para falta.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / FLUXO DE FALTOSOS CONFIRMADO NO SUPABASE / HOME PROFISSIONAL PADRONIZADA / MOBILE ADAPTADO / TESTES AUTOMATIZADOS NÃO EXECUTADOS NESTA ETAPA / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
