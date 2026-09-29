@@ -4038,3 +4038,42 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Commit:** `ddd8bb0c757fc254fac92232874c5341a28be6b1`.
 
 **Estado:** **ALINHADO NO CÓDIGO ÀS PERMISSÕES REAIS / GESTOR-TITULAR E ADMINISTRATIVO OPERACIONAL PODEM EDITAR / COORDENADOR PERMANECE SOMENTE CONSULTA / AGUARDANDO TESTE OPERACIONAL PUBLICADO**.
+
+### 28.78 Pré-implantação — continuidade real do paciente após cadastro/consulta (29/09/2026)
+
+**Evidência operacional:** durante o teste real do primeiro paciente, o cadastro inicial e o WhatsApp da etapa de Oferta CAPO funcionaram, porém ao localizar posteriormente o mesmo paciente a tela apresentava apenas um cartão pequeno e os atalhos deixavam de manter o paciente como contexto. WhatsApp não abria no fluxo consultado e Agenda, Familiar/Cuidador e Encerramentos eram links genéricos; a inclusão na Fila de Espera não estava disponível nesse bloco.
+
+**Causa estrutural confirmada no frontend:** `PatientsPage` descartava o contexto completo do paciente após a busca e os atalhos não transportavam `patient_id`/identificação para os módulos de destino. O botão contextual de WhatsApp dependia de nova consulta assíncrona antes de abrir a janela, enquanto o WhatsApp da Oferta Inicial usava diretamente o telefone já carregado no formulário. A Agenda já possuía suporte parcial a navegação contextual, mas exigia especialidade pré-informada antes de conservar o paciente.
+
+**Correção da tela Pacientes:**
+- a busca foi compactada e o paciente selecionado passou a ocupar a área principal;
+- busca com resultado único abre automaticamente o cadastro completo retornado por `get_patient_for_edit_for_interface`; múltiplos resultados apresentam seleção explícita;
+- o paciente recém-cadastrado também permanece selecionado após a confirmação do banco;
+- o cadastro completo mostra Nº CAPO, CMS, data de nascimento, idade, sexo, telefones, endereço, entrada, origem, situação e observação;
+- Gestor/Titular e Administrativo Operacional mantêm edição conforme as RPCs existentes; os demais contextos permitidos permanecem somente leitura;
+- WhatsApp passou a usar link direto construído a partir do telefone já carregado no cadastro completo, eliminando a nova consulta assíncrona no clique desta tela;
+- ações do paciente foram organizadas na ordem: WhatsApp, Agendamento, Familiar/Cuidador, Adicionar na Fila de Espera, Encerramentos e Óbito.
+
+**Continuidade contextual entre módulos:**
+- `AgendaPage` agora conserva `patientId`/`patientName` mesmo quando a especialidade ainda não foi escolhida, permitindo continuar o agendamento a partir do cadastro;
+- `FamilyCaregiverPage` recebe o paciente pela navegação, seleciona e carrega automaticamente o contexto familiar;
+- `QueuePage` recebe o paciente selecionado, abre diretamente o formulário de inclusão e carrega as especialidades reais;
+- `ClosuresPage` recebe o paciente, pré-seleciona o contexto administrativo de retorno e seleciona eventual encerramento existente do mesmo paciente.
+
+**Backend preservado:** não foram criadas RPCs, tabelas ou permissões novas. Foram reutilizados os contratos existentes. A aceitação da Oferta Inicial continua sendo o ponto que cria o primeiro ciclo CAPO real por `register_initial_active_search_attempt_for_interface`; Agenda e Fila continuam corretamente bloqueadas pelo backend quando não existe ciclo CAPO aberto.
+
+**Arquivos alterados:**
+- `src/features/patients/PatientsPage.tsx`;
+- `src/features/patients/patients-page.css`;
+- `src/features/agenda/AgendaPage.tsx`;
+- `src/features/social/FamilyCaregiverPage.tsx`;
+- `src/features/queues/QueuePage.tsx`;
+- `src/features/closures/ClosuresPage.tsx`.
+
+**Commits de implementação:** `d33dafc2a86bc88ec266c201e12cf09d07063a44`, `c1715f2ee75efa87ff7260ec05be3843ff19d0cf`, `0089cba561df9bb68154eba535a1b323798a63b5`, `4a65f8f971f91e4984e42faa7aafeeffa964d790`, `bc585e081365166c2b6601bbe7c1287c528b369a`, `91df42d58cf019b69eb55aa78922d8a98294e430`, `c09e1df6227c6efd5351bc71070eca01807e7d8d`, `c9ef86053264466b01ab8bcb9b927cbff3981d1c`.
+
+**Cobertura automatizada acrescentada/ajustada:** fluxo contextual de Pacientes, Agenda sem especialidade pré-selecionada, Familiar/Cuidador por navegação e Fila por navegação. Commits: `32e17d5d1317abad0692e75360a6e7e602a99cf1`, `5b29237809abf2daa7071340d1ff8f549b2f5009`, `32ed996a7ef01047e7b5ca3cef58df44345cc8e0`, `009a6643d8a666400577fd5d7485dc3b11036d68`, `44bf874f4b0818aab8b747c33cadb9df14f78df9`.
+
+**Limitação de verificação desta intervenção:** os testes foram atualizados no repositório, porém não foram executados neste agente por ausência de runner/CI acessível nesta sessão. Não classificar como PASS operacional até publicação e teste real pela Titular.
+
+**Estado:** **FLUXO CONTEXTUAL CORRIGIDO NO CÓDIGO / BACKEND REUTILIZADO SEM AMPLIAÇÃO DE PERMISSÃO / TESTES DE REGRESSÃO ATUALIZADOS / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL REAL DO PACIENTE Nº CAPO 1**.
