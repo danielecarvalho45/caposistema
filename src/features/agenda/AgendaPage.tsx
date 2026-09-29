@@ -205,6 +205,21 @@ function AppointmentTable({
 }
 
 
+function agendaBlockLabel(value: string | null) {
+  switch (value) {
+    case 'intervalo': return '☕ Intervalo / Café'
+    case 'alimentacao': return '🍽️ Almoço'
+    case 'estudo_caso': return '📚 Estudo de caso'
+    case 'atendimento_online': return '💻 Atendimentos online'
+    case 'rotina_administrativa': return '📋 Rotinas administrativas'
+    case 'reuniao': return '👥 Reunião'
+    case 'relatorio': return '📊 Relatório'
+    case 'atividade': return '📋 Atividade interna'
+    case 'bloqueio': return '⛔ Bloqueio'
+    default: return value ?? ''
+  }
+}
+
 function slotClock(value: string) {
   const date = new Date(value)
   return Number.isNaN(date.getTime())
@@ -278,7 +293,7 @@ function HomeScheduleGrid({
                         <small>{slot.appointment_type}</small>
                       )}
                       {slot.slot_status === 'bloqueado' && slot.block_type && (
-                        <small>{slot.block_type}</small>
+                        <small>{agendaBlockLabel(slot.block_type)}</small>
                       )}
                       {slot.slot_status === 'agendado' && slot.appointment_id && onAttendance && (
                         <div className="agenda-week-home-actions">
