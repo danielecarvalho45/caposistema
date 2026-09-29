@@ -2980,3 +2980,26 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `efac69e4c0b81cc2e667beaa0e94c10ae9ece434`, `e62c3773a3c55771ac1eb9ceb2761ab6f7e5c00b` e `35dd2831681be7d52b528299707b48c6469c924a`.
 
 **Estado:** **REGRESSÃO DE CONTEXTO CONFIRMADA E CORRIGIDA NO CÓDIGO / DEVOLUÇÃO AUTOMÁTICA AO ADMINISTRATIVO CONFIRMADA NO SUPABASE / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.36 Correção de contexto — Odontologia do Médico Clínico sem funções administrativas (28/09/2026)
+
+**Evidência de homologação:** na tela de Odontologia aberta no contexto do Médico Clínico ainda podiam aparecer funções administrativas quando a conta possuía papéis acumulados.
+
+**Confronto com o projeto estrutural:** o Index aprovado do Médico Clínico define o fluxo profissional como **Novo encaminhamento + Histórico**, com busca do paciente, destino, conteúdo do encaminhamento, identificação do Médico Clínico/CRM, pré-visualização e geração do PDF oficial. A seção 7.12 desta auditoria confirma que o PDF odontológico é de autoria exclusiva do profissional competente. Gestão e Administrativo apenas recebem, visualizam/baixam o documento e conduzem a providência administrativa.
+
+**Causa confirmada:** `src/features/dentistry/DentistryPage.tsx` utilizava diretamente os indicadores acumulados `can_issue` e `can_manage` devolvidos pelo backend. Em contas com mais de um papel, isso permitia que o contexto clínico exibisse simultaneamente emissão profissional e controles administrativos.
+
+**Correção aplicada:** a tela agora separa as ações pelo `primary_context.code`. Quando o contexto principal é `profissional`, somente `can_issue` é considerado e a tela apresenta **Nova emissão**, **Histórico**, geração do **PDF oficial** e consulta/visualização do documento. Quando o contexto principal é `administrador` ou `administrativo_operacional`, somente `can_manage` é considerado e são exibidos **Encaminhamentos recebidos**, campo de **Providência / informação administrativa** e ações administrativas autorizadas.
+
+**Controles removidos do contexto Clínico:** **Iniciar atendimento**, **Concluir atendimento**, **Cancelar encaminhamento** e **Providência / informação administrativa** não são renderizados no contexto profissional, mesmo quando o backend informa `can_manage=true` por papel acumulado.
+
+**Preservação funcional:** geração e vinculação do PDF continuam exclusivas do profissional emissor; Administrativo/Gestão não recebem ação de geração do documento. Nenhuma RPC, SQL, RLS, policy, trigger ou migration foi alterada nesta etapa.
+
+**Teste de regressão:** `tests/unit/dentistry-page.test.tsx` foi atualizado para usar contexto administrativo real no teste de gestão e ganhou cenário específico de papel acumulado, confirmando que o contexto principal `profissional` não exibe controles administrativos.
+
+**Arquivos alterados:** `src/features/dentistry/DentistryPage.tsx` e `tests/unit/dentistry-page.test.tsx`.
+
+**Commits:** `85f7617665e763cd4ffbfd5739db789c3432e0f1` e `7ad8dcecc38e8d8d4b369e5b0baa4550997a26a2`.
+
+**Estado:** **REGRESSÃO DE CONTEXTO CORRIGIDA NO CÓDIGO / FUNÇÕES CLÍNICAS E ADMINISTRATIVAS SEPARADAS / BACKEND PRESERVADO / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL REAL**.
