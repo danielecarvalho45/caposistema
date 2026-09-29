@@ -48,7 +48,8 @@ export function FamilyPsychologyAppointmentsPanel({
     (accessContext.specialties ?? []).some(
       (item) => normalize(item.specialty_name) === 'psicologia',
     )
-  const authorized = isGeneral || isPsychologyProfessional
+  const authorized =
+    isPsychologyProfessional || (isGeneral && Boolean(professionalId))
 
   const [state, setState] =
     useState<AsyncState<readonly FamilyPsychologyAppointment[]>>(loadingState)
