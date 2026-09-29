@@ -1292,10 +1292,6 @@ export function AgendaPage({
 
         <div aria-live="polite">
           {state.status === 'loading' && <p>Carregando agenda…</p>}
-          {(state.status === 'empty' ||
-            (state.status === 'success' && state.data.length === 0)) && (
-            <p>Nenhum agendamento encontrado no período.</p>
-          )}
           {state.status === 'error' && (
             <div className="assistential-error" role="alert">
               <p>Não foi possível carregar a agenda: {state.error.message}</p>
@@ -1304,20 +1300,26 @@ export function AgendaPage({
               </button>
             </div>
           )}
-          {state.status === 'success' && state.data.length > 0 && (
-            <AgendaResults
-              appointments={state.data}
-              startDate={startDate}
-              endDate={endDate}
-              view={view}
-              showSpecialty={shouldShowSpecialty}
-              onAttendance={isProfessional ? updateAttendance : undefined}
-              onReturn={isProfessional ? prepareProfessionalReturn : undefined}
-              busyAppointmentId={busyAppointmentId}
-              patientSpecialties={isProfessional ? patientSpecialties : undefined}
-              embeddedHome={embeddedHome}
-            />
-          )}
+          {(state.status === 'empty' ||
+            (state.status === 'success' && state.data.length === 0)) &&
+            view === 'day' && (
+              <p>Nenhum atendimento agendado para este dia.</p>
+            )}
+          {(state.status === 'empty' || state.status === 'success') &&
+            (view !== 'day' || (state.status === 'success' && state.data.length > 0)) && (
+              <AgendaResults
+                appointments={state.status === 'success' ? state.data : []}
+                startDate={startDate}
+                endDate={endDate}
+                view={view}
+                showSpecialty={shouldShowSpecialty}
+                onAttendance={isProfessional ? updateAttendance : undefined}
+                onReturn={isProfessional ? prepareProfessionalReturn : undefined}
+                busyAppointmentId={busyAppointmentId}
+                patientSpecialties={isProfessional ? patientSpecialties : undefined}
+                embeddedHome={embeddedHome}
+              />
+            )}
         </div>
       </div>
     </section>
