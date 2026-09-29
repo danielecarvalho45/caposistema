@@ -35,6 +35,7 @@ function agendaChangeText(row: AgendaChangeRow, ...keys: string[]) {
 const quickAccess = [
   ['/pacientes', '👥', 'Pacientes', 'Cadastrar e consultar', 'blue'],
   ['/agenda', '▣', 'Agenda', 'Visualizar agendas', 'green'],
+  ['/gestor/equipe?aba=agenda', '⏱', 'Ampliar horário', 'Abrir horário adicional na agenda', 'blue'],
   ['/fila', '≡', 'Filas', 'Pacientes e familiares', 'mint'],
   ['/faltosos', '◷', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
   ['/solicitacoes', '▤', 'Solicitações', 'Analisar e encaminhar', 'purple'],
