@@ -633,8 +633,8 @@ export function OwnAgendaManager({
                   value={recurringType}
                   onChange={(event) => setRecurringType(event.target.value as 'intervalo' | 'alimentacao')}
                 >
-                  <option value="intervalo">Intervalo</option>
-                  <option value="alimentacao">Almoço / Alimentação</option>
+                  <option value="intervalo">☕ Intervalo</option>
+                  <option value="alimentacao">🍽️ Almoço / Alimentação</option>
                 </select>
               </label>
               <label>
@@ -697,7 +697,7 @@ export function OwnAgendaManager({
                   return (
                     <div className="agenda-recurring-row" key={blockId}>
                       <span>{weekdayLabels[weekday] ?? 'Dia'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}</span>
-                      <small>{stringValue(item.block_type) === 'alimentacao' ? 'Almoço / Alimentação' : 'Intervalo'}</small>
+                      <small>{stringValue(item.block_type) === 'alimentacao' ? '🍽️ Almoço / Alimentação' : '☕ Intervalo'}</small>
                       <button type="button" disabled={recurringBusy} onClick={() => void removeRecurringInterval(blockId)}>
                         Remover
                       </button>
