@@ -4471,3 +4471,107 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 
 **Estado:** **ESPelhamento DOCUMENTAL CONFIRMADO / BACKEND CONFIRMADO / CENTRAL E CONTADOR DO GESTOR CONFIRMADOS / CONTEXTOS DE ÓBITO E ALTA MÉDICA CORRIGIDOS / TESTE DE REGRESSÃO ADICIONADO / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
 
+
+
+### 28.93 HIERARQUIA ADMINISTRATIVA — GESTOR/TITULAR, ADMINISTRATIVO GESTOR E ADMINISTRATIVO OPERACIONAL (29/09/2026)
+
+**Objetivo deste registro:** consolidar, para consultas futuras de manutenção, a diferença funcional entre os três níveis administrativos do CAPO, evitando que correções posteriores tratem o Gestor/Titular como se dependesse de permissões operacionais adicionais ou confundam o Administrativo Gestor com o proprietário do sistema.
+
+#### 28.93.1 Gestor do Sistema / Gestor Titular — conta Daniele
+
+- corresponde ao papel físico `administrador`;
+- é o perfil máximo e exclusivo do proprietário/criador do sistema;
+- atualmente está vinculado somente à conta Daniele;
+- esse perfil é intransferível pela interface;
+- criação, remoção ou transferência desse papel somente pode ocorrer diretamente no Supabase;
+- não depende de receber `administrativo_operacional`, capability administrativa adicional ou outro papel para exercer os fluxos administrativos do CAPO;
+- possui, por natureza do perfil, continuidade administrativa integral dos fluxos do sistema;
+- pode executar todas as ações pertencentes ao Administrativo Operacional;
+- pode acessar Coordenação, TI/Manutenção, auditoria, relatórios gerais e gestão de contas/permissões;
+- pode configurar agendas de profissionais;
+- pode registrar Confirmado/Falta em agenda de qualquer profissional;
+- pode decidir administrativamente a necessidade de retorno e agendar retornos;
+- pode reabrir acompanhamento encerrado e corrigir/cancelar encerramentos administrativos lançados por engano, preservando histórico;
+- pode registrar administrativamente devolutiva ou encerramento já definido por profissional;
+- pode conduzir integralmente solicitações e encaminhamentos administrativos;
+- pode registrar informações de luto;
+- pode cadastrar/atualizar familiar ou cuidador;
+- pode preencher, gerar e assinar o PDF de Transporte;
+- pode gerar o PDF de Planejamento Alimentar já preenchido pela Nutrição;
+- pode executar os fluxos administrativos de Psicologia e Fisioterapia sem acessar conteúdo clínico/técnico.
+
+**Limites de conduta profissional do Gestor/Titular:**
+- não registra acompanhamento social técnico;
+- não registra sinalizações/providências sociais profissionais;
+- não preenche nem altera Planejamento Alimentar;
+- não decide entre Renovar Receita e Necessita Consulta;
+- não decide encaminhamento odontológico;
+- não encerra clinicamente acompanhamento do Clínico Geral;
+- não registra conteúdo/conduta clínica de Psicologia;
+- não registra conteúdo/conduta técnica de Fisioterapia;
+- não substitui qualquer decisão técnica própria de profissional habilitado.
+
+**Regra de manutenção:** para o Gestor/Titular, toda ação administrativa do CAPO é presumidamente autorizada, salvo quando a própria natureza da ação constituir conduta técnica/profissional. Correções futuras não devem exigir `administrativo_operacional` ou capability administrativa extra para liberar ação administrativa ao papel `administrador`.
+
+#### 28.93.2 Administrativo Gestor
+
+O Administrativo Gestor é um nível administrativo ampliado, mas **não é proprietário do sistema** e **não possui os poderes excepcionais do Gestor/Titular**.
+
+No estado físico atual do banco, não existe um papel isolado chamado `administrativo_gestor`. Essa função deve ser representada por combinação controlada de papéis/permissões existentes, sem confundir-se com `administrador`.
+
+**Regras funcionais consolidadas:**
+- possui todas as ações do Administrativo Operacional;
+- pode acessar TI/Manutenção quando essa permissão estiver atribuída;
+- pode cadastrar, ativar, inativar e alterar contas/perfis dentro do escopo autorizado;
+- pode alterar permissões/capacidades de outros usuários, mas nunca atribuir, remover ou transferir o perfil exclusivo `administrador`;
+- pode configurar agendas de profissionais, incluindo dias, horários, intervalos, férias, bloqueios e horários extras;
+- pode consultar histórico/auditoria das ações administrativas;
+- pode acessar dados cadastrais completos necessários aos fluxos administrativos;
+- pode acessar relatórios administrativos/operacionais somente dentro das permissões recebidas;
+- não possui acesso à Coordenação por consequência desse perfil;
+- não pode excluir definitivamente histórico; deve cancelar/corrigir/reverter preservando rastreabilidade.
+
+**Limites específicos já definidos:**
+- não registra acompanhamento social;
+- não registra informações de luto;
+- pode registrar/atualizar familiar ou cuidador;
+- não registra sinalizações/providências sociais profissionais;
+- não preenche nem assina o PDF de Transporte, mas pode gerar/utilizar o documento já preenchido e assinado pela Assistência Social;
+- não preenche nem altera Planejamento Alimentar, mas pode gerar o PDF já preenchido pela Nutrição;
+- não decide entre Renovar Receita e Necessita Consulta;
+- não registra no CAPO a devolutiva médica já definida;
+- pode realizar encaminhamento administrativo para Odontologia após decisão do Clínico Geral;
+- não encerra clinicamente acompanhamento;
+- não registra administrativamente encerramento decidido pelo médico;
+- pode executar a parte administrativa de Psicologia e Fisioterapia sem acessar conteúdo clínico/técnico;
+- não registra Confirmado/Falta na agenda de qualquer profissional;
+- pode agendar retorno quando a necessidade já foi definida pelo profissional;
+- não decide retorno por conta própria;
+- não reabre acompanhamento encerrado;
+- não cancela/corrige encerramento lançado por engano;
+- não aceita/devolve/conclui solicitações feitas por profissionais;
+- pode receber, organizar, encaminhar e concluir administrativamente encaminhamentos já indicados por profissional;
+- pode acessar TI/Manutenção;
+- não possui visão geral irrestrita de relatórios;
+- não acessa Coordenação.
+
+#### 28.93.3 Administrativo Operacional / Auxiliar Administrativo
+
+- corresponde ao papel físico `administrativo_operacional`;
+- é o executor dos fluxos administrativos cotidianos definidos na Matriz Funcional e no Manual Estrutural;
+- agenda, remarca, consulta, opera filas, faltosos, contatos, cadastro, oferta CAPO, encaminhamentos administrativos, providências e demais tarefas operacionais previstas;
+- não recebe automaticamente poderes de TI, Coordenação ou gestão ampliada;
+- todas as ações próprias do Administrativo Operacional são também permitidas ao Administrativo Gestor e ao Gestor/Titular, respeitadas as restrições específicas registradas acima.
+
+#### 28.93.4 Regra transversal para manutenção futura
+
+A partir deste registro, qualquer manutenção relacionada a autorização administrativa deve classificar primeiro a ação em uma das categorias abaixo:
+
+1. **Ação administrativa operacional:** permitida ao Administrativo Operacional, Administrativo Gestor e Gestor/Titular.
+2. **Ação administrativa ampliada:** permitida ao Administrativo Gestor somente quando houver a permissão correspondente; permitida ao Gestor/Titular por natureza do perfil.
+3. **Ação administrativa excepcional do proprietário:** permitida somente ao Gestor/Titular, conforme os exemplos consolidados neste §28.93.
+4. **Conduta técnica/profissional:** não deve ser liberada a perfil administrativo apenas por hierarquia. Deve permanecer com o profissional habilitado, salvo exceção expressamente registrada neste documento.
+
+**Regra crítica:** o papel `administrador` não deve ser tratado como simples papel administrativo comum nem depender de `administrativo_operacional` para continuidade de fluxo. O Administrativo Gestor, por sua vez, não deve herdar automaticamente poderes exclusivos do proprietário.
+
+**Estado:** **HIERARQUIA ADMINISTRATIVA FORMALIZADA PARA MANUTENÇÕES FUTURAS / GESTOR-TITULAR DIFERENCIADO DO ADMINISTRATIVO GESTOR / LIMITES DE CONDUTA PROFISSIONAL REGISTRADOS / NENHUMA ALTERAÇÃO DE BANCO OU INTERFACE REALIZADA NESTE REGISTRO**.
