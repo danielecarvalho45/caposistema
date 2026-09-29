@@ -348,12 +348,14 @@ export function AgendaPage({
   showSpecialty = true,
   onConfirmed,
   loadPatientSpecialties = defaultPatientSpecialtiesLoader,
+  initialManageOpen = false,
 }: Readonly<{
   accessContext: AccessContext
   loadAgenda?: AgendaLoader
   showSpecialty?: boolean
   onConfirmed?: (appointment: AgendaAppointment) => void
   loadPatientSpecialties?: (patientId: string) => Promise<AsyncState<unknown>>
+  initialManageOpen?: boolean
 }>) {
   const location = useLocation()
   const [view, setView] = useState<AgendaView>('day')
@@ -383,7 +385,7 @@ export function AgendaPage({
   const [attendanceReason, setAttendanceReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
   const [showRescheduleForm, setShowRescheduleForm] = useState(false)
-  const [showOwnAgendaManager, setShowOwnAgendaManager] = useState(false)
+  const [showOwnAgendaManager, setShowOwnAgendaManager] = useState(initialManageOpen)
   const [reschedulableResult, setReschedulableResult] = useState<{ key: string; rows: readonly ReschedulableAppointment[] } | null>(null)
   const [selectedReschedulableId, setSelectedReschedulableId] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
@@ -866,7 +868,7 @@ export function AgendaPage({
               {isProfessional ? 'Operacional assistencial' : 'Operacional geral'}
             </p>
             <h2 id="agenda-title">
-              {isProfessional ? 'Agenda' : 'Agenda Geral'}
+              {isProfessional ? 'Minha Agenda' : 'Agenda Geral'}
             </h2>
             <p>
               {isProfessional
@@ -932,13 +934,7 @@ export function AgendaPage({
             >
               Gerenciar minha agenda
             </button>
-            <button
-              type="button"
-              aria-expanded={showRescheduleForm}
-              onClick={() => setShowRescheduleForm((current) => !current)}
-            >
-              Remarcar retorno
-            </button>
+
           </div>
         )}
 
