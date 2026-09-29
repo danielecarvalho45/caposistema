@@ -4077,3 +4077,35 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Limitação de verificação desta intervenção:** os testes foram atualizados no repositório, porém não foram executados neste agente por ausência de runner/CI acessível nesta sessão. Não classificar como PASS operacional até publicação e teste real pela Titular.
 
 **Estado:** **FLUXO CONTEXTUAL CORRIGIDO NO CÓDIGO / BACKEND REUTILIZADO SEM AMPLIAÇÃO DE PERMISSÃO / TESTES DE REGRESSÃO ATUALIZADOS / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL REAL DO PACIENTE Nº CAPO 1**.
+
+### 28.79 Pré-implantação — horários livres clicáveis e agendamento contínuo após cadastro (29/09/2026)
+
+**Evidência operacional:** na Agenda Geral, a consulta da grade do profissional mostrava horários com situação **Livre**, porém sem ação de **Agendar** na própria vaga. Ao tentar novo agendamento de paciente já cadastrado, o fluxo não chegava à gravação.
+
+**Confronto com a documentação funcional:** o Manual da Interface, seção 13.1, determina que horários livres sejam clicáveis para o Administrativo autorizado iniciar um agendamento. A seção 13.3 define Novo Agendamento como fluxo permanente da Agenda Geral: localizar paciente → especialidade → profissional → data → horário livre → tipo → confirmar. A Matriz Funcional, seção 18.5, também define Agenda Geral → Agendar como fluxo independente e determina reutilização dos dados já conhecidos do paciente. Portanto, agendamento não é uma ação disponível somente no momento da Oferta CAPO.
+
+**Estado real do primeiro paciente:** o paciente Nº CAPO `1` está ativo, sem óbito, possui ciclo CAPO `1` ativo, aberto por `initial_acceptance`, e a Oferta Inicial foi registrada como aceita. Portanto, o impedimento observado não era ausência de adesão/ciclo.
+
+**Evidência técnica da tentativa publicada:** entre 18:45Z e 19:05Z foram registrados 6 POSTs bem-sucedidos para `get_available_appointment_slots` e **0 POSTs** para `create_appointment_for_interface`. Assim, a interface consultava vagas, mas a tentativa não alcançava a RPC de criação do agendamento.
+
+**Causa de interface confirmada:** a grade efetiva renderizava `Livre` apenas como texto, sem callback de agendamento. Além disso, a seleção de horário podia ser perdida na recarga assíncrona de vagas, e a busca de paciente no formulário dependia de `blur`, sem ação explícita de busca.
+
+**Correção aplicada:**
+- cada horário `livre` da grade efetiva recebe botão **Agendar** somente para `administrador` e `administrativo_operacional`;
+- ao clicar na vaga, o sistema abre **Novo Agendamento** e reaproveita automaticamente profissional, especialidade correspondente, data e horário daquela vaga;
+- a recarga de `get_available_appointment_slots` preserva o horário já escolhido quando ele continua disponível;
+- o formulário recebeu botão explícito **Buscar paciente** e também aceita Enter;
+- quando o operador altera manualmente o texto da busca, o `patient_id` anterior é limpo para impedir agendamento no paciente errado;
+- paciente recebido da tela de cadastro/consulta continua pré-selecionado e pode ser agendado posteriormente, sem depender de estar no momento da Oferta CAPO.
+
+**Backend preservado:** `create_appointment_for_interface` não foi alterada. Ela já permite agendamentos posteriores enquanto o paciente possui ciclo CAPO aberto e mantém validação de vaga real, paciente ativo, profissional ativo, especialidade e autorização do perfil.
+
+**Arquivos alterados:** `src/features/agenda/AgendaPage.tsx` e `src/features/agenda/agenda-page.css`.
+
+**Commits:** `9d9b53b2a2f714e381697808c0bb636258ec79d3` e `e14d9e7705074a9d08eabdcd407f8e55ab107972`.
+
+**Teste de regressão acrescentado:** `tests/unit/agenda-queue-context.test.tsx` passou a cobrir o cenário paciente já cadastrado + horário livre → Agendar → tipo → Confirmar agendamento, verificando chamada a `createAppointment` com o mesmo paciente/profissional/slot. Commits `3ab6f038ba021f9e6846be318f20d0a6ad8ffcbd` e `31717dd5d91bc39771e67ca7a4eb197edad88a5e`.
+
+**Limitação:** não houve execução local da suíte nesta sessão porque o ambiente de execução não consegue resolver `github.com` para clonar o repositório e não existe CI configurado no repositório. A alteração foi conferida fisicamente no `main`, mas permanece aguardando build/publicação e teste operacional real.
+
+**Estado:** **CAUSA CONFIRMADA NO FRONTEND / HORÁRIO LIVRE AGORA INICIA AGENDAMENTO / PACIENTE SALVO PODE SER AGENDADO POSTERIORMENTE / BACKEND SEM ALTERAÇÃO / AGUARDANDO PUBLICAÇÃO E TESTE REAL**.
