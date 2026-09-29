@@ -19,8 +19,8 @@ describe('FamilyCaregiverPage', () => {
     ).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Paciente' })).toBeVisible()
     expect(
-      screen.getAllByText('Nenhum registro real encontrado.'),
-    ).toHaveLength(1)
+      screen.getByText('Nenhum familiar ativo para o paciente selecionado.'),
+    ).toBeVisible()
     expect(
       screen.getByRole('link', { name: '← Voltar ao painel inicial' }),
     ).toHaveAttribute('href', '/')
@@ -190,14 +190,11 @@ describe('FamilyCaregiverPage', () => {
     expect(screen.queryByRole('button', { name: 'Buscar familiar' })).not.toBeInTheDocument()
   })
 
-  it('explicita a separação dos registros confidenciais', () => {
+  it('não expõe textos técnicos de integração ao usuário', () => {
     render(<FamilyCaregiverPage accessContext={accessContext} />)
 
-    expect(
-      screen.getByText(
-        'Não há transferência automática de acompanhamento entre familiares.',
-      ),
-    ).toBeVisible()
-    expect(screen.getByText('Não exibidos nesta tela.')).toBeVisible()
+    expect(screen.queryByText(/Supabase/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Registros confidenciais/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Integração oficial CAPO/i)).not.toBeInTheDocument()
   })
 })
