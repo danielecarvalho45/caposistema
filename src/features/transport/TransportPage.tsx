@@ -133,11 +133,12 @@ export function TransportPage({ accessContext }: Props) {
     : null
 
   async function searchPatients() {
-    if (query.trim().length < 2) {
-      setFeedback('Informe ao menos dois caracteres para buscar o paciente.')
+    const cleanQuery = query.trim()
+    if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
+      setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       return
     }
-    const result = await getRpcService().searchReferralPatients(query.trim(), 20, 0)
+    const result = await getRpcService().searchReferralPatients(cleanQuery, 20, 0)
     setPatients(result.status === 'success' ? result.data : [])
     setFeedback(result.status === 'error' ? result.error.message : null)
   }
