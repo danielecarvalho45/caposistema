@@ -8,7 +8,7 @@ import {
 import type { AccessContext } from '../../types/access'
 import { PatientSearch } from '../../components/forms/PatientSearch'
 import type { ReferralPatient } from '../../lib/supabase/rpc'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import './queue-page.css'
 
@@ -61,6 +61,7 @@ export function QueuePage({
   accessContext: AccessContext
   loadPendingItems?: PendingItemsLoader
 }>) {
+  const location = useLocation()
   const [state, setState] =
     useState<AsyncState<readonly PendingItem[]>>(loadingState)
   const [professionalQueue, setProfessionalQueue] =
@@ -104,6 +105,35 @@ export function QueuePage({
   const canAddPatient = accessContext.roles.some((role) =>
     role.code === 'administrador' || role.code === 'administrativo_operacional',
   )
+
+  useEffect(() => {
+    if (!canAddPatient) return
+    const stateValue =
+      location.state && typeof location.state === 'object'
+        ? location.state as Record<string, unknown>
+        : null
+    const patientId =
+      typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
+    const patientName =
+      typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
+    if (!patientId || !patientName) return
+
+    setQueuePatient({
+      patient_id: patientId,
+      full_name: patientName,
+      patient_number:
+        typeof stateValue?.patientNumber === 'string' && stateValue.patientNumber
+          ? stateValue.patientNumber
+          : null,
+      cms:
+        typeof stateValue?.cms === 'string' && stateValue.cms
+          ? stateValue.cms
+          : null,
+    })
+    setShowQueueForm(true)
+    setQueueSpecialties(loadingState())
+    void getRpcService().getReferralSpecialties().then(setQueueSpecialties)
+  }, [canAddPatient, location.state])
 
   async function addPatient() {
     if (!canAddPatient || !queuePatient || !queueSpecialty || queueBusy) return
