@@ -4288,3 +4288,43 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 
 **Estado:** **MATRIZ FUNCIONAL INCORPORADA AO GITHUB / REFERÊNCIA ESTRUTURAL DISPONÍVEL NO REPOSITÓRIO / PRECEDÊNCIA DA REDAÇÃO MAIS RECENTE FORMALIZADA**.
 
+### 28.87 CANCELAMENTO DE AGENDAMENTO — CORREÇÃO TRANSVERSAL E VALIDAÇÃO INTERNA (29/09/2026)
+
+**Evidência apresentada pela Titular:** na Home do Gestor/Titular, a Agenda do dia não apresentava ação de cancelamento, apesar do cancelamento já estar implementado na Agenda Geral pelo §28.84.
+
+**Causa física confirmada:** a Home do Gestor utiliza grade própria em `GestorDashboard.tsx`. Essa grade apresentava `Agendar` para horários livres, mas não encaminhava horários ocupados ao fluxo central de cancelamento da `AgendaPage`.
+
+**Correção cirúrgica aplicada:**
+- horários ocupados da Home do Gestor passam a apresentar ação **Cancelar**;
+- a ação não duplica regra de negócio: navega para `/agenda` com `origin='home_cancel_appointment'`, `appointmentId`, `professionalId` e `slotDate`;
+- a `AgendaPage` abre diretamente o painel central **Cancelar agendamento** para o agendamento selecionado;
+- permanece obrigatório motivo com mínimo de 5 caracteres;
+- permanece utilizada exclusivamente a RPC `update_appointment_attendance_for_interface(..., p_action='cancelado', p_reason=...)`;
+- após sucesso, a Agenda e a grade efetiva do profissional são recarregadas do banco.
+
+**Conferência transversal interna:**
+- `AgendaPage` é o ponto compartilhado de Agenda para Administrador/Gestor, Administrativo Operacional, Coordenador e Profissional;
+- Assistência Social, Nutrição e Profissional Assistencial Padrão incorporam a mesma `AgendaPage` em suas Homes e, portanto, recebem a mesma ação de cancelamento nos agendamentos elegíveis;
+- a autorização física do backend permite alteração para `administrador`, `administrativo_operacional`, `coordenador` e para `profissional` apenas nos próprios agendamentos;
+- a RPC aceita `cancelado` somente enquanto o agendamento estiver em `agendado` ou `confirmado`;
+- o banco grava `attendance_reason`, `attendance_updated_at` e `attendance_updated_by`;
+- `patient_appointments` possui `trg_audit_patient_appointments` em INSERT/UPDATE/DELETE, preservando auditoria adicional do evento.
+
+**Proteção de regressão:** adicionado teste unitário para abertura do cancelamento central a partir do estado de navegação da Home do Gestor, além do teste já existente que verifica a chamada da RPC com `action='cancelado'` e motivo.
+
+**Arquivos alterados:**
+- `src/features/gestor/GestorDashboard.tsx`;
+- `src/features/agenda/AgendaPage.tsx`;
+- `src/features/gestor/gestor.css`;
+- `tests/unit/agenda-queue-context.test.tsx`.
+
+**Commits funcionais:**
+- `96daafa6e4e35959ef28acb3026f678e22839089`;
+- `2d0fbf1364922fc1ec914b2f487a33642aa92467`;
+- `632ab3729c98726070e0c7aedac3db0bc7de983c`;
+- `42ec4b3f14fb84061932cfbdc8f597eb92d59e0b`.
+
+**Validação interna:** contratos do frontend e função física do Supabase foram confrontados. A execução local automatizada não pôde ser iniciada neste ambiente porque o runner local não possui resolução de rede para clonar o GitHub; isso não altera a correção aplicada nem interrompe a continuidade da manutenção. A homologação operacional externa permanece posterior.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / BACKEND CONFIRMADO / AUDITORIA CONFIRMADA / COMPORTAMENTO TRANSVERSAL CONFERIDO / TESTE DE REGRESSÃO ADICIONADO / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
+
