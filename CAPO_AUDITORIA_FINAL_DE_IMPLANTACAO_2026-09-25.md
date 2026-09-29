@@ -4273,3 +4273,18 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Ponto de retomada operacional:** na aplicação publicada, localizar um agendamento elegível, verificar a ação **Cancelar agendamento**, informar motivo com pelo menos 5 caracteres, confirmar e conferir o estado final e a atualização da vaga na agenda.
 
 **Estado:** **PARADO POR SOLICITAÇÃO DA TITULAR / §28.84 PUBLICADO / HOMOLOGAÇÃO OPERACIONAL DO CANCELAMENTO PENDENTE / AGUARDANDO NOVO CHAT**.
+
+### 28.86 INCORPORAÇÃO DA MATRIZ FUNCIONAL / ORGANOGRAMA COMO FONTE DE CONSULTA (29/09/2026)
+
+**Documento incorporado ao repositório oficial:** `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`.
+
+**Finalidade:** tornar o organograma funcional consolidado do CAPO uma fonte física e permanente de consulta no próprio GitHub, junto ao Documento Mestre e aos demais manuais vigentes.
+
+**Regra de uso obrigatória:** antes de manutenção estrutural, integração, automação, roteamento por perfil, agenda, fluxo administrativo, fluxo assistencial, notificações, filas, Faltosos, Solicitações, Encaminhamentos, Transporte, Renovação de Receita, Familiar/Cuidador, Encerramentos, relatórios ou permissões acumuladas, confrontar o estado físico atual do sistema com esta Matriz Funcional e com os demais documentos normativos vigentes aplicáveis.
+
+**Regra de precedência temporal:** em qualquer conflito entre este documento de 12/09/2026 e uma decisão, regra, correção ou redação posterior formalmente registrada no Documento Mestre ou em documento normativo posterior, **prevalece sempre a escrita/decisão mais recente**. O documento mais antigo permanece como referência histórica e estrutural apenas no que não tiver sido substituído por atualização posterior.
+
+**Regra anti-loop:** esta incorporação não reabre nem invalida correções já registradas no Documento Mestre. O organograma deve ser usado para verificar coerência e identificar somente divergências reais ainda existentes, preservando blocos já corrigidos/congelados e manutenções posteriores mais recentes.
+
+**Estado:** **MATRIZ FUNCIONAL INCORPORADA AO GITHUB / REFERÊNCIA ESTRUTURAL DISPONÍVEL NO REPOSITÓRIO / PRECEDÊNCIA DA REDAÇÃO MAIS RECENTE FORMALIZADA**.
+
