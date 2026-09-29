@@ -3003,3 +3003,24 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `85f7617665e763cd4ffbfd5739db789c3432e0f1` e `7ad8dcecc38e8d8d4b369e5b0baa4550997a26a2`.
 
 **Estado:** **REGRESSÃO DE CONTEXTO CORRIGIDA NO CÓDIGO / FUNÇÕES CLÍNICAS E ADMINISTRATIVAS SEPARADAS / BACKEND PRESERVADO / AGUARDANDO PUBLICAÇÃO E TESTE VISUAL REAL**.
+
+
+### 28.37 Correção funcional — encerramentos independentes por especialidade com aviso aos demais profissionais (29/09/2026)
+
+**Regra funcional confirmada pela Titular:** cada profissional encerra somente a própria atuação/especialidade, de forma independente. O encerramento de uma especialidade **não cria obrigação, pendência automática nem dependência** para as demais. Quando uma especialidade é encerrada, os outros profissionais que ainda atendem aquele paciente recebem apenas um **aviso informativo**. Cada um encerra sua própria atuação conforme sua programação individual. A formalização do encerramento global do ciclo CAPO permanece como etapa administrativa separada.
+
+**Confronto estrutural:** o modelo canônico continua sendo **Paciente → Ciclo CAPO → Especialidade participante → Responsável operacional → Encerramento profissional da especialidade**. A função `finalize_care_cycle_for_interface` permanece restrita a Administrador/Administrativo Operacional e só formaliza o ciclo quando as especialidades participantes estiverem encerradas. Nenhuma especialidade passa a depender temporalmente do encerramento de outra.
+
+**Correção no Supabase oficial:** `close_care_closure_for_interface` passou a identificar os demais profissionais ativos do mesmo ciclo/paciente, utilizando responsáveis atuais das especialidades e profissionais com agendamentos válidos no ciclo. O profissional que realizou o encerramento é excluído. Cada destinatário recebe notificação **individual**, por `auth_user_id`, do tipo `care_specialty_closed`, informando que outra especialidade encerrou sua atuação e que a atuação do destinatário permanece independente. Não são criados novos `patient_care_closures` para os demais profissionais e o estado das outras especialidades não é alterado por esse aviso.
+
+**Aviso administrativo preservado:** a notificação `care_closure_completed` para `administrativo_operacional` foi mantida para acompanhamento e posterior formalização do ciclo quando aplicável.
+
+**Correção de interface:** em `src/features/closures/ClosuresPage.tsx`, a linguagem deixou de tratar o ato profissional como uma solicitação a terceiro. O botão passou a ser **Encerrar minha atuação**. O fluxo da própria especialidade cria o registro técnico necessário e conclui o encerramento imediatamente na sequência, exibindo quantos outros profissionais foram avisados quando o backend devolve essa contagem. A tela explicita que os demais profissionais são apenas avisados e encerram sua atuação de forma autônoma.
+
+**Migration:** `supabase/migrations/20260929011500_notify_other_professionals_on_independent_specialty_closure.sql`.
+
+**Commits:** `144048dbc2d6bd293f5668d070f5a7c3db26f08d` e `e44f2e76ba2a89f1290243b2d2aca5000ce439e7`.
+
+**Conferência física pós-correção:** a função foi relida no Supabase e contém notificação individual por `auth_user_id`, preserva o aviso ao Administrativo e não modifica outras especialidades. A tela atual contém o texto de independência entre encerramentos e não contém mais o botão **Solicitar encerramento da própria atuação**.
+
+**Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / ENCERRAMENTOS INDIVIDUAIS E INDEPENDENTES / AVISO ENTRE PROFISSIONAIS IMPLEMENTADO / FORMALIZAÇÃO FINAL ADMINISTRATIVA PRESERVADA / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
