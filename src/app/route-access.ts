@@ -4,6 +4,7 @@ export const KNOWN_APP_ROUTES = [
   '/',
   '/pacientes',
   '/agenda',
+  '/minha-agenda/gerenciar',
   '/minha-agenda/solicitar-alteracao',
   '/atuacao',
   '/nutricao',
@@ -133,6 +134,7 @@ export function canAccessAppRoute(
         (Boolean(accessContext.professional_id) &&
           hasProfessionalAssistentialRole(accessContext))
       )
+    case '/minha-agenda/gerenciar':
     case '/minha-agenda/solicitar-alteracao':
       return accessContext.is_active && Boolean(accessContext.professional_id) &&
         hasRole(accessContext, ['profissional'])
