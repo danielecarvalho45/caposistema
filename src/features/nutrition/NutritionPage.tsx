@@ -5,6 +5,7 @@ import { AgendaPage } from '../agenda/AgendaPage'
 import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 
 type NutritionRecord = Readonly<Record<string, unknown>>
@@ -429,6 +430,7 @@ export function NutritionPage({
             {patientSearchFeedback && <p role="status">{patientSearchFeedback}</p>}
             {patients.length > 0 && <select value={patients.some((item) => item.patient_id === patientId) ? patientId : ''} onChange={(event) => { const patient = patients.find((item) => item.patient_id === event.target.value); if (patient) void selectNutritionPatient(patient.patient_id, patient.full_name) }}><option value="">Selecionar paciente</option>{patients.map((patient) => <option key={patient.patient_id} value={patient.patient_id}>{patient.full_name} · {patient.patient_number ?? 'Nº CAPO não informado'}</option>)}</select>}
             {patientId && <p>Paciente selecionado: {selectedPatientName}</p>}
+            {patientId && <PatientDischargeProximityIndicator patientId={patientId} />}
             {planLoaded && !canEditPlan && <p role="status">O plano atual pertence a outro profissional; edição indisponível neste contexto.</p>}
             <div className="home-profile-grid">
               {Object.entries({ breakfast: 'Desjejum', lunch: 'Almoço', snack: 'Lanche', dinner: 'Jantar', hydration: 'Hidratação', supplement: 'Suplemento nutricional', other: 'Outras orientações' }).map(([planField, label]) => <label key={planField}>{label}<textarea rows={2} value={plan[planField as keyof typeof plan]} onChange={(event) => setPlan((current) => ({ ...current, [planField]: event.target.value }))} /></label>)}
