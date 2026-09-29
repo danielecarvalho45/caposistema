@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getRpcService, loadingState, type AsyncState, type AgendaAppointment, type BirthdayOverview } from '../../lib/supabase/rpc'
+import { getRpcService, loadingState, type AsyncState, type AgendaScheduleSlot, type BirthdayOverview } from '../../lib/supabase/rpc'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 
 
@@ -46,7 +46,7 @@ const quickAccess = [
 ] as const
 
 export function GestorDashboard() {
-  const [agenda, setAgenda] = useState<AsyncState<readonly AgendaAppointment[]>>(loadingState)
+  const [agendaGrid, setAgendaGrid] = useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [birthdays, setBirthdays] = useState<AsyncState<BirthdayOverview>>(loadingState)
   const [approvedAgendaChanges, setApprovedAgendaChanges] = useState<AsyncState<unknown>>(loadingState)
   const [agendaChangeBusyId, setAgendaChangeBusyId] = useState<string | null>(null)
@@ -55,7 +55,7 @@ export function GestorDashboard() {
     let active = true
     const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
     const rpc = getRpcService()
-    void rpc.getAgenda(date, date, null).then((result) => { if (active) setAgenda(result) })
+    void rpc.getAgendaScheduleGrid(date, date, null).then((result) => { if (active) setAgendaGrid(result) })
     void rpc.getBirthdays().then((result) => { if (active) setBirthdays(result) })
     return () => { active = false }
   }, [])
@@ -104,11 +104,33 @@ export function GestorDashboard() {
         </div>
       </section>
       <section className="gestor-dashboard-grid" aria-label="Visão geral do sistema">
-        <article className="gestor-panel"><header><h3>▣ Agenda do dia <em>— Todos os profissionais</em></h3></header>
-          {agenda.status === 'loading' && <p>Carregando agenda…</p>}
-          {agenda.status === 'error' && <p role="alert">{agenda.error.message}</p>}
-          {agenda.status === 'empty' && <p>Nenhum agendamento encontrado.</p>}
-          {agenda.status === 'success' && <ul>{agenda.data.map((item) => <li key={item.appointment_id}>{item.patient_name} · {item.professional_name} · {new Date(item.appointment_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</li>)}</ul>}
+        <article className="gestor-panel gestor-home-agenda-grid">
+          <header>
+            <h3>▣ Agenda do dia <em>— Todos os profissionais</em></h3>
+            <span className="gestor-agenda-weekday">
+              {new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }).format(new Date())}
+            </span>
+          </header>
+          {agendaGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
+          {agendaGrid.status === 'error' && <p role="alert">{agendaGrid.error.message}</p>}
+          {agendaGrid.status === 'empty' && <p>Nenhum horário cadastrado para este dia.</p>}
+          {agendaGrid.status === 'success' && (
+            <div className="gestor-agenda-slot-list">
+              {agendaGrid.data.map((slot) => (
+                <div className={`gestor-agenda-slot is-${slot.slot_status}`} key={`${slot.professional_id}:${slot.slot_start}`}>
+                  <strong>{new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(slot.slot_start))}</strong>
+                  <span>{slot.professional_name}</span>
+                  <small>
+                    {slot.slot_status === 'livre'
+                      ? 'Livre'
+                      : slot.slot_status === 'bloqueado'
+                        ? `Bloqueado${slot.block_type ? ` · ${slot.block_type}` : ''}`
+                        : slot.patient_name ?? 'Agendado'}
+                  </small>
+                </div>
+              ))}
+            </div>
+          )}
           <Link to="/agenda">Agenda geral do dia ›</Link>
         </article>
         <aside className="gestor-side-stack"><article className="gestor-panel"><h3>🎂 Aniversariantes de hoje</h3>
