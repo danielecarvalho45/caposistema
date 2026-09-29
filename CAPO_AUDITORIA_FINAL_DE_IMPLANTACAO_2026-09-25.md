@@ -3156,3 +3156,27 @@ Os atalhos aprovados do bloco principal são:
 **Conferência pós-correção:** as três Home específicas e a base assistencial foram relidas. Em todas, `AgendaPage` aparece antes de **Acessos rápidos**, não há card rápido **Minha Agenda** e o modo `embeddedHome` está ativo. O componente compartilhado contém os botões ✓ Confirmar e ✕ Falta e não contém mais a exigência de motivo para falta.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / FLUXO DE FALTOSOS CONFIRMADO NO SUPABASE / HOME PROFISSIONAL PADRONIZADA / MOBILE ADAPTADO / TESTES AUTOMATIZADOS NÃO EXECUTADOS NESTA ETAPA / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.43 Assistência Social — separação pontual entre Minha Agenda, Gerenciar minha agenda e Acompanhamento Social (29/09/2026)
+
+**Evidência de homologação:** na Assistência Social, **Minha Agenda** e **Gerenciar minha agenda** estavam visualmente duplicadas porque a rota de Minha Agenda ainda continha acesso ao gerenciador de disponibilidade e a rota de gerenciamento reutilizava o componente completo de agenda. Além disso, a rota **Acompanhamento Social** reutilizava `SocialPage` integral, fazendo a agenda reaparecer dentro do módulo social.
+
+**Confronto estrutural:** o Index aprovado `index(20260913-103215).html` separa claramente:
+- **Minha Agenda** → pacientes agendados, situação, ações de presença e retorno;
+- **Gerenciar minha agenda** → ajustes temporários de disponibilidade;
+- **Acompanhamento Social no Serviço CAPO** → **Ativos**, **Iniciar acompanhamento**, **Vulnerabilidade**, **Encerrar** e **Encerrados**. O conteúdo profissional/confidencial permanece no VIVVER.
+
+**Correção em Minha Agenda:** `AgendaPage.tsx` não exibe mais o botão interno **Gerenciar minha agenda** na rota normal `/agenda`. A função **Agendar retorno** permanece preservada para atendimento confirmado.
+
+**Correção em Gerenciar minha agenda:** quando `AgendaPage` é aberto por `/minha-agenda/gerenciar` com `initialManageOpen`, a tela retorna somente `OwnAgendaManager`, com ajustes temporários da disponibilidade. Não exibe lista de pacientes agendados e não substitui Minha Agenda.
+
+**Correção em Acompanhamento Social:** `SocialPage.tsx` passou a aceitar `mode='home' | 'followup'`. A Home da Assistência Social continua contendo agenda, atalhos e aniversariantes. A rota `/assistencia-social` abre `mode='followup'`, sem Agenda, sem atalhos da Home e sem aniversariantes, preservando somente o módulo **Acompanhamento Social no Serviço CAPO** e seus estados operacionais. O atalho da Home foi alterado para navegar para `/assistencia-social`.
+
+**Roteamento:** `App.tsx` agora chama `<SocialPage mode="home" />` apenas para a tela inicial da Assistência Social e `<SocialPage mode="followup" />` para a rota própria de Acompanhamento Social.
+
+**Conferência pós-correção:** relidos `SocialPage.tsx`, `App.tsx` e `AgendaPage.tsx`. A agenda está condicionada ao modo Home; a rota de Acompanhamento Social usa modo `followup`; Minha Agenda não contém mais botão **Gerenciar minha agenda**; a rota de gerenciamento exibe somente os ajustes temporários.
+
+**Commits:** `346b8a4a9ba53c745759a68733b05516c8f2bcb3`, `67246f00a533c673916d3cfc6ba0eb42a4f91dc4`, `0b18ce6f4f04987b84ed268479b19150aaa5970f` e `2c260a9683090b2feb2909a9812a88f91903228c`.
+
+**Estado:** **CORRIGIDO PONTUALMENTE NO CÓDIGO / FLUXOS SEPARADOS CONFORME INDEX ESTRUTURAL / SEM ALTERAÇÃO DE SUPABASE NESTA ETAPA / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
