@@ -948,6 +948,36 @@ export function AgendaPage({
     const renewalId =
       typeof stateValue?.renewalId === 'string' ? stateValue.renewalId : ''
     const origin = typeof stateValue?.origin === 'string' ? stateValue.origin : ''
+    const requestedSlotDate =
+      typeof stateValue?.slotDate === 'string' ? stateValue.slotDate : ''
+    const requestedSlotStart =
+      typeof stateValue?.slotStart === 'string' ? stateValue.slotStart : ''
+
+    if (
+      origin === 'home_free_slot' &&
+      requestedProfessionalId &&
+      requestedSlotDate &&
+      requestedSlotStart
+    ) {
+      if (schedulingCatalog.status !== 'success') return
+      const professionalRows = schedulingCatalogRows(schedulingCatalog.data).filter(
+        (item) => item.professional_id === requestedProfessionalId,
+      )
+      const specialtyIds = [...new Set(professionalRows.map((item) => item.specialty_id))]
+
+      setShowRescheduleForm(false)
+      setShowScheduleForm(true)
+      setAppointmentPatientId('')
+      setAppointmentPatientQuery('')
+      setAppointmentPatients([])
+      setSelectedProfessionalId(requestedProfessionalId)
+      if (specialtyIds.length === 1) setSelectedSpecialtyId(specialtyIds[0])
+      setAnchorDate(requestedSlotDate)
+      setSelectedSlotStart(requestedSlotStart)
+      setAppointmentOrigin('home_agenda')
+      setAppointmentFeedback(null)
+      return
+    }
 
     if (!patientId) return
 
