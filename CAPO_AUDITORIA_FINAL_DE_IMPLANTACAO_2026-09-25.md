@@ -2847,3 +2847,22 @@ Os atalhos aprovados do bloco principal são:
 **Verificação interna:** `npm run typecheck` PASS; `npm run build` PASS; testes direcionados de perfil e Social 9/9 PASS; suíte completa 242/245 PASS. As três falhas em `App.test.tsx` (título antigo da Área Técnica), `profile-shortcuts.test.tsx` (atalho de atuação antiga) e `renewal-prescription-page.test.tsx` (texto antigo de estado vazio) foram reproduzidas também no `main` limpo anterior a esta correção, com os mesmos cenários, portanto não são regressões introduzidas por este ajuste visual. Homologação visual dos perfis no Pages após deploy permanece **PENDENTE**; não declarar PASS publicado antes da inspeção física.
 
 **Estado:** **REGRESSÃO VISUAL CORRIGIDA NO CÓDIGO / TESTES DIRECIONADOS, TYPECHECK E BUILD PASS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL PELA TITULAR.**
+
+
+### 28.29 Regressão de linguagem/estrutura — Familiar / Cuidador (28/09/2026)
+
+**Evidência apresentada na homologação real:** a tela Familiar / Cuidador no contexto Administrativo Operacional exibia blocos e textos técnicos voltados à implementação, entre eles **Registros confidenciais**, **Integração oficial CAPO** e a frase **“O vínculo familiar e o fluxo de luto usam contratos distintos e auditáveis do Supabase.”**
+
+**Confronto estrutural:** o Index aprovado `index(20260913-103215).html` não contém esses blocos nem expõe Supabase/contratos técnicos ao usuário. A composição aprovada do módulo Familiar / Cuidador é funcional e centrada em **Vincular / substituir familiar**, **Familiar ativo** e **Histórico de substituições**. O Documento Mestre já registra que Familiar/Cuidador e Luto são fluxos distintos, mas essa separação pertence à implementação e à auditoria, não à linguagem operacional da tela.
+
+**Correção aplicada:** removidos da interface os blocos **Registros confidenciais** e **Integração oficial CAPO** e qualquer menção visível a contratos/Supabase nessa área. O cabeçalho passou a usar a regra funcional aprovada: **“Somente um familiar pode permanecer ativo por paciente; substituições preservam o histórico.”** O estado vazio foi ajustado para **“Nenhum familiar ativo para o paciente selecionado.”** e o histórico passou a usar linguagem funcional, sem termos de implementação.
+
+**Preservação funcional:** nenhuma RPC, SQL, RLS, policy, trigger, migration, autorização ou dado do módulo foi alterado. A correção é exclusivamente de composição e linguagem da interface. A separação real entre Familiar/Cuidador e Luto permanece preservada no backend e nas rotas.
+
+**Teste atualizado:** `tests/unit/family-caregiver-page.test.tsx` deixou de exigir os textos técnicos removidos e agora verifica explicitamente que **Supabase**, **Registros confidenciais** e **Integração oficial CAPO** não aparecem na interface do usuário.
+
+**Arquivos alterados:** `src/features/social/FamilyCaregiverPage.tsx` e `tests/unit/family-caregiver-page.test.tsx`.
+
+**Commits:** `72650ed6c1d4d1229ec76ebae30867e9f19c5481`, `c26b6cd6c051abdcb405c54e611e09d9ecb9cf4d` e `a969d76a3ebe1231c44e6e09f1babdf6ed44aca1`.
+
+**Estado:** **REGRESSÃO CONFIRMADA E CORRIGIDA NO CÓDIGO / PADRÃO ESTRUTURAL RESTAURADO / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
