@@ -3742,3 +3742,17 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Preservação:** nenhuma RPC, SQL, RLS, migration, dado real, regra de duração, regra de intervalo ou módulo externo à interface da Agenda foi alterado.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / RESPONSIVIDADE REFORÇADA / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL EM CELULAR, TABLET E COMPUTADOR**.
+
+### 28.63 Diagnóstico/correção cirúrgica — quarta-feira fora da vigência do padrão (29/09/2026)
+
+**Evidência operacional:** terça-feira carregava normalmente, quarta-feira 30/09 aparecia como **Sem horário cadastrado**, embora terça e quarta estivessem marcadas no mesmo padrão semanal.
+
+**Causa física confirmada no Supabase:** o padrão correspondente está ativo, com dias **terça (2) e quarta (3)**, horário **08:10–11:30** e duração **60 minutos**, porém sua vigência está salva como **29/09/2026 a 29/09/2026**. Assim, terça 29/09 está dentro da vigência e quarta 30/09 está fora dela. A grade está obedecendo corretamente o contrato de vigência.
+
+**Correção somente de interface:** `OwnAgendaManager` passou a impedir o salvamento quando o intervalo de vigência não alcança todos os dias da semana selecionados e o campo **Fim da vigência** não permite data anterior ao início. Nenhum dado real de agenda foi alterado automaticamente, porque a nova data final desejada pertence à decisão operacional da Titular.
+
+**Arquivo alterado:** `src/features/agenda/OwnAgendaManager.tsx`.
+
+**Commit:** `55ef15619884962b2a34a6b81fff527709d927cf`.
+
+**Estado:** **CAUSA CONFIRMADA / INTERFACE PROTEGIDA CONTRA NOVA CONFIGURAÇÃO INCONSISTENTE / PADRÃO EXISTENTE AINDA REQUER QUE A TITULAR DEFINA A DATA FINAL DE VIGÊNCIA DESEJADA**.
