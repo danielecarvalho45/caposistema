@@ -3818,3 +3818,27 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Preservação:** nenhuma RPC, SQL, migration, RLS, dado real ou regra de configuração da agenda foi alterado.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.68 Nova funcionalidade estrutural — Indicador de Proximidade de Alta (29/09/2026)
+
+**Origem:** nova solicitação apresentada após a estrutura original do CAPO.
+
+**Regra incorporada ao projeto:** criação de indicador transversal do paciente com três estados:
+- Verde — **Em acompanhamento**;
+- Amarelo — **Atenção**;
+- Vermelho — **Alta próxima**.
+
+**Responsável pela alteração nesta versão:** exclusivamente profissional ativo vinculado à especialidade **Clínica Geral**, por vínculo de especialidade no banco. É proibido amarrar a autorização ao nome, username ou function_title do profissional.
+
+**Alcance:** o indicador pertence ao paciente e deve ser visível nos contextos assistenciais autorizados que acompanhem esse paciente. Fora da Clínica Geral, a função é somente leitura.
+
+**Sem automação de encerramento nesta etapa:** Amarelo/Vermelho não criam fila, não abrem encerramento, não mudam ciclo, não notificam automaticamente e não geram solicitação. Eventual automação futura será manutenção específica.
+
+**Referência visual:** mesma semântica de cores do sistema de vulnerabilidade, porém com contrato e persistência próprios; não reutilizar a tabela ou o significado da vulnerabilidade.
+
+**Diretriz técnica aprovada para implementação:** persistência própria auditável, estado corrente único por paciente, histórico de mudanças, getter transversal restrito ao escopo autorizado do paciente e setter exclusivo da Clínica Geral. Ausência de registro deve ser interpretada como Verde/Em acompanhamento.
+
+**Documentação:** regra adicionada ao Manual Técnico Integrado vigente e sua cópia física existente no repositório.
+
+**Estado:** **REGRA ESTRUTURAL INCORPORADA / ANÁLISE DE BANCO E INTERFACE CONCLUÍDA / IMPLEMENTAÇÃO A EXECUTAR**.
