@@ -4368,3 +4368,33 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / FLUXO ÚNICO REUTILIZADO / BACKEND PRESERVADO / AGUARDANDO HOMOLOGAÇÃO OPERACIONAL EXTERNA**.
 
+### 28.90 GESTOR/TITULAR — VERIFICAÇÃO DOS BOTÕES DO FLUXO FAMILIAR/CUIDADOR (29/09/2026)
+
+**Escopo:** validação interna, botão por botão, da interface compartilhada utilizada pelo Gestor/Titular após a correção do §28.89.
+
+**Contratos físicos conferidos no Supabase oficial:**
+- `Vincular familiar` → `create_family_link_for_interface`;
+- `Substituir familiar` → `replace_family_link_for_interface`;
+- `Encerrar vínculo` → `close_family_link_for_interface`;
+- `Atualizar dados operacionais` → `update_family_link_operational_for_interface`;
+- `Buscar familiar` → `search_family_members_for_interface`;
+- `Solicitar avaliação psicológica` → `create_family_psychology_interest_request_for_interface`;
+- consulta de paciente → busca real já existente;
+- consulta do vínculo/histórico → `get_family_context_for_interface`.
+
+**Divergências físicas encontradas e corrigidas na interface:**
+1. o seletor de interesse psicológico oferecia valor `sim`, mas o backend aceita somente `avaliacao` ou `nao`; valor inválido removido;
+2. `Atualizar dados operacionais` não enviava `p_reason`, embora o backend exija motivo mínimo de 5 caracteres no fluxo administrativo; motivo obrigatório e parâmetros cadastrais foram alinhados;
+3. substituição/encerramento validavam motivo com apenas 3 caracteres na interface, enquanto o banco exige 5; validação alinhada a 5;
+4. a busca de familiar existente retorna `family_member_id`, mas a interface utilizava `id`; seleção corrigida para enviar o identificador físico correto.
+
+**Conferência do botão de Psicologia:** a interface chama a RPC correta. O contrato físico exige origem profissional em `requesting_professional_id`; portanto, uma conta administrativa sem vínculo profissional pode receber recusa do backend. Essa regra não foi alterada nesta manutenção por não haver autorização documental para modificar o contrato funcional.
+
+**Arquivo corrigido:** `src/features/social/FamilyCaregiverPage.tsx`.
+
+**Proteção de regressão:** adicionados testes para uso de `family_member_id`, envio de motivo na correção administrativa e ausência do valor psicológico rejeitado pelo backend.
+
+**Commits:** `6121211117365d53f533db046fd06b569d0ca746` e `677bc3cb953de4ba24113c0ed175eabc5fdf56df`.
+
+**Estado:** **VÍNCULO / SUBSTITUIÇÃO / ENCERRAMENTO / CORREÇÃO ADMINISTRATIVA / BUSCA DE FAMILIAR ALINHADOS AO BANCO / SOLICITAÇÃO DE PSICOLOGIA APONTA PARA RPC CORRETA COM RESTRIÇÃO DE ORIGEM PROFISSIONAL PRESERVADA / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
+
