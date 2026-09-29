@@ -223,8 +223,8 @@ ${operatorName} – ADMINISTRATIVO CAPO`
 
   async function searchPatients() {
     const cleanQuery = query.trim()
-    if (cleanQuery.length < 2) {
-      setFeedback('Informe ao menos dois caracteres para buscar o paciente.')
+    if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
+      setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       setResult(emptyState)
       return
     }
@@ -295,7 +295,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     })
     if (next.status === 'success') {
       setFeedback('Cadastro administrativo do paciente atualizado.')
-      if (query.trim().length >= 2) await searchPatients()
+      if (query.trim().length >= 2 || /^\d$/.test(query.trim())) await searchPatients()
     } else if (next.status === 'error') {
       setFeedback(next.error.message)
     }
@@ -517,7 +517,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Digite ao menos 2 caracteres"
+              placeholder="Nome, CMS ou Nº CAPO exato"
             />
           </label>
           <button
