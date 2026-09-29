@@ -4192,3 +4192,27 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Preservação anti-avalanche:** não foi reaberta a formulação de agendas dos §§28.59–28.69 nem o fluxo geral do §28.79. A intervenção foi limitada à ligação da Home com o fluxo já existente.
 
 **Estado:** **IMPLEMENTADO NO `main` / BACKEND PRESERVADO / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL NA HOME DO GESTOR**.
+
+### 28.83 Manutenção cirúrgica — identificação direta do paciente no Novo Agendamento (29/09/2026)
+
+**Solicitação operacional:** após clicar em **Agendar** e pesquisar o paciente, a interface não deve apresentar um seletor genérico com o texto `Selecionar paciente encontrado`. O resultado deve identificar o paciente imediatamente por Nome, Nº CAPO e CMS, reduzindo uma etapa desnecessária e o risco de escolha equivocada.
+
+**Confronto documental prévio:** o Manual da Interface define a pesquisa real por Nome, Nº CAPO ou CMS, com retorno minimizado incluindo `full_name`, `patient_number`, `cms`, nascimento, idade, status e óbito, mantendo `patient_id` apenas no estado interno. O fluxo de Novo Agendamento determina localizar o paciente antes de especialidade/profissional/vaga. Nenhuma alteração de backend é necessária para esta adequação.
+
+**Correção cirúrgica aplicada somente na interface da Agenda:**
+- quando a busca retorna exatamente um paciente, ele é selecionado automaticamente no estado interno;
+- o resultado aparece imediatamente com **Nome + Nº CAPO + CMS**;
+- o seletor genérico `Selecionar paciente encontrado` foi removido deste fluxo;
+- quando existem dois ou mais resultados, cada opção aparece como botão identificável com **Nome + Nº CAPO + CMS**, permitindo escolha explícita;
+- ao alterar novamente o texto da pesquisa, a seleção anterior e a lista anterior são limpas para impedir associação acidental ao paciente errado;
+- busca, RPC, autorização, criação de agendamento, agenda, banco e regras clínicas permanecem inalterados.
+
+**Arquivos alterados:** `src/features/agenda/AgendaPage.tsx`, `src/features/agenda/agenda-page.css`, `tests/unit/agenda-queue-context.test.tsx`.
+
+**Commits:** `6069963785e418aa75a397e2d6954a462ecac1c7`, `8e4f0dd4ca29efd2c9fafaac056cffb9cb4f9447`, `b3ded319b3566f4dc802835bdb274c6af8c0045f`.
+
+**Proteção de regressão:** teste ajustado para resultado único com seleção automática e identificação Nº CAPO/CMS; acrescentado cenário de homônimos com escolha explícita entre resultados identificados.
+
+**Preservação anti-avalanche:** não foram alterados `search_patients_for_interface`, `create_appointment_for_interface`, contratos de agenda, permissões, RLS, configuração profissional ou demais módulos.
+
+**Estado:** **IMPLEMENTADO NO `main` / SOMENTE INTERFACE / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
