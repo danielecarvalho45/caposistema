@@ -150,6 +150,19 @@ function selectedCodes(value: unknown): readonly string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
+function capabilityRecords(value: unknown): readonly RecordValue[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => {
+      if (typeof item === 'string' && item.trim()) {
+        return [{ capability_code: item }]
+      }
+      const current = asRecord(item)
+      return current ? [current] : []
+    })
+  }
+  return records(value, ['effective_capabilities', 'capabilities', 'items'])
+}
+
 function selectedField(value: unknown, key: string): readonly string[] {
   if (!Array.isArray(value)) return []
   return value.flatMap((item) => {
@@ -287,7 +300,7 @@ export function GestorTeamPage({
     void (async () => {
       const result = await service.getCapabilities(professionalId)
       if (!active) return
-      if (result.status === 'success') setCapabilities(records(result.data, ['effective_capabilities', 'capabilities', 'items']))
+      if (result.status === 'success') setCapabilities(capabilityRecords(result.data))
       else if (result.status === 'error') setFeedback(result.error.message)
     })()
     return () => { active = false }
@@ -412,7 +425,7 @@ export function GestorTeamPage({
     const result = await service.setCapability(selected.professionalId, code, isEnabled)
     if (result.status !== 'success') { setFeedback(errorMessage(result) ?? 'O banco não confirmou a alteração da permissão.'); return }
     const refreshed = await service.getCapabilities(selected.professionalId)
-    if (refreshed.status === 'success') setCapabilities(records(refreshed.data, ['effective_capabilities', 'capabilities', 'items']))
+    if (refreshed.status === 'success') setCapabilities(capabilityRecords(refreshed.data))
     setFeedback(refreshed.status === 'error' ? refreshed.error.message : 'Permissão atualizada no banco.')
   }
 
