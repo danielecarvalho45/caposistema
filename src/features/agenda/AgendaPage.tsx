@@ -264,7 +264,15 @@ function HomeScheduleGrid({
   }
 
   return (
-    <div className={view === 'month' ? 'agenda-schedule-grid agenda-schedule-grid--month' : 'agenda-schedule-grid'} aria-label="Grade efetiva da agenda">
+    <div
+      className={[
+        'agenda-schedule-grid',
+        view === 'day' ? 'agenda-schedule-grid--day' : '',
+        view === 'week' ? 'agenda-schedule-grid--week' : '',
+        view === 'month' ? 'agenda-schedule-grid--month' : '',
+      ].filter(Boolean).join(' ')}
+      aria-label="Grade efetiva da agenda"
+    >
       {days.map((day) => {
         const daySlots = slots.filter((slot) => slot.slot_date === day)
         return (
