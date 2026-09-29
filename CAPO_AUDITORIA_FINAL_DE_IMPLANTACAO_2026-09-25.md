@@ -3718,3 +3718,27 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Conferência física pós-correção:** o componente não contém mais `useState(30)`, `setStructuralDuration(30)` nem fallback `appointment_duration_minutes, 30`; permanecem presentes **Novo padrão semanal**, **Alterar horário do dia** e **Desativar padrão selecionado**.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / SEM ALTERAÇÃO DE BACKEND / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.62 Ajuste cirúrgico de usabilidade/responsividade — Gestão de Agenda (29/09/2026)
+
+**Verificação:** a regra dos intervalos semanais permanece vinculada ao padrão selecionado e aos dias ativos desse padrão; cada intervalo conserva início/fim próprios. A interface compartilhada continua utilizando o mesmo `OwnAgendaManager`.
+
+**Divergência de interface encontrada:** no Gestor/Titular, o CSS específico mantinha a área Equipe + Gestão de Agenda em duas colunas em larguras intermediárias e sobrescrevia largura/tamanho dos controles do componente compartilhado, comprimindo a operação em tablet/celular.
+
+**Correção somente de interface:**
+- separação visual explícita entre **Ajustes pontuais de uma data** e **Configuração semanal permanente**;
+- texto dos intervalos esclarece que Café/Almoço/Estudo de caso/Online/Rotinas pertencem ao padrão selecionado e mantêm horários próprios;
+- Gestão de Agenda passa para uma coluna em larguras de até 1050 px;
+- botões e campos recebem largura/altura adequadas para toque em até 820 px;
+- cards de ações ocupam corretamente a coluna no Gestor;
+- em até 440 px, ações e linhas de intervalos passam para uma coluna;
+- grade estrutural do Gestor usa colunas adaptáveis, evitando estouro horizontal em tablet.
+
+**Arquivos alterados:** `src/features/agenda/OwnAgendaManager.tsx`, `src/features/agenda/agenda-page.css`, `src/features/gestor/gestor.css`.
+
+**Commits:** `fc1d7a909b79e2ecb4e501c7fce2846a375b5053`, `1e6bd6f31b36f72c1574f31a0eff453c968d336f`, `a3924a5ae43ceccc80e6b9fa9e42ef1598c4966c`.
+
+**Preservação:** nenhuma RPC, SQL, RLS, migration, dado real, regra de duração, regra de intervalo ou módulo externo à interface da Agenda foi alterado.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / RESPONSIVIDADE REFORÇADA / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL EM CELULAR, TABLET E COMPUTADOR**.
