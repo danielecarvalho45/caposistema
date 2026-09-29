@@ -320,6 +320,24 @@
   margin: 0;
 }
 
+.agenda-operation-heading {
+  display: grid;
+  gap: 3px;
+}
+
+.agenda-operation-heading h4 {
+  margin: 0;
+  color: #17365f;
+  font-size: 0.96rem;
+}
+
+.agenda-operation-heading p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .agenda-own-action-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
