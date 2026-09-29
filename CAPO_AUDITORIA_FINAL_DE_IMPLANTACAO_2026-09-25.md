@@ -4109,3 +4109,27 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Limitação:** não houve execução local da suíte nesta sessão porque o ambiente de execução não consegue resolver `github.com` para clonar o repositório e não existe CI configurado no repositório. A alteração foi conferida fisicamente no `main`, mas permanece aguardando build/publicação e teste operacional real.
 
 **Estado:** **CAUSA CONFIRMADA NO FRONTEND / HORÁRIO LIVRE AGORA INICIA AGENDAMENTO / PACIENTE SALVO PODE SER AGENDADO POSTERIORMENTE / BACKEND SEM ALTERAÇÃO / AGUARDANDO PUBLICAÇÃO E TESTE REAL**.
+
+### 28.80 Pré-implantação — busca do Nº CAPO 1 após adoção da numeração simples (29/09/2026)
+
+**Evidência operacional:** após a alteração do formato do Nº CAPO para sequência simples (`1, 2, 3...`), o primeiro paciente real deixou de ser encontrado ao pesquisar apenas `1`.
+
+**Causa confirmada:** a busca compartilhada `search_patients_for_interface` e diversas telas de interface ainda conservavam a regra antiga de exigir no mínimo 2 caracteres. Essa regra era compatível com o formato anterior `000001`, mas passou a bloquear legitimamente o Nº CAPO `1` após a mudança de numeração.
+
+**Correção cirúrgica no backend:** `search_patients_for_interface` passou a aceitar consulta de um único caractere somente quando ele é um dígito, tratando-o como Nº CAPO exato. CMS continua exigindo ao menos 2 caracteres e nome continua sendo pesquisado somente com 3 ou mais caracteres, evitando ampliação indevida da busca.
+
+**Verificação física pós-correção:** executada a RPC sob o contexto autenticado real da conta administrativa com `p_query='1'`; retorno confirmado para `Eliana Teles Machado`, Nº CAPO `1`, CMS `87259`, status ativo e sem óbito.
+
+**Harmonização mínima das interfaces que usam a mesma busca:** foram ajustadas apenas as validações locais que bloqueavam Nº CAPO de um dígito em Pacientes, Agenda, Encaminhamentos, Transporte, Renovação de Receita, Busca Ativa e no componente compartilhado `PatientSearch`. Nenhuma regra clínica, autorização, tabela, ciclo CAPO ou agendamento foi alterado.
+
+**Migration:** `20260929195600_allow_single_digit_capo_number_patient_search.sql`.
+
+**Commit da migration:** `4ab1229cde49398cda9bdb1458baa0bbeef07e97`.
+
+**Commits de interface:** `a87c9ef08e8d7d2277172b95d58f535aa5332483`, `5bac17ab56e01d2cb39553a3de7836404f041e55`, `00c0a56bf094db8ad1ad9e964339791c8d2da35e`, `fc231e53a362d5a21cd3f9064d5a27f7a72b2623`, `27ab6bbfa33a849dee49084fa462790e52a4a171`, `59b665fb6382f8d08435d52d995453a74ec838a2`, `d58db78eaea1edb56b38033d1d4a6dcccfe4fe2a`.
+
+**Teste de regressão atualizado:** `tests/unit/patients-context-flow.test.tsx` agora exercita busca usando diretamente Nº CAPO `1`. Commit `48e5e43f83655cdce9f84797ce0751d835e907bd`.
+
+**Regra anti-avalanche aplicada:** não foram reabertos módulos estáveis nem alteradas permissões; a intervenção ficou limitada ao contrato de busca afetado diretamente pela mudança de formato do Nº CAPO.
+
+**Estado:** **CAUSA CONFIRMADA / BACKEND CORRIGIDO E TESTADO COM Nº CAPO 1 / VALIDAÇÕES DE INTERFACE HARMONIZADAS / AGUARDANDO PUBLICAÇÃO E RETESTE OPERACIONAL**.
