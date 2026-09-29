@@ -26,10 +26,12 @@ const relatedModules: readonly { path: AppRoute; title: string }[] = [
 
 export function SocialPage({
   accessContext,
+  mode = 'home',
   integration = defaultIntegration,
   loadSpecialties = defaultSpecialtiesLoader,
 }: Readonly<{
   accessContext: AccessContext
+  mode?: 'home' | 'followup'
   integration?: ReturnType<typeof createClosuresIntegration>
   loadSpecialties?: typeof defaultSpecialtiesLoader
 }>) {
@@ -160,33 +162,37 @@ export function SocialPage({
         </div>
       </header>
 
-      <section
-        id="agenda"
-        className="social-agenda"
-        aria-labelledby="agenda-title"
-      >
-        <div className="social-section-heading">
-          <div>
-            <p className="eyebrow">Atendimento</p>
-            <h2 id="agenda-title">Atendimentos de hoje</h2>
-          </div>
-          <span className="social-section-note">
-            ✓ Confirmar · ✕ Falta → fluxo administrativo de Faltosos
-          </span>
-        </div>
-        <AgendaPage accessContext={accessContext} onConfirmed={openConfirmedPatient} embeddedHome />
-      </section>
+      {mode === 'home' && (
+        <>
+          <section
+            id="agenda"
+            className="social-agenda"
+            aria-labelledby="agenda-title"
+          >
+            <div className="social-section-heading">
+              <div>
+                <p className="eyebrow">Atendimento</p>
+                <h2 id="agenda-title">Atendimentos de hoje</h2>
+              </div>
+              <span className="social-section-note">
+                ✓ Confirmar · ✕ Falta → fluxo administrativo de Faltosos
+              </span>
+            </div>
+            <AgendaPage accessContext={accessContext} onConfirmed={openConfirmedPatient} embeddedHome />
+          </section>
 
-      <section className="social-quick-access home-profile-standard" aria-labelledby="quick-title">
-        <h2 id="quick-title">Acessos rápidos</h2>
-        <div className="social-quick-grid">
-          <a className="social-quick-card social-quick-card--followup" href="#acompanhamento-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></a>
-          <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
-          <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
-        </div>
-      </section>
+          <section className="social-quick-access home-profile-standard" aria-labelledby="quick-title">
+            <h2 id="quick-title">Acessos rápidos</h2>
+            <div className="social-quick-grid">
+              <Link className="social-quick-card social-quick-card--followup" to="/assistencia-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></Link>
+              <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
+              <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
+            </div>
+          </section>
 
-      <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp className="social-birthdays" />
+          <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp className="social-birthdays" />
+        </>
+      )}
 
       <section
         id="acompanhamento-social"
@@ -287,20 +293,22 @@ export function SocialPage({
         )}
       </section>
 
-      <section className="social-modules" aria-labelledby="modules-title">
-        <div className="social-section-heading">
-          <div>
-            <p className="eyebrow">Acompanhamento</p>
-            <h2 id="modules-title">Fluxos autorizados</h2>
+      {mode === 'home' && (
+        <section className="social-modules" aria-labelledby="modules-title">
+          <div className="social-section-heading">
+            <div>
+              <p className="eyebrow">Acompanhamento</p>
+              <h2 id="modules-title">Fluxos autorizados</h2>
+            </div>
+            <p>Abrir o módulo correspondente para consultar os registros autorizados.</p>
           </div>
-          <p>Abrir o módulo correspondente para consultar os registros autorizados.</p>
-        </div>
-        <div className="social-module-grid">
-          {relatedModules.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title }) => (
-            <Link className="social-module" to={path} key={path}><h3>{title}</h3><span>Abrir fluxo</span></Link>
-          ))}
-        </div>
-      </section>
+          <div className="social-module-grid">
+            {relatedModules.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title }) => (
+              <Link className="social-module" to={path} key={path}><h3>{title}</h3><span>Abrir fluxo</span></Link>
+            ))}
+          </div>
+        </section>
+      )}
     </section>
   )
 }
