@@ -186,11 +186,12 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   }, [canManageAdmin, selectedId, service])
 
   async function searchPatients() {
-    if (patientQuery.trim().length < 2) {
-      setFeedback('Informe ao menos dois caracteres para buscar o paciente.')
+    const cleanQuery = patientQuery.trim()
+    if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
+      setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       return
     }
-    const result = await service.searchReferralPatients(patientQuery.trim(), 20, 0)
+    const result = await service.searchReferralPatients(cleanQuery, 20, 0)
     setPatients(result.status === 'success' ? result.data : [])
     if (result.status === 'error') setFeedback(result.error.message)
   }
