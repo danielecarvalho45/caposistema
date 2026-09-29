@@ -10,6 +10,24 @@ const emptyState: AsyncState<readonly { patient_id: string; full_name: string; p
   status: 'empty',
 }
 
+function calculateAge(birthDate: string, today = new Date()): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate)
+  if (!match) return null
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null
+
+  let age = today.getFullYear() - year
+  const birthdayHasNotOccurred =
+    today.getMonth() + 1 < month ||
+    (today.getMonth() + 1 === month && today.getDate() < day)
+
+  if (birthdayHasNotOccurred) age -= 1
+  return age >= 0 && age <= 120 ? age : null
+}
+
 export function PatientsPage({
   accessContext,
 }: Readonly<{ accessContext: AccessContext }>) {
@@ -45,6 +63,8 @@ export function PatientsPage({
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Record<string, string>>({})
   const [editBusy, setEditBusy] = useState(false)
+
+  const patientAge = calculateAge(patientBirthDate)
 
   const whatsappDigits = patientPhone.replace(/\D/g, '')
   const whatsappNumber = whatsappDigits.startsWith('55')
@@ -315,7 +335,12 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             </label>
             <label>
               Idade
-              <input type="text" placeholder="Calculada automaticamente" readOnly />
+              <input
+                type="text"
+                value={patientAge === null ? '' : String(patientAge)}
+                placeholder="Calculada automaticamente"
+                readOnly
+              />
             </label>
             <label>
               CMS
