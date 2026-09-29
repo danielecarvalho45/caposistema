@@ -7,6 +7,7 @@ import { NoShowsPage } from '../features/no-shows/NoShowsPage'
 import { HomePage } from '../features/home/HomePage'
 import { PatientsPage } from '../features/patients/PatientsPage'
 import { AssistentialPage } from '../features/professional/AssistentialPage'
+import { resolveProfessionalScreenKind } from '../features/professional/professional-screen'
 import { NutritionPage } from '../features/nutrition/NutritionPage'
 import { QueuePage } from '../features/queues/QueuePage'
 import { RequestsPage } from '../features/requests/RequestsPage'
@@ -156,24 +157,18 @@ export function App() {
     : false
   const isGestor = accessContext.primary_context.code === 'administrador'
   const primaryContextCode = accessContext.primary_context.code
-  const professionalSpecialty = accessContext.primary_specialty_name
-    ?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+  const professionalScreen = resolveProfessionalScreenKind(accessContext)
   const isProfessionalHome =
     location.pathname === '/' &&
-    Boolean(accessContext.professional_id) &&
-    primaryContextCode === 'profissional' &&
-    professionalSpecialty !== 'nutricao' &&
-    professionalSpecialty !== 'assistencia social'
+    primaryContextCode === 'profissional'
   const isNutritionHome =
-    location.pathname === '/' &&
-    Boolean(accessContext.professional_id) &&
-    primaryContextCode === 'profissional' &&
-    professionalSpecialty === 'nutricao'
+    isProfessionalHome && professionalScreen === 'nutricao'
   const isSocialHome =
-    location.pathname === '/' &&
-    Boolean(accessContext.professional_id) &&
-    primaryContextCode === 'profissional' &&
-    professionalSpecialty === 'assistencia social'
+    isProfessionalHome && professionalScreen === 'assistencia_social'
+  const isAssistentialHome =
+    isProfessionalHome &&
+    (professionalScreen === 'clinico_geral' ||
+      professionalScreen === 'assistencial_padrao')
 
   const content = isConstructionRoute ? (
     <ConstructionPage path={location.pathname} />
@@ -189,8 +184,8 @@ export function App() {
     <NutritionPage accessContext={accessContext} />
   ) : isSocialHome ? (
     <SocialPage accessContext={accessContext} />
-  ) : isProfessionalHome ? (
-    <AssistentialPage accessContext={accessContext} />
+  ) : isAssistentialHome ? (
+    <AssistentialPage accessContext={accessContext} profileKind={professionalScreen} />
   ) : location.pathname === '/gestor/social' ? (
     <GestorSocialOverview />
   ) : location.pathname === '/gestor/luto' ? (
@@ -216,7 +211,10 @@ export function App() {
   ) : isAgendaChangeRequestRoute ? (
     <AgendaChangeRequestPage accessContext={accessContext} />
   ) : isAssistentialRoute ? (
-    <AssistentialPage accessContext={accessContext} />
+    <AssistentialPage
+      accessContext={accessContext}
+      profileKind={resolveProfessionalScreenKind(accessContext)}
+    />
   ) : isNutritionRoute ? (
     <NutritionPage accessContext={accessContext} />
   ) : isSocialRoute ? (
