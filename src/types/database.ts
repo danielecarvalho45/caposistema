@@ -373,39 +373,6 @@ export type Database = {
         Args: { p_family_member_id: string; p_notes?: string | null }
         Returns: Json
       }
-      get_family_psychology_appointments_for_interface: {
-        Args: {
-          p_start_date: string
-          p_end_date: string
-          p_professional_id?: string | null
-        }
-        Returns: {
-          appointment_id: string
-          family_member_id: string
-          family_name: string
-          family_phone: string | null
-          source_patient_id: string
-          source_patient_name: string | null
-          source_patient_number: string | null
-          relationship: string
-          professional_id: string
-          professional_name: string
-          appointment_date: string
-          appointment_end: string
-          attendance_status: string
-          general_notes: string | null
-          waiting_list_id: string | null
-        }[]
-      }
-      update_family_psychology_attendance_for_interface: {
-        Args: {
-          p_appointment_id: string
-          p_action: string
-          p_reason?: string | null
-          p_notes?: string | null
-        }
-        Returns: Json
-      }
       get_family_psychology_request_context_for_interface: {
         Args: { p_request_id: string }
         Returns: Json
