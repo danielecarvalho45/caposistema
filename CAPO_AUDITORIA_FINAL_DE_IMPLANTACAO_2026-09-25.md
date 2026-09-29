@@ -4022,3 +4022,19 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Verificação pós-correção:** primeiro paciente real = Nº CAPO `1`; função geradora sem `lpad`; sequence em `last_value=1`, `is_called=true`.
 
 **Estado:** **CORRIGIDO NO BANCO E REGISTRADO / FORMATO DEFINITIVO 1, 2, 3... / PRÓXIMO Nº CAPO PREVISTO = 2 / AGUARDANDO TESTE OPERACIONAL DO PRÓXIMO CADASTRO**.
+
+### 28.77 Pré-implantação — alinhamento da consulta/edição do paciente às permissões do perfil (29/09/2026)
+
+**Evidência operacional:** na consulta de pacientes, a interface exibida ao Gestor/Titular mostrava o texto “Contexto administrativo: consulta autorizada para o perfil Administrador”, o que dava a entender que o acesso era apenas de consulta e não refletia corretamente as permissões efetivas.
+
+**Confronto funcional:** a Matriz Funcional vigente estabelece permissões acumuladas e contexto principal apenas como ambiente inicial, sem retirar funções concedidas à conta. No fluxo de pacientes, Gestor/Titular (`administrador`) e Administrativo Operacional (`administrativo_operacional`) possuem permissão de manutenção cadastral; Coordenador possui acesso à rota de pacientes para consulta, mas não recebe automaticamente manutenção cadastral.
+
+**Conferência física:** as RPCs `get_patient_for_edit_for_interface` e `update_patient_for_interface` já autorizam `administrador` e `administrativo_operacional`. A rota `/pacientes` já aceita `administrador`, `coordenador` e `administrativo_operacional`.
+
+**Correção de interface:** removida a mensagem fixa que reduzia o contexto a “consulta autorizada para Administrador”. A tela agora informa consulta + edição quando o perfil possui `administrador` ou `administrativo_operacional`, e somente consulta quando o perfil não possui permissão de edição. O botão **Editar cadastro** passa a aparecer apenas para os perfis efetivamente autorizados pelo backend.
+
+**Arquivo alterado:** `src/features/patients/PatientsPage.tsx`.
+
+**Commit:** `ddd8bb0c757fc254fac92232874c5341a28be6b1`.
+
+**Estado:** **ALINHADO NO CÓDIGO ÀS PERMISSÕES REAIS / GESTOR-TITULAR E ADMINISTRATIVO OPERACIONAL PODEM EDITAR / COORDENADOR PERMANECE SOMENTE CONSULTA / AGUARDANDO TESTE OPERACIONAL PUBLICADO**.
