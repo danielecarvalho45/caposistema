@@ -165,3 +165,56 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
     operationalOrigin: 'cadastro_paciente',
   })
 })
+
+
+it('abre Novo Agendamento a partir de uma vaga livre da Home sem exigir paciente pré-selecionado', async () => {
+  const slotStart = '2026-10-01T12:00:00.000Z'
+  rpc.getSchedulingCatalog.mockResolvedValue({
+    status: 'success',
+    data: [{
+      specialty_id: 's1',
+      specialty_name: 'Clínica Geral',
+      professional_id: 'p1',
+      professional_name: 'Profissional autorizado',
+    }],
+  })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'p1',
+      slot_date: '2026-10-01',
+      slot_time: '09:00:00',
+      slot_start: slotStart,
+      slot_end: '2026-10-01T12:30:00.000Z',
+      duration_minutes: 30,
+    }],
+  })
+
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+  } as unknown as AccessContext
+
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: '/agenda',
+      state: {
+        origin: 'home_free_slot',
+        professionalId: 'p1',
+        slotDate: '2026-10-01',
+        slotStart,
+      },
+    }]}>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+      />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByPlaceholderText('Nome, Nº CAPO ou CMS')).toBeVisible()
+  expect(screen.getByLabelText('Especialidade *')).toHaveValue('s1')
+  expect(screen.getByLabelText('Profissional *')).toHaveValue('p1')
+  expect(await screen.findByRole('option', { name: /09:00/ })).toBeVisible()
+})
