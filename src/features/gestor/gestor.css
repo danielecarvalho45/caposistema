@@ -209,3 +209,75 @@
     text-align: left;
   }
 }
+
+
+/* CAPO — Gestão de Agenda: responsividade operacional sem alterar contratos */
+.gestor-agenda-management .agenda-own-action-card {
+  width: 100%;
+}
+
+.gestor-agenda-management .agenda-structural-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+@media(max-width:1050px){
+  .gestor-team-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .gestor-team-list {
+    max-height: none;
+  }
+}
+
+@media(max-width:820px){
+  .gestor-team-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gestor-team-tabs button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .gestor-agenda-management .agenda-own-management {
+    padding: 12px;
+  }
+
+  .gestor-agenda-management .agenda-own-management button,
+  .gestor-agenda-management .agenda-structural-pattern-picker > button,
+  .gestor-agenda-management .agenda-recurring-heading > button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .gestor-agenda-management .agenda-own-management select,
+  .gestor-agenda-management .agenda-own-management input,
+  .gestor-agenda-management .agenda-own-management textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+@media(max-width:440px){
+  .gestor-team-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .gestor-agenda-management .agenda-own-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gestor-agenda-management .agenda-own-action-card {
+    min-height: 88px;
+  }
+
+  .gestor-agenda-management .agenda-recurring-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gestor-agenda-management .agenda-recurring-row > small {
+    grid-column: auto;
+  }
+}
