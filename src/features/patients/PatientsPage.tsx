@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { canAccessAppRoute } from '../../app/route-access'
 import { getRpcService, type AsyncState } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
-import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import './patients-page.css'
 
@@ -26,6 +26,13 @@ function calculateAge(birthDate: string, today = new Date()): number | null {
 
   if (birthdayHasNotOccurred) age -= 1
   return age >= 0 && age <= 120 ? age : null
+}
+
+function patientWhatsAppHref(phone: string | undefined) {
+  const clean = (phone ?? '').replace(/\D/g, '')
+  if (clean.length < 10) return null
+  const normalized = clean.startsWith('55') ? clean : `55${clean}`
+  return `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalized)}`
 }
 
 export function PatientsPage({
@@ -65,8 +72,13 @@ export function PatientsPage({
   const [editBusy, setEditBusy] = useState(false)
 
   const patientAge = calculateAge(patientBirthDate)
+  const selectedPatientAge = calculateAge(editForm.birth_date ?? '')
 
   const canEditPatient = accessContext.roles.some((role) =>
+    role.code === 'administrador' || role.code === 'administrativo_operacional',
+  )
+
+  const canRegisterDeath = accessContext.roles.some((role) =>
     role.code === 'administrador' || role.code === 'administrativo_operacional',
   )
 
@@ -128,6 +140,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         0,
       )
       if (refreshed.status === 'success') setResult(refreshed)
+      await openPatientEditor(next.data.patient_id)
     } else if (next.status === 'error') {
       setFeedback(next.error.message)
     } else {
@@ -220,7 +233,9 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     const next = await getRpcService().searchReferralPatients(cleanQuery, 20, 0)
     setResult(next.status === 'success' ? next : { status: 'empty' })
 
-    if (next.status === 'error') {
+    if (next.status === 'success' && next.data.length === 1) {
+      await openPatientEditor(next.data[0].patient_id)
+    } else if (next.status === 'error') {
       setFeedback(next.error.message)
     }
   }
@@ -235,6 +250,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         const source = row as Record<string, unknown>
         setEditingPatientId(patientId)
         setEditForm({
+          patient_number: String(source.patient_number ?? ''),
           full_name: String(source.full_name ?? ''),
           birth_date: String(source.birth_date ?? ''),
           cms: String(source.cms ?? ''),
@@ -520,98 +536,235 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         </p>
       )}
 
-      <section className="home-profile" aria-labelledby="patients-results-title">
-        <div>
-          <p className="eyebrow">Resultado</p>
-          <h2 id="patients-results-title">Pacientes encontrados</h2>
-        </div>
-
-        {result.status === 'loading' && <p>Buscando pacientes…</p>}
-        {result.status === 'empty' && <p>Nenhum paciente encontrado.</p>}
-        {result.status === 'success' && result.data.length === 0 && (
-          <p>Nenhum paciente encontrado.</p>
-        )}
-
-        {result.status === 'success' && result.data.length > 0 && (
-          <div className="home-profile-grid">
-            {result.data.map((patient) => (
-              <article key={patient.patient_id} className="home-profile-card">
-                <strong>{patient.full_name}</strong>
-                <span>
-                  {patient.patient_number ? `Nº CAPO ${patient.patient_number}` : 'Nº CAPO não informado'}
-                  {patient.patient_number && patient.cms ? ' · ' : ''}
-                  {patient.cms ? `CMS ${patient.cms}` : patient.cms === null ? 'CMS não informado' : ''}
-                </span>
-                <small>
-                  {canEditPatient
-                    ? 'Cadastro disponível para consulta e edição conforme as permissões deste perfil.'
-                    : 'Cadastro disponível para consulta conforme as permissões deste perfil.'}
-                </small>
-                <div className="patients-card-actions" aria-label={`Ações para ${patient.full_name}`}>
-                  <PatientWhatsAppButton patientId={patient.patient_id} />
-                  <RegisterPatientDeath patientId={patient.patient_id} patientName={patient.full_name} />
-                  {canEditPatient && (
-                    <button type="button" disabled={editBusy} onClick={() => void openPatientEditor(patient.patient_id)}>
-                      Editar cadastro
-                    </button>
-                  )}
-                  <Link to="/agenda">Agenda Geral</Link>
-                  <Link to="/familiar-cuidador">Familiar / Cuidador</Link>
-                  <Link to="/encerramentos">Encerramentos</Link>
-                </div>
-              </article>
-            ))}
+      {activeView === 'search' && (
+        <section className="home-profile patients-results" aria-labelledby="patients-results-title">
+          <div>
+            <p className="eyebrow">Resultado</p>
+            <h2 id="patients-results-title">
+              {result.status === 'success' && result.data.length > 1
+                ? 'Selecione o paciente'
+                : 'Paciente localizado'}
+            </h2>
           </div>
-        )}
-      </section>
+
+          {result.status === 'loading' && <p>Buscando pacientes…</p>}
+          {result.status === 'empty' && <p>Nenhum paciente encontrado.</p>}
+          {result.status === 'success' && result.data.length === 0 && (
+            <p>Nenhum paciente encontrado.</p>
+          )}
+
+          {result.status === 'success' && result.data.length > 1 && (
+            <div className="patients-search-results">
+              {result.data.map((patient) => (
+                <button
+                  key={patient.patient_id}
+                  type="button"
+                  className={editingPatientId === patient.patient_id ? 'is-selected' : undefined}
+                  onClick={() => void openPatientEditor(patient.patient_id)}
+                >
+                  <strong>{patient.full_name}</strong>
+                  <span>
+                    {patient.patient_number ? `Nº CAPO ${patient.patient_number}` : 'Nº CAPO não informado'}
+                    {patient.cms ? ` · CMS ${patient.cms}` : ''}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {editingPatientId && (
-        <section className="home-profile" aria-labelledby="patient-edit-title">
-          <div>
-            <p className="eyebrow">Cadastro administrativo</p>
-            <h2 id="patient-edit-title">Editar paciente</h2>
+        <section className="home-profile patients-selected" aria-labelledby="patient-edit-title">
+          <div className="patients-selected-heading">
+            <div>
+              <p className="eyebrow">Paciente selecionado</p>
+              <h2 id="patient-edit-title">{editForm.full_name || 'Cadastro do paciente'}</h2>
+              <p>
+                Nº CAPO <strong>{editForm.patient_number || '—'}</strong>
+                {editForm.cms ? <> · CMS <strong>{editForm.cms}</strong></> : null}
+              </p>
+            </div>
+            <span className="patients-selected-status">{editForm.status === 'inativo' ? 'Inativo' : 'Ativo'}</span>
           </div>
-          <div className="patients-form-grid">
+
+          <div className="patients-form-grid patients-selected-grid">
             <label className="patients-span-2">Nome completo
-              <input value={editForm.full_name ?? ''} onChange={(event) => setEditForm({ ...editForm, full_name: event.target.value })} />
+              <input
+                value={editForm.full_name ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, full_name: event.target.value })}
+              />
             </label>
             <label>Data de nascimento
-              <input type="date" value={editForm.birth_date ?? ''} onChange={(event) => setEditForm({ ...editForm, birth_date: event.target.value })} />
+              <input
+                type="date"
+                value={editForm.birth_date ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, birth_date: event.target.value })}
+              />
+            </label>
+            <label>Idade
+              <input value={selectedPatientAge === null ? '' : String(selectedPatientAge)} readOnly />
             </label>
             <label>CMS
-              <input value={editForm.cms ?? ''} onChange={(event) => setEditForm({ ...editForm, cms: event.target.value })} />
+              <input
+                value={editForm.cms ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, cms: event.target.value })}
+              />
+            </label>
+            <label>Nº CAPO
+              <input value={editForm.patient_number ?? ''} readOnly />
             </label>
             <label>Sexo
-              <input value={editForm.sex ?? ''} onChange={(event) => setEditForm({ ...editForm, sex: event.target.value })} />
+              <input
+                value={editForm.sex ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, sex: event.target.value })}
+              />
             </label>
             <label>Telefone / WhatsApp
-              <input value={editForm.phone ?? ''} onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })} />
+              <input
+                value={editForm.phone ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })}
+              />
             </label>
             <label>Telefone alternativo
-              <input value={editForm.phone_secondary ?? ''} onChange={(event) => setEditForm({ ...editForm, phone_secondary: event.target.value })} />
+              <input
+                value={editForm.phone_secondary ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, phone_secondary: event.target.value })}
+              />
             </label>
             <label className="patients-span-2">Endereço
-              <input value={editForm.address ?? ''} onChange={(event) => setEditForm({ ...editForm, address: event.target.value })} />
+              <input
+                value={editForm.address ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, address: event.target.value })}
+              />
             </label>
             <label>Entrada no CAPO
-              <input type="date" value={editForm.capo_start_date ?? ''} onChange={(event) => setEditForm({ ...editForm, capo_start_date: event.target.value })} />
+              <input
+                type="date"
+                value={editForm.capo_start_date ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, capo_start_date: event.target.value })}
+              />
             </label>
             <label>Origem
-              <input value={editForm.origin ?? ''} onChange={(event) => setEditForm({ ...editForm, origin: event.target.value })} />
+              <input
+                value={editForm.origin ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, origin: event.target.value })}
+              />
             </label>
             <label>Situação
-              <select value={editForm.status ?? 'ativo'} onChange={(event) => setEditForm({ ...editForm, status: event.target.value })}>
+              <select
+                value={editForm.status ?? 'ativo'}
+                disabled={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, status: event.target.value })}
+              >
                 <option value="ativo">Ativo</option>
                 <option value="inativo">Inativo</option>
               </select>
             </label>
             <label className="patients-span-all">Observação administrativa
-              <textarea rows={3} value={editForm.operational_notes ?? ''} onChange={(event) => setEditForm({ ...editForm, operational_notes: event.target.value })} />
+              <textarea
+                rows={3}
+                value={editForm.operational_notes ?? ''}
+                readOnly={!canEditPatient}
+                onChange={(event) => setEditForm({ ...editForm, operational_notes: event.target.value })}
+              />
             </label>
           </div>
-          <div className="patients-form-actions">
-            <button type="button" disabled={editBusy} onClick={() => void savePatientEditor()}>Salvar alterações</button>
-            <button type="button" disabled={editBusy} onClick={() => { setEditingPatientId(null); setEditForm({}) }}>Fechar</button>
+
+          {canEditPatient && (
+            <div className="patients-form-actions patients-selected-save">
+              <button type="button" disabled={editBusy} onClick={() => void savePatientEditor()}>
+                {editBusy ? 'Salvando…' : 'Salvar alterações'}
+              </button>
+            </div>
+          )}
+
+          <div className="patients-flow-actions" aria-label={`Ações do paciente ${editForm.full_name || ''}`}>
+            {patientWhatsAppHref(editForm.phone) ? (
+              <a href={patientWhatsAppHref(editForm.phone) ?? undefined} target="_blank" rel="noreferrer">
+                <span aria-hidden="true">💬</span>
+                WhatsApp
+              </a>
+            ) : (
+              <span className="is-disabled"><span aria-hidden="true">💬</span> WhatsApp</span>
+            )}
+
+            {canAccessAppRoute(accessContext, '/agenda') && (
+              <Link
+                to="/agenda"
+                state={{
+                  patientId: editingPatientId,
+                  patientName: editForm.full_name ?? '',
+                  origin: 'patient_record',
+                }}
+              >
+                <span aria-hidden="true">📅</span>
+                Agendamento
+              </Link>
+            )}
+
+            {canAccessAppRoute(accessContext, '/familiar-cuidador') && (
+              <Link
+                to="/familiar-cuidador"
+                state={{
+                  patientId: editingPatientId,
+                  patientName: editForm.full_name ?? '',
+                  patientNumber: editForm.patient_number ?? '',
+                  cms: editForm.cms ?? '',
+                }}
+              >
+                <span aria-hidden="true">👥</span>
+                Familiar / Cuidador
+              </Link>
+            )}
+
+            {canEditPatient && canAccessAppRoute(accessContext, '/fila') && (
+              <Link
+                to="/fila"
+                state={{
+                  patientId: editingPatientId,
+                  patientName: editForm.full_name ?? '',
+                  patientNumber: editForm.patient_number ?? '',
+                  cms: editForm.cms ?? '',
+                  origin: 'patient_record',
+                }}
+              >
+                <span aria-hidden="true">⏳</span>
+                Adicionar na fila de espera
+              </Link>
+            )}
+
+            {canAccessAppRoute(accessContext, '/encerramentos') && (
+              <Link
+                to="/encerramentos"
+                state={{
+                  patientId: editingPatientId,
+                  patientName: editForm.full_name ?? '',
+                  patientNumber: editForm.patient_number ?? '',
+                  cms: editForm.cms ?? '',
+                  origin: 'patient_record',
+                }}
+              >
+                <span aria-hidden="true">✓</span>
+                Encerramentos
+              </Link>
+            )}
+
+            {canRegisterDeath && (
+              <RegisterPatientDeath
+                patientId={editingPatientId}
+                patientName={editForm.full_name ?? 'Paciente'}
+              />
+            )}
           </div>
         </section>
       )}
