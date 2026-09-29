@@ -20,6 +20,7 @@ import { Link } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
+import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
 import { canAccessAppRoute } from '../../app/route-access'
 import type { ProfessionalScreenKind } from './professional-screen'
 
@@ -103,6 +104,16 @@ export function AssistentialPage({
   const isProfessional =
     Boolean(accessContext.professional_id) &&
     accessContext.roles.some((role) => role.code === 'profissional')
+  const canEditDischargeProximity =
+    profileKind === 'clinico_geral' &&
+    accessContext.specialties.some(
+      (specialty) =>
+        specialty.specialty_name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim()
+          .toLowerCase() === 'clinica geral',
+    )
   useEffect(() => {
     if (!isProfessional) return
     let active = true
@@ -284,6 +295,10 @@ export function AssistentialPage({
                   </span>
                   <small>Situação: {patient.status}</small>
                   <PatientCareSpecialties patientId={patient.patient_id} />
+                  <PatientDischargeProximityIndicator
+                    patientId={patient.patient_id}
+                    editable={canEditDischargeProximity}
+                  />
                   <div className="assistential-patient-actions">
                     <PatientWhatsAppButton patientId={patient.patient_id} />
                     {canAccessAppRoute(accessContext, '/solicitacoes') && (
