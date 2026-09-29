@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PatientSearch } from '../../components/forms/PatientSearch'
+import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import {
   getRpcService,
   loadingState,
@@ -15,12 +16,6 @@ import {
 } from '../closures/closures-integration'
 
 type RowsState<T> = AsyncState<readonly T[]>
-type DeathSource =
-  | 'family_caregiver'
-  | 'health_service'
-  | 'official_document'
-  | 'other_authorized_institution'
-
 const closuresIntegration = createClosuresIntegration()
 
 function text(record: Readonly<Record<string, unknown>>, ...keys: string[]) {
@@ -70,10 +65,6 @@ export function GestorOperationalPage() {
   const [busy, setBusy] = useState<string | null>(null)
   const [reason, setReason] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<ReferralPatient | null>(null)
-  const [deathDate, setDeathDate] = useState('')
-  const [deathTime, setDeathTime] = useState('')
-  const [deathSource, setDeathSource] = useState<DeathSource>('family_caregiver')
-  const [deathNotes, setDeathNotes] = useState('')
   const [deliveryStatus, setDeliveryStatus] = useState('')
   const [deliveryReason, setDeliveryReason] = useState('')
 
@@ -131,18 +122,7 @@ export function GestorOperationalPage() {
     setBusy(null)
   }
 
-  async function reloadPatientContext() {
-    if (!selectedPatient) return false
-    const result = await rpc.searchReferralPatients(selectedPatient.full_name, 20, 0)
-    if (result.status !== 'success') return false
-    const current = result.data.find((patient) => patient.patient_id === selectedPatient.patient_id)
-    if (!current) return false
-    setSelectedPatient(current)
-    return reloadAll()
-  }
-
   const reopenReasonIsValid = reason.trim().length >= 5 && reason.trim().length <= 500
-  const deathDateIsValid = Boolean(deathDate) && deathDate <= new Date().toISOString().slice(0, 10)
 
   return (
     <section className="gestor-route" aria-labelledby="gestor-operational-title">
@@ -190,10 +170,14 @@ export function GestorOperationalPage() {
         </article>
 
         <article className="gestor-panel">
-          <h3>Registrar óbito administrativo</h3>
+          <h3>Óbito administrativo</h3>
           <PatientSearch loadPatients={(query, limit, offset) => rpc.searchReferralPatients(query, limit, offset)} onSelect={setSelectedPatient} />
-          {selectedPatient && <p>Paciente selecionado: {selectedPatient.full_name} {selectedPatient.patient_number ? `· Nº CAPO ${selectedPatient.patient_number}` : ''}</p>}
-          <div className="gestor-team-form"><label>Data<input type="date" max={new Date().toISOString().slice(0, 10)} value={deathDate} onChange={(event) => setDeathDate(event.target.value)} /></label><label>Horário, quando conhecido<input type="time" value={deathTime} onChange={(event) => setDeathTime(event.target.value)} /></label><label>Origem<select value={deathSource} onChange={(event) => setDeathSource(event.target.value as DeathSource)}><option value="family_caregiver">Familiar / cuidador</option><option value="health_service">Serviço de saúde</option><option value="official_document">Documento oficial</option><option value="other_authorized_institution">Outra instituição autorizada</option></select></label><label>Observação administrativa<textarea value={deathNotes} maxLength={500} onChange={(event) => setDeathNotes(event.target.value)} /></label><button type="button" disabled={Boolean(busy) || !selectedPatient || !deathDateIsValid} onClick={() => void runMutation('death', () => rpc.registerPatientDeath({ patientId: selectedPatient!.patient_id, deathDate, deathTime: deathTime || null, source: deathSource, notes: deathNotes.trim() || null }), 'Óbito administrativo confirmado e contexto real do paciente recarregado.', reloadPatientContext)}>Registrar óbito</button></div>
+          {selectedPatient && (
+            <>
+              <p>Paciente selecionado: {selectedPatient.full_name} {selectedPatient.patient_number ? `· Nº CAPO ${selectedPatient.patient_number}` : ''}</p>
+              <RegisterPatientDeath patientId={selectedPatient.patient_id} patientName={selectedPatient.full_name} />
+            </>
+          )}
         </article>
 
         <article className="gestor-panel">
