@@ -27,10 +27,32 @@ export function GestorManagementPage({ view, accessContext }: Readonly<{ view: M
   if (view === 'auditoria') return <AuditLogPage />
   if (view === 'busca-ativa') return <ActiveSearchPage accessContext={accessContext} />
   if (view === 'suporte') return <section className="gestor-route" aria-labelledby="support-title"><header><span>Gestão do Serviço</span><h2 id="support-title">Suporte</h2><p>Consulte e acompanhe solicitações de suporte do CAPO.</p></header><article className="gestor-panel"><Link to="/tecnica">Abrir Área Técnica e chamados de suporte</Link></article></section>
+  const flowShortcuts = [
+    { to: '/gestor/operacional', icon: '▤', label: 'Pendências e Operacional', detail: 'Pendências, familiares e entregas nutricionais' },
+    { to: '/gestor/social', icon: '❤', label: 'Acompanhamento Social', detail: 'Fluxo social autorizado' },
+    { to: '/gestor/luto', icon: '✿', label: 'Luto', detail: 'Acompanhamento de familiares e cuidadores' },
+    { to: '/gestor/familiares', icon: '♡', label: 'Familiar / Cuidador', detail: 'Vínculos e acompanhamento' },
+    { to: '/transporte', icon: '↗', label: 'Transporte', detail: 'Solicitações e acompanhamento' },
+    { to: '/encaminhamentos', icon: '⇢', label: 'Encaminhamentos', detail: 'Recebidos e enviados' },
+    { to: '/odontologia', icon: '⚕', label: 'Odontologia', detail: 'Fluxo odontológico' },
+    { to: '/receita', icon: '✚', label: 'Renovação de Receita', detail: 'Solicitações e acompanhamento' },
+  ] as const
+
   return (
     <section className="gestor-route" aria-labelledby="gestor-route-title">
       <header><span>{page.kicker}</span><h2 id="gestor-route-title">{page.title}</h2><p>{page.description}</p></header>
-      <article className="gestor-panel"><h3>Abrir módulos autorizados</h3><ul><li><Link to="/gestor/operacional">Pendências, familiares e entregas nutricionais</Link></li><li><Link to="/gestor/social">Acompanhamento Social</Link></li><li><Link to="/gestor/luto">Luto</Link></li><li><Link to="/gestor/familiares">Familiar / Cuidador</Link></li><li><Link to="/transporte">Transporte</Link></li><li><Link to="/encaminhamentos">Encaminhamentos</Link></li><li><Link to="/odontologia">Odontologia</Link></li><li><Link to="/receita">Renovação de Receita</Link></li></ul></article>
+      <article className="gestor-panel">
+        <h3>Abrir módulos autorizados</h3>
+        <nav className="gestor-flow-shortcuts" aria-label="Fluxos e acompanhamentos">
+          {flowShortcuts.map((item) => (
+            <Link className="gestor-flow-shortcut" key={item.to} to={item.to}>
+              <span className="gestor-flow-shortcut-icon" aria-hidden="true">{item.icon}</span>
+              <strong>{item.label}</strong>
+              <small>{item.detail}</small>
+            </Link>
+          ))}
+        </nav>
+      </article>
     </section>
   )
 }
