@@ -136,3 +136,76 @@
   .gestor-action-tabs{flex-wrap:wrap}
   .gestor-search-row,.gestor-field-grid,.gestor-team-layout,.gestor-team-actions{grid-template-columns:1fr}
 }
+
+
+.gestor-home-agenda-grid > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gestor-agenda-weekday {
+  text-transform: capitalize;
+  color: #627d9d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.gestor-agenda-slot-list {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+
+.gestor-agenda-slot {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e1eaf2;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.gestor-agenda-slot.is-livre {
+  background: #f7fcf9;
+}
+
+.gestor-agenda-slot.is-bloqueado {
+  background: #fff8f2;
+}
+
+.gestor-agenda-slot.is-agendado {
+  background: #f7faff;
+}
+
+.gestor-agenda-slot > strong {
+  color: #17365f;
+}
+
+.gestor-agenda-slot > small {
+  color: #627d9d;
+  text-align: right;
+}
+
+@media (max-width: 620px) {
+  .gestor-home-agenda-grid > header {
+    display: block;
+  }
+
+  .gestor-agenda-weekday {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .gestor-agenda-slot {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .gestor-agenda-slot > small {
+    grid-column: 2;
+    text-align: left;
+  }
+}
