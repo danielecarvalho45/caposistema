@@ -3297,3 +3297,24 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `1f5c07cfe16b71887bbb38fcae72ebce6a1400e0`, `7c6a59b1cc8ef796f71aac7197e8f49fcf86d49c` e `36c623e4057c18e14cce8099830eddbd5b829ebd`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / ATALHO INCLUÍDO NA HOME DO GESTOR / ABERTURA DIRETA DA GESTÃO DE AGENDA / SEM ALTERAÇÃO DE SUPABASE / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.49 Gestor/Titular — separação entre Equipe e Agendas e Usuários e Contas (29/09/2026)
+
+**Divergência observada:** as rotas `/gestor/equipe` e `/gestor/administracao` abriam o mesmo componente `GestorTeamPage`, fazendo **Equipe e Agendas** e **Usuários e Contas** parecerem o mesmo módulo.
+
+**Confronto com o Index estrutural aprovado do Gestor:** em `index(10)_GESTOR_FUNCIONAL_20260913-092622.html`, a área **Equipe e Profissionais** é descrita como visão funcional da equipe — profissionais, especialidades, atividade, disponibilidade, produtividade e situação de trabalho — e registra expressamente: **“Cadastro de conta e permissões continuam em Usuários e Contas, pois são funções de Administração do Sistema.”** A área **Agendas da Equipe** é gerencial/funcional, distinta do cadastro de acesso.
+
+**Correção aplicada:** `GestorTeamPage` passou a possuir dois modos estruturais distintos:
+- `mode='equipe'` → **Equipe e Agendas**: lista funcional da equipe, situação de trabalho, especialidades e aba **Gestão de Agenda**. Não mostra botão Novo profissional, senha, conta de acesso, papéis ou permissões.
+- `mode='administracao'` → **Usuários e Contas**: cadastro/edição de profissional, criação de conta, usuário, e-mail, papéis, especialidades, contexto principal e permissões. Não mostra a aba Gestão de Agenda.
+
+**Roteamento corrigido:** `GestorManagementPage` agora envia `/gestor/equipe` para `GestorTeamPage mode="equipe"` e `/gestor/administracao` para `GestorTeamPage mode="administracao"`. O parâmetro `?aba=agenda`, utilizado pelo atalho **Ampliar horário**, é aplicado somente ao módulo Equipe e Agendas.
+
+**Preservação:** os serviços/RPCs já existentes continuam compartilhados internamente, mas a exposição funcional foi separada conforme a arquitetura. Nenhuma RPC, SQL, migration, RLS, policy ou permissão foi alterada.
+
+**Commits:** `5276d61962f8df5d2985570a7c53380d794b8258` e `f771a100e6e346e2977fb6f737c79cb3daa1f422`.
+
+**Conferência pós-correção:** a leitura física confirmou que Novo profissional e ações de conta/permissões estão condicionados ao modo Administração; a visão funcional e Gestão de Agenda pertencem ao modo Equipe; e as duas rotas deixam de retornar a mesma configuração visual/funcional.
+
+**Estado:** **CORRIGIDO NO CÓDIGO CONFORME INDEX ESTRUTURAL / MÓDULOS SEPARADOS / SEM ALTERAÇÃO DE BACKEND / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
