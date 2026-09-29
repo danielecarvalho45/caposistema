@@ -488,7 +488,8 @@ export function GestorTeamPage({
             <OwnAgendaManager
               professionalId={selected.professionalId}
               title={`Gestão da agenda — ${selected.fullName}`}
-              intro="Ajustes temporários autorizados: Café / Intervalo, Alimentação / Almoço, Reunião, Atividade interna, Relatório, Bloquear período e Exceção de data. Férias, mudança permanente de horário, turno ou carga seguem Coordenação → anuência → efetivação administrativa."
+              intro="Ajustes temporários autorizados: Café / Intervalo, Alimentação / Almoço, Reunião, Atividade interna, Relatório, Bloquear período, Exceção de data e inclusão excepcional de horário de urgência. Férias, mudança permanente de horário, turno ou carga seguem Coordenação → anuência → efetivação administrativa."
+              allowEmergencySlot
             />
           ) : (
             <div>
