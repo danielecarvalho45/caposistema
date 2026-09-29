@@ -54,10 +54,12 @@ function dateRangeIncludesSelectedWeekdays(
   const end = new Date(`${endDate}T12:00:00`)
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return false
 
+  const selected = new Set(weekdays)
   const covered = new Set<number>()
   const cursor = new Date(start)
-  while (cursor <= end && covered.size < weekdays.length) {
-    covered.add(cursor.getDay())
+  while (cursor <= end && covered.size < selected.size) {
+    const weekday = cursor.getDay()
+    if (selected.has(weekday)) covered.add(weekday)
     cursor.setDate(cursor.getDate() + 1)
   }
 
