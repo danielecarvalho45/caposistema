@@ -4216,3 +4216,32 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Preservação anti-avalanche:** não foram alterados `search_patients_for_interface`, `create_appointment_for_interface`, contratos de agenda, permissões, RLS, configuração profissional ou demais módulos.
 
 **Estado:** **IMPLEMENTADO NO `main` / SOMENTE INTERFACE / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+### 28.84 Manutenção cirúrgica — cancelamento de agendamento exposto na Agenda (29/09/2026)
+
+**Evidência operacional:** a Titular não encontrou onde cancelar um agendamento já criado.
+
+**Confronto documental prévio:** o Manual da Interface — bloco **Presença, Falta e Cancelamento** — determina que a ação de cancelamento esteja disponível a partir do agendamento selecionado na Agenda Real, usando exclusivamente `update_appointment_attendance_for_interface(p_appointment_id,p_action,p_reason,p_notes)`, com `p_action='cancelado'`. Somente agendamentos `agendado` ou `confirmado` são elegíveis e o cancelamento exige motivo de 5 a 500 caracteres.
+
+**Conferência física do backend:** `update_appointment_attendance_for_interface` já aceita `cancelado`, exige motivo mínimo de 5 caracteres, preserva registro auditável e autoriza Administrador, Administrativo Operacional, Coordenador e o profissional em seus próprios agendamentos. Nenhuma alteração de banco foi necessária.
+
+**Causa confirmada na interface:** `AgendaPage` possuía o contrato `updateAppointmentAttendance`, porém expunha na visualização principalmente Confirmar/Falta no contexto profissional. O botão específico de cancelamento não estava disponível ao usuário na Agenda.
+
+**Correção cirúrgica:**
+- acrescentado **Cancelar agendamento** nos registros elegíveis (`agendado`/`confirmado`);
+- a ação está disponível na grade efetiva do profissional e nas visualizações Dia/Semana/Mês da Agenda;
+- ao selecionar cancelar, abre painel próprio com **Motivo do cancelamento obrigatório**;
+- o botão **Confirmar cancelamento** só habilita com pelo menos 5 caracteres;
+- a gravação reutiliza a RPC existente com `action='cancelado'`; nenhuma escrita direta em `patient_appointments` foi criada;
+- após sucesso, a agenda é recarregada; quando há profissional selecionado, também é recarregada a grade de horários para refletir a liberação da vaga;
+- incluído **Manter agendamento** para abandonar a operação sem alteração.
+
+**Arquivos alterados:** `src/features/agenda/AgendaPage.tsx`, `src/features/agenda/agenda-page.css`, `tests/unit/agenda-queue-context.test.tsx`.
+
+**Commits:** `d2c2f4ff72067ce4d1ccdb12af2f6821395745b3`, `11ef26d77a99e8b0d2d36354f9df2057986c9df8`, `56269918310adadc68110e43f86eac1a5d4a1230`.
+
+**Proteção de regressão:** adicionado cenário administrativo que localiza **Cancelar agendamento**, exige motivo e verifica chamada a `updateAppointmentAttendance` com `action='cancelado'` e o motivo informado.
+
+**Preservação anti-avalanche:** não foram alterados RPC, SQL, RLS, permissões, regras de vagas, configuração de agenda, paciente ou demais fluxos de Confirmar/Falta/Remarcação.
+
+**Estado:** **IMPLEMENTADO NO `main` / BACKEND PRESERVADO / AGUARDANDO BUILD-PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
