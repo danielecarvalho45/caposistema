@@ -165,7 +165,19 @@ export function ClosuresPage({
   }
 
   async function requestOwnClosure() {
-    if (!ownPatientId || !ownSpecialtyId || ownReason.trim().length < 5 || busy) return
+    if (busy) return
+    if (!ownPatientId) {
+      setFeedback('Selecione o paciente antes de solicitar o encerramento.')
+      return
+    }
+    if (!ownSpecialtyId) {
+      setFeedback('Selecione a especialidade antes de solicitar o encerramento.')
+      return
+    }
+    if (ownReason.trim().length < 5) {
+      setFeedback('Informe o motivo do encerramento com pelo menos cinco caracteres.')
+      return
+    }
     setBusy(true)
     setFeedback(null)
     const result = await integration.requestOwnClosure(
@@ -203,7 +215,15 @@ export function ClosuresPage({
   }
 
   async function openReturnCycle() {
-    if (!returnPatientId || returnReason.trim().length < 5 || busy) return
+    if (busy) return
+    if (!returnPatientId) {
+      setFeedback('Selecione o paciente antes de abrir um novo ciclo de retorno.')
+      return
+    }
+    if (returnReason.trim().length < 5) {
+      setFeedback('Informe o motivo da abertura com pelo menos cinco caracteres.')
+      return
+    }
     setBusy(true)
     setFeedback(null)
     const result = await integration.openReturnCycle(
@@ -341,13 +361,17 @@ export function ClosuresPage({
                 {booleanValue(selected, 'can_close') && (
                   <button
                     type="button"
-                    disabled={busy || actionReason.trim().length < 5}
-                    onClick={() =>
+                    disabled={busy}
+                    onClick={() => {
+                      if (actionReason.trim().length < 5) {
+                        setFeedback('Informe o motivo/observação com pelo menos cinco caracteres.')
+                        return
+                      }
                       void run(
                         () => integration.closeClosure(closureId, actionReason.trim()),
                         'Encerramento da própria atuação concluído.',
                       )
-                    }
+                    }}
                   >
                     Concluir meu encerramento
                   </button>
@@ -356,13 +380,17 @@ export function ClosuresPage({
                 {canAdministrativeAction && booleanValue(selected, 'can_reopen') && (
                   <button
                     type="button"
-                    disabled={busy || actionReason.trim().length < 5}
-                    onClick={() =>
+                    disabled={busy}
+                    onClick={() => {
+                      if (actionReason.trim().length < 5) {
+                        setFeedback('Informe o motivo/observação com pelo menos cinco caracteres.')
+                        return
+                      }
                       void run(
                         () => integration.reopenClosure(closureId, actionReason.trim()),
                         'Encerramento reaberto com histórico preservado.',
                       )
-                    }
+                    }}
                   >
                     Reabrir encerramento
                   </button>
@@ -373,8 +401,12 @@ export function ClosuresPage({
                   textValue(selected, 'professional_id') === '—' && (
                     <button
                       type="button"
-                      disabled={busy || !professionalId}
-                      onClick={() =>
+                      disabled={busy}
+                      onClick={() => {
+                        if (!professionalId) {
+                          setFeedback('Selecione o profissional elegível antes de atribuir.')
+                          return
+                        }
                         void run(
                           () => integration.assignProfessional(
                             closureId,
@@ -383,7 +415,7 @@ export function ClosuresPage({
                           ),
                           'Profissional responsável atribuído.',
                         )
-                      }
+                      }}
                     >
                       Atribuir profissional
                     </button>
@@ -413,7 +445,7 @@ export function ClosuresPage({
           </label>
           <button
             type="button"
-            disabled={busy || ownPatientQuery.trim().length < 2}
+            disabled={busy}
             onClick={() => void searchOwnPatients()}
           >
             Buscar paciente
@@ -450,7 +482,7 @@ export function ClosuresPage({
           </label>
           <button
             type="button"
-            disabled={busy || !ownPatientId || !ownSpecialtyId || ownReason.trim().length < 5}
+            disabled={busy}
             onClick={() => void requestOwnClosure()}
           >
             Solicitar encerramento da própria atuação
@@ -475,7 +507,7 @@ export function ClosuresPage({
           </label>
           <button
             type="button"
-            disabled={busy || returnPatientQuery.trim().length < 2}
+            disabled={busy}
             onClick={() => void searchReturnPatients()}
           >
             Buscar paciente
@@ -501,7 +533,7 @@ export function ClosuresPage({
           </label>
           <button
             type="button"
-            disabled={busy || !returnPatientId || returnReason.trim().length < 5}
+            disabled={busy}
             onClick={() => void openReturnCycle()}
           >
             Abrir ciclo de retorno
