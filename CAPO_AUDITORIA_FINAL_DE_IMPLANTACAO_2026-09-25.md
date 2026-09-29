@@ -4398,3 +4398,45 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 
 **Estado:** **VÍNCULO / SUBSTITUIÇÃO / ENCERRAMENTO / CORREÇÃO ADMINISTRATIVA / BUSCA DE FAMILIAR ALINHADOS AO BANCO / SOLICITAÇÃO DE PSICOLOGIA APONTA PARA RPC CORRETA COM RESTRIÇÃO DE ORIGEM PROFISSIONAL PRESERVADA / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
 
+### 28.91 AUTOMAÇÃO DE NOVA VAGA — INTERFACE, FILA E NOTIFICAÇÃO (29/09/2026)
+
+**Escopo:** verificação ponta a ponta do comportamento previsto na Matriz Funcional §18.6: nova vaga → identificar especialidade → próximo elegível → avisar Administrativo → sinalizar fila → Agendar.
+
+**Fluxo físico confirmado para cancelamento/remarcação:**
+- a interface cancela por `update_appointment_attendance_for_interface(..., 'cancelado', ...)`;
+- a remarcação usa `reschedule_appointment_for_interface`, que cria o novo agendamento e marca o anterior como `remarcado`;
+- ambos os estados disparam `trg_capo_notify_waiting_vacancy_from_appointment`;
+- em Psicologia também dispara `trg_capo_notify_family_queue_vacancy_from_patient_appointment`;
+- os triggers identificam a especialidade, selecionam o próximo elegível por prioridade/ordem e criam notificação de alta prioridade para `administrativo_operacional`.
+
+**Divergências de interface encontradas e corrigidas:**
+1. a notificação de `waiting_list` abria `/fila`, mas descartava o `entity_id` do candidato sugerido;
+2. `family_psychology_waiting_list` não estava mapeada para abertura de contexto na Central de Notificações;
+3. a `QueuePage` não destacava o registro indicado pela automação.
+
+**Correção aplicada:**
+- `notificationContextHref` passa a abrir `/fila?waitingListId=<id>&queueKind=patient|family`;
+- `family_psychology_waiting_list` passa a apontar para `/fila`;
+- `QueuePage` lê esse contexto, informa que a vaga foi liberada e destaca visualmente o paciente/familiar sugerido;
+- no fluxo de pacientes, `Agendar` continua abrindo `AgendaPage` com paciente, especialidade e `waitingListId` já conhecidos;
+- após `create_appointment_for_interface` confirmar o agendamento, a interface chama `complete_waiting_list_scheduling_for_interface` para retirar corretamente a entrada da fila ativa.
+
+**Lacuna adicional confirmada contra a Matriz:** o fluxo de "NOVA VAGA" funcionava somente quando a vaga surgia de cancelamento/remarcação. A abertura explícita de horário adicional (`atendimento_extra`) gravava a nova vaga, mas não notificava a fila.
+
+**Correção cirúrgica no banco:** criada `capo_notify_waiting_vacancy_from_agenda_exception()` com trigger `trg_capo_notify_waiting_vacancy_from_agenda_exception` em `agenda_exceptions`. Somente INSERT ativo de `atendimento_extra` executa a automação. O trigger:
+- identifica o profissional e sua especialidade ativa;
+- seleciona o próximo paciente elegível da fila;
+- cria notificação de alta prioridade ao Administrativo Operacional;
+- quando a especialidade é Psicologia, também verifica a Fila de Familiares respeitando a incompatibilidade do psicólogo e cria a notificação correspondente quando houver familiar elegível.
+
+**Arquivos/registro:**
+- `src/app/App.tsx`;
+- `src/features/queues/QueuePage.tsx`;
+- `src/features/queues/queue-page.css`;
+- `tests/unit/queue-inclusion.test.tsx`;
+- `supabase/migrations/20260929200000_notify_waiting_list_on_extra_agenda_slot.sql`.
+
+**Commits:** `7a2bf1ce4aceb868c64e2711a1e6e38d5e999625`, `6154b3df1a0694bfcdafd2feff4ba3cf634c3ceb`, `b38372f61778694a04ec159adb14fd391fdc35b7`, `3b928859f9929f832a3acd8b64e4a0269407680b` e `88260bae8d0f0c743c307e098db2983438a8848e`.
+
+**Estado:** **FLUXO DE CANCELAMENTO/REMARCAÇÃO CONFIRMADO / CONTEXTO DA NOTIFICAÇÃO CORRIGIDO / CANDIDATO SINALIZADO NA FILA / BAIXA DA FILA CONFIRMADA PELO CONTRATO / NOVA VAGA POR ATENDIMENTO_EXTRA PASSOU A NOTIFICAR AUTOMATICAMENTE / HOMOLOGAÇÃO OPERACIONAL EXTERNA POSTERIOR**.
+
