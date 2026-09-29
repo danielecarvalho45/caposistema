@@ -126,8 +126,8 @@ export function FamilyCaregiverPage({
 
   async function write(action: 'create' | 'replace') {
     if (!patientId || busy) return
-    if (action === 'replace' && reason.trim().length < 3) {
-      setError('Informe o motivo da substituição.')
+    if (action === 'replace' && reason.trim().length < 5) {
+      setError('Informe o motivo da substituição com pelo menos 5 caracteres.')
       return
     }
     setBusy(true)
@@ -159,8 +159,8 @@ export function FamilyCaregiverPage({
     const linkId = String(
       context?.active_link?.link_id ?? context?.active_link?.id ?? '',
     )
-    if (!linkId || reason.trim().length < 3 || busy) {
-      setError('Informe o motivo do encerramento.')
+    if (!linkId || reason.trim().length < 5 || busy) {
+      setError('Informe o motivo do encerramento com pelo menos 5 caracteres.')
       return
     }
     setBusy(true)
@@ -178,14 +178,25 @@ export function FamilyCaregiverPage({
       context?.active_link?.link_id ?? context?.active_link?.id ?? '',
     )
     if (!linkId || !context?.can_admin_correct || busy) return
+    if (reason.trim().length < 5) {
+      setError('Informe o motivo da correção com pelo menos 5 caracteres.')
+      return
+    }
     setBusy(true)
     const result = await service.updateFamilyLinkOperational({
       p_link_id: linkId,
       p_relationship: form.relationship || null,
       p_psychological_interest: form.psychological_interest || null,
+      p_full_name: form.full_name || null,
+      p_phone: form.phone || null,
+      p_email: form.email || null,
+      p_birth_date: form.birth_date || null,
+      p_address: form.address || null,
+      p_reason: reason.trim(),
     })
     if (result.status === 'success') {
       setFeedback('Dados operacionais atualizados.')
+      setReason('')
       await loadContext()
     } else if (result.status === 'error') setError(result.error.message)
     setBusy(false)
@@ -378,8 +389,7 @@ export function FamilyCaregiverPage({
                   setField('psychological_interest', event.target.value)
                 }
               >
-                <option value="nao">Não informado</option>
-                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
                 <option value="avaliacao">Avaliação</option>
               </select>
             </label>
@@ -400,18 +410,24 @@ export function FamilyCaregiverPage({
           )}
           {context?.can_admin_correct && familyMembers.length > 0 && (
             <ul className="family-caregiver-results">
-              {familyMembers.map((member, index) => (
-                <li key={String(member.id ?? index)}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setField('existing_family_member_id', String(member.id))
-                    }
-                  >
-                    {String(member.full_name ?? member.name ?? 'Familiar')}
-                  </button>
-                </li>
-              ))}
+              {familyMembers.map((member, index) => {
+                const familyMemberId = String(
+                  member.family_member_id ?? member.id ?? '',
+                )
+                return (
+                  <li key={familyMemberId || String(index)}>
+                    <button
+                      type="button"
+                      disabled={!familyMemberId}
+                      onClick={() =>
+                        setField('existing_family_member_id', familyMemberId)
+                      }
+                    >
+                      {String(member.full_name ?? member.name ?? 'Familiar')}
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           )}
           {context?.active_link && (
