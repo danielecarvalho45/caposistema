@@ -8,6 +8,7 @@ const rpc = vi.hoisted(() => ({
   saveAgendaConfiguration: vi.fn(),
   saveAgendaRecurringInterval: vi.fn(),
   setAgendaRecurringIntervalStatus: vi.fn(),
+  setAgendaConfigurationStatus: vi.fn(),
   createAgendaBlock: vi.fn(),
   createAgendaException: vi.fn(),
 }))
@@ -87,6 +88,9 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
 
     await user.click(screen.getByRole('button', { name: 'Novo padrão semanal' }))
 
+    expect(screen.getByLabelText('Duração do atendimento (minutos)')).toHaveValue(null)
+    expect(screen.getByRole('button', { name: 'Alterar horário do dia' })).toBeVisible()
+
     fireEvent.change(screen.getByLabelText('Início da vigência'), {
       target: { value: '2026-10-01' },
     })
@@ -96,7 +100,7 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     fireEvent.change(screen.getByLabelText('Horário final'), {
       target: { value: '17:00' },
     })
-    fireEvent.change(screen.getByLabelText('Duração da consulta (minutos)'), {
+    fireEvent.change(screen.getByLabelText('Duração do atendimento (minutos)'), {
       target: { value: '60' },
     })
 
