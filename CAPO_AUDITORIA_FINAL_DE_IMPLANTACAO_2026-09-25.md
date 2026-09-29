@@ -3965,3 +3965,22 @@ A Auditoria ganhou o rótulo da nova entidade em `AuditLogPage.tsx`.
 **Verificação pós-correção:** paciente real atual com Nº CAPO `000001`; sequence em `last_value=1` e `is_called=true`.
 
 **Estado:** **CORRIGIDO NO BANCO E REGISTRADO / PRIMEIRO PACIENTE REAL = 000001 / PRÓXIMO NÚMERO PREVISTO = 000002 / AGUARDANDO CONTINUIDADE DOS TESTES REAIS DE PRÉ-IMPLANTAÇÃO**.
+
+
+### 28.74 Pré-implantação — cálculo automático de idade no Cadastro do Paciente (29/09/2026)
+
+**Evidência operacional:** no cadastro do primeiro paciente real, a Data de nascimento era informada, porém o campo **Idade** permanecia vazio.
+
+**Causa confirmada:** em `src/features/patients/PatientsPage.tsx`, o campo Idade estava presente apenas como input `readOnly` com placeholder “Calculada automaticamente”, mas não existia cálculo nem `value` associado à data de nascimento.
+
+**Correção cirúrgica:** incluído cálculo automático da idade a partir da data `AAAA-MM-DD`, considerando se o aniversário do ano corrente já ocorreu. O campo Idade agora é preenchido automaticamente assim que a data de nascimento é informada e permanece somente leitura.
+
+**Conferência com o primeiro paciente real:** para nascimento em **21/10/1956**, na data desta pré-implantação **29/09/2026**, a idade correta é **69 anos**.
+
+**Preservação:** nenhuma tabela, RPC, trigger, dado cadastral ou regra de autorização foi alterada. A data de nascimento continua sendo a fonte do cálculo; idade não é gravada como dado duplicado no banco.
+
+**Arquivo alterado:** `src/features/patients/PatientsPage.tsx`.
+
+**Commit:** `e31fcc7226b902b606abe8db234fe83c528e37a7`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL DO CAMPO IDADE**.
