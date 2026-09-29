@@ -2521,6 +2521,13 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: parseConfirmedJson,
       }),
+    getPatientDeathContext: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'get_patient_death_context_for_interface',
+        args: { p_patient_id: patientId },
+        parse: parseConfirmedJson,
+      }),
     registerPatientDeath: (input: {
       patientId: string
       deathDate: string
@@ -2538,6 +2545,13 @@ export function createRpcService(transport: RpcTransport) {
           p_source: input.source,
           p_notes: input.notes,
         },
+        parse: parseConfirmedJson,
+      }),
+    correctPatientDeath: (patientId: string, reason: string) =>
+      execute({
+        transport,
+        operation: 'correct_patient_death_for_interface',
+        args: { p_patient_id: patientId, p_reason: reason },
         parse: parseConfirmedJson,
       }),
     getNoShowFollowups: (
@@ -3523,7 +3537,9 @@ function createSupabaseTransport(
       case 'get_family_queue_candidates_for_slot':
       case 'create_family_psychology_appointment_for_interface':
       case 'update_family_waiting_list_status_for_interface':
+      case 'get_patient_death_context_for_interface':
       case 'register_patient_death_for_interface':
+      case 'correct_patient_death_for_interface':
       case 'complete_waiting_list_scheduling_for_interface':
       case 'get_waiting_list_for_interface':
       case 'add_patient_to_waiting_list_for_interface':
