@@ -3443,3 +3443,18 @@ As funções são restritas ao papel `administrador`, compatível com o Gestor/T
 **Conferência pós-correção:** as duas novas RPCs existem fisicamente no Supabase; o frontend contém cadastro em múltiplos dias, botão de todos os dias ativos, listagem e remoção de intervalos recorrentes; o modo estrutural continua habilitado apenas no Gestor/Titular.
 
 **Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / INTERVALOS PODEM SER PERMANENTES NA SEMANA / UM OU VÁRIOS DIAS / APLICAÇÃO EM TODOS OS DIAS ATIVOS / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.54 Padronização visual — ícones dos intervalos recorrentes (29/09/2026)
+
+Na configuração permanente de **Intervalos semanais recorrentes**, os tipos passam a utilizar exatamente os mesmos ícones já usados nas ações pontuais da agenda:
+- **☕ Intervalo**;
+- **🍽️ Almoço / Alimentação**.
+
+A padronização foi aplicada tanto no seletor do tipo de intervalo quanto na listagem dos intervalos ativos, evitando linguagem visual diferente para a mesma função.
+
+**Arquivo alterado:** `src/features/agenda/OwnAgendaManager.tsx`.
+
+**Commit:** `a1c78b0c47abe6a5d6962f61d4986448ac9437d5`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / SEM ALTERAÇÃO DE BACKEND / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
