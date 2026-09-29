@@ -50,6 +50,18 @@ const baseContext: AccessContext = {
   homologation_context: null,
 }
 
+const administrativeContext: AccessContext = {
+  ...baseContext,
+  professional_id: null,
+  roles: [{ code: 'administrativo_operacional', name: 'Administrativo Operacional' }],
+  capabilities: [],
+  primary_context: {
+    ...baseContext.primary_context,
+    code: 'administrativo_operacional',
+    name: 'Administrativo Operacional',
+  },
+}
+
 afterEach(cleanup)
 
 describe('DentistryPage', () => {
@@ -189,7 +201,7 @@ describe('DentistryPage', () => {
     })
   })
 
-  it('expõe ações administrativas quando o backend autoriza gestión', async () => {
+  it('expõe ações administrativas somente no contexto administrativo', async () => {
     const service = {
       getDentistryAccessContextForInterface: vi.fn(async () => ({
         status: 'success',
@@ -246,7 +258,7 @@ describe('DentistryPage', () => {
 
     render(
       <DentistryPage
-        accessContext={baseContext}
+        accessContext={administrativeContext}
         service={service as unknown as DentistryService}
       />,
     )
@@ -265,4 +277,70 @@ describe('DentistryPage', () => {
       )
     })
   })
+
+  it('não expõe ações administrativas no contexto clínico mesmo com autorização acumulada do backend', async () => {
+    const service = {
+      getDentistryAccessContextForInterface: vi.fn(async () => ({
+        status: 'success',
+        data: {
+          professional_id: 'professional-id',
+          professional_name: 'Profissional real',
+          can_issue: true,
+          can_manage: true,
+        },
+      })),
+      getDentistryReferralsForInterface: vi.fn(async () => ({
+        status: 'success',
+        data: [
+          {
+            referral_id: 'referral-3',
+            patient_id: 'patient-3',
+            patient_name: 'Paciente Clínico',
+            patient_number: '3003',
+            cms: 'CMS-003',
+            requesting_professional_id: 'professional-id',
+            requesting_professional_name: 'Profissional real',
+            destination: 'Odontologia',
+            operational_reason: 'Avaliação odontológica',
+            response: null,
+            status: 'pending_approval',
+            created_at: '2026-09-17T00:00:00Z',
+            completed_at: null,
+            cancelled_at: null,
+            history: [],
+            total_count: 1,
+          },
+        ],
+      })),
+    }
+    const mixedContext: AccessContext = {
+      ...baseContext,
+      roles: [
+        { code: 'profissional', name: 'Profissional' },
+        { code: 'administrativo_operacional', name: 'Administrativo Operacional' },
+      ],
+      primary_context: {
+        ...baseContext.primary_context,
+        code: 'profissional',
+        name: 'Profissional',
+      },
+    }
+
+    render(
+      <DentistryPage
+        accessContext={mixedContext}
+        service={service as unknown as DentistryService}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Nova emissão' })).toBeVisible()
+    })
+    expect(screen.getByRole('heading', { name: 'Histórico' })).toBeVisible()
+    expect(screen.queryByLabelText('Providência / informação administrativa')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Iniciar atendimento' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Concluir atendimento' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar encaminhamento' })).not.toBeInTheDocument()
+  })
+
 })
