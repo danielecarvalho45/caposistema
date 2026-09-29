@@ -3756,3 +3756,19 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Commit:** `55ef15619884962b2a34a6b81fff527709d927cf`.
 
 **Estado:** **CAUSA CONFIRMADA / INTERFACE PROTEGIDA CONTRA NOVA CONFIGURAÇÃO INCONSISTENTE / PADRÃO EXISTENTE AINDA REQUER QUE A TITULAR DEFINA A DATA FINAL DE VIGÊNCIA DESEJADA**.
+
+### 28.64 Ajuste cirúrgico de visualização — ocultar dias sem configuração (29/09/2026)
+
+**Regra mais recente da Titular:** na consulta da agenda não devem aparecer dias que não estejam marcados em nenhuma configuração ativa do profissional.
+
+**Correção somente de interface:** `HomeScheduleGrid` deixou de montar cartões para todas as datas do período. Agora exibe somente as datas efetivamente retornadas pela grade configurada. Quando o período não possui nenhum horário configurado, aparece apenas a mensagem geral **Nenhum horário configurado neste período**, sem listar dias vazios.
+
+**Preservação:** horários Livres, Agendados e Bloqueados continuam aparecendo normalmente nos dias configurados. Nenhuma RPC, SQL, migration, RLS, configuração real ou dado de agenda foi alterado.
+
+**Arquivo alterado:** `src/features/agenda/AgendaPage.tsx`.
+
+**Commit:** `e1310ce6f55d9f14b33f59ef74aef991bf4c13fa`.
+
+**Observação de precedência:** esta instrução direta mais recente substitui, apenas quanto à exibição de dias vazios, a regra anterior de mostrar `Sem horário cadastrado` para todo dia do período.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
