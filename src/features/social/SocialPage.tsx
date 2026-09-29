@@ -9,20 +9,12 @@ import {
 import './social-page.css'
 import '../../styles/quick-access.css'
 import { Link } from 'react-router-dom'
-import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
 
 const defaultIntegration = createClosuresIntegration()
 const defaultSpecialtiesLoader = () => getRpcService().getMyAssistentialSpecialties()
-
-const relatedModules: readonly { path: AppRoute; title: string }[] = [
-  { path: '/luto', title: 'Luto' },
-  { path: '/transporte', title: 'Transporte' },
-  { path: '/encaminhamentos', title: 'Encaminhamentos' },
-  { path: '/relatorios', title: 'Relatórios' },
-]
 
 export function SocialPage({
   accessContext,
@@ -293,22 +285,6 @@ export function SocialPage({
         )}
       </section>
 
-      {mode === 'home' && (
-        <section className="social-modules" aria-labelledby="modules-title">
-          <div className="social-section-heading">
-            <div>
-              <p className="eyebrow">Acompanhamento</p>
-              <h2 id="modules-title">Fluxos autorizados</h2>
-            </div>
-            <p>Abrir o módulo correspondente para consultar os registros autorizados.</p>
-          </div>
-          <div className="social-module-grid">
-            {relatedModules.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title }) => (
-              <Link className="social-module" to={path} key={path}><h3>{title}</h3><span>Abrir fluxo</span></Link>
-            ))}
-          </div>
-        </section>
-      )}
     </section>
   )
 }
