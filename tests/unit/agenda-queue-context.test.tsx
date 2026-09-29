@@ -327,3 +327,53 @@ it('cancela agendamento pela Agenda com motivo obrigatório e contrato existente
     reason: 'Paciente solicitou cancelamento',
   })
 })
+
+it('abre o cancelamento central ao clicar em Cancelar na Home do Gestor', async () => {
+  const appointment = {
+    appointment_id: 'appointment-1',
+    patient_id: 'patient-1',
+    patient_name: 'Paciente agendado',
+    patient_number: '1',
+    professional_id: 'p1',
+    professional_name: 'Profissional autorizado',
+    specialty_name: 'Clínica Geral',
+    appointment_date: '2026-10-01T11:10:00.000Z',
+    appointment_end: '2026-10-01T12:10:00.000Z',
+    appointment_type: 'retorno',
+    attendance_status: 'agendado',
+    general_notes: null,
+    rescheduled_from_id: null,
+    reschedule_reason: null,
+    reschedule_origin: null,
+  }
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({ status: 'empty' })
+
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+  } as unknown as AccessContext
+
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: '/agenda',
+      state: {
+        origin: 'home_cancel_appointment',
+        appointmentId: 'appointment-1',
+        professionalId: 'p1',
+        slotDate: '2026-10-01',
+      },
+    }]}>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'success', data: [appointment] })}
+      />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByRole('heading', { name: 'Cancelar agendamento' })).toBeVisible()
+  expect(screen.getByLabelText('Motivo do cancelamento *')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Confirmar cancelamento' })).toBeDisabled()
+})
+
