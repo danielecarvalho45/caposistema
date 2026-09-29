@@ -3657,3 +3657,39 @@ Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois f
 **Commits:** `086889405b1ccf0c530a7ac502545af2da1686ad` e `d0d2779633abb07f1522012f917e7a2853d75804`.
 
 **Estado:** **REGRESSÃO RESIDUAL CORRIGIDA NO CÓDIGO / FLUXO CLÍNICO NOVAMENTE ISOLADO DOS ESTADOS ADMINISTRATIVOS / TESTE AUTOMATIZADO ATUALIZADO, NÃO EXECUTADO / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.60 Correção cirúrgica — intervalos recorrentes preservam o horário exato dentro da grade (29/09/2026)
+
+**Evidência operacional apresentada pela Titular:** na grade publicada, uma agenda com duração de consulta de 60 minutos exibia o Café configurado para **10:10–10:30** como **10:10–11:10 Bloqueado** e o Almoço configurado para **12:30–13:00** como **12:10–13:10 Bloqueado**.
+
+**Confronto físico:** o Supabase armazenava corretamente os intervalos nos horários informados. A divergência estava na geração da grade: `get_agenda_schedule_grid_for_interface` criava primeiro blocos fixos com a duração da consulta e, se qualquer parte desse bloco sobrepunha um intervalo recorrente, marcava o bloco inteiro como bloqueado. `get_available_appointment_slots` utilizava o mesmo alinhamento fixo, descartando o bloco sobreposto sem reiniciar a sequência após o término real do intervalo.
+
+**Regra preservada:** a duração da consulta define a duração dos atendimentos. Café / Intervalo, Almoço, Estudo de caso, Atendimentos online e Rotinas administrativas preservam seus próprios horários inicial e final gravados na formulação semanal. Após um intervalo recorrente, a sequência de vagas reinicia no término real desse intervalo, sem transformar um intervalo menor em uma consulta inteira.
+
+**Correção aplicada no Supabase:** as RPCs `get_agenda_schedule_grid_for_interface` e `get_available_appointment_slots` passaram a dividir a janela diária em segmentos livres delimitados pelos intervalos recorrentes. A grade também passou a retornar cada intervalo recorrente como linha própria, com início/fim e duração reais.
+
+**Verificação física com a configuração observada:** para quinta-feira com jornada **08:10–14:00**, consultas de **60 minutos**, Café **10:10–10:30** e Almoço **12:30–13:00**, a grade passou a retornar:
+- 08:10–09:10 Livre;
+- 09:10–10:10 Livre;
+- 10:10–10:30 Bloqueado — Intervalo / Café;
+- 10:30–11:30 Livre;
+- 11:30–12:30 Livre;
+- 12:30–13:00 Bloqueado — Almoço;
+- 13:00–14:00 Livre.
+
+`get_available_appointment_slots` retornou somente as vagas de 60 minutos compatíveis com esses limites, incluindo **10:30–11:30** e **13:00–14:00**.
+
+**Segundo ponto da evidência — quarta-feira sem agenda:** a configuração mostrada para terça/quarta estava fisicamente salva com vigência **29/09/2026 a 29/09/2026**. Portanto, terça-feira 29/09 pertence à vigência e quarta-feira 30/09 está fora dela. O retorno **Sem horário cadastrado** em 30/09 é coerente com a vigência atualmente gravada e não foi alterado automaticamente, pois ampliar a data final exigiria inventar uma decisão de agenda da Titular.
+
+**Teste adicional:** terça-feira 29/09, duração de 30 minutos e Café 10:10–10:30 passou a retornar 10:10–10:30 como bloqueio exato e reiniciar os horários livres em 10:30–11:00 e 11:00–11:30. Quarta-feira 30/09 permaneceu com zero linhas por estar fora da vigência dessa configuração.
+
+**Migration aplicada no Supabase:** `20260929100031_respect_exact_recurring_intervals_in_agenda_grid`.
+
+**Arquivo registrado no repositório:** `supabase/migrations/20260929100031_respect_exact_recurring_intervals_in_agenda_grid.sql`.
+
+**Commit do arquivo de migration:** `db5f5db873fb1d2fb3ae92b291c08c86dd666e38`.
+
+**Preservação:** nenhuma configuração de agenda foi alterada; nenhum paciente, agendamento, bloqueio ou intervalo real foi criado, excluído ou remanejado; nenhuma interface ou módulo fora da geração de grade/vagas foi modificado.
+
+**Estado:** **CORRIGIDO NO SUPABASE / TESTE FÍSICO PASS / MIGRATION REGISTRADA NO GITHUB / AGUARDANDO NOVA CONFERÊNCIA OPERACIONAL PUBLICADA**.
