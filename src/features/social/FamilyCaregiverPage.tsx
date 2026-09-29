@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import type { ReferralPatient } from '../../lib/supabase/rpc'
 import {
@@ -28,11 +29,16 @@ function openFamilyWhatsApp(phone: string, fullName: string) {
 }
 
 export function FamilyCaregiverPage({
-  service = createFamilyCaregiverService(),
+  service: serviceProp,
 }: Readonly<{
   accessContext: AccessContext
   service?: FamilyCaregiverService
 }>) {
+  const location = useLocation()
+  const service = useMemo(
+    () => serviceProp ?? createFamilyCaregiverService(),
+    [serviceProp],
+  )
   const [patientQuery, setPatientQuery] = useState('')
   const [patients, setPatients] = useState<readonly ReferralPatient[]>([])
   const [patientId, setPatientId] = useState('')
@@ -49,6 +55,42 @@ export function FamilyCaregiverPage({
   const [feedback, setFeedback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const authorized = context?.can_operate ?? false
+
+  useEffect(() => {
+    const stateValue =
+      location.state && typeof location.state === 'object'
+        ? location.state as Record<string, unknown>
+        : null
+    const selectedPatientId =
+      typeof stateValue?.patientId === 'string' ? stateValue.patientId : ''
+    const selectedPatientName =
+      typeof stateValue?.patientName === 'string' ? stateValue.patientName : ''
+
+    if (!selectedPatientId) return
+
+    setPatientId(selectedPatientId)
+    setPatientName(selectedPatientName)
+    setPatientQuery(selectedPatientName)
+    setLoading(true)
+    setError(null)
+
+    let active = true
+    void service.getFamilyContext(selectedPatientId).then((result) => {
+      if (!active) return
+      if (result.status === 'success') {
+        setContext(result.data)
+        setError(null)
+      } else {
+        setContext(null)
+        setError(result.status === 'error' ? result.error.message : null)
+      }
+      setLoading(false)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [location.state, service])
 
   async function loadContext(id = patientId) {
     if (!id) return
