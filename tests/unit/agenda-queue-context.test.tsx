@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -147,7 +147,8 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
   )
 
   expect(await screen.findByDisplayValue('Paciente já cadastrado')).toBeVisible()
-  const freeSlotButton = await screen.findByRole('button', { name: 'Agendar' })
+  const scheduleGrid = await screen.findByLabelText('Grade efetiva da agenda')
+  const freeSlotButton = await within(scheduleGrid).findByRole('button', { name: 'Agendar' })
   await user.click(freeSlotButton)
 
   await user.selectOptions(screen.getByLabelText('Tipo *'), 'Primeiro atendimento na especialidade')
