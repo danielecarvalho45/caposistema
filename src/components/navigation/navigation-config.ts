@@ -12,6 +12,7 @@ export const navigationItems: readonly NavigationItem[] = [
   { path: '/', label: 'Início', icon: '⌂', group: 'principal' },
   { path: '/pacientes', label: 'Pacientes', icon: '👥', group: 'principal' },
   { path: '/agenda', label: 'Agenda Geral', icon: '🗓', group: 'principal' },
+  { path: '/minha-agenda/gerenciar', label: 'Gerenciar minha agenda', icon: '⏱', group: 'principal' },
   { path: '/minha-agenda/solicitar-alteracao', label: 'Solicitar ao Coordenador', icon: '▤', group: 'principal' },
   { path: '/nutricao', label: 'Nutrição', icon: '◉', group: 'principal' },
   { path: '/assistencia-social', label: 'Assistência Social', icon: '♡', group: 'principal' },
@@ -59,5 +60,10 @@ export function authorizedNavigationItems(
       ) return false
       return true
     },
+  ).map((item) =>
+    item.path === '/agenda' &&
+    accessContext.primary_context.code === 'profissional'
+      ? { ...item, label: 'Minha Agenda' }
+      : item,
   )
 }
