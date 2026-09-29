@@ -274,7 +274,17 @@ describe('RenewalPrescriptionPage', () => {
     expect(screen.getByRole('button', { name: 'Recebido' })).toBeVisible()
     expect(screen.queryByRole('heading', { name: 'Nova solicitação' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cancelar solicitação' })).not.toBeInTheDocument()
+
+    const situation = screen.getByLabelText('Situação')
+    expect(situation).toHaveTextContent('Recebidas')
+    expect(situation).toHaveTextContent('Em andamento')
+    expect(situation).toHaveTextContent('Histórico')
+    expect(situation).not.toHaveTextContent('Aguardando processamento administrativo')
+    expect(situation).not.toHaveTextContent('Concluída')
+    expect(situation).not.toHaveTextContent('Cancelada')
+
     expect(service.getPrescriptionRenewalDoctors).not.toHaveBeenCalled()
+    expect(service.getPrescriptionRenewalOperationalContext).not.toHaveBeenCalled()
   })
 
 })
