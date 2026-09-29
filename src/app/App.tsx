@@ -183,7 +183,7 @@ export function App() {
   ) : isNutritionHome ? (
     <NutritionPage accessContext={accessContext} />
   ) : isSocialHome ? (
-    <SocialPage accessContext={accessContext} />
+    <SocialPage accessContext={accessContext} mode="home" />
   ) : isAssistentialHome ? (
     <AssistentialPage accessContext={accessContext} profileKind={professionalScreen} />
   ) : location.pathname === '/gestor/social' ? (
@@ -218,7 +218,7 @@ export function App() {
   ) : isNutritionRoute ? (
     <NutritionPage accessContext={accessContext} />
   ) : isSocialRoute ? (
-    <SocialPage accessContext={accessContext} />
+    <SocialPage accessContext={accessContext} mode="followup" />
   ) : isBereavementRoute ? (
     <BereavementPage accessContext={accessContext} />
   ) : isFamilyCaregiverRoute ? (
