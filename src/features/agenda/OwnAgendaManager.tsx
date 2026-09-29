@@ -43,7 +43,7 @@ type PendingConfirmation = Readonly<{
 export function OwnAgendaManager({
   professionalId,
   title = 'Gerenciar minha agenda',
-  intro = 'Ajustes temporários da própria disponibilidade. Mudanças estruturais de jornada, carga ou disponibilidade devem ser solicitadas ao Coordenador.',
+  intro = 'Você pode flexibilizar temporariamente sua própria agenda sem depender do Administrativo: ajustar café/almoço, reunião, atividade interna, relatório, bloquear períodos e alterar provisoriamente o horário em uma data específica. Alterações permanentes de jornada, turno, carga ou horário seguem Coordenação → anuência → efetivação administrativa.',
 }: Props) {
   const rpc = useMemo(() => getRpcService(), [])
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
@@ -113,11 +113,11 @@ export function OwnAgendaManager({
     setBusy(true)
     setFeedback(null)
 
-    if (entryType === 'excecao') {
+    if (entryType === 'excecao' || entryType === 'horario_provisorio') {
       const result = await rpc.createAgendaException({
         agendaConfigId: configId,
         exceptionDate: date,
-        exceptionType: 'bloqueio',
+        exceptionType: entryType === 'horario_provisorio' ? 'alteracao_horario' : 'bloqueio',
         startTime,
         endTime,
         description: description.trim(),
@@ -132,7 +132,11 @@ export function OwnAgendaManager({
               'Existe conflito nessa data. Confirme para registrar a exceção.',
           )
         } else {
-          setFeedback('Exceção temporária registrada na agenda.')
+          setFeedback(
+            entryType === 'horario_provisorio'
+              ? 'Horário provisório registrado na própria agenda.'
+              : 'Exceção temporária registrada na agenda.',
+          )
           resetForm()
         }
       } else if (result.status === 'error') {
@@ -216,7 +220,8 @@ export function OwnAgendaManager({
               <option value="atividade">Atividade interna</option>
               <option value="relatorio">Relatório</option>
               <option value="bloqueio">Bloquear período</option>
-              <option value="excecao">Exceção de data</option>
+              <option value="horario_provisorio">Horário provisório — data específica</option>
+              <option value="excecao">Exceção de data / bloqueio</option>
             </select>
           </label>
 
@@ -243,7 +248,7 @@ export function OwnAgendaManager({
             />
           </label>
 
-          {entryType !== 'excecao' && (
+          {entryType !== 'excecao' && entryType !== 'horario_provisorio' && (
             <label>
               Orientação de remanejamento, se houver paciente afetado
               <textarea
@@ -268,16 +273,7 @@ export function OwnAgendaManager({
           ) : (
             <button
               type="button"
-              disabled={
-                busy ||
-                !configId ||
-                !entryType ||
-                !date ||
-                !startTime ||
-                !endTime ||
-                endTime <= startTime ||
-                description.trim().length < 5
-              }
+              disabled={busy}
               onClick={() => void submit(false)}
             >
               Registrar alteração temporária
