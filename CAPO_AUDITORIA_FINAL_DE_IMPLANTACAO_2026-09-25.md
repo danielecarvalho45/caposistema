@@ -3045,3 +3045,24 @@ Os atalhos aprovados do bloco principal são:
 **Commits:** `c98e07029849f32f6930e03dc23847b86f55ebe8` e `6eda93eeadd7d5a11f058dd623d32598445fc477`.
 
 **Estado:** **REGRESSÃO DE CONTEXTO CORRIGIDA NO CÓDIGO / RELATÓRIO DA PRÓPRIA ESPECIALIDADE PRESERVADO / DASHBOARD GERENCIAL ISOLADO / AGUARDANDO PUBLICAÇÃO E TESTE OPERACIONAL REAL**.
+
+
+### 28.39 Gerenciar minha agenda — atalhos visuais e ausência de configuração na homologação de Nutrição (29/09/2026)
+
+**Evidência de homologação:** no contexto **Homologação — Nutrição**, a área **Gerenciar minha agenda** abria com o texto explicativo, porém os controles de bloqueio/horário não apareciam e a tela seguia diretamente para Dia/Semana/Mês.
+
+**Causa física confirmada no Supabase:** existem 2 profissionais assistenciais ativos vinculados à especialidade Nutrição, mas apenas 1 possui configuração de agenda ativa. O único contexto de homologação de Nutrição habilitado possui profissional simulado, porém esse profissional **não possui agenda ativa configurada**. O contrato `get_agenda_configuration_for_interface` retorna corretamente `configurations`; sem configuração, o componente anterior simplesmente não renderizava o formulário, o que fazia parecer que a função estava ausente.
+
+**Correção visual aplicada:** `src/features/agenda/OwnAgendaManager.tsx` passou a exibir, logo no início da área de gerenciamento, uma grade de ações por ícones: **Alterar horário do dia**, **Bloquear período**, **Almoço**, **Café / Intervalo**, **Reunião**, **Atividade interna**, **Relatório** e **Exceção de data**. A seleção por lista foi substituída por esses atalhos visuais, preservando os mesmos contratos técnicos existentes.
+
+**Horário provisório validado:** a RPC física `get_available_appointment_slots` foi relida e confirma que a exceção `alteracao_horario` substitui, naquela data específica, `start_time` e `end_time` da janela base. Portanto, o atalho **Alterar horário do dia** pode ser utilizado para alterar provisoriamente o início e/ou o fechamento da agenda em uma data específica.
+
+**Ausência de agenda tratada:** quando o contexto profissional não possui configuração de agenda, os atalhos permanecem visíveis, porém desabilitados, e a tela informa explicitamente que os ajustes temporários só podem ser registrados depois que existir uma agenda configurada para aquele profissional. A interface deixa de ocultar silenciosamente a funcionalidade.
+
+**Preservação de dados:** nenhuma agenda foi criada ou copiada para o profissional de homologação de Nutrição, pois horário inicial, horário final, duração e dias de atendimento são dados individuais e não devem ser inventados nem herdados automaticamente de outro profissional.
+
+**Arquivos alterados:** `src/features/agenda/OwnAgendaManager.tsx` e `src/features/agenda/agenda-page.css`.
+
+**Commits:** `e1a8f7eb649a363023392a670ae3e4d8dc296c34` e `2c639e763b240c320aeda911d82931ac9742a236`.
+
+**Estado:** **INTERFACE CORRIGIDA / CAUSA DA HOMOLOGAÇÃO CONFIRMADA NO BANCO / CONTEXTO DE NUTRIÇÃO SEM AGENDA ATIVA / AGUARDANDO CONFIGURAÇÃO REAL DA AGENDA E PUBLICAÇÃO PARA TESTE OPERACIONAL**.
