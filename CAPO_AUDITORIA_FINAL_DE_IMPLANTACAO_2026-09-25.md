@@ -3458,3 +3458,29 @@ A padronização foi aplicada tanto no seletor do tipo de intervalo quanto na li
 **Commit:** `a1c78b0c47abe6a5d6962f61d4986448ac9437d5`.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / SEM ALTERAÇÃO DE BACKEND / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
+
+
+### 28.55 Formulação semanal da agenda — cinco tipos estruturais obrigatórios (29/09/2026)
+
+**Regra funcional definida pela Titular:** a formulação permanente da agenda deve contemplar, com identidade própria e os mesmos ícones usados operacionalmente:
+- **☕ Intervalo / Café**;
+- **🍽️ Almoço**;
+- **📚 Estudo de caso**;
+- **💻 Atendimentos online**;
+- **📋 Rotinas administrativas**.
+
+Esses itens não devem ser escondidos sob um tipo genérico de atividade, pois fazem parte da estrutura semanal da agenda e precisam ser reconhecidos visual e funcionalmente.
+
+**Correção de banco:** o constraint `agenda_blocks_block_type_check` foi ampliado para aceitar os tipos estruturais `estudo_caso`, `atendimento_online` e `rotina_administrativa`, preservando os tipos existentes. A RPC `save_agenda_recurring_interval_for_interface` passou a aceitar os cinco tipos da formulação semanal.
+
+**Correção de interface:** a seção **Intervalos semanais recorrentes / formulação semanal** da Gestão de Agenda do Gestor passou a oferecer os cinco tipos com os ícones canônicos. A seleção pode ser aplicada a um, vários ou todos os dias ativos.
+
+**Exibição na grade:** a Home profissional e a Home do Gestor passam a traduzir os códigos técnicos para os nomes/ícones visuais acima quando um horário estiver ocupado pela formulação semanal.
+
+**Migration:** `supabase/migrations/20260929035500_expand_weekly_agenda_formulation_types.sql`.
+
+**Arquivos alterados:** `src/lib/supabase/rpc.ts`, `src/features/agenda/OwnAgendaManager.tsx`, `src/features/agenda/AgendaPage.tsx` e `src/features/gestor/GestorDashboard.tsx`.
+
+**Commits:** `43f0aa37951f8e837b8202143122b895fed4e990`, `82634db30c428178337f107bfbe45f0d5cf823f7`, `642b3e2d57ae21bd3b4d19b7cef91464c315ea0a`, `477cb3e6bca5390f6488ab1bccee8403ac783afb` e `93b6836ef0deec0420f521b7caa9b77f253edb57`.
+
+**Estado:** **CORRIGIDO NO CÓDIGO E NO SUPABASE / CINCO TIPOS ESTRUTURAIS INCLUÍDOS NA FORMULAÇÃO SEMANAL / ÍCONES PADRONIZADOS / TESTES AUTOMATIZADOS NÃO EXECUTADOS / AGUARDANDO PUBLICAÇÃO E CONFERÊNCIA VISUAL REAL**.
