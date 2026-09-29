@@ -190,14 +190,16 @@ function errorMessage(result: AsyncState<unknown>): string | null {
 export function GestorTeamPage({
   service: providedService,
   initialTab = 'cadastro',
+  mode = 'equipe',
 }: Readonly<{
   service?: TeamManagementService
   initialTab?: 'cadastro' | 'agenda'
+  mode?: 'equipe' | 'administracao'
 }>) {
   const service = useMemo(() => providedService ?? createTeamManagementService(), [providedService])
   const [context, setContext] = useState<unknown>(null)
   const [selected, setSelected] = useState<TeamMember | null>(null)
-  const [teamTab, setTeamTab] = useState<'cadastro' | 'agenda'>(initialTab)
+  const [teamTab, setTeamTab] = useState<'cadastro' | 'agenda'>(mode === 'administracao' ? 'cadastro' : initialTab)
   const [profile, setProfile] = useState<TeamMemberProfileInput>(blankProfile)
   const [temporaryPassword, setTemporaryPassword] = useState('')
   const [initiallyActive, setInitiallyActive] = useState(true)
@@ -439,19 +441,33 @@ export function GestorTeamPage({
   }
 
   return <section className="gestor-route" aria-labelledby="gestor-team-title">
-    <header><span>Gestão do Serviço</span><h2 id="gestor-team-title">Equipe e Agendas</h2><p>Cadastro da equipe e gestão operacional temporária das agendas profissionais.</p></header>
-    <div className="gestor-team-tabs" role="tablist" aria-label="Equipe e agendas">
-      <button type="button" role="tab" aria-selected={teamTab === 'cadastro'} onClick={() => setTeamTab('cadastro')}>Cadastro de Profissionais</button>
-      <button type="button" role="tab" aria-selected={teamTab === 'agenda'} onClick={() => setTeamTab('agenda')}>Gestão de Agenda</button>
-    </div>
+    <header>
+      <span>{mode === 'administracao' ? 'Administração do Sistema' : 'Gestão do Serviço'}</span>
+      <h2 id="gestor-team-title">{mode === 'administracao' ? 'Usuários e Contas' : 'Equipe e Agendas'}</h2>
+      <p>{mode === 'administracao'
+        ? 'Cadastro de profissional, conta de acesso, papéis, especialidades e permissões.'
+        : 'Visão funcional da equipe, especialidades, situação de trabalho, disponibilidade e agendas.'}</p>
+    </header>
+
+    {mode === 'equipe' && (
+      <div className="gestor-team-tabs" role="tablist" aria-label="Equipe e agendas">
+        <button type="button" role="tab" aria-selected={teamTab === 'cadastro'} onClick={() => setTeamTab('cadastro')}>Equipe</button>
+        <button type="button" role="tab" aria-selected={teamTab === 'agenda'} onClick={() => setTeamTab('agenda')}>Gestão de Agenda</button>
+      </div>
+    )}
+
     <div className="gestor-team-layout">
       <article className="gestor-panel gestor-team-list">
-        <div className="gestor-team-heading"><h3>Equipe</h3><button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Novo profissional</button></div>
+        <div className="gestor-team-heading">
+          <h3>{mode === 'administracao' ? 'Profissionais e contas' : 'Equipe'}</h3>
+          {mode === 'administracao' && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Novo profissional</button>}
+        </div>
         <div className="gestor-search-row"><input aria-label="Buscar equipe" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou usuário" /><button type="button" onClick={() => void reload()}>Buscar</button><button type="button" aria-label={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} title={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} onClick={() => { const next = showInactiveSearch ? 'ativo' : 'inativo'; setShowInactiveSearch(!showInactiveSearch); setStatus(next); setQuery(''); setSelected(null); void reload('', next) }}>⌕</button></div>
         {showInactiveSearch && <label>Buscar profissionais inativos <select aria-label="Situação da equipe" value={status} onChange={(event) => setStatus(event.target.value)}><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></label>}
-        {loading ? <p role="status">Carregando equipe...</p> : team.length === 0 ? <p>Nenhum profissional retornado.</p> : <ul className="gestor-result-list">{team.map((member) => <li key={member.professionalId}><button type="button" className={selected?.professionalId === member.professionalId ? 'is-selected' : ''} onClick={() => chooseMember(member)}><strong>{member.fullName}</strong><small>{member.functionTitle ?? 'Sem função informada'} · {member.active ? 'Ativo' : 'Inativo'}{!member.userAccountId ? ' · Sem conta de acesso' : ''}</small></button></li>)}</ul>}
+        {loading ? <p role="status">Carregando equipe...</p> : team.length === 0 ? <p>Nenhum profissional retornado.</p> : <ul className="gestor-result-list">{team.map((member) => <li key={member.professionalId}><button type="button" className={selected?.professionalId === member.professionalId ? 'is-selected' : ''} onClick={() => chooseMember(member)}><strong>{member.fullName}</strong><small>{member.functionTitle ?? 'Sem função informada'} · {member.active ? 'Ativo' : 'Inativo'}{mode === 'administracao' && !member.userAccountId ? ' · Sem conta de acesso' : ''}</small></button></li>)}</ul>}
       </article>
-      {teamTab === 'cadastro' ? (
+
+      {mode === 'administracao' ? (
       <form className="gestor-panel gestor-team-form" onSubmit={(event) => void saveProfile(event)}>
         <div className="gestor-team-heading"><h3>{selected ? 'Editar profissional' : 'Cadastrar profissional'}</h3>{selected && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Cancelar edição</button>}</div>
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
@@ -466,7 +482,7 @@ export function GestorTeamPage({
         <button className="gestor-primary-action" type="submit" disabled={submitting}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
         {selected && !selected.userAccountId && <button type="button" disabled={submitting} onClick={() => void createAccessForSelected()}>{submitting ? 'Processando…' : 'Criar acesso'}</button>}
       </form>
-      ) : (
+      ) : teamTab === 'agenda' ? (
         <article className="gestor-panel gestor-agenda-management" aria-label="Gestão de agenda do profissional selecionado">
           {selected ? (
             <OwnAgendaManager
@@ -477,13 +493,28 @@ export function GestorTeamPage({
           ) : (
             <div>
               <h3>Gestão de Agenda</h3>
-              <p>Selecione um profissional da equipe para abrir os horários e registrar ajustes temporários.</p>
+              <p>Selecione um profissional da equipe para consultar a disponibilidade e registrar ajustes temporários.</p>
             </div>
+          )}
+        </article>
+      ) : (
+        <article className="gestor-panel" aria-label="Visão funcional do profissional selecionado">
+          <h3>Visão funcional da equipe</h3>
+          {selected ? (
+            <dl className="gestor-team-functional-summary">
+              <div><dt>Profissional</dt><dd>{selected.fullName}</dd></div>
+              <div><dt>Função</dt><dd>{selected.functionTitle ?? 'Não informada'}</dd></div>
+              <div><dt>Situação de trabalho</dt><dd>{selected.active ? 'Ativo' : 'Inativo'}</dd></div>
+              <div><dt>Especialidades</dt><dd>{selectedField(selected.profile.specialties, 'specialty_name').join(', ') || 'Não informadas'}</dd></div>
+            </dl>
+          ) : (
+            <p>Selecione um integrante da equipe para consultar sua situação funcional e especialidades. Cadastro de conta e permissões ficam em Usuários e Contas.</p>
           )}
         </article>
       )}
     </div>
-    {teamTab === 'cadastro' && selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3>{selected.userAccountId && <select aria-label="Contexto principal" defaultValue="" onChange={(event) => { if (event.target.value) void mutate(() => service.setPrimaryContext(selected.userAccountId!, event.target.value), 'Contexto principal atualizado.') }}><option value="">Definir contexto principal</option>{roles.filter((role) => profile.roleCodes.includes(role.id)).map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3><p>As capacidades são lidas do catálogo atual do banco. Nenhuma especialidade concede automaticamente Encaminhamento Interprofissional.</p>{capabilityOptions.filter((item) => item.individualAssignable).length === 0 ? <p>Nenhuma capacidade individual atribuível foi retornada pelo banco.</p> : <ul className="gestor-capability-list">{capabilityOptions.filter((item) => item.individualAssignable).map((item) => <li key={item.code}><label className="gestor-check"><input type="checkbox" checked={effectiveCapabilityCodes.has(item.code)} onChange={(event) => void mutateProfessionalCapability(item.code, event.target.checked)} />{item.code}</label>{effectiveCapabilityCodes.has(item.code) && <button type="button" onClick={() => void mutate(() => service.removeCapability(selected.professionalId, item.code), 'Permissão individual removida.')}>Remover permissão individual</button>}</li>)}</ul>}<p>Capacidades próprias de especialidade são administradas somente nos vínculos que já existem no catálogo canônico.</p><label>Especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && (selectedSpecialtyCapabilities.length === 0 ? <p>Nenhuma capacidade específica cadastrada para esta especialidade.</p> : <ul className="gestor-capability-list">{selectedSpecialtyCapabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); const isEnabled = capability.is_enabled === true; return code ? <li key={code}><label className="gestor-check"><input type="checkbox" checked={isEnabled} disabled={code === 'encaminhamento_interprofissional'} onChange={(event) => void mutateSpecialtyCapability(specialtyForCapability, code, event.target.checked)} />{code}</label>{code === 'encaminhamento_interprofissional' && <small>Concessão individual; não automática por especialidade.</small>}</li> : null })}</ul>)}</article></section>}
+
+    {mode === 'administracao' && selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3>{selected.userAccountId && <select aria-label="Contexto principal" defaultValue="" onChange={(event) => { if (event.target.value) void mutate(() => service.setPrimaryContext(selected.userAccountId!, event.target.value), 'Contexto principal atualizado.') }}><option value="">Definir contexto principal</option>{roles.filter((role) => profile.roleCodes.includes(role.id)).map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3><p>As capacidades são lidas do catálogo atual do banco. Nenhuma especialidade concede automaticamente Encaminhamento Interprofissional.</p>{capabilityOptions.filter((item) => item.individualAssignable).length === 0 ? <p>Nenhuma capacidade individual atribuível foi retornada pelo banco.</p> : <ul className="gestor-capability-list">{capabilityOptions.filter((item) => item.individualAssignable).map((item) => <li key={item.code}><label className="gestor-check"><input type="checkbox" checked={effectiveCapabilityCodes.has(item.code)} onChange={(event) => void mutateProfessionalCapability(item.code, event.target.checked)} />{item.code}</label>{effectiveCapabilityCodes.has(item.code) && <button type="button" onClick={() => void mutate(() => service.removeCapability(selected.professionalId, item.code), 'Permissão individual removida.')}>Remover permissão individual</button>}</li>)}</ul>}<p>Capacidades próprias de especialidade são administradas somente nos vínculos que já existem no catálogo canônico.</p><label>Especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && (selectedSpecialtyCapabilities.length === 0 ? <p>Nenhuma capacidade específica cadastrada para esta especialidade.</p> : <ul className="gestor-capability-list">{selectedSpecialtyCapabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); const isEnabled = capability.is_enabled === true; return code ? <li key={code}><label className="gestor-check"><input type="checkbox" checked={isEnabled} disabled={code === 'encaminhamento_interprofissional'} onChange={(event) => void mutateSpecialtyCapability(specialtyForCapability, code, event.target.checked)} />{code}</label>{code === 'encaminhamento_interprofissional' && <small>Concessão individual; não automática por especialidade.</small>}</li> : null })}</ul>)}</article></section>}
     {feedback && <p className="gestor-feedback" role="status">{feedback}</p>}
   </section>
 }
