@@ -4829,3 +4829,84 @@ Foi realizado backfill somente de inconsistências já existentes: ciclos encerr
 - tela Pacientes / busca por `TESTE-CAPO-0001`: paciente oficial encontrado corretamente e isoladamente.
 
 **Estado:** **AMBIENTE DE HOMOLOGAÇÃO PREPARADO / PACIENTE TESTE VINCULADO AOS PERFIS SIMULADOS / ADMINISTRATIVO OPERACIONAL INICIADO / PRONTO PARA PERCORRER OS MÓDULOS E DEPOIS OS DEMAIS PERFIS**.
+
+
+### 28.99 HOMOLOGAÇÃO — AUDITORIA DE ISOLAMENTO ENTRE DADOS DE TESTE E PRODUÇÃO (30/09/2026)
+
+**Escopo:** auditoria somente de leitura antes da criação de agendas para os profissionais de homologação. Objetivo: impedir que dados do paciente/profissionais de teste apareçam em agendas, relatórios ou telas reais e impedir que a conta `manuteste` enxergue/operacionalize dados reais durante a homologação.
+
+#### Estado atual dos dados de homologação
+Paciente oficial:
+- `PACIENTE SIMULADO CAPO — HOMOLOGAÇÃO`;
+- Nº CAPO `TESTE-CAPO-0001`;
+- `is_test = true`.
+
+Profissionais de homologação:
+- Médico Clínico Geral;
+- Nutrição;
+- Assistência Social;
+- Psicologia;
+- Fisioterapia;
+todos com `is_homologation_profile = true`.
+
+No momento da auditoria:
+- 0 agendamentos do paciente teste;
+- 0 entradas de fila;
+- 0 faltosos;
+- 0 solicitações administrativas;
+- 0 encaminhamentos;
+- 0 solicitações de Transporte;
+- 0 renovações de receita;
+- 0 encerramentos;
+- 0 planos nutricionais;
+- 0 configurações de agenda e 0 agendamentos para os profissionais de homologação.
+
+#### Isolamento já correto
+- `capo_patient_visible_in_current_context` isola o paciente teste: contas reais não recebem o paciente de teste; homologação ativa recebe somente o paciente de teste explicitamente vinculado.
+- As principais RPCs operacionais de agenda, fila, faltosos, solicitações, encaminhamentos, transporte, receita e encerramentos utilizam a visibilidade central do paciente.
+- `get_reports_dashboard_for_interface` exclui homologação das métricas de produção por `is_test` / `capo_patient_is_production`.
+- `get_scheduling_catalog`, em produção, exclui profissionais de homologação por `capo_professional_is_production`.
+- `get_team_management_context_for_interface` exclui profissionais de homologação da gestão real de equipe.
+- `get_interprofessional_referral_targets_for_interface` exclui profissionais de homologação em produção.
+
+#### Brechas comprovadas — NÃO CRIAR AGENDAS DE TESTE AINDA
+1. **Visão de Agenda da Coordenação real**
+   - `get_coordinator_agenda_overview_for_interface` monta a matriz a partir de todos os profissionais ativos e não aplica `capo_professional_is_production`.
+   - Com a identidade real do Gestor/Titular, a visão já retorna os cinco profissionais “Homologação — ...” como `sem_agenda`.
+   - Se forem criadas agendas agora, elas poderão aparecer na agenda real da Coordenação.
+
+2. **Lista de médicos para Renovação de Receita**
+   - `get_prescription_renewal_doctors_for_interface` usa `is_active_clinical_doctor`, e esse helper não exclui `is_homologation_profile`.
+   - A lista real retorna simultaneamente “Homologação — Médico Clínico Geral” e médico real.
+   - Portanto o perfil de homologação já aparece em tela real de Receita.
+
+3. **Conta `manuteste` — catálogo de agendamento**
+   - Em contexto Administrativo Operacional de homologação, `get_scheduling_catalog` retorna profissionais reais, porque o contrato usa somente `capo_professional_is_production`.
+   - Isso é o inverso do isolamento desejado: a conta de teste recebe nomes/profissionais de produção.
+
+4. **Conta `manuteste` — grade de agenda**
+   - Em contexto Administrativo Operacional de homologação, `get_agenda_schedule_grid_for_interface` sem profissional explícito retorna a grade dos profissionais reais.
+   - Foram retornados profissionais reais do CAPO.
+   - Portanto a conta de homologação consegue consultar estrutura de agendas reais.
+
+5. **Conta `manuteste` — visão da Coordenação**
+   - Ao simular o papel `coordenador`, `get_coordinator_team_overview_for_interface` retorna profissionais reais da equipe CAPO.
+   - O helper atualmente força “produção” em vez de escolher “produção x homologação” de acordo com o contexto.
+
+#### Conclusão técnica
+O isolamento de **paciente** está adequado, porém o isolamento de **profissionais/agendas** não está contextualizado. O banco possui um helper binário `capo_professional_is_production`, mas falta um equivalente contextual que funcione assim:
+- conta real → somente profissionais de produção;
+- conta de homologação em contexto Administrativo/Coordenação → somente profissionais de homologação;
+- conta de homologação em contexto profissional → somente o profissional de homologação selecionado.
+
+Esse isolamento contextual deve ser aplicado, no mínimo, aos contratos que alimentam:
+- catálogo de agendamento;
+- grade de agenda;
+- visão da agenda da Coordenação;
+- visão da equipe da Coordenação;
+- lista de médicos de Renovação de Receita;
+- demais seletores de profissional usados em fluxos de homologação.
+
+**Decisão de segurança desta auditoria:** **NÃO CRIAR AGENDAS PARA OS PROFISSIONAIS DE TESTE antes de corrigir o isolamento contextual de profissionais.**
+
+**Estado:** **PACIENTE TESTE ISOLADO / RELATÓRIOS GERENCIAIS PROTEGIDOS CONTRA DADOS DE PACIENTE TESTE / ISOLAMENTO DE PROFISSIONAIS INCOMPLETO / VAZAMENTOS BIDIRECIONAIS COMPROVADOS / CRIAÇÃO DE AGENDAS DE HOMOLOGAÇÃO BLOQUEADA ATÉ CORREÇÃO**.
