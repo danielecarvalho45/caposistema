@@ -76,6 +76,7 @@ export function buildCapoDocumentPdf(
     (_, page) => lines.slice(page * linesPerPage, (page + 1) * linesPerPage),
   )
 
+  const logoHeight = 505 * CAPO_DOCUMENT_LOGO_HEIGHT / CAPO_DOCUMENT_LOGO_WIDTH
   const logo = getCapoDocumentLogoJpeg()
   const pageIds = pages.map((_, index) => 5 + index * 2)
   const objects: Uint8Array[] = [
@@ -91,7 +92,7 @@ export function buildCapoDocumentPdf(
 
   pages.forEach((page, index) => {
     const stream = bytes(
-      `q\n505 0 0 82.65 45 745 cm\n/Logo Do\nQ\nBT\n/F1 ${fontSize} Tf\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\nBT\n/F1 8 Tf\n11 TL\n45 54 Td\n${footerLines(footer).map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
+      `q\n505 0 0 ${logoHeight.toFixed(2)} 45 745 cm\n/Logo Do\nQ\nBT\n/F1 ${fontSize} Tf\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\nBT\n/F1 8 Tf\n11 TL\n45 54 Td\n${footerLines(footer).map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
     )
     const contentId = pageIds[index] + 1
     objects.push(

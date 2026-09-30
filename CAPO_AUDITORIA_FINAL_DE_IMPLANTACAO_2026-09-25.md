@@ -4758,3 +4758,24 @@ Foi realizado backfill somente de inconsistências já existentes: ciclos encerr
 **Commit da migration:** `38c7003694c2459c3f803438f87c36499dd774a8`.
 
 **Estado:** **ABRIR CONTEXTO SEM RELOAD / SESSÃO PRESERVADA NA NAVEGAÇÃO INTERNA / SOLICITAÇÕES DE TRANSPORTE COERENTES COM O CANCELAMENTO DA NECESSIDADE / HISTÓRICO PRESERVADO**.
+
+
+### 28.98 Substituição integral do timbre dos PDFs (30/09/2026)
+
+**Solicitação expressa:** substituir todos os timbres dos PDFs pela imagem enviada pela Titular em 30/09/2026 (`Imagem do ChatGPT 30 de set. de 2026, 11_15_46.png`).
+
+**Continuidade:** trabalho iniciado sobre `origin/main` em `1605d1d`; preservadas as correções anteriores, inclusive Transporte e sessão. Escopo exclusivo da identidade visual dos documentos.
+
+**Correção:** o PNG oficial foi substituído pelos bytes integrais da imagem enviada (1448 × 231), sem recorte ou reconstrução. A cópia JPEG embutida no gerador compartilhado foi regenerada a partir dessa mesma imagem. A altura do timbre no PDF agora deriva das dimensões originais, preservando a proporção. Transporte, Odontologia, Nutrição (profissional e gestão) e exportação PDF de Relatórios reutilizam esse gerador; a impressão de Relatórios importa o mesmo PNG substituído. Documentos anteriormente armazenados não foram reescritos: o novo timbre aplica-se às novas gerações.
+
+**Preservação:** conteúdo, dados reais, autoria, data por extenso/hora no rodapé, paginação, filtros, autorizações e contratos de backend foram mantidos. Nenhum dado foi criado ou alterado no Supabase.
+
+**Arquivos alterados:** `src/assets/capo-timbre-oficial.png`, `src/lib/pdf/capo-document-brand.ts`, `src/lib/pdf/capo-document-pdf.ts`, `tests/unit/capo-document-pdf.test.ts` e este Documento Mestre.
+
+**Verificação:** testes direcionados `capo-document-pdf.test.ts` e `report-export.test.ts`: **4/4 PASS**. PDF de verificação produzido pelo gerador real com 65 linhas neutras, renderizado em duas páginas e inspecionado visualmente: timbre novo integral, proporção correta, conteúdo sem sobreposição e rodapé repetido em ambas. Nenhum paciente ou registro fictício foi criado. `git diff --check`: PASS.
+
+**Bloqueio preexistente:** `npm run typecheck` e `npm run build` falham em `src/features/nutrition/NutritionPage.tsx:625` por ausência de fechamento `}`. O arquivo está idêntico ao `origin/main` de base e não foi alterado nesta tarefa. Não declarar PASS global nem deploy concluído. A correção de Nutrição não foi incluída neste escopo visual.
+
+**Validação publicada:** pendente de build/deploy válido e emissão autenticada de novos documentos no ambiente oficial. A renderização local não substitui homologação publicada.
+
+**Estado:** **TIMBRE SUBSTITUÍDO NO CÓDIGO / TESTES DIRECIONADOS E INSPEÇÃO VISUAL DO PDF PASS / PUBLICAÇÃO FUNCIONAL BLOQUEADA POR ERRO PREEXISTENTE DE SINTAXE EM NUTRIÇÃO**.
