@@ -250,6 +250,7 @@ function HomeScheduleGrid({
   onCancel,
   onSchedule,
   busyAppointmentId,
+  patientSpecialties,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
   startDate: string
@@ -261,6 +262,7 @@ function HomeScheduleGrid({
   onCancel?: (appointmentId: string) => void
   onSchedule?: (slot: AgendaScheduleSlot) => void
   busyAppointmentId?: string | null
+  patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
 }>) {
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
@@ -274,6 +276,122 @@ function HomeScheduleGrid({
 
   if (days.length === 0) {
     return <p className="agenda-schedule-no-hours">Nenhum horário configurado neste período.</p>
+  }
+
+  if (view === 'day') {
+    const daySlots = slots.filter((slot) => slot.slot_date === days[0])
+    return (
+      <div className="assistential-table-wrap agenda-day-table-wrap">
+        <table className="assistential-table agenda-day-table">
+          <thead>
+            <tr>
+              <th scope="col">Horário</th>
+              <th scope="col">Paciente</th>
+              <th scope="col">Especialidades</th>
+              <th scope="col">Tipo</th>
+              <th scope="col">Situação</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {daySlots.map((slot) => {
+              const appointment = slot.appointment_id
+                ? appointmentById.get(slot.appointment_id)
+                : undefined
+              const visiblePatientId = appointment?.patient_id ?? slot.patient_id
+              const visiblePatientName = appointment?.patient_name ?? slot.patient_name
+              const patientIsVisible = Boolean(visiblePatientId && visiblePatientName)
+              const patientName =
+                visiblePatientName ??
+                (appointment?.patient_number
+                  ? `Paciente Nº CAPO ${appointment.patient_number}`
+                  : slot.slot_status === 'agendado'
+                    ? 'Horário ocupado'
+                    : '—')
+              const statusLabel =
+                slot.slot_status === 'livre'
+                  ? 'Livre'
+                  : slot.slot_status === 'bloqueado'
+                    ? 'Bloqueado'
+                    : appointment?.attendance_status === 'confirmado'
+                      ? 'Confirmado'
+                      : appointment?.attendance_status === 'faltou'
+                        ? 'Falta'
+                        : 'Agendado'
+              const typeLabel =
+                slot.slot_status === 'bloqueado' && slot.block_type
+                  ? agendaBlockLabel(slot.block_type)
+                  : slot.appointment_type ?? '—'
+              return (
+                <tr key={`${slot.professional_id}:${slot.slot_start}`} className={`is-${slot.slot_status}`}>
+                  <td data-label="Horário"><strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong></td>
+                  <td data-label="Paciente">
+                    <strong>{patientName}</strong>
+                  </td>
+                  <td data-label="Especialidades">
+                    {patientIsVisible && visiblePatientId && patientSpecialties?.[visiblePatientId]
+                      ? <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[visiblePatientId])}</small>
+                      : '—'}
+                  </td>
+                  <td data-label="Tipo">{typeLabel}</td>
+                  <td data-label="Situação">{statusLabel}</td>
+                  <td data-label="Ações" className="agenda-attendance-actions">
+                    {slot.slot_status === 'livre' && onSchedule && (
+                      <button type="button" className="agenda-slot-schedule-button" onClick={() => onSchedule(slot)}>
+                        Agendar
+                      </button>
+                    )}
+                    {slot.slot_status === 'agendado' &&
+                      patientIsVisible &&
+                      slot.appointment_id &&
+                      onAttendance &&
+                      (!appointment || appointment.attendance_status === 'agendado') && (
+                        <>
+                          <button
+                            type="button"
+                            className="agenda-attendance-confirm"
+                            disabled={busyAppointmentId === slot.appointment_id}
+                            onClick={() => onAttendance(slot.appointment_id!, 'confirmado')}
+                          >
+                            Confirmar
+                          </button>
+                          <button
+                            type="button"
+                            className="agenda-attendance-absence"
+                            disabled={busyAppointmentId === slot.appointment_id}
+                            onClick={() => onAttendance(slot.appointment_id!, 'faltou')}
+                          >
+                            Falta
+                          </button>
+                        </>
+                      )}
+                    {appointment && onReturn && appointment.attendance_status === 'confirmado' && (
+                      <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>
+                        Agendar retorno
+                      </button>
+                    )}
+                    {slot.slot_status === 'agendado' &&
+                      patientIsVisible &&
+                      slot.appointment_id &&
+                      onCancel &&
+                      (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
+                        <button
+                          type="button"
+                          className="agenda-cancel-button"
+                          disabled={busyAppointmentId === slot.appointment_id}
+                          onClick={() => onCancel(slot.appointment_id!)}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
   }
 
   return (
@@ -1867,6 +1985,7 @@ export function AgendaPage({
                   : undefined
               }
               busyAppointmentId={busyAppointmentId}
+              patientSpecialties={patientSpecialties}
             />
           )}
 
