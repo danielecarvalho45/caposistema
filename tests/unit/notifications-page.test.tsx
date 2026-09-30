@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import { NotificationsPage } from '../../src/features/notifications/NotificationsPage'
 import {
   createNotificationsService,
@@ -22,6 +23,10 @@ const notification: Notification = {
   read_at: null,
   resolved_at: null,
   total_count: 1,
+}
+
+function renderPage(element: React.ReactNode) {
+  return render(<MemoryRouter>{element}</MemoryRouter>)
 }
 
 function serviceWith(result: object) {
@@ -109,7 +114,7 @@ describe('notifications integration', () => {
 describe('NotificationsPage', () => {
   it('exibe estado vazio, loading e erro do contrato', async () => {
     const emptyService = serviceWith({ status: 'empty' })
-    render(<NotificationsPage service={emptyService} />)
+    renderPage(<NotificationsPage service={emptyService} />)
     expect(
       await screen.findByText('Nenhuma notificação encontrada.'),
     ).toBeVisible()
@@ -123,7 +128,7 @@ describe('NotificationsPage', () => {
         message: 'Não foi possível carregar notificações.',
       }),
     })
-    render(<NotificationsPage service={errorService} />)
+    renderPage(<NotificationsPage service={errorService} />)
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Não foi possível carregar notificações.',
     )
@@ -137,7 +142,7 @@ describe('NotificationsPage', () => {
       .mockResolvedValueOnce({ status: 'success', data: [notification] })
       .mockResolvedValueOnce({ status: 'empty' })
 
-    render(<NotificationsPage service={service} />)
+    renderPage(<NotificationsPage service={service} />)
     await screen.findByText('Solicitação concluída')
     await user.selectOptions(
       screen.getByLabelText('Filtrar notificações'),
@@ -159,7 +164,7 @@ describe('NotificationsPage', () => {
 
   it('exibe ação de resolução e mantém contexto quando não há rota mapeada', async () => {
     const service = serviceWith({ status: 'success', data: [notification] })
-    render(<NotificationsPage service={service} />)
+    renderPage(<NotificationsPage service={service} />)
 
     expect(
       await screen.findByRole('button', { name: 'Marcar como resolvida' }),
@@ -167,5 +172,18 @@ describe('NotificationsPage', () => {
     expect(
       screen.queryByRole('link', { name: 'Abrir contexto' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('abre contexto por navegação interna sem recarregar a aplicação', async () => {
+    const service = serviceWith({ status: 'success', data: [notification] })
+    renderPage(
+      <NotificationsPage
+        service={service}
+        getContextHref={() => '/transporte'}
+      />,
+    )
+
+    const link = await screen.findByRole('link', { name: 'Abrir contexto' })
+    expect(link).toHaveAttribute('href', '/transporte')
   })
 })
