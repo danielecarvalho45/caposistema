@@ -53,6 +53,7 @@ function service(overrides = {}) {
       .fn()
       .mockResolvedValue({ status: 'success', data: { id: 'closure-id' } }),
     closeClosure: vi.fn(),
+    registerAdministrativeDecision: vi.fn(),
     assignProfessional: vi.fn(),
     loadEligibleProfessionals: vi.fn().mockResolvedValue({ status: 'empty' }),
     reopenClosure: vi.fn(),
@@ -95,6 +96,37 @@ describe('ClosuresPage', () => {
     ).toBeDisabled()
     expect(screen.queryByLabelText('ID do paciente')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('ID da especialidade')).not.toBeInTheDocument()
+  })
+
+  it('expõe registro administrativo de decisão profissional somente ao Gestor Titular', async () => {
+    const gestorContext: AccessContext = {
+      ...context,
+      professional_id: null,
+      roles: [{ code: 'administrador', name: 'Administrador' }],
+      primary_context: {
+        ...context.primary_context,
+        code: 'administrador',
+        name: 'Administrador',
+      },
+    }
+    const integration = service({
+      loadClosures: vi.fn().mockResolvedValue({
+        status: 'success',
+        data: [{
+          closure_id: 'closure-id',
+          patient_name: 'Paciente real',
+          specialty: 'Clínico Geral',
+          professional_id: 'professional-id',
+          professional_name: 'Médico responsável',
+          status: 'pendente',
+        }],
+      }),
+    })
+
+    const user = userEvent.setup()
+    renderWithRouter(<ClosuresPage accessContext={gestorContext} integration={integration} />)
+    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    expect(screen.getByRole('button', { name: 'Registrar decisão profissional' })).toBeVisible()
   })
 
   it('mantém acompanhamento social fora da tela de encerramentos', () => {
