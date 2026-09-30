@@ -5288,3 +5288,51 @@ Persistem avisos anteriores do projeto:
 Esses avisos não foram introduzidos pelos dados de homologação desta etapa e não foram alterados em massa para evitar regressão fora do escopo.
 
 **Estado final:** **AMBIENTE DE HOMOLOGAÇÃO OPERACIONAL / AGENDAS TESTE CRIADAS / CINCO PERFIS TESTADOS / PARTICULARIDADES DE CLÍNICO, NUTRIÇÃO E SOCIAL EXECUTADAS / RETORNOS TESTADOS / ENCERRAMENTOS TESTADOS COM ROLLBACK / DUAS REGRESSÕES REAIS CORRIGIDAS (EVENTOS DA RECEITA E NOTIFICAÇÕES) / PRODUÇÃO ISOLADA / RELATÓRIOS REAIS SEM DADOS DE HOMOLOGAÇÃO / MANUTESTE RESTAURADA AO CONTEXTO TI/MANUTENÇÃO**.
+
+
+### 28.102 HOMOLOGAÇÃO — ADMINISTRATIVO OPERACIONAL NÃO CARREGAVA ESPECIALIDADES/PROFISSIONAIS DA AGENDA (30/09/2026)
+
+**Relato real de teste:** ao acessar o perfil **Administrativo Operacional** pela conta `manuteste`, as agendas de homologação já existiam no banco, porém as especialidades/profissionais não apareciam na tela de Agenda.
+
+**Banco verificado:** `get_scheduling_catalog()`, com `manuteste` em contexto `administrativo_operacional`, retorna corretamente:
+- Assistência Social → Homologação — Assistência Social;
+- Clínica Geral → Homologação — Médico Clínico Geral;
+- Fisioterapia → Homologação — Fisioterapia;
+- Nutrição → Homologação — Nutrição;
+- Psicologia → Homologação — Psicologia.
+
+Portanto a falha não estava nas agendas nem no catálogo do Supabase.
+
+**Causa raiz na interface:** `AgendaPage.tsx` montava `roleCodes` somente a partir de `accessContext.roles`. Na conta `manuteste`, esse array preserva o papel físico `administrador_tecnico`, enquanto o papel simulado de homologação é informado por `accessContext.primary_context.code='administrativo_operacional'` e `homologation_context.enabled=true`.
+
+Consequência:
+- a rota podia ser aberta pelo contexto simulado;
+- porém a própria `AgendaPage` calculava `canAccess=false`;
+- o `useEffect` responsável por chamar `getSchedulingCatalog()` não executava;
+- `specialtyOptions` e `professionalOptions` permaneciam vazios.
+
+**Correção cirúrgica:** durante homologação ativa, `roleCodes` passa a incluir também o `primary_context.code` simulado, sem alterar os papéis físicos da conta e sem conceder papel real no banco.
+
+O comportamento real continua inalterado:
+- contas reais continuam usando os próprios `roles`;
+- somente contas marcadas como homologação, com `homologation_context.enabled=true`, recebem o contexto simulado na lógica da Agenda.
+
+**Teste de regressão adicionado:** cenário com:
+- papel físico `administrador_tecnico`;
+- `is_homologation_account=true`;
+- contexto simulado `administrativo_operacional`;
+- catálogo com Clínica Geral e Nutrição;
+- valida que o botão Agendar abre e que as especialidades/profissionais são exibidos.
+
+**Commits:**
+- correção: `75a1f188bf697ae77ca0a3f14aabf81b9cb4ddba`;
+- teste: `5cdb1dc84f82cf16ecdf87b7d77faf4237de11bd`.
+
+**Validação física pós-correção:**
+- contexto da `manuteste` retornou `primary_code='administrativo_operacional'`;
+- `homologation_enabled=true`;
+- paciente de teste correto;
+- catálogo retornou exatamente as cinco especialidades/profissionais de homologação;
+- após a validação, `clear_homologation_context_for_interface` foi executado e a conta retornou ao contexto TI/Manutenção.
+
+**Estado:** **AGENDAS EXISTIAM / CAUSA NA LEITURA DE PAPEL DA INTERFACE / AGENDA DO AO SIMULADO CORRIGIDA PARA CARREGAR ESPECIALIDADES E PROFISSIONAIS / PRODUÇÃO NÃO ALTERADA / MANUTESTE RESTAURADA AO TI**.
