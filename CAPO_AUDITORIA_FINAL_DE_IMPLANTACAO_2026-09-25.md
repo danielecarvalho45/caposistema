@@ -5615,3 +5615,63 @@ Commits:
 **Observação:** os arquivos de teste foram atualizados, porém a suíte npm não foi executada nesta intervenção via conector. Não registrar PASS automatizado sem execução física posterior.
 
 **Estado:** **REGRESSÃO VISUAL COMPROVADA / PADRÃO DA AGENDA DIÁRIA RESTAURADO / HOME SOCIAL E NUTRIÇÃO REALINHADAS ÀS REFERÊNCIAS FÍSICAS APROVADAS / SEM ALTERAÇÃO DE BANCO NESTA ETAPA / SEM REABERTURA DE REGRA FUNCIONAL**.
+
+
+### 28.105 PAUSA CONTROLADA — AUDITORIA VISUAL DA AGENDA PROFISSIONAL (30/09/2026)
+
+**Comando da usuária:** parar a tarefa e registrar o que foi feito.
+
+#### O que foi feito antes da pausa
+
+1. **Foi reconhecida uma regressão estrutural/visual na Agenda compartilhada**, a partir da imagem real apresentada pela usuária.
+
+2. **Foi consultada fisicamente a referência funcional obrigatória disponível no repositório**, especialmente:
+   - `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`;
+   - os HTMLs canônicos/homologados existentes para Assistência Social, Nutrição e Clínico Geral.
+
+3. **Regra estrutural confirmada para a Agenda profissional:**
+   - linha do atendimento deve apresentar **Horário | Paciente | Especialidades | Ação**;
+   - o paciente deve aparecer pelo **nome**;
+   - as ações devem ficar ligadas ao paciente;
+   - **Confirmado** deve registrar a presença e abrir imediatamente o contexto do paciente, sem nova busca;
+   - **Falta** deve encaminhar para Faltosos/Administrativo;
+   - o padrão é transversal para Assistência Social, Nutrição, Clínico Geral, Psicologia, Fisioterapia e futuras especialidades.
+
+4. **Foi confrontada a implementação atual da `AgendaPage.tsx` com a estrutura aprovada.**
+   A implementação atual ainda apresenta divergências de composição da Home, incluindo:
+   - bloco de Agenda com estrutura visual diferente do HTML aprovado;
+   - ausência da organização visual canônica da linha/tabela da Agenda;
+   - necessidade de alinhar a Home profissional à composição aprovada de **Acessos rápidos → Minha Agenda → indicadores → Aniversariantes**, respeitando particularidades de cada perfil.
+
+5. **Correções funcionais já concluídas antes desta pausa e mantidas:**
+   - busca do paciente teste corrigida;
+   - paciente de homologação ativo preservado entre perfis;
+   - nome do paciente restaurado na Agenda;
+   - horário de outro paciente de homologação mostrado como **Horário ocupado**;
+   - botões **Confirmar** e **Falta** por extenso;
+   - Confirmar passa a disparar o fluxo do perfil;
+   - Confirmar/Falta deixam de aparecer depois da presença registrada;
+   - contexto da Assistência Social de homologação alinhado ao `TESTE-CAPO-0002`.
+
+6. **Correções já commitadas nesta frente:**
+   - `36b857d5ac740b91fc0966dc1da09e9dc7f85556` — continuidade após Confirmar;
+   - `074b484c5974a1f3d277a5bed8c52d3c159e8375` — padrão visual verde/vermelho;
+   - `2cf7de7f35e28f6ee5c6182ca948ae335433194d` — nome/horário ocupado;
+   - `480f3b7803896acef070c77b4acc80a18d24fde7` — oculta Confirmar/Falta após presença;
+   - `a8395d155afb707e76f9d34f4b6c6ff9c8632cf9` — preserva paciente teste entre perfis;
+   - `9d7caeca861cd3d6f9ed12815b1e1932040f6919` — testes de regressão da grade.
+
+#### Ponto exato da pausa
+
+A tarefa foi interrompida **antes de qualquer nova alteração estrutural de layout** após a comparação com a referência aprovada.
+
+O próximo passo, quando autorizado, é:
+- continuar a auditoria visual da Home/Agenda compartilhada;
+- usar a estrutura canônica já existente nos HTMLs aprovados como referência;
+- alinhar o componente compartilhado sem criar um novo desenho;
+- aplicar a correção transversalmente às telas profissionais que reutilizam a Agenda;
+- preservar particularidades por perfil;
+- não reabrir módulos fora do escopo;
+- não alterar banco de dados para resolver divergência puramente visual.
+
+**Estado na pausa:** **FUNÇÃO CORRIGIDA / REGRESSÃO VISUAL CONFIRMADA / REFERÊNCIA CANÔNICA CONSULTADA / CORREÇÃO ESTRUTURAL DE LAYOUT AINDA NÃO EXECUTADA / AGUARDANDO NOVA AUTORIZAÇÃO**.
