@@ -5675,3 +5675,58 @@ O próximo passo, quando autorizado, é:
 - não alterar banco de dados para resolver divergência puramente visual.
 
 **Estado na pausa:** **FUNÇÃO CORRIGIDA / REGRESSÃO VISUAL CONFIRMADA / REFERÊNCIA CANÔNICA CONSULTADA / CORREÇÃO ESTRUTURAL DE LAYOUT AINDA NÃO EXECUTADA / AGUARDANDO NOVA AUTORIZAÇÃO**.
+
+
+### 28.106 CONTINUIDADE CONTROLADA — HOME DO CLÍNICO GERAL E ASSISTENCIAL PADRÃO (30/09/2026)
+
+**Origem:** continuidade autorizada pela responsável a partir do ponto de pausa registrado no §28.105.
+
+#### Diagnóstico físico
+Após atualização do `main` e confronto com:
+- `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`, especialmente §§ 3 e 4;
+- `index(20260914-000000)_MEDICO_CLINICO_GERAL.html`;
+- implementação física atual de `src/features/professional/AssistentialPage.tsx`;
+
+foi comprovada uma divergência estrutural ainda restante no componente compartilhado usado pelo Clínico Geral e pelo profissional assistencial padrão.
+
+A implementação React iniciava a Home por um cabeçalho externo **“Atendimentos de hoje”** + Agenda e somente depois apresentava **Acessos rápidos**.
+
+O HTML físico aprovado do Clínico Geral apresenta a composição da Home com **Acessos rápidos antes do painel Minha Agenda**, e a restauração já aplicada à Assistência Social/Nutrição no §28.105 segue o mesmo princípio estrutural.
+
+#### Correção cirúrgica
+Foi alterado somente:
+- `src/features/professional/AssistentialPage.tsx`.
+
+A ordem passou a ser:
+1. **Acessos rápidos**;
+2. **Minha Agenda** — componente canônico `AgendaPage`;
+3. **Aniversariantes de hoje**;
+4. demais blocos próprios da atuação.
+
+Foi removido o cabeçalho externo **“Atendimentos de hoje”**. O próprio painel `Minha Agenda` permanece como elemento canônico da Agenda.
+
+Não foram alterados:
+- contratos RPC;
+- Supabase;
+- regras de autorização;
+- busca de paciente;
+- comportamento de Confirmar/Falta;
+- fluxo após presença;
+- isolamento produção × homologação;
+- particularidades de Clínico Geral, Psicologia ou Fisioterapia.
+
+Commit:
+- `b1dceaa24a0f668de0953a641afd385e883bbe37` — `fix: alinha home assistencial ao padrão estrutural`.
+
+#### Proteção de regressão
+O teste existente em `tests/unit/App.test.tsx` foi reforçado para verificar:
+- ausência do cabeçalho **“Atendimentos de hoje”**;
+- existência de **Acessos rápidos**;
+- **Acessos rápidos** antes de **Minha agenda** no DOM.
+
+Commit:
+- `e918e0d35fcc75c71fdb29ae388f046591d7b14e` — `test: protege ordem da home assistencial`.
+
+**Limitação desta intervenção via conector:** o arquivo de teste foi atualizado, mas a suíte npm não foi executada fisicamente neste ambiente. Portanto não registrar PASS automatizado sem execução posterior.
+
+**Estado:** **DIVERGÊNCIA ESTRUTURAL COMPROVADA / CORREÇÃO TRANSVERSAL APLICADA AO CLÍNICO GERAL E ASSISTENCIAL PADRÃO / SOCIAL E NUTRIÇÃO PRESERVADOS / SEM ALTERAÇÃO DE BANCO / AGUARDANDO TESTE OPERACIONAL VISUAL**.
