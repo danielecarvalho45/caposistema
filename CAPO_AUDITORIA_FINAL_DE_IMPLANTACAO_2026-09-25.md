@@ -4910,3 +4910,76 @@ Esse isolamento contextual deve ser aplicado, no mínimo, aos contratos que alim
 **Decisão de segurança desta auditoria:** **NÃO CRIAR AGENDAS PARA OS PROFISSIONAIS DE TESTE antes de corrigir o isolamento contextual de profissionais.**
 
 **Estado:** **PACIENTE TESTE ISOLADO / RELATÓRIOS GERENCIAIS PROTEGIDOS CONTRA DADOS DE PACIENTE TESTE / ISOLAMENTO DE PROFISSIONAIS INCOMPLETO / VAZAMENTOS BIDIRECIONAIS COMPROVADOS / CRIAÇÃO DE AGENDAS DE HOMOLOGAÇÃO BLOQUEADA ATÉ CORREÇÃO**.
+
+
+### 28.100 HOMOLOGAÇÃO — ISOLAMENTO CONTEXTUAL DE PROFISSIONAIS E TRAVA CONTRA MISTURA COM PRODUÇÃO (30/09/2026)
+
+**Autorização:** correção liberada após auditoria §28.99, com condição expressa de não gerar dano ao ambiente real.
+
+**Princípio aplicado:** nenhuma agenda, agendamento, paciente ou registro real foi alterado. A intervenção é composta por filtros contextuais de leitura e travas preventivas de integridade.
+
+#### 1. Helper contextual privado
+Criado `private.capo_professional_visible_in_current_context(uuid)`:
+- conta real → somente profissional com `is_homologation_profile=false`;
+- conta de homologação fora de contexto profissional → somente profissionais de homologação;
+- conta de homologação simulando `profissional` → somente o profissional de homologação selecionado no `homologation_contexts`.
+
+A função está no schema privado e sem EXECUTE direto para `anon` ou `authenticated`.
+
+#### 2. Telas/contratos contextualizados
+O filtro contextual foi aplicado sem alterar as demais regras dos contratos:
+- `get_scheduling_catalog`;
+- `get_agenda_schedule_grid_for_interface`;
+- `get_coordinator_agenda_overview_for_interface`;
+- `get_coordinator_team_overview_for_interface`;
+- `get_prescription_renewal_doctors_for_interface`;
+- `get_interprofessional_referral_targets_for_interface`.
+
+Consequência:
+- produção não lista profissionais de homologação;
+- `manuteste` não recebe profissionais reais nesses catálogos;
+- contexto profissional de homologação não recebe outro profissional além do selecionado.
+
+#### 3. Trava estrutural contra mistura paciente↔profissional
+Antes da ativação foi comprovado **zero mistura histórica** nos registros existentes.
+
+Criada validação privada `private.capo_assert_patient_professional_same_environment(uuid,uuid)` e trigger genérico privado. Foram protegidas:
+- `patient_appointments`;
+- `nutrition_plans`;
+- `social_followup_cycles`;
+- `patient_care_closures`;
+- `referrals` (solicitante e destinatário);
+- `administrative_requests`.
+
+Regra:
+- paciente real só pode ser associado a profissional real;
+- paciente `is_test=true` só pode ser associado a profissional `is_homologation_profile=true`;
+- tentativa de mistura é rejeitada antes da gravação.
+
+Nenhum registro existente foi atualizado, removido ou reclassificado.
+
+#### 4. Validação pós-correção
+**Conta real Gestor/Titular:**
+- catálogo geral de agendamento retornou somente profissionais reais;
+- visão de agenda da Coordenação retornou somente profissionais reais;
+- Renovação de Receita retornou somente médico real, sem o “Homologação — Médico Clínico Geral”.
+
+**Conta `manuteste`:**
+- helper contextual retornou exclusivamente os cinco profissionais de homologação;
+- ao simular Coordenador, a visão da equipe retornou exclusivamente Médico Clínico Geral, Nutrição, Assistência Social, Psicologia e Fisioterapia de homologação;
+- nenhum profissional real foi retornado nessa visão.
+
+**Trava de integridade:**
+- paciente teste + profissional real → bloqueado com `Mistura entre homologação e produção bloqueada.`;
+- paciente real + profissional de homologação → bloqueado com a mesma regra.
+
+#### 5. Segurança
+Executado advisor de segurança após a DDL. Os avisos encontrados correspondem ao conjunto amplo de funções `SECURITY DEFINER` já existente no projeto e ao Leaked Password Protection desativado; não foi criada nova função pública de autorização. Os novos helpers estão no schema `private` e tiveram EXECUTE revogado de `public`, `anon` e `authenticated`.
+
+**Migration Supabase:** `20260930165143_isolate_homologation_professionals_and_protect_environment_mix`.
+
+**Arquivo sincronizado:** `supabase/migrations/20260930165143_isolate_homologation_professionals_and_protect_environment_mix.sql`.
+
+**Commit:** `facfbfb81cf25ee38751002abfb8d77f474598c6`.
+
+**Estado:** **ISOLAMENTO CONTEXTUAL ATIVO / PRODUÇÃO PRESERVADA / HOMOLOGAÇÃO NÃO ENXERGA PROFISSIONAIS REAIS NOS CONTRATOS CORRIGIDOS / PROFISSIONAIS DE TESTE NÃO APARECEM NOS CONTRATOS REAIS CORRIGIDOS / MISTURA PACIENTE↔PROFISSIONAL BLOQUEADA NO BANCO / NENHUMA AGENDA DE TESTE CRIADA AINDA**.
