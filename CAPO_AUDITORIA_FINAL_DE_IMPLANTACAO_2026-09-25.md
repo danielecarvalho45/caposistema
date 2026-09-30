@@ -4729,3 +4729,32 @@ Com isso, a sessão permanece disponível durante recargas na mesma aba e é des
 **Commit:** `eb30a0f55ea788ddd5bf37291936f50117b66169`.
 
 **Estado:** **RELOAD CORRIGIDO PARA MANTER SESSÃO / FECHAR ABA CONTINUA SEM PERSISTÊNCIA ENTRE ABAS / BOTÃO SAIR PRESERVADO / EXPIRAÇÃO DE SESSÃO PRESERVADA / TIMEOUT POR INATIVIDADE AINDA NÃO IMPLEMENTADO POR AUSÊNCIA DE DURAÇÃO CANÔNICA**.
+
+
+### 28.97 TRANSPORTE + NOTIFICAÇÕES — ABRIR CONTEXTO NÃO PODE RECARREGAR A APLICAÇÃO; CANCELAMENTO DA NECESSIDADE DEVE CANCELAR SOLICITAÇÕES ABERTAS (30/09/2026)
+
+**Relato de teste real:** ao abrir pelo contexto/notificação uma solicitação de Transporte relacionada a fluxo já cancelado, a aplicação retornava à tela de login.
+
+**Causa 1 — navegação:** `NotificationsPage.tsx` utilizava `<a href>` em **Abrir contexto**, provocando reload completo da SPA. A navegação foi substituída por `<Link to>` do React Router, preservando a sessão e o estado da aplicação sem reload de documento.
+
+**Commit da interface:** `321c61ef45a91e66ef19eb50bd8991c8611984e0`.
+
+**Teste de regressão ajustado:** `2db3d154e0a08f4bc5cbd7e29fd6d33c73ba5877`, com ajuste de tipo em `d4c4f9d23a9509fc4c302971a887bc69a6d30b9f`.
+
+**Causa 2 — inconsistência do Transporte:** o ciclo de necessidade da paciente Eliana Teles Machado havia sido encerrado com motivo **“Não precisa mais”**, mas a solicitação vinculada permanecia em `confirmado`. Isso deixava solicitação ativa sob necessidade já encerrada.
+
+**Correção do contrato:** `manage_transport_need_for_interface`, ao executar `cancel`, agora:
+- encerra o ciclo de necessidade;
+- cancela todas as solicitações do mesmo ciclo ainda em `solicitado` ou `confirmado`;
+- preserva `cancelled_at`, `cancelled_by`, `cancellation_reason` e histórico;
+- retorna também a quantidade de solicitações canceladas.
+
+Foi realizado backfill somente de inconsistências já existentes: ciclos encerrados com solicitações ainda abertas.
+
+**Caso real reparado:** solicitação `ff9b2dce-6cdb-445f-ba94-1da17735309a` da Eliana passou de `confirmado` para `cancelado`, mantendo motivo **“Não precisa mais”** e a data/responsável do encerramento do ciclo.
+
+**Migration aplicada e sincronizada:** `20260930143614_cascade_transport_need_cancellation_to_open_requests.sql`.
+
+**Commit da migration:** `38c7003694c2459c3f803438f87c36499dd774a8`.
+
+**Estado:** **ABRIR CONTEXTO SEM RELOAD / SESSÃO PRESERVADA NA NAVEGAÇÃO INTERNA / SOLICITAÇÕES DE TRANSPORTE COERENTES COM O CANCELAMENTO DA NECESSIDADE / HISTÓRICO PRESERVADO**.
