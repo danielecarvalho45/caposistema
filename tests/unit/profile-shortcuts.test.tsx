@@ -154,7 +154,7 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
     const homologationService = {
       getHomologationOptions: async () => ({
         status: 'success' as const,
-        data: { roles: [], professionals: [], specialties: [] },
+        data: { roles: [], professionals: [], specialties: [], test_patients: [{ patient_id: 'test-patient-id', patient_name: 'PACIENTE SIMULADO CAPO — HOMOLOGAÇÃO', patient_number: 'TESTE-CAPO-0001', cms: 'TESTE-CMS-CAPO-0001', test_label: 'Paciente oficial de homologação' }] },
       }),
       setHomologationContext: async () => ({
         status: 'success' as const,
@@ -229,6 +229,15 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
           specialties: [
             { specialty_id: 'nutrition-id', specialty_name: 'Nutrição', professional_id: null },
           ],
+          test_patients: [
+            {
+              patient_id: 'test-patient-id',
+              patient_name: 'PACIENTE SIMULADO CAPO — HOMOLOGAÇÃO',
+              patient_number: 'TESTE-CAPO-0001',
+              cms: 'TESTE-CMS-CAPO-0001',
+              test_label: 'Paciente oficial de homologação',
+            },
+          ],
           professionals: [
             {
               professional_id: 'stub-id',
@@ -283,6 +292,7 @@ describe('atalhos de funções acumuladas no cabeçalho', () => {
         roleCode: 'profissional',
         professionalId: 'stub-id',
         specialtyId: 'nutrition-id',
+        testPatientId: 'test-patient-id',
       }),
     ])
   })
