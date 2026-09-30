@@ -4661,3 +4661,41 @@ Uma inclusão redundante feita durante a manutenção foi retirada antes do fech
 - a suíte npm **não foi executada neste ambiente**, porque o runtime local não conseguiu resolver `github.com` para clonar o repositório. Os testes de regressão foram adicionados/ajustados no código, mas não devem ser declarados PASS até execução em ambiente com o repositório disponível.
 
 **Estado:** **AGENDA CORRIGIDA / TRANSPORTE CORRIGIDO / PDF NUTRICIONAL GERENCIAL IMPLEMENTADO SEM EDIÇÃO DE CONDUTA / REGISTRO ADMINISTRATIVO DE ENCERRAMENTO IMPLEMENTADO / ADMINISTRAÇÃO E TI CONFIRMADOS COMO JÁ EXISTENTES / BACKEND E AUTORIZAÇÃO VERIFICADOS / TESTES AUTOMATIZADOS PENDENTES DE EXECUÇÃO**.
+
+
+### 28.95 TRANSPORTE — FALHA REAL NA GERAÇÃO DO PDF DURANTE TESTE COM ELIANA TELES MACHADO (29/09/2026)
+
+**Evidência operacional:** durante teste real do Gestor/Titular com a paciente Eliana Teles Machado (Nº CAPO 1), a solicitação de Transporte foi criada e confirmada, porém o PDF não foi gerado.
+
+**Estado físico encontrado no Supabase:**
+- solicitação `ff9b2dce-6cdb-445f-ba94-1da17735309a`;
+- status `confirmado`;
+- `pdf_prepared_at = null`;
+- `request_pdf_path = null`;
+- `request_pdf_generated_at = null`;
+- `request_pdf_signed_at = null`;
+- nenhum objeto existente no bucket `capo-documents` sob o prefixo da solicitação.
+
+**Causa raiz comprovada:** a policy `capo_documents_authenticated_insert` do Storage chamava `capo_patient_visible_in_current_context(...)`, mas essa função interna havia sido endurecida anteriormente e não possuía `EXECUTE` para `authenticated`. Além disso, a própria policy consultava diretamente tabelas operacionais que não possuem SELECT direto para o papel `authenticated`, pois o CAPO trabalha por RPCs. O upload era, portanto, bloqueado antes da RPC `register_transport_pdf_for_interface`.
+
+**Correção final aplicada:** a autorização do Storage foi encapsulada em funções privadas `SECURITY DEFINER`, fora do schema público:
+- `private.capo_storage_document_access(text,text)`;
+- `private.capo_storage_nutrition_management_access(text)`.
+
+As policies de INSERT/SELECT do bucket agora chamam essas funções privadas. A função pública `capo_patient_visible_in_current_context(uuid)` permanece sem EXECUTE direto para `authenticated`, preservando o endurecimento de segurança e evitando exposição desnecessária.
+
+**Validação com identidade real da conta Daniele:**
+- `has_app_role('administrador') = true`;
+- `private.capo_storage_document_access('transport/ff9b2dce-6cdb-445f-ba94-1da17735309a/teste.pdf','insert') = true`;
+- mesma função para `read` = true.
+
+Portanto, a policy final reconhece a conta Gestor/Titular como autorizada a gravar e ler o PDF da solicitação real da Eliana, mantendo as tabelas operacionais sem SELECT direto.
+
+**Migrations aplicadas e sincronizadas:**
+- `20260930002814_restore_authenticated_storage_visibility_helper.sql` — etapa intermediária de diagnóstico;
+- `20260930002929_secure_storage_visibility_helper.sql` — etapa intermediária de proteção;
+- `20260930003017_encapsulate_document_storage_policies.sql` — estado final vigente.
+
+**Commits:** `57ad402040ae69faa78c286e2b1e5789236b1318`, `53d636dacf81a010092d6bdd8923582f38b16076`, `5e91f967227f2f4f646c7203bc88ab3508cb1079`.
+
+**Estado:** **CAUSA RAIZ COMPROVADA / STORAGE CORRIGIDO SEM ABRIR SELECT DIRETO NAS TABELAS / AUTORIZAÇÃO DA CONTA DANIELE VALIDADA PARA INSERT E READ DO PDF / SOLICITAÇÃO DA ELIANA PRESERVADA E PRONTA PARA NOVA TENTATIVA DE GERAR PDF**.
