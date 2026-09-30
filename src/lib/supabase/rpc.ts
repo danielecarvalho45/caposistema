@@ -3305,6 +3305,8 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'register_nutrition_pdf_management_for_interface', args: { p_document_id: documentId, p_storage_path: storagePath }, parse: parseConfirmedJson }),
     getNutritionDocument: (documentId: string) =>
       execute({ transport, operation: 'get_nutrition_document_for_interface', args: { p_document_id: documentId }, parse: parseConfirmedJson }),
+    getNutritionManagementDocument: (documentId: string) =>
+      execute({ transport, operation: 'get_nutrition_document_for_management_interface', args: { p_document_id: documentId }, parse: parseConfirmedJson }),
     registerNutritionDelivery: (documentId: string, mode: string) =>
       execute({ transport, operation: 'register_nutrition_delivery_for_interface', args: { p_document_id: documentId, p_mode: mode }, parse: parseConfirmedJson }),
     getNutritionDocumentsForManagement: (limit = 50, offset = 0) =>
@@ -3501,6 +3503,7 @@ function createSupabaseTransport(
       case 'register_nutrition_pdf_for_interface':
       case 'register_nutrition_pdf_management_for_interface':
       case 'get_nutrition_document_for_interface':
+      case 'get_nutrition_document_for_management_interface':
       case 'register_nutrition_delivery_for_interface':
       case 'get_nutrition_documents_for_management':
       case 'get_nutrition_admin_deliveries_for_interface':
