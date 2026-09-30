@@ -5336,3 +5336,30 @@ O comportamento real continua inalterado:
 - após a validação, `clear_homologation_context_for_interface` foi executado e a conta retornou ao contexto TI/Manutenção.
 
 **Estado:** **AGENDAS EXISTIAM / CAUSA NA LEITURA DE PAPEL DA INTERFACE / AGENDA DO AO SIMULADO CORRIGIDA PARA CARREGAR ESPECIALIDADES E PROFISSIONAIS / PRODUÇÃO NÃO ALTERADA / MANUTESTE RESTAURADA AO TI**.
+
+
+### 28.103 HOMOLOGAÇÃO — CADASTRO SEGURO DE NOVOS PACIENTES TESTE (30/09/2026)
+
+**Problema identificado:** `create_patient_for_interface` ainda autorizava somente papéis físicos `administrador`/`administrativo_operacional` e não preenchia `is_test=true`. Portanto a conta `manuteste`, mesmo simulando Administrativo Operacional, não possuía um caminho seguro para cadastrar novo paciente teste pela tela comum.
+
+**Proteções já existentes confirmadas:** o trigger `trg_capo_homologation_patient_marker` impede conta de homologação com contexto ativo de criar paciente real e protege o marcador `is_test`.
+
+**Correção aplicada no Supabase:**
+- conta real continua usando as regras normais de produção;
+- conta `is_homologation_account=true` só pode cadastrar paciente quando o contexto de homologação estiver ativo em perfil administrativo autorizado;
+- nessa situação, o novo paciente é obrigatoriamente gravado com `is_test=true`;
+- `test_label='Paciente criado em homologação controlada'`;
+- criado contador separado `capo_test_patient_number_seq`;
+- o gerador de Nº CAPO passa a gerar `TESTE-CAPO-0001`, `TESTE-CAPO-0002` etc. para `is_test=true`;
+- a sequência real `capo_patient_number_seq` permanece exclusiva dos pacientes de produção.
+
+**Validação controlada com ROLLBACK:** a `manuteste`, simulando Administrativo Operacional, cadastrou temporariamente um paciente e o banco retornou:
+- Nº CAPO `TESTE-CAPO-0002`;
+- `is_test=true`;
+- rótulo de homologação correto.
+
+O registro temporário foi revertido. A sequência de teste foi restaurada para que o próximo paciente efetivamente criado continue sendo `TESTE-CAPO-0002`.
+
+**Migration aplicada no Supabase:** `20260930180849_safe_test_patient_creation_from_homologation`.
+
+**Estado:** **CADASTRO DE PACIENTE TESTE SEGURO / NUMERAÇÃO TESTE SEPARADA / PRODUÇÃO NÃO CONSOME NUMERAÇÃO DE HOMOLOGAÇÃO E VICE-VERSA / MODO HOMOLOGAÇÃO IMPEDIDO DE CRIAR PACIENTE REAL**.
