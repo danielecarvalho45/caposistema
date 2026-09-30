@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { AsyncState } from '../../lib/supabase/rpc'
 import {
   getNotificationsService,
@@ -165,7 +166,7 @@ export function NotificationsPage({
                   </small>
                 </div>
                 <div className="notification-actions">
-                  {contextHref && <a href={contextHref}>Abrir contexto</a>}
+                  {contextHref && <Link to={contextHref}>Abrir contexto</Link>}
                   {isUnread(item) && (
                     <button
                       type="button"
