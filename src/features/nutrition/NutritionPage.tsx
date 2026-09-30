@@ -458,16 +458,14 @@ export function NutritionPage({
     <section className="home-page home-mobile-standard" aria-labelledby="nutrition-title">
       {isNutritionProfessional && (
         <>
-          <section className="home-welcome" aria-labelledby="nutrition-title">
-            <p className="eyebrow">Nutrição</p>
-            <h1 id="nutrition-title">Atendimentos de hoje</h1>
-            <p>
-              Os pacientes agendados aparecem diretamente na tela inicial. Confirme a presença ou registre a falta na própria linha do atendimento.
-            </p>
-            <p className="home-slogan">
-              Agenda · pacientes vinculados · plano alimentar · relatórios
-            </p>
-          </section>
+          <nav className="home-profile home-profile-standard" aria-label="Acessos rápidos da Nutrição">
+            <h2>Acessos rápidos</h2>
+            <div className="home-profile-grid">
+              <a className="home-profile-card quick-green" href="#nutrition-plan-title"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Planejamento Alimentar</strong><span>Abrir o plano do paciente selecionado.</span></a>
+              <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Demandas da própria atuação.</span></Link>
+              <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores autorizados da Nutrição.</span></Link>
+            </div>
+          </nav>
 
           <AgendaPage accessContext={accessContext} showSpecialty={false} onConfirmed={(appointment) => void openConfirmedPatient(appointment)} embeddedHome />
 
@@ -486,15 +484,6 @@ export function NutritionPage({
   </li>
 ))}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<h3>Equipe CAPO</h3>{birthdays.data.team.length ? <ul>{birthdays.data.team.map((member) => <li key={member.professional_id}>{member.full_name}</li>)}</ul> : <p>Nenhum integrante da equipe faz aniversário hoje.</p>}</>}
           </section>
-
-          <nav className="home-profile home-profile-standard" aria-label="Acessos rápidos da Nutrição">
-            <h2>Acessos rápidos</h2>
-            <div className="home-profile-grid">
-              <a className="home-profile-card quick-green" href="#nutrition-plan-title"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Planejamento Alimentar</strong><span>Abrir o plano do paciente selecionado.</span></a>
-              <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Demandas da própria atuação.</span></Link>
-              <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores autorizados da Nutrição.</span></Link>
-            </div>
-          </nav>
 
           <section className="home-profile" aria-labelledby="nutrition-plan-title">
             <p className="eyebrow">Planejamento Alimentar</p>
