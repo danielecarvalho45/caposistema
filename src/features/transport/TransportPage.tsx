@@ -106,7 +106,7 @@ export function TransportPage({ accessContext }: Props) {
   const canCreateRequest =
     isManager || (isSocialProfessional && hasTransportCapability)
   const canAdminister = isManager || isAdministrativeOperational
-  const canForwardExternally = isAdministrativeOperational
+  const canForwardExternally = isManager || isAdministrativeOperational
   const authorized = canCreateRequest || canAdminister
 
   const [query, setQuery] = useState('')
