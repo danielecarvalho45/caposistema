@@ -4575,3 +4575,89 @@ A partir deste registro, qualquer manutenção relacionada a autorização admin
 **Regra crítica:** o papel `administrador` não deve ser tratado como simples papel administrativo comum nem depender de `administrativo_operacional` para continuidade de fluxo. O Administrativo Gestor, por sua vez, não deve herdar automaticamente poderes exclusivos do proprietário.
 
 **Estado:** **HIERARQUIA ADMINISTRATIVA FORMALIZADA PARA MANUTENÇÕES FUTURAS / GESTOR-TITULAR DIFERENCIADO DO ADMINISTRATIVO GESTOR / LIMITES DE CONDUTA PROFISSIONAL REGISTRADOS / NENHUMA ALTERAÇÃO DE BANCO OU INTERFACE REALIZADA NESTE REGISTRO**.
+
+
+### 28.94 GESTOR/TITULAR — ADEQUAÇÃO CIRÚRGICA DA INTERFACE À HIERARQUIA DO §28.93 (29/09/2026)
+
+**Escopo:** vistoria física da conta real `daniele` e correção somente das divergências comprovadas entre a interface/backend atual e a hierarquia administrativa formalizada no §28.93.
+
+**Conta física confirmada no Supabase:** `daniele` permanece ativa, não é conta de homologação e é a única conta atualmente vinculada ao papel `administrador`, com esse papel como contexto primário. Não foi adicionado `administrativo_operacional` à conta para contornar restrições.
+
+#### Agenda — Confirmado/Falta
+- backend já autorizava `administrador` em `update_appointment_attendance_for_interface`;
+- a interface escondia Confirmado/Falta para qualquer contexto não profissional;
+- `AgendaPage.tsx` passou a expor essas ações ao profissional da agenda **ou** ao papel `administrador`;
+- Administrativo Operacional/Administrativo Gestor não recebeu essa ação por consequência desta correção, preservando a decisão funcional do §28.93.
+
+**Commit:** `90fc679045894ec215b122d55fe71c695da24389`.
+**Teste de regressão atualizado:** `1aa673b07123db47a76aa4f820dfe3e71c899e2b`.
+
+#### Transporte — continuidade administrativa do Gestor/Titular
+- a interface permitia ao Gestor criar/confirmar a solicitação e gerar/assinar o PDF, porém `Registrar encaminhamento` e `Concluir` eram condicionados somente a `administrativo_operacional`;
+- `canForwardExternally` passou a aceitar `administrador` ou `administrativo_operacional`;
+- nenhuma conduta profissional da Assistência Social foi ampliada.
+
+**Commit:** `71034e572788682a7185b2713c57ea4fa3c8d5a8`.
+**Teste de regressão atualizado:** `683c562655bb9c379f484de03207830e88c09712`.
+
+#### Nutrição — geração gerencial do PDF sem edição do Plano Alimentar
+Foi preservada a fronteira definida no §28.93: Gestor/Titular não preenche nem altera Plano Alimentar, mas pode gerar o PDF de um plano já preenchido.
+
+**Contratos novos:**
+- `create_nutrition_document_for_management_interface`;
+- `get_nutrition_document_for_management_interface`;
+- `register_nutrition_pdf_management_for_interface`.
+
+O documento é criado a partir do plano `current` já salvo, preservando `professional_id`, autoria, registro profissional e snapshot do conteúdo da Nutrição. A conta administrativa não recebe função de salvar/atualizar o plano.
+
+**Storage:** policies adicionais e específicas permitem INSERT/SELECT do PDF nutricional para:
+- `administrador`; ou
+- combinação `administrativo_operacional + administrador_tecnico`, usada para representar o Administrativo Gestor conforme §28.93.
+
+A listagem `get_nutrition_documents_for_management` foi alinhada à mesma combinação do Administrativo Gestor, preservando Coordenador e Gestor/Titular.
+
+**Migrations aplicadas no Supabase e sincronizadas no GitHub:**
+- `20260930000411_align_gestor_titular_admin_flows.sql`;
+- `20260930000604_complete_gestor_nutrition_pdf_management.sql`;
+- `20260930001221_allow_administrative_manager_nutrition_documents.sql`.
+
+**Commits principais:** `02fe5b7c3dc75445ecc88510319a18f1684fb966`, `d47b47209b83e1b325ee3e8aef8d0890414c1cdf`, `a190aaa33aa11bfeaa2f6069d3d22f87ba1ac85b`, `252e6d61e61d99c262e6a7b78be50e68f7623cbd`, `d7feab4e6ae83f8df427c503fefe18d4f2426d9e`, `a0cc58935262ddee4b6c0561196f3e9afbc352de`.
+
+**Teste de regressão adicionado:** `08e882ec7b3914d4db33548245662ba1d7331a71`.
+
+#### Encerramentos — registro administrativo de decisão profissional
+Foi criado `register_care_closure_decision_for_interface`, exclusivo do papel `administrador`.
+
+O contrato:
+- exige encerramento pendente;
+- exige profissional responsável já individualizado;
+- não cria decisão clínica;
+- registra que se trata de **registro administrativo de decisão profissional**;
+- mantém o profissional responsável original;
+- grava `closed_by` como a conta administrativa que realizou o registro;
+- atualiza o ciclo/especialidade canônicos;
+- preserva histórico e notificações das demais atuações.
+
+A interface passou a mostrar **Registrar decisão profissional** somente ao Gestor/Titular quando a pendência já possui profissional responsável.
+
+**Commits:** `9cd91cd19d0e409a34c22e717f83a2931c0bf1fc`, `6ac058b49eef1e056917d24e1003128b5718dc8b`.
+**Teste de regressão atualizado:** `8e63c7124591242ced31d6a1779b49f23cfa4c86`.
+
+#### Administração do Sistema e TI / Manutenção — revisão da divergência inicial
+A vistoria final confirmou que esses acessos **já existiam em grupos próprios no menu lateral do Gestor**:
+- Administração do Sistema → Usuários e Contas;
+- TI / Manutenção → Área Técnica.
+
+Uma inclusão redundante feita durante a manutenção foi retirada antes do fechamento. A branch final possui apenas uma entrada de cada rota no menu.
+
+**Commit corretivo:** `889075d0568a56cc7eee51ff68f4ee2658e923c2`.
+
+#### Validação
+- branch `main` relida fisicamente após as alterações: os quatro fluxos corrigidos estão presentes e Administração/TI permanecem sem duplicidade;
+- funções novas verificadas no Supabase: `anon_execute=false` e `authenticated_execute=true`;
+- teste de autorização usando a identidade real da conta Daniele chegou às validações de entidade/paciente, sem recusa por papel;
+- não havia no banco, no momento da validação, Plano Alimentar `current` nem Encerramento `pendente` com profissional atribuído para executar um teste completo com dados reais;
+- nenhum dado fictício foi criado para forçar homologação;
+- a suíte npm **não foi executada neste ambiente**, porque o runtime local não conseguiu resolver `github.com` para clonar o repositório. Os testes de regressão foram adicionados/ajustados no código, mas não devem ser declarados PASS até execução em ambiente com o repositório disponível.
+
+**Estado:** **AGENDA CORRIGIDA / TRANSPORTE CORRIGIDO / PDF NUTRICIONAL GERENCIAL IMPLEMENTADO SEM EDIÇÃO DE CONDUTA / REGISTRO ADMINISTRATIVO DE ENCERRAMENTO IMPLEMENTADO / ADMINISTRAÇÃO E TI CONFIRMADOS COMO JÁ EXISTENTES / BACKEND E AUTORIZAÇÃO VERIFICADOS / TESTES AUTOMATIZADOS PENDENTES DE EXECUÇÃO**.
