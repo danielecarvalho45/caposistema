@@ -110,6 +110,10 @@ export type ClosuresIntegration = Readonly<{
     closureId: string,
     notes: string,
   ) => Promise<AsyncState<ClosureResult>>
+  registerAdministrativeDecision: (
+    closureId: string,
+    reason: string,
+  ) => Promise<AsyncState<ClosureResult>>
   assignProfessional: (
     closureId: string,
     professionalId: string,
@@ -168,6 +172,15 @@ export function createClosuresIntegration(): ClosuresIntegration {
         {
           p_closure_id: closureId,
           p_closure_notes: notes,
+        },
+      ),
+    registerAdministrativeDecision: (closureId, reason) =>
+      write(
+        'register_care_closure_decision_for_interface',
+        'register_care_closure_decision_for_interface',
+        {
+          p_closure_id: closureId,
+          p_reason: reason,
         },
       ),
     assignProfessional: (closureId, professionalId, createAdditional) =>
