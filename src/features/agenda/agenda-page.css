@@ -1189,3 +1189,95 @@
     min-height: 44px;
   }
 }
+
+
+/* Padrão transversal aprovado — ações de presença imediatamente ao lado do paciente. */
+.agenda-attendance-confirm,
+.agenda-attendance-absence {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.agenda-attendance-confirm {
+  border-color: #18864b;
+  background: #18864b;
+  color: #fff;
+}
+
+.agenda-attendance-confirm:hover:not(:disabled),
+.agenda-attendance-confirm:focus-visible:not(:disabled) {
+  background: #116b3b;
+}
+
+.agenda-attendance-absence {
+  border-color: #c93636;
+  background: #c93636;
+  color: #fff;
+}
+
+.agenda-attendance-absence:hover:not(:disabled),
+.agenda-attendance-absence:focus-visible:not(:disabled) {
+  background: #a92b2b;
+}
+
+.agenda-schedule-slot.is-agendado {
+  grid-template-columns: minmax(90px, auto) minmax(0, 1fr) auto;
+}
+
+.agenda-schedule-slot.is-agendado .agenda-schedule-status {
+  grid-column: 2;
+  grid-row: 1;
+  font-weight: 800;
+}
+
+.agenda-schedule-slot.is-agendado .agenda-week-home-actions {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+  margin-top: 0;
+}
+
+.agenda-schedule-slot.is-agendado > small {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.agenda-schedule-slot.is-agendado > .agenda-cancel-button {
+  grid-column: 3;
+  grid-row: 2;
+  justify-self: end;
+}
+
+.agenda-week-home-actions .agenda-attendance-confirm,
+.agenda-week-home-actions .agenda-attendance-absence {
+  min-width: 88px;
+}
+
+@media (max-width: 760px) {
+  .agenda-schedule-slot.is-agendado {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-schedule-slot.is-agendado .agenda-schedule-status,
+  .agenda-schedule-slot.is-agendado .agenda-week-home-actions,
+  .agenda-schedule-slot.is-agendado > small,
+  .agenda-schedule-slot.is-agendado > .agenda-cancel-button {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: stretch;
+  }
+
+  .agenda-week-home-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .agenda-week-home-actions button {
+    width: 100%;
+  }
+}
