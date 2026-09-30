@@ -5363,3 +5363,156 @@ O registro temporário foi revertido. A sequência de teste foi restaurada para 
 **Migration aplicada no Supabase:** `20260930180849_safe_test_patient_creation_from_homologation`.
 
 **Estado:** **CADASTRO DE PACIENTE TESTE SEGURO / NUMERAÇÃO TESTE SEPARADA / PRODUÇÃO NÃO CONSOME NUMERAÇÃO DE HOMOLOGAÇÃO E VICE-VERSA / MODO HOMOLOGAÇÃO IMPEDIDO DE CRIAR PACIENTE REAL**.
+
+
+### 28.104 HOMOLOGAÇÃO — CORREÇÃO TRANSVERSAL DA AGENDA, BUSCA DO PACIENTE E CONTINUIDADE DO ATENDIMENTO (30/09/2026)
+
+**Relato observado na interface real de homologação:**
+- no Administrativo Operacional, o paciente recém-cadastrado não era localizado na consulta;
+- na Agenda da Assistência Social aparecia horário agendado sem identificação clara do paciente;
+- o botão de confirmação registrava a presença, porém não iniciava/abria o processo do perfil;
+- os botões estavam fora do padrão visual aprovado, exibidos como ícones isolados em vez de `Confirmar`/`Falta` por extenso;
+- exigência: corrigir de forma transversal em todas as telas que utilizam a Agenda canônica.
+
+#### 1. Busca do paciente recém-cadastrado
+Foi comprovado que o novo paciente teste existia fisicamente no banco, mas o `homologation_contexts.test_patient_id` permanecia apontando para outro paciente ou ficava nulo após trocas de perfil. Como `capo_patient_visible_in_current_context` isola a homologação por paciente, o cadastro existia mas não aparecia na busca.
+
+**Correção:**
+- após `create_patient_for_interface` criar um paciente em homologação, o próprio contexto passa automaticamente a selecionar o novo `patient_id`;
+- ao trocar de perfil em `ProfileShortcuts.tsx`, o paciente teste atualmente selecionado é preservado;
+- quando não há paciente selecionado, o seletor usa o paciente teste mais recente por Nº CAPO, sem voltar obrigatoriamente ao `TESTE-CAPO-0001`.
+
+Migration:
+`20260930195004_select_new_test_patient_in_homologation_context`
+
+Commit migration:
+`eb3b31efc12302357e97d5f77158b4d8bfb78b2e`
+
+Commit ProfileShortcuts:
+`a8395d155afb707e76f9d34f4b6c6ff9c8632cf9`
+
+Também foi sincronizada a migration anterior de criação segura do paciente teste:
+`20260930180849_safe_test_patient_creation_from_homologation.sql`
+commit:
+`a1b55b647792026e62aa42597ef035f24a4d2ed4`.
+
+#### 2. Validação da busca
+Em transação de homologação, após cadastrar paciente temporário:
+- o contexto passou a apontar para o novo paciente;
+- `search_patients_for_interface` localizou imediatamente o cadastro;
+- a transação foi revertida.
+
+Foi restaurada a sequência de Nº CAPO de homologação após o teste.
+
+Estado real confirmado:
+- `TESTE-CAPO-0001` — paciente oficial inicial;
+- `TESTE-CAPO-0002` — paciente cadastrado pela usuária.
+
+No Administrativo Operacional simulado, a busca por `TESTE-CAPO-0002` retornou exatamente 1 resultado.
+
+#### 3. Contexto persistente da Assistência Social
+Foi encontrado:
+- perfil simulado: `profissional`;
+- profissional: Homologação — Assistência Social;
+- especialidade: Assistência Social;
+- `test_patient_id=null`.
+
+Esse estado explicava a ausência do nome e a impossibilidade de seguir o fluxo.
+
+O contexto persistente foi corrigido pelo contrato oficial para:
+- Assistência Social;
+- paciente `TESTE-CAPO-0002`.
+
+Nenhum dado de produção foi alterado.
+
+#### 4. Nome do paciente na grade
+A `HomeScheduleGrid` usava prioritariamente `slot.patient_name`. Em horários ocupados por paciente fora do contexto de homologação, esse campo é intencionalmente nulo. Em horários do paciente atual, o nome pode estar disponível na lista de Agenda mesmo quando a grade não o carregou no primeiro momento.
+
+**Correção transversal:**
+- usar `appointment.patient_name` quando disponível;
+- senão usar `slot.patient_name`;
+- se o horário pertence a outro paciente de homologação fora do contexto, mostrar apenas `Horário ocupado`;
+- não exibir Confirmar/Falta/Cancelar para paciente oculto pelo isolamento.
+
+Commit:
+`2cf7de7f35e28f6ee5c6182ca948ae335433194d`.
+
+#### 5. Confirmar/Falta — padrão visual
+Na Home compartilhada, os botões eram apenas `✓` e `✕`.
+
+Foi restaurado o padrão transversal:
+- botão **Confirmar** por extenso;
+- verde;
+- botão **Falta** por extenso;
+- vermelho;
+- posicionados junto ao nome do paciente;
+- padrão aplicado à grade da Home e à visão semanal compartilhada;
+- responsividade preservada.
+
+Commits:
+- estrutura/nome/ações: `36b857d5ac740b91fc0966dc1da09e9dc7f85556`;
+- CSS verde/vermelho e alinhamento: `074b484c5974a1f3d277a5bed8c52d3c159e8375`.
+
+#### 6. Confirmado não abria o processo do perfil
+Foi comprovado fisicamente no banco que o agendamento do `TESTE-CAPO-0002` na Assistência Social já estava com:
+`attendance_status='confirmado'`.
+
+Portanto o clique havia gravado a presença. A falha estava na interface.
+
+**Causa:** `updateAttendance()` só executava `onConfirmed` se encontrasse o atendimento na lista `state.data` antes da recarga. Na Home baseada na grade efetiva, o atendimento pode estar visível em `scheduleGrid` sem estar disponível nessa lista no mesmo instante.
+
+**Correção:**
+- após confirmar, procurar primeiro o atendimento recarregado;
+- depois a lista anterior;
+- por último usar os dados da própria grade efetiva;
+- ao encontrar paciente visível, disparar `onConfirmed`.
+
+Isso passa a funcionar para todas as telas que usam a Agenda canônica com callback próprio:
+- Assistência Social;
+- Nutrição;
+- Profissional Assistencial Padrão;
+- Clínico Geral quando compartilhado pelo componente assistencial;
+- Psicologia;
+- Fisioterapia.
+
+Commit:
+`36b857d5ac740b91fc0966dc1da09e9dc7f85556`.
+
+#### 7. Botões após presença registrada
+A grade mantinha Confirmar/Falta visíveis porque `slot_status` permanece `agendado` mesmo após a atualização de `attendance_status`.
+
+**Correção:** Confirmar/Falta só aparecem quando:
+- o paciente está visível no contexto;
+- o atendimento ainda está em `attendance_status='agendado'`.
+
+Após confirmar, esses botões deixam de ser oferecidos na linha.
+
+Commit:
+`480f3b7803896acef070c77b4acc80a18d24fde7`.
+
+#### 8. Testes de regressão adicionados
+Adicionados cenários que protegem:
+1. confirmação pela grade quando a lista paralela está vazia — deve chamar `onConfirmed`;
+2. horário ocupado por paciente fora do contexto — deve mostrar `Horário ocupado` e não oferecer Confirmar/Falta.
+
+Commit:
+`9d7caeca861cd3d6f9ed12815b1e1932040f6919`.
+
+#### 9. Validação física final
+- Assistência Social / `TESTE-CAPO-0002` retorna nome, Nº CAPO e agendamento correto;
+- agendamento estava efetivamente `confirmado`, provando que o clique anterior gravou no backend;
+- Administrativo Operacional encontra `TESTE-CAPO-0002` pela busca;
+- contexto persistente da Assistência Social foi alinhado ao paciente 02;
+- horários de outro paciente de teste continuam protegidos pelo isolamento.
+
+#### 10. Security Advisor
+Executado após as migrations.
+
+Persistem os mesmos grupos já conhecidos:
+- `anon_security_definer_function_executable`: 5 WARN;
+- `authenticated_security_definer_function_executable`: 198 WARN;
+- `auth_leaked_password_protection`: 1 WARN.
+
+Nenhum novo grupo de alerta foi introduzido por esta correção.
+
+**Estado:** **BUSCA DO PACIENTE TESTE CORRIGIDA / PACIENTE ATIVO PRESERVADO ENTRE PERFIS / NOME RESTAURADO NA AGENDA / HORÁRIO DE OUTRO PACIENTE MOSTRADO COMO OCUPADO / CONFIRMAR VERDE E FALTA VERMELHO POR EXTENSO / CONFIRMAR PASSA A ABRIR O FLUXO DO PERFIL / CORREÇÃO TRANSVERSAL NO COMPONENTE CANÔNICO / PRODUÇÃO PRESERVADA**.
