@@ -55,15 +55,17 @@ describe('SocialPage', () => {
     render(<MemoryRouter><SocialPage accessContext={accessContext} loadSpecialties={loadSocialSpecialties} /></MemoryRouter>)
     await screen.findByRole('link', { name: /Minha Agenda/i })
 
-    const headings = screen.getAllByRole('heading', {
-      name: 'Acompanhamento Social no Serviço CAPO',
-    })
-
-    expect(headings).toHaveLength(2)
-    headings.forEach((heading) => expect(heading).toBeVisible())
     expect(
       screen.getByRole('link', { name: /Minha Agenda/i }),
-    ).toHaveAttribute('href', '#agenda')
+    ).toHaveAttribute('href', '/agenda')
+    expect(
+      screen.queryByRole('heading', { name: 'Atendimentos de hoje' }),
+    ).not.toBeInTheDocument()
+    const quickAccess = screen.getByRole('heading', { name: 'Acessos rápidos' })
+    const agenda = screen.getByRole('heading', { name: 'Minha Agenda' })
+    expect(
+      quickAccess.compareDocumentPosition(agenda) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
     expect(
       screen.getByRole('link', { name: /Familiar \/ Cuidador/i }),
     ).toHaveAttribute('href', '/familiar-cuidador')
