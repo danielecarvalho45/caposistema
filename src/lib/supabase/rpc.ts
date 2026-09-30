@@ -48,10 +48,19 @@ export type HomologationSpecialtyOption = Readonly<{
   professional_id: string | null
 }>
 
+export type HomologationPatientOption = Readonly<{
+  patient_id: string
+  patient_name: string
+  patient_number: string | null
+  cms: string | null
+  test_label: string | null
+}>
+
 export type HomologationOptions = Readonly<{
   roles: readonly HomologationRoleOption[]
   professionals: readonly HomologationProfessionalOption[]
   specialties: readonly HomologationSpecialtyOption[]
+  test_patients: readonly HomologationPatientOption[]
 }>
 
 export type TeamMemberProfileInput = Readonly<{
@@ -885,6 +894,16 @@ function parseHomologationOptions(value: unknown): HomologationOptions {
         specialty_id: optionString(item, ['specialty_id', 'id'], operation),
         specialty_name: optionString(item, ['specialty_name', 'name'], operation),
         professional_id: typeof item.professional_id === 'string' ? item.professional_id : null,
+      }
+    }),
+    test_patients: optionArray(candidate, ['test_patients'], operation).map((item) => {
+      if (!isRecord(item)) throw contractError(operation, 'paciente de homologação inválido.')
+      return {
+        patient_id: optionString(item, ['patient_id', 'id'], operation),
+        patient_name: optionString(item, ['patient_name', 'name'], operation),
+        patient_number: typeof item.patient_number === 'string' ? item.patient_number : null,
+        cms: typeof item.cms === 'string' ? item.cms : null,
+        test_label: typeof item.test_label === 'string' ? item.test_label : null,
       }
     }),
   }
