@@ -5730,3 +5730,97 @@ Commit:
 **Limitação desta intervenção via conector:** o arquivo de teste foi atualizado, mas a suíte npm não foi executada fisicamente neste ambiente. Portanto não registrar PASS automatizado sem execução posterior.
 
 **Estado:** **DIVERGÊNCIA ESTRUTURAL COMPROVADA / CORREÇÃO TRANSVERSAL APLICADA AO CLÍNICO GERAL E ASSISTENCIAL PADRÃO / SOCIAL E NUTRIÇÃO PRESERVADOS / SEM ALTERAÇÃO DE BANCO / AGUARDANDO TESTE OPERACIONAL VISUAL**.
+
+
+### 28.107 INTERFACE — PADRÃO CANÔNICO DA HOME PROFISSIONAL APLICADO TRANSVERSALMENTE (30/09/2026)
+
+**Origem:** evidência visual apresentada pela responsável e confirmação expressa de que o padrão deve valer para Clínico Geral, Assistência Social, Nutrição, Psicologia, Fisioterapia e futuras especialidades cadastradas que usem a estrutura profissional padrão.
+
+#### Ordem documental seguida
+Antes da alteração foram consultados fisicamente no `main`:
+1. este Documento Mestre de continuidade, inclusive §§ 28.105 e 28.106;
+2. `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`;
+3. `CAPO_Manual_Tecnico_Integrado_Banco_Interface_ATUALIZADO_2026-09-15_v5(1).md`;
+4. HTMLs canônicos aprovados:
+   - `index(20260913-103215).html` — Assistência Social;
+   - `index(20260913-173000)_NUTRICIONISTA.html` — Nutrição;
+   - `index(20260914-000000)_MEDICO_CLINICO_GERAL.html` — Clínico Geral.
+
+A Matriz continua citando como documentos obrigatórios:
+- `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12.md`;
+- `CAPO_ESPECIFICACAO_ESTRUTURAL_DA_INTERFACE_2026-09-12.md`.
+
+Esses dois caminhos continuam não localizados fisicamente no `main`. Portanto não foram usados como prova documental nesta intervenção; a correção foi fundamentada na Matriz vigente, Manual Técnico v5 e HTMLs canônicos fisicamente presentes.
+
+#### Padrão visual confirmado
+O padrão canônico da Home profissional fica:
+1. **Acessos rápidos** no topo, preservando cores e ícones próprios de cada perfil;
+2. **Minha Agenda** em destaque;
+3. abas discretas **Dia / Semana / Mês** dentro da própria Agenda no Home;
+4. ao lado da Agenda, indicadores discretos:
+   - **Notificações**;
+   - **Faltosos**;
+5. **Aniversariantes de hoje** abaixo;
+6. demais funções específicas da especialidade depois desses blocos.
+
+Esse padrão é comum; as funções e atalhos próprios de cada especialidade permanecem particulares.
+
+#### Correção transversal
+O ponto compartilhado corrigido foi:
+- `src/features/agenda/AgendaPage.tsx`;
+- `src/features/agenda/agenda-page.css`.
+
+Quando `AgendaPage` é usada em modo `embeddedHome` para profissional:
+- mantém a Agenda como bloco principal;
+- mantém Dia/Semana/Mês no próprio Home;
+- exibe ao lado o painel discreto de **Notificações** e **Faltosos**;
+- em telas menores, os indicadores passam para baixo da Agenda sem desmontar a ordem mobile;
+- o indicador **Notificações** lê a contagem real de avisos não lidos pelo contrato já existente `get_my_notifications_for_interface`;
+- o indicador **Faltosos** é somente informativo e conta faltas presentes na agenda carregada do profissional no período;
+- não oferece acesso operacional à rota `/faltosos` para o profissional.
+
+A restrição de Faltosos foi preservada porque o Manual Técnico v5 define a operação do fluxo como responsabilidade do Administrativo/AO, e `route-access.ts` mantém `/faltosos` restrito a Administração, Coordenação e Administrativo Operacional.
+
+#### Alcance da alteração
+Como a correção foi feita no componente canônico compartilhado, o padrão passa a atingir:
+- Clínico Geral;
+- Assistência Social;
+- Nutrição;
+- Psicologia;
+- Fisioterapia;
+- futuras especialidades que reutilizem a estrutura assistencial padrão.
+
+A conta técnica de homologação utiliza os mesmos componentes canônicos; portanto não foi criada tela paralela de teste e o mesmo layout é aplicado ao ambiente de homologação quando o contexto profissional é simulado.
+
+#### Preservações
+Não foram alterados:
+- Supabase;
+- migrations;
+- RPCs;
+- regras de isolamento produção × homologação;
+- comportamento Confirmar/Falta;
+- abertura do paciente após presença;
+- autorização de Faltosos;
+- funções particulares de cada especialidade;
+- cores/ícones dos atalhos já existentes.
+
+#### Commits
+- `d8b18b7e74fcb1d5700be43d4b85cb9ab320c714` — `fix: padroniza agenda profissional com indicadores laterais`;
+- `dd4e02990b83de59c85e906a1bc220a921d35ff9` — `style: alinha home profissional ao layout canônico`;
+- `d7497f3fb85bd62cb501af08e4442a54a09548fd` — `test: protege layout canônico da home profissional`.
+
+#### Proteção de regressão
+O teste de Home profissional passou a exigir:
+- **Acessos rápidos** antes de **Minha agenda**;
+- abas **Dia**, **Semana** e **Mês**;
+- painel lateral **Indicadores da agenda** contendo **Notificações** e **Faltosos**.
+
+#### Validação técnica desta intervenção
+Foi tentada execução física local após atualização do `main`, porém o terminal deste ambiente não conseguiu resolver `github.com` para clonar o repositório (`Could not resolve host: github.com`).
+
+Consequentemente:
+- os arquivos de teste estão atualizados no `main`;
+- **não foi registrado PASS automatizado**;
+- permanece necessária execução física posterior de typecheck/testes/build no ambiente com acesso ao repositório.
+
+**Estado:** **PADRÃO VISUAL CANÔNICO APLICADO TRANSVERSALMENTE NO CÓDIGO / HOMOLOGAÇÃO E PRODUÇÃO COMPARTILHAM O MESMO COMPONENTE / SEM ALTERAÇÃO DE BANCO / TESTE AUTOMATIZADO PREPARADO / EXECUÇÃO FÍSICA DA SUÍTE PENDENTE**.
