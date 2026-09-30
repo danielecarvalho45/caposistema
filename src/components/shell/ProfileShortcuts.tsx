@@ -213,12 +213,23 @@ export function ProfileShortcuts({
       }
     }
 
+    const testPatient =
+      homologationOptions?.test_patients.find(
+        (patient) => patient.patient_number === 'TESTE-CAPO-0001',
+      ) ?? homologationOptions?.test_patients[0] ?? null
+
+    if (!testPatient) {
+      setSwitchingHomologation(false)
+      setHomologationError('Paciente oficial de homologação não encontrado.')
+      return
+    }
+
     const result = await service.setHomologationContext({
       roleCode: target.roleCode,
       professionalId,
       specialtyId,
-      testPatientId: null,
-      reason: `Homologação controlada do perfil ${target.label}.`,
+      testPatientId: testPatient.patient_id,
+      reason: `Homologação controlada do perfil ${target.label} com paciente teste.`,
     })
 
     if (result.status === 'success') {
