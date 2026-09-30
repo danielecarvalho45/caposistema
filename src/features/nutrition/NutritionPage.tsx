@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type AgendaAppointment } from '../../lib/supabase/rpc'
+import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type AgendaAppointment, type ReferralPatient } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { AgendaPage } from '../agenda/AgendaPage'
 import { Link } from 'react-router-dom'
@@ -91,9 +91,12 @@ export function NutritionPage({
     accessContext.roles.some((role) => role.code === 'profissional')
   const isController = accessContext.roles.some((role) => role.code === 'administrador')
   const isAdministrativeOperational = accessContext.roles.some((role) => role.code === 'administrativo_operacional')
+  const isTechnicalAdministrator = accessContext.roles.some((role) => role.code === 'administrador_tecnico')
+  const isAdministrativeManager = isController || (isAdministrativeOperational && isTechnicalAdministrator)
   const isCoordinator = accessContext.roles.some((role) => role.code === 'coordenador')
   const canManageDeliveries = isController || isAdministrativeOperational
-  const canConsultDocuments = isController || isCoordinator
+  const canGenerateManagementPdf = isAdministrativeManager
+  const canConsultDocuments = isController || isCoordinator || isAdministrativeManager
   const authorized = isNutritionProfessional || canManageDeliveries || canConsultDocuments
   const [patientId, setPatientId] = useState('')
   const [selectedPatientName, setSelectedPatientName] = useState('')
@@ -114,6 +117,10 @@ export function NutritionPage({
   const [deliveryReason, setDeliveryReason] = useState('')
   const [managementDocuments, setManagementDocuments] = useState<readonly NutritionRecord[]>([])
   const [managementFeedback, setManagementFeedback] = useState<string | null>(null)
+  const [managementPatientQuery, setManagementPatientQuery] = useState('')
+  const [managementPatients, setManagementPatients] = useState<readonly ReferralPatient[]>([])
+  const [managementPatientId, setManagementPatientId] = useState('')
+  const [managementPatientName, setManagementPatientName] = useState('')
 
   useEffect(() => {
     if (!eligibleForSpecialty || !accessContext.professional_id) return
@@ -281,6 +288,83 @@ export function NutritionPage({
     const reloaded = await getRpcService().getNutritionDocument(documentId)
     setDocument(reloaded.status === 'success' ? reloaded.data as NutritionRecord : officialDocument)
     setFeedback('PDF Nutricional Oficial gerado e vinculado ao documento.')
+    setBusy(false)
+  }
+
+  async function searchManagementPatients() {
+    const query = managementPatientQuery.trim()
+    if (query.length < 2 || busy) {
+      setManagementFeedback('Informe nome, Nº CAPO ou CMS com pelo menos dois caracteres.')
+      return
+    }
+    setBusy(true)
+    setManagementFeedback(null)
+    const result = await getRpcService().searchReferralPatients(query, 20, 0)
+    if (result.status === 'success') {
+      setManagementPatients(result.data)
+      setManagementFeedback(result.data.length ? null : 'Nenhum paciente encontrado.')
+    } else {
+      setManagementPatients([])
+      setManagementFeedback(result.status === 'error' ? result.error.message : 'Nenhum paciente encontrado.')
+    }
+    setBusy(false)
+  }
+
+  async function generateManagementDocument() {
+    if (!canGenerateManagementPdf || !managementPatientId || busy) return
+    setBusy(true)
+    setManagementFeedback('Gerando PDF a partir do Plano Alimentar já preenchido…')
+
+    const created = await getRpcService().createNutritionManagementDocument(managementPatientId)
+    if (created.status !== 'success') {
+      setManagementFeedback(created.status === 'error' ? created.error.message : 'Documento não retornou confirmação.')
+      setBusy(false)
+      return
+    }
+
+    const documentId = field(created.data as NutritionRecord, 'document_id', 'id')
+    if (!documentId) {
+      setManagementFeedback('O banco não retornou a identificação do documento nutricional.')
+      setBusy(false)
+      return
+    }
+
+    const loaded = await getRpcService().getNutritionManagementDocument(documentId)
+    if (loaded.status !== 'success') {
+      setManagementFeedback(loaded.status === 'error' ? loaded.error.message : 'O documento nutricional não pôde ser carregado.')
+      setBusy(false)
+      return
+    }
+
+    const officialDocument = loaded.data as NutritionRecord
+    const blob = buildNutritionPdf(officialDocument)
+    const storagePath = `nutrition/${documentId}/plano-alimentar-${Date.now()}.pdf`
+    const { error: uploadError } = await getSupabaseClient()
+      .storage.from('capo-documents')
+      .upload(storagePath, blob, { contentType: 'application/pdf', upsert: false })
+
+    if (uploadError) {
+      setManagementFeedback(uploadError.message)
+      setBusy(false)
+      return
+    }
+
+    const registered = await getRpcService().registerNutritionManagementPdf(documentId, storagePath)
+    if (registered.status !== 'success') {
+      setManagementFeedback(registered.status === 'error' ? registered.error.message : 'O banco não confirmou o PDF nutricional.')
+      setBusy(false)
+      return
+    }
+
+    const refreshed = await getRpcService().getNutritionDocumentsForManagement(50, 0)
+    if (refreshed.status === 'success') setManagementDocuments(refreshed.data as readonly NutritionRecord[])
+    else if (refreshed.status === 'empty') setManagementDocuments([])
+
+    setManagementFeedback(`PDF Nutricional Oficial de ${managementPatientName || 'paciente selecionado'} gerado sem alteração do Plano Alimentar.`)
+    setManagementPatients([])
+    setManagementPatientId('')
+    setManagementPatientName('')
+    setManagementPatientQuery('')
     setBusy(false)
   }
 
@@ -496,7 +580,48 @@ export function NutritionPage({
           <p className="eyebrow">Consulta gerencial</p>
           <h2 id="nutrition-management-title">Documentos nutricionais oficiais</h2>
           <p>Consulta operacional do PDF e de seus metadados. O conteúdo do Plano Alimentar permanece sem edição neste contexto.</p>
-          {managementFeedback && <p role="status">{managementFeedback}</p>}
+          {canGenerateManagementPdf && (
+            <div className="home-ops">
+              <h3>Gerar PDF de Plano Alimentar já preenchido</h3>
+              <p>Esta ação cria uma nova revisão do documento usando exatamente o plano atual salvo pela Nutrição, sem permitir edição do conteúdo.</p>
+              <label>Paciente
+                <input
+                  value={managementPatientQuery}
+                  onChange={(event) => {
+                    setManagementPatientQuery(event.target.value)
+                    setManagementPatientId('')
+                    setManagementPatientName('')
+                  }}
+                  placeholder="Nome, Nº CAPO ou CMS"
+                />
+              </label>
+              <button type="button" disabled={busy || managementPatientQuery.trim().length < 2} onClick={() => void searchManagementPatients()}>
+                Buscar paciente
+              </button>
+              {managementPatients.length > 0 && (
+                <div className="patient-results">
+                  {managementPatients.map((patient) => (
+                    <button
+                      type="button"
+                      key={patient.patient_id}
+                      className={managementPatientId === patient.patient_id ? 'is-selected' : ''}
+                      onClick={() => {
+                        setManagementPatientId(patient.patient_id)
+                        setManagementPatientName(patient.full_name)
+                      }}
+                    >
+                      {patient.full_name}
+                      <small>{patient.patient_number ?? patient.cms ?? 'Identificação disponível no cadastro'}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button type="button" disabled={busy || !managementPatientId} onClick={() => void generateManagementDocument()}>
+                Gerar PDF do plano já preenchido
+              </button>
+            </div>
+          )}
+          {managementFeedback && <p role="status">{managementFeedback}</p>
           {managementDocuments.length === 0 && <p>Nenhum documento nutricional oficial encontrado.</p>}
           {managementDocuments.length > 0 && (
             <ul>
