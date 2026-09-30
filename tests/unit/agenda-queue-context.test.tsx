@@ -434,3 +434,116 @@ it('carrega especialidades e profissionais no Administrativo Operacional simulad
     screen.getByRole('option', { name: 'Homologação — Nutrição' }),
   ).toBeVisible()
 })
+
+
+it('confirma pela grade e abre o fluxo do paciente mesmo quando a lista paralela está vazia', async () => {
+  const onConfirmed = vi.fn()
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'social-professional-id',
+      professional_name: 'Homologação — Assistência Social',
+      slot_date: '2026-09-30',
+      weekday: 3,
+      slot_start: '2026-09-30T13:30:00.000Z',
+      slot_end: '2026-09-30T14:00:00.000Z',
+      duration_minutes: 30,
+      slot_status: 'agendado',
+      appointment_id: 'appointment-visible',
+      patient_id: 'patient-visible',
+      patient_name: 'Paciente teste visível',
+      appointment_type: 'primeiro_capo',
+      block_type: null,
+    }],
+  })
+  rpc.updateAppointmentAttendance.mockResolvedValue({
+    status: 'success',
+    data: {
+      appointment_id: 'appointment-visible',
+      attendance_status: 'confirmado',
+    },
+  })
+
+  const context = {
+    roles: [{ code: 'profissional', name: 'Profissional' }],
+    primary_context: { code: 'profissional', name: 'Profissional' },
+    professional_id: 'social-professional-id',
+  } as unknown as AccessContext
+
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+        onConfirmed={onConfirmed}
+        embeddedHome
+      />
+    </MemoryRouter>,
+  )
+
+  const confirm = await screen.findByRole('button', {
+    name: 'Confirmar consulta de Paciente teste visível',
+  })
+  expect(confirm).toHaveClass('agenda-attendance-confirm')
+  expect(confirm).toHaveTextContent('Confirmar')
+  await user.click(confirm)
+
+  expect(rpc.updateAppointmentAttendance).toHaveBeenCalledWith({
+    appointmentId: 'appointment-visible',
+    action: 'confirmado',
+    notes: '',
+    reason: '',
+  })
+  expect(onConfirmed).toHaveBeenCalledWith(
+    expect.objectContaining({
+      appointment_id: 'appointment-visible',
+      patient_id: 'patient-visible',
+      patient_name: 'Paciente teste visível',
+      attendance_status: 'confirmado',
+    }),
+  )
+})
+
+it('não oferece Confirmar ou Falta para horário ocupado por paciente fora do contexto visível', async () => {
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'social-professional-id',
+      professional_name: 'Homologação — Assistência Social',
+      slot_date: '2026-09-30',
+      weekday: 3,
+      slot_start: '2026-09-30T13:00:00.000Z',
+      slot_end: '2026-09-30T13:30:00.000Z',
+      duration_minutes: 30,
+      slot_status: 'agendado',
+      appointment_id: 'appointment-hidden',
+      patient_id: 'patient-hidden',
+      patient_name: null,
+      appointment_type: 'outro',
+      block_type: null,
+    }],
+  })
+
+  const context = {
+    roles: [{ code: 'profissional', name: 'Profissional' }],
+    primary_context: { code: 'profissional', name: 'Profissional' },
+    professional_id: 'social-professional-id',
+  } as unknown as AccessContext
+
+  render(
+    <MemoryRouter>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+        embeddedHome
+      />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByText('Horário ocupado')).toBeVisible()
+  expect(screen.queryByRole('button', { name: /Confirmar consulta/ })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Marcar falta/ })).not.toBeInTheDocument()
+})
