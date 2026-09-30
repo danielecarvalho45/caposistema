@@ -296,6 +296,12 @@ function HomeScheduleGrid({
                   const appointment = slot.appointment_id
                     ? appointmentById.get(slot.appointment_id)
                     : undefined
+                  const patientName =
+                    appointment?.patient_name ??
+                    slot.patient_name ??
+                    (appointment?.patient_number
+                      ? `Paciente Nº CAPO ${appointment.patient_number}`
+                      : 'Paciente agendado')
                   return (
                     <div
                       className={`agenda-schedule-slot is-${slot.slot_status}`}
@@ -307,7 +313,7 @@ function HomeScheduleGrid({
                           ? 'Livre'
                           : slot.slot_status === 'bloqueado'
                             ? 'Bloqueado'
-                            : slot.patient_name ?? 'Agendado'}
+                            : patientName}
                       </span>
                       {slot.slot_status === 'livre' && onSchedule && (
                         <button
@@ -326,10 +332,26 @@ function HomeScheduleGrid({
                       )}
                       {slot.slot_status === 'agendado' && slot.appointment_id && onAttendance && (
                         <div className="agenda-week-home-actions">
-                          <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onAttendance(slot.appointment_id!, 'confirmado')} aria-label={`Confirmar consulta de ${slot.patient_name ?? 'paciente'}`}>✓</button>
-                          <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onAttendance(slot.appointment_id!, 'faltou')} aria-label={`Marcar falta de ${slot.patient_name ?? 'paciente'}`}>✕</button>
+                          <button
+                            type="button"
+                            className="agenda-attendance-confirm"
+                            disabled={busyAppointmentId === slot.appointment_id}
+                            onClick={() => onAttendance(slot.appointment_id!, 'confirmado')}
+                            aria-label={`Confirmar consulta de ${patientName}`}
+                          >
+                            Confirmar
+                          </button>
+                          <button
+                            type="button"
+                            className="agenda-attendance-absence"
+                            disabled={busyAppointmentId === slot.appointment_id}
+                            onClick={() => onAttendance(slot.appointment_id!, 'faltou')}
+                            aria-label={`Marcar falta de ${patientName}`}
+                          >
+                            Falta
+                          </button>
                           {appointment && onReturn && appointment.attendance_status === 'confirmado' && (
-                            <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${slot.patient_name ?? 'paciente'}`}>↻</button>
+                            <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${patientName}`}>Agendar retorno</button>
                           )}
                         </div>
                       )}
@@ -417,8 +439,8 @@ function AgendaResults({
                         <small>{appointment.appointment_type}</small>
                         {onAttendance && (
                           <div className="agenda-week-home-actions">
-                            <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')} aria-label={`Confirmar consulta de ${appointment.patient_name}`}>✓</button>
-                            <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')} aria-label={`Marcar falta de ${appointment.patient_name}`}>✕</button>
+                            <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')} aria-label={`Confirmar consulta de ${appointment.patient_name}`}>Confirmar</button>
+                            <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')} aria-label={`Marcar falta de ${appointment.patient_name}`}>Falta</button>
                             {onReturn && appointment.attendance_status === 'confirmado' && (
                               <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${appointment.patient_name}`}>↻</button>
                             )}
@@ -982,9 +1004,6 @@ export function AgendaPage({
       reason: attendanceReason.trim(),
     })
     if (result.status === 'success') {
-      const confirmedAppointment = action === 'confirmado' && state.status === 'success'
-        ? state.data.find((appointment) => appointment.appointment_id === appointmentId)
-        : undefined
       setAttendanceNotes('')
       setAttendanceReason('')
       const reloaded = await load()
@@ -992,7 +1011,42 @@ export function AgendaPage({
         setAppointmentFeedback('Atendimento registrado, mas a recarga da agenda falhou: ' + reloaded.error.message)
       } else {
         setAppointmentFeedback('Atendimento atualizado. Agenda recarregada do banco.')
-        if (confirmedAppointment) onConfirmed?.(confirmedAppointment)
+        if (action === 'confirmado' && onConfirmed) {
+          const confirmedAppointment =
+            (reloaded.status === 'success'
+              ? reloaded.data.find((appointment) => appointment.appointment_id === appointmentId)
+              : undefined) ??
+            (state.status === 'success'
+              ? state.data.find((appointment) => appointment.appointment_id === appointmentId)
+              : undefined)
+
+          if (confirmedAppointment) {
+            onConfirmed(confirmedAppointment)
+          } else if (scheduleGrid.status === 'success') {
+            const slot = scheduleGrid.data.find(
+              (item) => item.appointment_id === appointmentId,
+            )
+            if (slot?.patient_id && slot.patient_name) {
+              onConfirmed({
+                appointment_id: appointmentId,
+                patient_id: slot.patient_id,
+                patient_name: slot.patient_name,
+                patient_number: null,
+                professional_id: slot.professional_id,
+                professional_name: slot.professional_name,
+                specialty_name: null,
+                appointment_date: slot.slot_start,
+                appointment_end: slot.slot_end,
+                appointment_type: slot.appointment_type ?? 'atendimento',
+                attendance_status: 'confirmado',
+                general_notes: null,
+                rescheduled_from_id: null,
+                reschedule_reason: null,
+                reschedule_origin: null,
+              })
+            }
+          }
+        }
       }
     } else {
       setAppointmentFeedback(result.status === 'error' ? result.error.message : 'A atualização não retornou confirmação.')
