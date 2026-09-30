@@ -1363,3 +1363,37 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Home profissional — Confirmar/Falta imediatamente ao lado do nome do paciente. */
+.agenda-home-patient-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agenda-home-patient-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agenda-home-patient-actions .agenda-attendance-confirm,
+.agenda-home-patient-actions .agenda-attendance-absence {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
+}
+
+@media (max-width: 620px) {
+  .agenda-home-patient-line,
+  .agenda-home-patient-actions {
+    width: 100%;
+  }
+
+  .agenda-home-patient-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
