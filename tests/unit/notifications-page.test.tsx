@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -25,7 +26,7 @@ const notification: Notification = {
   total_count: 1,
 }
 
-function renderPage(element: React.ReactNode) {
+function renderPage(element: ReactNode) {
   return render(<MemoryRouter>{element}</MemoryRouter>)
 }
 
