@@ -13,8 +13,9 @@ export function createCapoSupabaseClient(
     {
       auth: {
         autoRefreshToken: true,
-        // Exige novo login após recarregar, fechar a aba ou reiniciar o navegador.
-        persistSession: false,
+        // Mantém a sessão durante recargas na mesma aba e a descarta ao encerrar a aba.
+        persistSession: true,
+        storage: window.sessionStorage,
         detectSessionInUrl: true,
       },
     },
