@@ -296,12 +296,14 @@ function HomeScheduleGrid({
                   const appointment = slot.appointment_id
                     ? appointmentById.get(slot.appointment_id)
                     : undefined
+                  const visiblePatientId = appointment?.patient_id ?? slot.patient_id
+                  const visiblePatientName = appointment?.patient_name ?? slot.patient_name
+                  const patientIsVisible = Boolean(visiblePatientId && visiblePatientName)
                   const patientName =
-                    appointment?.patient_name ??
-                    slot.patient_name ??
+                    visiblePatientName ??
                     (appointment?.patient_number
                       ? `Paciente Nº CAPO ${appointment.patient_number}`
-                      : 'Paciente agendado')
+                      : 'Horário ocupado')
                   return (
                     <div
                       className={`agenda-schedule-slot is-${slot.slot_status}`}
@@ -330,7 +332,7 @@ function HomeScheduleGrid({
                       {slot.slot_status === 'bloqueado' && slot.block_type && (
                         <small>{agendaBlockLabel(slot.block_type)}</small>
                       )}
-                      {slot.slot_status === 'agendado' && slot.appointment_id && onAttendance && (
+                      {slot.slot_status === 'agendado' && patientIsVisible && slot.appointment_id && onAttendance && (
                         <div className="agenda-week-home-actions">
                           <button
                             type="button"
@@ -355,7 +357,7 @@ function HomeScheduleGrid({
                           )}
                         </div>
                       )}
-                      {slot.slot_status === 'agendado' && slot.appointment_id && onCancel && (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
+                      {slot.slot_status === 'agendado' && patientIsVisible && slot.appointment_id && onCancel && (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
                         <button
                           type="button"
                           className="agenda-cancel-button"
