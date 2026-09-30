@@ -39,6 +39,8 @@ const managementItems: readonly NavItem[] = [
   { path: '/gestor/auditoria', icon: '▥', label: 'Auditoria e Relatórios' },
   { path: '/relatorios', icon: '▥', label: 'Relatórios' },
   { path: '/notificacoes', icon: '●', label: 'Notificações' },
+  { path: '/gestor/administracao', icon: '👥', label: 'Administração do Sistema' },
+  { path: '/tecnica', icon: '⚙', label: 'TI / Manutenção' },
   { path: '/gestor/suporte', icon: '?', label: 'Suporte' },
 ]
 
