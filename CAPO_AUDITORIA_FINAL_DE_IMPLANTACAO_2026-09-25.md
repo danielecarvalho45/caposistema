@@ -5824,3 +5824,51 @@ Consequentemente:
 - permanece necessária execução física posterior de typecheck/testes/build no ambiente com acesso ao repositório.
 
 **Estado:** **PADRÃO VISUAL CANÔNICO APLICADO TRANSVERSALMENTE NO CÓDIGO / HOMOLOGAÇÃO E PRODUÇÃO COMPARTILHAM O MESMO COMPONENTE / SEM ALTERAÇÃO DE BANCO / TESTE AUTOMATIZADO PREPARADO / EXECUÇÃO FÍSICA DA SUÍTE PENDENTE**.
+
+
+### 28.108 INTERFACE — CONFIRMAR/FALTA JUNTO AO NOME DO PACIENTE NA AGENDA DA HOME (30/09/2026)
+
+**Origem:** solicitação da responsável para manutenção cirúrgica da Agenda exibida na tela inicial.
+
+#### Regra aplicada
+Na Agenda profissional embutida no Home, quando houver paciente agendado e visível no contexto, as ações:
+- **Confirmar**;
+- **Falta**;
+
+devem aparecer imediatamente junto ao nome do paciente, e não afastadas em uma coluna de ações.
+
+#### Correção cirúrgica
+Foi alterado somente o comportamento visual da Agenda no modo `embeddedHome`:
+- o nome do paciente e os botões **Confirmar** e **Falta** passam a ocupar a mesma célula/linha visual;
+- **Confirmar** permanece verde;
+- **Falta** permanece vermelho;
+- os botões continuam visíveis somente enquanto o atendimento estiver em estado agendado;
+- após presença/falta registrada, a regra anterior de ocultação permanece preservada;
+- horário ocupado por paciente fora do contexto continua sem expor nome e sem oferecer Confirmar/Falta;
+- a Agenda completa fora do Home mantém sua estrutura atual, evitando alteração fora do escopo solicitado.
+
+Como `AgendaPage` é compartilhado, a alteração alcança o Home de:
+- Clínico Geral;
+- Assistência Social;
+- Nutrição;
+- Psicologia;
+- Fisioterapia;
+- futuras especialidades assistenciais que reutilizem o componente canônico;
+- homologação da conta técnica nos mesmos contextos profissionais.
+
+#### Arquivos alterados
+- `src/features/agenda/AgendaPage.tsx`;
+- `src/features/agenda/agenda-page.css`;
+- `tests/unit/agenda-queue-context.test.tsx`.
+
+#### Proteção de regressão
+O teste existente que confirma pela grade foi reforçado para exigir que **Confirmar** e **Falta** estejam dentro da mesma célula do paciente na Agenda da Home.
+
+#### Commits
+- `668320d365347240c2ff77da118c6f81dd9e2a13` — `fix: aproxima Confirmar e Falta do paciente na Home`;
+- `32c711abe2d7d6055708496382cd478e75549716` — `style: posiciona presença junto ao paciente na Home`;
+- `ca067a49ecba1c14a3e197de5f729b1fb4ca9693` — `test: protege ações junto ao nome na Home`.
+
+**Preservado:** Supabase, RPCs, permissões, isolamento de homologação, fluxo de abertura do paciente após Confirmar, fluxo administrativo de Faltosos e demais telas fora do Home.
+
+**Estado:** **MANUTENÇÃO CIRÚRGICA APLICADA NO COMPONENTE CANÔNICO / CONFIRMAR E FALTA JUNTO AO NOME DO PACIENTE NA HOME / SEM ALTERAÇÃO DE BANCO / TESTE DE REGRESSÃO ATUALIZADO**.
