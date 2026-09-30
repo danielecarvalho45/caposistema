@@ -5516,3 +5516,102 @@ Persistem os mesmos grupos já conhecidos:
 Nenhum novo grupo de alerta foi introduzido por esta correção.
 
 **Estado:** **BUSCA DO PACIENTE TESTE CORRIGIDA / PACIENTE ATIVO PRESERVADO ENTRE PERFIS / NOME RESTAURADO NA AGENDA / HORÁRIO DE OUTRO PACIENTE MOSTRADO COMO OCUPADO / CONFIRMAR VERDE E FALTA VERMELHO POR EXTENSO / CONFIRMAR PASSA A ABRIR O FLUXO DO PERFIL / CORREÇÃO TRANSVERSAL NO COMPONENTE CANÔNICO / PRODUÇÃO PRESERVADA**.
+
+
+### 28.105 INTERFACE — RESTAURAÇÃO DO PADRÃO ESTRUTURAL DA HOME PROFISSIONAL E DA AGENDA (30/09/2026)
+
+**Origem:** evidência visual apresentada pela usuária mostrou a Home profissional fora do padrão anteriormente aprovado.
+
+#### Documentação e referências fisicamente confrontadas
+Foi consultada fisicamente no repositório:
+- `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`, especialmente o **§3 — Padrão transversal das Agendas Profissionais**;
+- `index(20260913-103215).html` — referência física da Assistência Social;
+- `index(20260913-173000)_NUTRICIONISTA.html` — referência física da Nutrição;
+- `index(20260914-000000)_MEDICO_CLINICO_GERAL.html` — referência física do Clínico Geral.
+
+A Matriz cita como documentos estruturais obrigatórios:
+- `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12.md`;
+- `CAPO_ESPECIFICACAO_ESTRUTURAL_DA_INTERFACE_2026-09-12.md`.
+
+Porém, tentativa direta de abertura desses dois caminhos no `main` retornou arquivo não localizado. Portanto **não foram usados como prova física nesta manutenção**; a correção foi fundamentada na Matriz obrigatória presente e nos HTMLs de referência aprovados fisicamente existentes.
+
+#### Divergências comprovadas na implementação React atual
+1. A Home da Assistência Social começava com cabeçalho funcional + bloco “Atendimentos de hoje” e só depois mostrava Acessos rápidos.
+2. A referência física aprovada da Assistência Social apresenta:
+   - Acessos rápidos;
+   - painel Minha Agenda;
+   - indicadores auxiliares;
+   - Aniversariantes.
+3. A Home da Nutrição também estava com Agenda/Aniversariantes antes de Acessos rápidos, enquanto o HTML aprovado apresenta Acessos rápidos antes da Agenda.
+4. A Agenda profissional do modo Dia estava sendo renderizada como cartões/slots verticais.
+5. A Matriz §3 determina linha de Agenda vinculando:
+   - Horário;
+   - Paciente;
+   - indicador de especialidades;
+   - ações Confirmado/Falta.
+6. Os HTMLs aprovados de Assistência Social e Nutrição usam tabela no modo Dia.
+
+#### Correção transversal da Agenda diária
+`AgendaPage.tsx` foi ajustada para que o **modo Dia** da agenda profissional seja apresentado em tabela com:
+- Horário;
+- Paciente;
+- Especialidades;
+- Tipo;
+- Situação;
+- Ações.
+
+Foram preservados também os horários:
+- livres;
+- bloqueados;
+- ocupados.
+
+Regras preservadas:
+- paciente visível → nome exibido;
+- paciente fora do contexto → “Horário ocupado”;
+- horário livre → pode exibir Agendar quando o perfil tiver autorização;
+- Confirmar/Falta somente para atendimento visível e ainda em situação agendada;
+- Confirmar e Falta permanecem verde/vermelho conforme §28.104;
+- especialidades atuais do paciente continuam sendo carregadas pelo contrato existente;
+- Semana e Mês permanecem com suas visualizações próprias.
+
+Commit:
+`817558d8468fd52d195c68564a89dd6d45a51bef`.
+
+#### Assistência Social — Home
+A ordem da Home foi restaurada para:
+1. Acessos rápidos;
+2. Minha Agenda;
+3. Aniversariantes;
+4. demais módulos funcionais abaixo.
+
+Foi removido da Home o cabeçalho duplicado “Acompanhamento Social no Serviço CAPO” e o bloco externo “Atendimentos de hoje”, deixando o próprio painel `Minha Agenda` como elemento canônico.
+
+Foi recolocado o atalho **Minha Agenda** entre os Acessos rápidos.
+
+Commits:
+- ordem estrutural: `1393ce3763a784671bb9966c18bd0ee118dc5a63`;
+- remoção do cabeçalho duplicado: `3721973f437987ea2993a27fbd314e2c7db6e728`.
+
+#### Nutrição — Home
+A ordem foi alinhada ao HTML físico aprovado:
+1. Acessos rápidos;
+2. Minha Agenda;
+3. Aniversariantes;
+4. Planejamento Alimentar e demais módulos.
+
+Foi removido o cabeçalho adicional “Atendimentos de hoje” que não pertence à estrutura física aprovada da Home da Nutrição.
+
+Commit:
+`7e9d801a7a3903ea197c595c8ac85d0ab7fb20d2`.
+
+#### Testes de regressão atualizados/adicionados
+- Social: protege Acessos rápidos antes de Minha Agenda e ausência do cabeçalho indevido;
+- Agenda: protege a tabela diária com colunas Horário, Paciente, Especialidades e Ações.
+
+Commits:
+- `95ef56d9d09eb695e9cf86207fd3cda0cfb7125d`;
+- `b6f14fec448763bed51f08e9c18579b4ddd0a0d2`.
+
+**Observação:** os arquivos de teste foram atualizados, porém a suíte npm não foi executada nesta intervenção via conector. Não registrar PASS automatizado sem execução física posterior.
+
+**Estado:** **REGRESSÃO VISUAL COMPROVADA / PADRÃO DA AGENDA DIÁRIA RESTAURADO / HOME SOCIAL E NUTRIÇÃO REALINHADAS ÀS REFERÊNCIAS FÍSICAS APROVADAS / SEM ALTERAÇÃO DE BANCO NESTA ETAPA / SEM REABERTURA DE REGRA FUNCIONAL**.
