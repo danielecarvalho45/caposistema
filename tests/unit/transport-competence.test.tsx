@@ -15,7 +15,7 @@ const access = (role: string, social = false) => ({
 
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 
-it('orienta o Gestor antes da seleção e deixa o Administrativo somente na continuidade externa', async () => {
+it('permite ao Gestor criar e concluir a continuidade externa do Transporte', async () => {
   const user = userEvent.setup()
   rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [{ patient_id: 'p1', full_name: 'Paciente encontrado' }] })
   rpc.getTransportContext.mockResolvedValue({ status: 'success', data: {
@@ -29,7 +29,7 @@ it('orienta o Gestor antes da seleção e deixa o Administrativo somente na cont
   await user.click(screen.getByRole('button', { name: 'Buscar' }))
   await user.click(await screen.findByRole('button', { name: /Paciente encontrado/ }))
   expect(await screen.findByRole('button', { name: 'Gerar PDF' })).toBeVisible()
-  expect(screen.queryByRole('button', { name: 'Registrar encaminhamento' })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Registrar encaminhamento' })).toBeVisible()
   cleanup()
   render(<TransportPage accessContext={access('administrativo_operacional')} />)
   expect(screen.queryByRole('heading', { name: 'Como solicitar transporte' })).not.toBeInTheDocument()
