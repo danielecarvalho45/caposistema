@@ -4983,3 +4983,308 @@ Executado advisor de segurança após a DDL. Os avisos encontrados correspondem 
 **Commit:** `facfbfb81cf25ee38751002abfb8d77f474598c6`.
 
 **Estado:** **ISOLAMENTO CONTEXTUAL ATIVO / PRODUÇÃO PRESERVADA / HOMOLOGAÇÃO NÃO ENXERGA PROFISSIONAIS REAIS NOS CONTRATOS CORRIGIDOS / PROFISSIONAIS DE TESTE NÃO APARECEM NOS CONTRATOS REAIS CORRIGIDOS / MISTURA PACIENTE↔PROFISSIONAL BLOQUEADA NO BANCO / NENHUMA AGENDA DE TESTE CRIADA AINDA**.
+
+
+### 28.101 HOMOLOGAÇÃO CONTROLADA — CRIAÇÃO DE AGENDAS, EXECUÇÃO DOS FLUXOS E CORREÇÕES ENCONTRADAS (30/09/2026)
+
+**Autorização:** executar a sequência integral sem interrupções para confirmação, utilizando exclusivamente a conta `manuteste`, o paciente oficial de homologação e os profissionais marcados como `is_homologation_profile=true`.
+
+**Premissa de segurança:** nenhum dado real do CAPO poderia ser alterado, misturado ou exposto pelos testes. O isolamento estrutural do §28.100 foi mantido como condição obrigatória.
+
+#### 1. Preparação do paciente teste
+Foi aberto um ciclo CAPO exclusivo para:
+- `PACIENTE SIMULADO CAPO — HOMOLOGAÇÃO`;
+- Nº CAPO `TESTE-CAPO-0001`;
+- `is_test=true`.
+
+Motivo registrado no ciclo:
+`Ciclo exclusivo para homologação controlada pela conta manuteste.`
+
+Nenhum ciclo de paciente real foi alterado.
+
+#### 2. Agendas dos profissionais de homologação
+Foram criadas agendas apenas para os cinco perfis de homologação:
+
+**Clínico Geral**
+- seg/qua: 08:00–12:00;
+- ter/qui: 13:00–17:00;
+- duração: 30 min.
+
+**Nutrição**
+- ter/qui: 08:00–12:00;
+- qua: 13:00–17:00;
+- duração: 60 min.
+
+**Assistência Social**
+- seg/qua/sex: 08:00–16:00;
+- duração: 60 min;
+- almoço recorrente: 12:00–13:00.
+
+**Psicologia**
+- seg/qua: 13:00–18:00;
+- duração: 50 min.
+
+**Fisioterapia**
+- ter/qui: 13:00–17:00;
+- duração: 40 min.
+
+Também foram criadas configurações de vigência exclusiva em **30/09/2026** para testar presença no mesmo dia sem interferir nas agendas permanentes de homologação.
+
+Uma duplicação interna do bloco de almoço da Assistência Social foi detectada durante a carga controlada e removida imediatamente. O estado final ficou com exatamente um bloco de alimentação por segunda, quarta e sexta.
+
+#### 3. Isolamento após criação das agendas
+Após as agendas existirem fisicamente:
+- conta real Gestor/Titular → **0 profissionais de homologação** na visão de Agenda da Coordenação;
+- `manuteste` em Administrativo Operacional → catálogo retornou somente os cinco profissionais de homologação;
+- grade da Agenda da `manuteste` → somente os cinco profissionais de homologação;
+- nenhuma agenda real foi alterada.
+
+#### 4. Agendamentos criados para homologação
+Foram criados agendamentos do paciente teste nas cinco especialidades:
+- Clínico Geral;
+- Nutrição;
+- Assistência Social;
+- Psicologia;
+- Fisioterapia.
+
+Foram mantidos agendamentos futuros para validar a visualização das agendas e criados atendimentos exclusivos do dia 30/09/2026 para validar presença.
+
+**Estado consolidado:** 15 agendamentos pertencentes ao paciente teste no período de homologação.
+
+#### 5. Presença
+A primeira tentativa confirmou que o contrato usa o valor técnico `confirmado` e não `confirmar`.
+
+A tentativa sobre consultas futuras foi corretamente recusada com:
+`Não é permitido confirmar presença, registrar atendimento ou falta antecipadamente.`
+
+Foram então utilizados os horários de homologação do próprio dia.
+
+Resultado:
+- Clínico Geral → presença confirmada;
+- Nutrição → presença confirmada;
+- Assistência Social → presença confirmada;
+- Psicologia → presença confirmada;
+- Fisioterapia → presença confirmada.
+
+Nenhuma regra de antecipação foi flexibilizada para fazer o teste passar.
+
+#### 6. Retorno pelo próprio profissional
+Testado o contrato `create_appointment_for_interface(..., 'retorno', ...)` no contexto profissional simulado.
+
+Resultado:
+- Assistência Social → retorno criado;
+- Nutrição → retorno criado;
+- Psicologia → retorno criado;
+- Fisioterapia → retorno criado;
+- Clínico Geral → primeira tentativa bloqueada corretamente por sobreposição com atendimento de Fisioterapia do mesmo paciente; novo horário sem conflito foi utilizado e o retorno foi criado.
+
+A proteção de sobreposição do paciente permaneceu intacta.
+
+#### 7. Nutrição — particularidade profissional
+No contexto **Homologação — Nutrição**:
+- `get_nutrition_context_for_interface` acessível;
+- plano alimentar salvo pelo contrato canônico;
+- dados usados identificados explicitamente como homologação;
+- documento de Plano Alimentar criado;
+- revisão do documento gerada com sucesso.
+
+Estado persistido:
+- 1 plano nutricional atual do paciente teste;
+- 1 documento nutricional de homologação.
+
+Não foi registrado caminho de PDF fictício no Storage.
+
+#### 8. Assistência Social — particularidades
+No contexto **Homologação — Assistência Social**:
+- acompanhamento social iniciado pelo agendamento canônico confirmado;
+- indicador de vulnerabilidade testado;
+- primeira entrada `alta` foi corretamente recusada porque o contrato aceita `verde`, `amarelo` ou `vermelho`;
+- indicador `amarelo` registrado com sucesso;
+- necessidade de Transporte reconhecida;
+- solicitação de Transporte criada e ligada a agendamento do paciente teste;
+- familiar/cuidador de homologação criado e vinculado com `psychological_interest='avaliacao'`.
+
+Estado persistido:
+- 1 acompanhamento social ativo;
+- 1 indicador social ativo;
+- 1 necessidade de Transporte ativa;
+- 1 solicitação de Transporte;
+- 1 vínculo familiar ativo.
+
+Todos vinculados ao paciente teste.
+
+#### 9. Clínico Geral — Renovação de Receita
+Fluxo testado ponta a ponta:
+
+**Administrativo Operacional simulado**
+- criou solicitação de Renovação de Receita direcionada ao Médico Clínico de homologação.
+
+**Clínico Geral simulado**
+- iniciou a etapa médica;
+- tentou registrar `renewed`.
+
+Foi encontrada regressão real:
+a função gerava o evento `medical_renewed`, porém a constraint `prescription_renewal_event_type_check` ainda aceitava somente o conjunto antigo:
+- `created`;
+- `medical_started`;
+- `doctor_reassigned`;
+- `medical_completed`;
+- `admin_completed`;
+- `cancelled`.
+
+A transação foi recusada, portanto nenhuma decisão parcial ficou gravada.
+
+**Correção cirúrgica:**
+a constraint passou a aceitar também:
+- `medical_renewed`;
+- `medical_needs_consult`.
+
+Depois da correção:
+- decisão `renewed` registrada;
+- retorno operacional registrado;
+- local de retirada registrado;
+- status passou para `awaiting_admin`.
+
+**Administrativo Operacional simulado**
+- confirmou orientação ao paciente teste;
+- concluiu a solicitação;
+- status final `completed`.
+
+Migration:
+`20260930173105_align_prescription_renewal_medical_event_types`
+
+Commit:
+`5f05af08261d5b5780b3f943728f46f0e3012dd4`.
+
+#### 10. Trava adicional da Renovação contra mistura de ambientes
+Durante a homologação foi reforçado que `prescription_renewal_requests` possui:
+- `patient_id`;
+- `target_doctor_id`.
+
+Foi aplicada a mesma trava estrutural do §28.100:
+- paciente teste ↔ somente médico de homologação;
+- paciente real ↔ somente médico real.
+
+Migration:
+`20260930172821_protect_prescription_renewal_homologation_environment`
+
+Commit:
+`29056d995f09a2f7e3ca1351306ba413e6308a5d`.
+
+#### 11. Clínico Geral — Odontologia
+No contexto do Médico Clínico de homologação:
+- capability `emitir_encaminhamento_odontologico_externo` confirmada;
+- encaminhamento odontológico externo criado para o paciente teste;
+- status `pending_approval`;
+- nenhum encaminhamento real foi criado ou alterado.
+
+#### 12. Encerramento por especialidade
+Foi executado `request_own_specialty_care_closure_for_interface` para:
+- Clínico Geral;
+- Nutrição;
+- Assistência Social;
+- Psicologia;
+- Fisioterapia.
+
+Todos retornaram `success=true` e `status='pendente'`.
+
+**Cada teste foi executado em transação com `ROLLBACK`.**
+
+Resultado físico final:
+- **0 encerramentos de homologação persistidos**;
+- ciclo do paciente teste permanece aberto;
+- nenhuma especialidade foi efetivamente encerrada.
+
+#### 13. Falha real descoberta — notificações de homologação aparecendo para produção
+A decisão médica da Receita gerou notificação com:
+- `entity_type='prescription_renewal_requests'`;
+- `entity_id` da solicitação teste;
+- `target_role='administrativo_operacional'`;
+- `patient_id=null`.
+
+Como `get_my_notifications_for_interface` filtrava apenas `notifications.patient_id`, uma conta real administrativa conseguiu visualizar essa notificação de homologação.
+
+**Causa comprovada:** notificação ligada ao paciente apenas indiretamente pelo `entity_type/entity_id`.
+
+**Correção:**
+criado helper privado `private.capo_notification_patient_id(...)`, capaz de resolver o paciente a partir de entidades operacionais conhecidas.
+
+`get_my_notifications_for_interface` passou a:
+- resolver o paciente efetivo da notificação;
+- aplicar `capo_patient_visible_in_current_context`;
+- incluir o papel simulado do `homologation_contexts` na lista de papéis da `manuteste`;
+- impedir que notificações role-based sem paciente resolvível vazem para a conta de homologação, salvo notificações técnicas ou explicitamente endereçadas à própria conta.
+
+**Validação final:**
+- conta real Gestor/Titular → notificação da Receita teste **não retornada**;
+- `manuteste` em Administrativo Operacional → mesma notificação **retornada corretamente**.
+
+Migration:
+`20260930173512_isolate_homologation_notifications_by_patient_context`
+
+Commit:
+`7e0c54abb044710fc4c774db89ab5a232044ab62`.
+
+#### 14. Agenda real após criação dos dados de teste
+Consulta real da Agenda no período 30/09–10/10:
+- nenhum agendamento do paciente teste retornado;
+- nenhum profissional “Homologação — ...” retornado.
+
+#### 15. Relatórios reais após criação dos dados de teste
+No mesmo período existem fisicamente:
+- **15 agendamentos de homologação**.
+
+O Relatório Gerencial real retornou:
+- `homologation_data_excluded=true`;
+- `agenda.total_period=2`.
+
+A contagem física independente de produção no mesmo período também retornou:
+- **2 agendamentos de produção**.
+
+Portanto os 15 agendamentos de homologação ficaram fora da métrica oficial.
+
+Também existem fisicamente na homologação:
+- 1 Renovação de Receita;
+- 1 encaminhamento odontológico;
+- 1 solicitação de Transporte;
+- 1 acompanhamento social;
+- 1 plano/documento nutricional;
+- 1 familiar ativo.
+
+O Relatório real retornou **zero** para esses eventos de homologação nos respectivos blocos, comprovando a exclusão.
+
+#### 16. Estado físico final da homologação
+- configurações ativas de agenda de homologação: 12;
+- agendamentos do paciente teste: 15;
+- encerramentos persistidos: 0;
+- plano nutricional atual: 1;
+- acompanhamento social ativo: 1;
+- solicitação de Transporte: 1;
+- Renovação de Receita: 1;
+- encaminhamento: 1;
+- vínculo familiar ativo: 1.
+
+#### 17. Contexto final da conta `manuteste`
+Após finalizar a preparação automatizada foi executado:
+`clear_homologation_context_for_interface(...)`.
+
+Estado confirmado:
+- `primary_code='administrador_tecnico'`;
+- `primary_name='Administrador Técnico'`;
+- homologation context desabilitado.
+
+Portanto o próximo login inicia normalmente em **TI / Manutenção**. A troca para os perfis de homologação continua disponível pelos atalhos já corrigidos.
+
+#### 18. Security Advisor
+Executado novamente após as migrations.
+
+Os novos helpers de isolamento permanecem no schema `private` e sem EXECUTE direto para `public`, `anon` ou `authenticated`.
+
+Persistem avisos anteriores do projeto:
+- 5 funções públicas `SECURITY DEFINER` executáveis por anon;
+- conjunto amplo de RPCs `SECURITY DEFINER` executáveis por authenticated;
+- Leaked Password Protection desativado.
+
+Esses avisos não foram introduzidos pelos dados de homologação desta etapa e não foram alterados em massa para evitar regressão fora do escopo.
+
+**Estado final:** **AMBIENTE DE HOMOLOGAÇÃO OPERACIONAL / AGENDAS TESTE CRIADAS / CINCO PERFIS TESTADOS / PARTICULARIDADES DE CLÍNICO, NUTRIÇÃO E SOCIAL EXECUTADAS / RETORNOS TESTADOS / ENCERRAMENTOS TESTADOS COM ROLLBACK / DUAS REGRESSÕES REAIS CORRIGIDAS (EVENTOS DA RECEITA E NOTIFICAÇÕES) / PRODUÇÃO ISOLADA / RELATÓRIOS REAIS SEM DADOS DE HOMOLOGAÇÃO / MANUTESTE RESTAURADA AO CONTEXTO TI/MANUTENÇÃO**.
