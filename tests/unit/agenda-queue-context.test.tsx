@@ -377,3 +377,60 @@ it('abre o cancelamento central ao clicar em Cancelar na Home do Gestor', async 
   expect(screen.getByRole('button', { name: 'Confirmar cancelamento' })).toBeDisabled()
 })
 
+
+
+it('carrega especialidades e profissionais no Administrativo Operacional simulado da homologação', async () => {
+  rpc.getSchedulingCatalog.mockResolvedValue({
+    status: 'success',
+    data: [
+      {
+        specialty_id: 'clinical-id',
+        specialty_name: 'Clínica Geral',
+        professional_id: 'clinical-professional-id',
+        professional_name: 'Homologação — Médico Clínico Geral',
+      },
+      {
+        specialty_id: 'nutrition-id',
+        specialty_name: 'Nutrição',
+        professional_id: 'nutrition-professional-id',
+        professional_name: 'Homologação — Nutrição',
+      },
+    ],
+  })
+
+  const context = {
+    roles: [{ code: 'administrador_tecnico', name: 'Administrador Técnico' }],
+    primary_context: {
+      code: 'administrativo_operacional',
+      name: 'Administrativo Operacional',
+    },
+    professional_id: null,
+    is_homologation_account: true,
+    homologation_context: {
+      enabled: true,
+      role_code: 'administrativo_operacional',
+      role_name: 'Administrativo Operacional',
+      test_patient_id: 'test-patient-id',
+    },
+  } as unknown as AccessContext
+
+  const user = userEvent.setup()
+  render(
+    <MemoryRouter>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+      />
+    </MemoryRouter>,
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Agendar' }))
+
+  expect(await screen.findByRole('option', { name: 'Clínica Geral' })).toBeVisible()
+  expect(screen.getByRole('option', { name: 'Nutrição' })).toBeVisible()
+
+  await user.selectOptions(screen.getByLabelText('Especialidade *'), 'nutrition-id')
+  expect(
+    screen.getByRole('option', { name: 'Homologação — Nutrição' }),
+  ).toBeVisible()
+})
