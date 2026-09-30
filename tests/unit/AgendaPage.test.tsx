@@ -200,8 +200,8 @@ describe('AgendaPage', () => {
     )
   })
 
-  it('usa a visão geral de agenda para o Gestor sem misturar com o contexto assistencial', async () => {
-    const loadAgenda = vi.fn().mockResolvedValue({ status: 'empty' })
+  it('usa a visão geral de agenda para o Gestor e expõe Confirmar/Falta sem contexto assistencial', async () => {
+    const loadAgenda = vi.fn().mockResolvedValue({ status: 'success', data: [appointment] })
     const gestorContext: AccessContext = {
       ...accessContext,
       professional_id: null,
@@ -236,6 +236,8 @@ describe('AgendaPage', () => {
     expect(screen.getByRole('tab', { name: 'Dia' })).toBeVisible()
     expect(screen.getByRole('tab', { name: 'Semana' })).toBeVisible()
     expect(screen.getByRole('tab', { name: 'Mês' })).toBeVisible()
+    expect(screen.getByRole('button', { name: /Confirmar/ })).toBeVisible()
+    expect(screen.getByRole('button', { name: /Falta/ })).toBeVisible()
     await waitFor(() =>
       expect(loadAgenda).toHaveBeenLastCalledWith(
         '2026-09-17',
