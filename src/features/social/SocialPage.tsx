@@ -144,16 +144,18 @@ export function SocialPage({
 
   return (
     <section className={mode === 'home' ? 'social-page home-mobile-standard' : 'social-page'} aria-labelledby="social-title">
-      <header className="social-header">
-        <div>
-          <p className="eyebrow">Assistência Social</p>
-          <h1 id="social-title">Acompanhamento Social no Serviço CAPO</h1>
-          <p>
-            Visão operacional autorizada, sem conteúdo profissional confidencial
-            e sem dados demonstrativos.
-          </p>
-        </div>
-      </header>
+      {mode !== 'home' && (
+        <header className="social-header">
+          <div>
+            <p className="eyebrow">Assistência Social</p>
+            <h1 id="social-title">Acompanhamento Social no Serviço CAPO</h1>
+            <p>
+              Visão operacional autorizada, sem conteúdo profissional confidencial
+              e sem dados demonstrativos.
+            </p>
+          </div>
+        </header>
+      )}
 
       {mode === 'home' && (
         <>
