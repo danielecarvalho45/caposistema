@@ -4699,3 +4699,33 @@ Portanto, a policy final reconhece a conta Gestor/Titular como autorizada a grav
 **Commits:** `57ad402040ae69faa78c286e2b1e5789236b1318`, `53d636dacf81a010092d6bdd8923582f38b16076`, `5e91f967227f2f4f646c7203bc88ab3508cb1079`.
 
 **Estado:** **CAUSA RAIZ COMPROVADA / STORAGE CORRIGIDO SEM ABRIR SELECT DIRETO NAS TABELAS / AUTORIZAÇÃO DA CONTA DANIELE VALIDADA PARA INSERT E READ DO PDF / SOLICITAÇÃO DA ELIANA PRESERVADA E PRONTA PARA NOVA TENTATIVA DE GERAR PDF**.
+
+
+### 28.96 AUTENTICAÇÃO — SESSÃO NÃO DEVE SER ENCERRADA AO RECARREGAR A PÁGINA (30/09/2026)
+
+**Regra funcional reafirmada:**
+- recarregar/F5 na mesma aba **não deve exigir novo login**;
+- usar o botão **Sair** deve encerrar a sessão e voltar ao login;
+- fechar a aba do navegador deve exigir novo login ao abrir nova aba;
+- sessão expirada/inválida deve voltar ao login;
+- inatividade prolongada deve encerrar a sessão, porém o tempo de inatividade ainda não possui regra física configurada no código atual e não foi inventado nesta manutenção.
+
+**Causa raiz comprovada:** `src/lib/supabase/client.ts` estava configurado com `persistSession: false`, inclusive com comentário explícito determinando novo login após recarregar. Isso contradizia a regra aprovada.
+
+**Correção cirúrgica:** o cliente Supabase passou a utilizar:
+- `persistSession: true`;
+- `storage: window.sessionStorage`;
+- `autoRefreshToken: true`;
+- `detectSessionInUrl: true`.
+
+Com isso, a sessão permanece disponível durante recargas na mesma aba e é descartada pelo navegador ao encerrar a aba, sem usar `localStorage`.
+
+**Logout:** o fluxo existente em `AccessProvider.logout()` permanece chamando `authApi.signOut()` e retornando a interface ao login. Nenhuma alteração foi necessária nesse ponto.
+
+**Sessão expirada:** o fluxo existente continua detectando erros de sessão/JWT/refresh token, executa `signOut('local')` e retorna ao login.
+
+**Inatividade:** não foi encontrado mecanismo de idle timeout no código atual. Como nenhuma duração objetiva estava registrada nos documentos consultados nesta vistoria, nenhuma duração foi criada por interpretação própria.
+
+**Commit:** `eb30a0f55ea788ddd5bf37291936f50117b66169`.
+
+**Estado:** **RELOAD CORRIGIDO PARA MANTER SESSÃO / FECHAR ABA CONTINUA SEM PERSISTÊNCIA ENTRE ABAS / BOTÃO SAIR PRESERVADO / EXPIRAÇÃO DE SESSÃO PRESERVADA / TIMEOUT POR INATIVIDADE AINDA NÃO IMPLEMENTADO POR AUSÊNCIA DE DURAÇÃO CANÔNICA**.
