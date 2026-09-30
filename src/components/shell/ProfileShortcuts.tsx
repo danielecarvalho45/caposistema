@@ -213,10 +213,21 @@ export function ProfileShortcuts({
       }
     }
 
+    const currentTestPatientId =
+      accessContext.homologation_context?.test_patient_id ?? null
+    const testPatients = homologationOptions?.test_patients ?? []
     const testPatient =
-      homologationOptions?.test_patients.find(
-        (patient) => patient.patient_number === 'TESTE-CAPO-0001',
-      ) ?? homologationOptions?.test_patients[0] ?? null
+      testPatients.find(
+        (patient) => patient.patient_id === currentTestPatientId,
+      ) ??
+      [...testPatients].sort((left, right) =>
+        (right.patient_number ?? '').localeCompare(
+          left.patient_number ?? '',
+          'pt-BR',
+          { numeric: true },
+        ),
+      )[0] ??
+      null
 
     if (!testPatient) {
       setSwitchingHomologation(false)
