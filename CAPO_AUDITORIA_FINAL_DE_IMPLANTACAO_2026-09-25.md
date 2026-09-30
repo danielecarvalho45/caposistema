@@ -4779,3 +4779,53 @@ Foi realizado backfill somente de inconsistências já existentes: ciclos encerr
 **Validação publicada:** pendente de build/deploy válido e emissão autenticada de novos documentos no ambiente oficial. A renderização local não substitui homologação publicada.
 
 **Estado:** **TIMBRE SUBSTITUÍDO NO CÓDIGO / TESTES DIRECIONADOS E INSPEÇÃO VISUAL DO PDF PASS / PUBLICAÇÃO FUNCIONAL BLOQUEADA POR ERRO PREEXISTENTE DE SINTAXE EM NUTRIÇÃO**.
+
+
+### 28.98 HOMOLOGAÇÃO CONTROLADA — CONTA `manuteste` + PACIENTE TESTE OFICIAL (30/09/2026)
+
+**Objetivo:** permitir percorrer as telas dos perfis disponíveis pelo login técnico `manuteste` usando exclusivamente o paciente oficial de homologação, sem expor ou alterar pacientes reais.
+
+**Conta física confirmada:**
+- username: `manuteste`;
+- ativa;
+- `is_homologation_account = true`;
+- papel real/primário: `administrador_tecnico`;
+- termo vigente aceito.
+
+**Paciente oficial confirmado:**
+- `PACIENTE SIMULADO CAPO — HOMOLOGAÇÃO`;
+- Nº CAPO `TESTE-CAPO-0001`;
+- CMS `TESTE-CMS-CAPO-0001`;
+- `is_test = true`;
+- status ativo.
+
+**Perfis profissionais de homologação físicos confirmados:**
+- Homologação — Médico Clínico Geral / Clínica Geral;
+- Homologação — Nutrição / Nutrição;
+- Homologação — Assistência Social / Assistência Social;
+- Homologação — Psicologia / Psicologia;
+- Homologação — Fisioterapia / Fisioterapia.
+
+**Regressão encontrada no seletor de perfil:** o backend `get_homologation_options_for_interface` já retornava `test_patients`, porém `parseHomologationOptions` descartava esse campo e `ProfileShortcuts` enviava `testPatientId: null` ao trocar de perfil. A função `capo_patient_visible_in_current_context` exige que o paciente de teste esteja explicitamente vinculado ao contexto de homologação. Portanto, os perfis simulados poderiam abrir sem acesso ao paciente oficial e produzir falsos bloqueios.
+
+**Correção aplicada:**
+- `HomologationOptions` passou a incluir `test_patients`;
+- parser passou a preservar `patient_id`, nome, Nº CAPO, CMS e rótulo de teste;
+- `ProfileShortcuts` seleciona prioritariamente `TESTE-CAPO-0001` e, na troca de perfil, envia o `testPatientId` correspondente;
+- se nenhum paciente de homologação existir, a troca é bloqueada com mensagem explícita, em vez de abrir um contexto incompleto.
+
+**Commits:**
+- `46fecd7bcaaf912642c13888ad23c9d537a12fb7` — parser/tipo do paciente de homologação;
+- `d3436b959a8da3be9373c6d083b5c105f1a6c8c3` — vínculo automático do paciente teste na troca de perfil;
+- `58d3b6a2a5a585ed81a458bc9c29bc727d8378d6` — teste ajustado para proteger o vínculo do paciente teste.
+
+**Validação de contexto com ROLLBACK:** Administrativo Operacional, Coordenador, Clínico Geral, Nutrição, Assistência Social, Psicologia e Fisioterapia retornaram o contexto esperado com o mesmo `test_patient_id` e nome do paciente oficial.
+
+**Contexto atual preparado para homologação manual:** `manuteste` está no perfil **Administrativo Operacional**, com o paciente oficial vinculado.
+
+**Primeira validação funcional:**
+- Home Administrativo Operacional: Agenda do dia, Pendências, Faltosos e Aniversariantes respondem sem erro;
+- resultados atuais estão vazios porque o paciente teste ainda não possui movimentações nesses fluxos;
+- tela Pacientes / busca por `TESTE-CAPO-0001`: paciente oficial encontrado corretamente e isoladamente.
+
+**Estado:** **AMBIENTE DE HOMOLOGAÇÃO PREPARADO / PACIENTE TESTE VINCULADO AOS PERFIS SIMULADOS / ADMINISTRATIVO OPERACIONAL INICIADO / PRONTO PARA PERCORRER OS MÓDULOS E DEPOIS OS DEMAIS PERFIS**.
