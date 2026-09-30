@@ -194,13 +194,19 @@ export function AssistentialPage({
 
   return (
     <section className="assistential-page home-mobile-standard" aria-labelledby="assistential-title">
-      <section id="assistential-agenda" aria-labelledby="assistential-agenda-title">
-        <h3
-          id="assistential-agenda-title"
-          className="assistential-section-title"
-        >
-          Atendimentos de hoje
-        </h3>
+      <nav className="assistential-card home-profile-standard" aria-label="Acessos rápidos do profissional">
+        <h2 id="assistential-title">Acessos rápidos</h2>
+        <div className="home-profile-grid">
+          <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true">⏱</span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
+          <a className="home-profile-card quick-blue" href="#assistential-patients"><span className="home-profile-icon" aria-hidden="true">♙</span><strong>Pacientes</strong><span>Consultar pacientes vinculados</span></a>
+          {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
+          {canAccessAppRoute(accessContext, '/encaminhamentos') && accessContext.capabilities.includes('encaminhamento_interprofissional') && <Link className="home-profile-card quick-mint" to="/encaminhamentos"><span className="home-profile-icon" aria-hidden="true">↗</span><strong>Encaminhamentos</strong><span>Consultar e encaminhar</span></Link>}
+          {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/receita') && <Link className="home-profile-card quick-yellow" to="/receita"><span className="home-profile-icon" aria-hidden="true">▰</span><strong>Renovação de Receita</strong><span>Solicitações recebidas</span></Link>}
+          <a className="home-profile-card quick-violet" href="#assistential-summary"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Resumo operacional</strong><span>Consultar a própria atuação</span></a>
+        </div>
+      </nav>
+
+      <section id="assistential-agenda">
         {specialtiesState.status === 'loading' && (
           <div className="assistential-card" aria-live="polite">
             Carregando especialidades…
@@ -238,18 +244,6 @@ export function AssistentialPage({
           embeddedHome
         />
       </section>
-
-      <nav className="assistential-card home-profile-standard" aria-label="Acessos rápidos do profissional">
-        <h2 id="assistential-title">Acessos rápidos</h2>
-        <div className="home-profile-grid">
-          <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true">⏱</span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
-          <a className="home-profile-card quick-blue" href="#assistential-patients"><span className="home-profile-icon" aria-hidden="true">♙</span><strong>Pacientes</strong><span>Consultar pacientes vinculados</span></a>
-          {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
-          {canAccessAppRoute(accessContext, '/encaminhamentos') && accessContext.capabilities.includes('encaminhamento_interprofissional') && <Link className="home-profile-card quick-mint" to="/encaminhamentos"><span className="home-profile-icon" aria-hidden="true">↗</span><strong>Encaminhamentos</strong><span>Consultar e encaminhar</span></Link>}
-          {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/receita') && <Link className="home-profile-card quick-yellow" to="/receita"><span className="home-profile-icon" aria-hidden="true">▰</span><strong>Renovação de Receita</strong><span>Solicitações recebidas</span></Link>}
-          <a className="home-profile-card quick-violet" href="#assistential-summary"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Resumo operacional</strong><span>Consultar a própria atuação</span></a>
-        </div>
-      </nav>
 
       <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp />
 
