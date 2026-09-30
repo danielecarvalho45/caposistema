@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   getRpcService,
   loadingState,
@@ -12,6 +12,7 @@ import {
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { getNotificationsService } from '../notifications/notifications-integration'
 import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
@@ -746,6 +747,7 @@ export function AgendaPage({
     useState<AsyncState<readonly AgendaAppointment[]>>(loadingState)
   const [scheduleGrid, setScheduleGrid] =
     useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
+  const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
   const [specialtyResult, setSpecialtyResult] = useState<{ agenda: AsyncState<readonly AgendaAppointment[]>; byPatient: Record<string, AsyncState<readonly { specialty_id: string; specialty_name: string }[]>> } | null>(null)
   const requestSequence = useRef(0)
   const automaticBounds = agendaBounds(anchorDate, view)
@@ -772,6 +774,34 @@ export function AgendaPage({
   const professionalId = isProfessional
     ? accessContext.professional_id
     : selectedProfessionalId || null
+  const periodNoShows =
+    state.status === 'success'
+      ? state.data.filter((appointment) => appointment.attendance_status === 'faltou').length
+      : state.status === 'empty'
+        ? 0
+        : null
+
+  useEffect(() => {
+    if (!embeddedHome || !isProfessional) {
+      setUnreadNotifications(null)
+      return
+    }
+    let active = true
+    void getNotificationsService().getNotifications(true, 1, 0).then((nextState) => {
+      if (!active) return
+      setUnreadNotifications(
+        nextState.status === 'success'
+          ? (nextState.data[0]?.total_count ?? 0)
+          : nextState.status === 'empty'
+            ? 0
+            : null,
+      )
+    })
+    return () => {
+      active = false
+    }
+  }, [embeddedHome, isProfessional])
+
   const effectiveSpecialties = accessContext.specialties ?? []
   const contextHasSingleSpecialty = effectiveSpecialties.length === 1
   const shouldShowSpecialty = showSpecialty && !contextHasSingleSpecialty
@@ -2018,6 +2048,20 @@ export function AgendaPage({
             )}
         </div>
       </div>
+      {embeddedHome && isProfessional && (
+        <aside className="agenda-home-side" aria-label="Indicadores da agenda">
+          <Link className="agenda-home-indicator agenda-home-indicator--notifications" to="/notificacoes">
+            <span>Notificações</span>
+            <strong>{unreadNotifications ?? '—'}</strong>
+            <small>Avisos não lidos</small>
+          </Link>
+          <article className="agenda-home-indicator agenda-home-indicator--no-shows">
+            <span>Faltosos</span>
+            <strong>{periodNoShows ?? '—'}</strong>
+            <small>Encaminhados ao Administrativo</small>
+          </article>
+        </aside>
+      )}
     </section>
   )
 }
