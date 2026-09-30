@@ -487,11 +487,18 @@ it('confirma pela grade e abre o fluxo do paciente mesmo quando a lista paralela
     </MemoryRouter>,
   )
 
-  const confirm = await screen.findByRole('button', {
+  const patientCell = (await screen.findByText('Paciente teste visível')).closest('td')
+  expect(patientCell).not.toBeNull()
+  const confirm = within(patientCell as HTMLElement).getByRole('button', {
     name: 'Confirmar consulta de Paciente teste visível',
+  })
+  const absence = within(patientCell as HTMLElement).getByRole('button', {
+    name: 'Marcar falta de Paciente teste visível',
   })
   expect(confirm).toHaveClass('agenda-attendance-confirm')
   expect(confirm).toHaveTextContent('Confirmar')
+  expect(absence).toHaveClass('agenda-attendance-absence')
+  expect(absence).toHaveTextContent('Falta')
   await user.click(confirm)
 
   expect(rpc.updateAppointmentAttendance).toHaveBeenCalledWith({
