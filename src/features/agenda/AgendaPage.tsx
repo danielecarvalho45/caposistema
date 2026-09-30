@@ -150,6 +150,7 @@ function AppointmentTable({
   onCancel,
   busyAppointmentId,
   patientSpecialties,
+  embeddedHome,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
   includeDate?: boolean
@@ -159,6 +160,7 @@ function AppointmentTable({
   onCancel?: (appointmentId: string) => void
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
+  embeddedHome?: boolean
 }>) {
   return (
     <div className="assistential-table-wrap">
@@ -327,7 +329,36 @@ function HomeScheduleGrid({
                 <tr key={`${slot.professional_id}:${slot.slot_start}`} className={`is-${slot.slot_status}`}>
                   <td data-label="Horário"><strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong></td>
                   <td data-label="Paciente">
-                    <strong>{patientName}</strong>
+                    <div className="agenda-home-patient-line">
+                      <strong>{patientName}</strong>
+                      {embeddedHome &&
+                        slot.slot_status === 'agendado' &&
+                        patientIsVisible &&
+                        slot.appointment_id &&
+                        onAttendance &&
+                        (!appointment || appointment.attendance_status === 'agendado') && (
+                          <span className="agenda-home-patient-actions">
+                            <button
+                              type="button"
+                              className="agenda-attendance-confirm"
+                              disabled={busyAppointmentId === slot.appointment_id}
+                              onClick={() => onAttendance(slot.appointment_id!, 'confirmado')}
+                              aria-label={`Confirmar consulta de ${patientName}`}
+                            >
+                              Confirmar
+                            </button>
+                            <button
+                              type="button"
+                              className="agenda-attendance-absence"
+                              disabled={busyAppointmentId === slot.appointment_id}
+                              onClick={() => onAttendance(slot.appointment_id!, 'faltou')}
+                              aria-label={`Marcar falta de ${patientName}`}
+                            >
+                              Falta
+                            </button>
+                          </span>
+                        )}
+                    </div>
                   </td>
                   <td data-label="Especialidades">
                     {patientIsVisible && visiblePatientId && patientSpecialties?.[visiblePatientId]
@@ -342,7 +373,8 @@ function HomeScheduleGrid({
                         Agendar
                       </button>
                     )}
-                    {slot.slot_status === 'agendado' &&
+                    {!embeddedHome &&
+                      slot.slot_status === 'agendado' &&
                       patientIsVisible &&
                       slot.appointment_id &&
                       onAttendance &&
@@ -2016,6 +2048,7 @@ export function AgendaPage({
               }
               busyAppointmentId={busyAppointmentId}
               patientSpecialties={patientSpecialties}
+              embeddedHome={embeddedHome}
             />
           )}
 
