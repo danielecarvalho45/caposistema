@@ -150,8 +150,12 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
   )
 
   expect(await screen.findByDisplayValue('Paciente já cadastrado')).toBeVisible()
-  const scheduleGrid = await screen.findByLabelText('Grade efetiva da agenda')
-  const freeSlotButton = await within(scheduleGrid).findByRole('button', { name: 'Agendar' })
+  const scheduleTable = await screen.findByRole('table')
+  expect(within(scheduleTable).getByRole('columnheader', { name: 'Horário' })).toBeVisible()
+  expect(within(scheduleTable).getByRole('columnheader', { name: 'Paciente' })).toBeVisible()
+  expect(within(scheduleTable).getByRole('columnheader', { name: 'Especialidades' })).toBeVisible()
+  expect(within(scheduleTable).getByRole('columnheader', { name: 'Ações' })).toBeVisible()
+  const freeSlotButton = await within(scheduleTable).findByRole('button', { name: 'Agendar' })
   await user.click(freeSlotButton)
 
   await user.selectOptions(screen.getByLabelText('Tipo *'), 'Primeiro atendimento na especialidade')
