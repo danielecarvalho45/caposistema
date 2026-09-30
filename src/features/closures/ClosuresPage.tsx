@@ -76,6 +76,11 @@ export function ClosuresPage({
     Boolean(accessContext.professional_id) && hasRole('profissional')
 
   const closureId = selected ? textValue(selected, 'closure_id', 'id') : ''
+  const canRegisterProfessionalDecision =
+    hasRole('administrador') &&
+    Boolean(selected) &&
+    textValue(selected!, 'status') === 'pendente' &&
+    textValue(selected!, 'professional_id') !== '—'
 
   useEffect(() => {
     const stateValue =
@@ -385,7 +390,8 @@ export function ClosuresPage({
               </dl>
 
               {(booleanValue(selected, 'can_close') ||
-                booleanValue(selected, 'can_reopen')) && (
+                booleanValue(selected, 'can_reopen') ||
+                canRegisterProfessionalDecision) && (
                 <label>
                   Motivo / observação
                   <textarea
@@ -437,6 +443,25 @@ export function ClosuresPage({
                     }}
                   >
                     Concluir meu encerramento
+                  </button>
+                )}
+
+                {canRegisterProfessionalDecision && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      if (actionReason.trim().length < 5) {
+                        setFeedback('Informe o registro administrativo da decisão profissional com pelo menos cinco caracteres.')
+                        return
+                      }
+                      void run(
+                        () => integration.registerAdministrativeDecision(closureId, actionReason.trim()),
+                        'Decisão profissional registrada administrativamente com histórico preservado.',
+                      )
+                    }}
+                  >
+                    Registrar decisão profissional
                   </button>
                 )}
 
