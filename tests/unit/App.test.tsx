@@ -528,7 +528,15 @@ describe('App', () => {
     expect(
       screen.queryByRole('heading', { name: 'Minha atuação assistencial' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Minha agenda' })).toBeVisible()
+    expect(
+      screen.queryByRole('heading', { name: 'Atendimentos de hoje' }),
+    ).not.toBeInTheDocument()
+    const quickAccess = screen.getByRole('heading', { name: 'Acessos rápidos' })
+    const agenda = screen.getByRole('heading', { name: 'Minha agenda' })
+    expect(
+      quickAccess.compareDocumentPosition(agenda) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(agenda).toBeVisible()
     expect(
       await screen.findByText('Nenhum agendamento encontrado no período.'),
     ).toBeVisible()
