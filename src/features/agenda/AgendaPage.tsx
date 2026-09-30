@@ -332,7 +332,11 @@ function HomeScheduleGrid({
                       {slot.slot_status === 'bloqueado' && slot.block_type && (
                         <small>{agendaBlockLabel(slot.block_type)}</small>
                       )}
-                      {slot.slot_status === 'agendado' && patientIsVisible && slot.appointment_id && onAttendance && (
+                      {slot.slot_status === 'agendado' &&
+                        patientIsVisible &&
+                        slot.appointment_id &&
+                        onAttendance &&
+                        (!appointment || appointment.attendance_status === 'agendado') && (
                         <div className="agenda-week-home-actions">
                           <button
                             type="button"
