@@ -605,7 +605,16 @@ export function AgendaPage({
   const automaticBounds = agendaBounds(anchorDate, view)
   const startDate = embeddedHome ? automaticBounds.startDate : consultationStartDate
   const endDate = embeddedHome ? automaticBounds.endDate : consultationEndDate
-  const roleCodes = accessContext.roles.map((role) => role.code)
+  const roleCodes = [
+    ...new Set([
+      ...accessContext.roles.map((role) => role.code),
+      ...(accessContext.is_homologation_account &&
+      accessContext.homologation_context?.enabled &&
+      accessContext.primary_context.code
+        ? [accessContext.primary_context.code]
+        : []),
+    ]),
+  ]
   const isProfessional =
     Boolean(accessContext.professional_id) &&
     roleCodes.includes('profissional') &&
