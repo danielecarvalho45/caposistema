@@ -610,6 +610,7 @@ export function AgendaPage({
     Boolean(accessContext.professional_id) &&
     roleCodes.includes('profissional') &&
     accessContext.primary_context.code === 'profissional'
+  const canRegisterAttendance = isProfessional || roleCodes.includes('administrador')
   const canAccess = roleCodes.some((role) =>
     ['administrador', 'administrativo_operacional', 'coordenador', 'profissional'].includes(role),
   )
@@ -1785,7 +1786,7 @@ export function AgendaPage({
               endDate={endDate}
               view={view}
               appointments={state.status === 'success' ? state.data : []}
-              onAttendance={isProfessional ? updateAttendance : undefined}
+              onAttendance={canRegisterAttendance ? updateAttendance : undefined}
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
               onCancel={prepareCancellation}
               onSchedule={
@@ -1822,6 +1823,7 @@ export function AgendaPage({
                 endDate={endDate}
                 view={view}
                 showSpecialty={shouldShowSpecialty}
+                onAttendance={canRegisterAttendance ? updateAttendance : undefined}
                 onCancel={prepareCancellation}
                 busyAppointmentId={busyAppointmentId}
               />
