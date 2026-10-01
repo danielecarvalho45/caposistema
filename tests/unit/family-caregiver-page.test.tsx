@@ -16,6 +16,42 @@ function renderPage(ui: ReactElement, initialEntries: Parameters<typeof MemoryRo
   return render(<MemoryRouter initialEntries={initialEntries}>{ui}</MemoryRouter>)
 }
 
+
+it('exibe os campos do familiar cuidador em português', async () => {
+  const service = {
+    searchPatients: vi.fn().mockResolvedValue({ status: 'empty' }),
+    getFamilyContext: vi.fn().mockResolvedValue({
+      status: 'success',
+      data: {
+        can_operate: true,
+        can_admin_correct: true,
+        active_link: null,
+        history: [],
+      },
+    }),
+    searchFamilyMembers: vi.fn().mockResolvedValue({ status: 'empty' }),
+    createFamilyLink: vi.fn(),
+    replaceFamilyLink: vi.fn(),
+    closeFamilyLink: vi.fn(),
+    updateFamilyLinkOperational: vi.fn(),
+    createPsychologyRequest: vi.fn(),
+  } as unknown as FamilyCaregiverService
+
+  renderPage(
+    <FamilyCaregiverPage accessContext={accessContext} service={service} />,
+    [{
+      pathname: '/familiar-cuidador',
+      state: { patientId: 'patient-1', patientName: 'Paciente Real' },
+    }],
+  )
+
+  expect(await screen.findByLabelText('Telefone')).toBeVisible()
+  expect(screen.getByLabelText('E-mail')).toBeVisible()
+  expect(screen.getByLabelText('Endereço')).toBeVisible()
+  expect(screen.queryByLabelText('phone')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('address')).not.toBeInTheDocument()
+})
+
 describe('FamilyCaregiverPage', () => {
   it('exibe estado vazio sem dados fictícios antes da seleção de paciente', () => {
     renderPage(<FamilyCaregiverPage accessContext={accessContext} />)
