@@ -12,6 +12,7 @@ import {
 import type { AccessContext } from '../../types/access'
 import { ProfileDashboard } from './ProfileDashboard'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { TeamDayAgendaPanel } from './TeamDayAgendaPanel'
 import './home-page.css'
 import '../../styles/quick-access.css'
 
@@ -46,32 +47,6 @@ function formatDateOnly(value: string) {
   const [year, month, day] = value.split('-').map(Number)
   if (!year || !month || !day) return value
   return new Intl.DateTimeFormat('pt-BR').format(new Date(year, month - 1, day))
-}
-
-function agendaBlockLabel(value: string | null) {
-  switch (value) {
-    case 'intervalo': return '☕ Intervalo / Café'
-    case 'alimentacao': return '🍽️ Almoço'
-    case 'estudo_caso': return '📚 Estudo de caso'
-    case 'atendimento_online': return '💻 Atendimentos online'
-    case 'rotina_administrativa': return '📋 Rotinas administrativas'
-    case 'reuniao': return '👥 Reunião'
-    case 'relatorio': return '📊 Relatório'
-    case 'atividade': return '📋 Atividade interna'
-    case 'bloqueio': return '⛔ Bloqueio'
-    default: return value ?? 'Bloqueado'
-  }
-}
-
-function slotTime(value: string) {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'America/Sao_Paulo',
-      }).format(date)
 }
 
 export function HomePage({
@@ -144,71 +119,8 @@ export function HomePage({
 
       {isAdministrativeOperational && (
         <section className="operational-dashboard-grid" aria-label="Rotina operacional do dia">
-          <article className="gestor-panel operational-agenda-panel">
-            <header className="gestor-panel-head">
-              <div>
-                <p className="eyebrow">Hoje</p>
-                <h2>Agenda do dia</h2>
-              </div>
-            </header>
-            {operationalAgenda.status === 'loading' && <p>Carregando agendas dos profissionais…</p>}
-            {operationalAgenda.status === 'error' && (
-              <p role="alert">Não foi possível carregar as agendas dos profissionais.</p>
-            )}
-            {(operationalAgenda.status === 'empty' ||
-              (operationalAgenda.status === 'success' && operationalAgenda.data.length === 0)) && (
-              <div className="gestor-empty-state">Nenhum horário cadastrado para os profissionais neste dia.</div>
-            )}
-            {operationalAgenda.status === 'success' && operationalAgenda.data.length > 0 && (
-              <div className="operational-agenda-slot-list" aria-label="Agendas dos profissionais">
-                {operationalAgenda.data.map((slot) => (
-                  <div
-                    className={`operational-agenda-slot is-${slot.slot_status}`}
-                    key={`${slot.professional_id}:${slot.slot_start}`}
-                  >
-                    <strong>{slotTime(slot.slot_start)}</strong>
-                    <span className="operational-agenda-professional">{slot.professional_name}</span>
-                    <span className="operational-agenda-status">
-                      {slot.slot_status === 'livre'
-                        ? 'Livre'
-                        : slot.slot_status === 'bloqueado'
-                          ? agendaBlockLabel(slot.block_type)
-                          : slot.patient_name ?? 'Horário ocupado'}
-                    </span>
-                    {slot.slot_status === 'livre' && (
-                      <Link
-                        className="operational-agenda-action"
-                        to="/agenda"
-                        state={{
-                          origin: 'home_free_slot',
-                          professionalId: slot.professional_id,
-                          slotDate: slot.slot_date,
-                          slotStart: slot.slot_start,
-                        }}
-                      >
-                        Agendar
-                      </Link>
-                    )}
-                    {slot.slot_status === 'agendado' && slot.appointment_id && (
-                      <Link
-                        className="operational-agenda-action"
-                        to="/agenda"
-                        state={{
-                          origin: 'home_cancel_appointment',
-                          appointmentId: slot.appointment_id,
-                          professionalId: slot.professional_id,
-                          slotDate: slot.slot_date,
-                        }}
-                      >
-                        Abrir
-                      </Link>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            <Link className="gestor-panel-foot" to="/agenda">Abrir Agenda Geral ›</Link>
-          </article>
+          <TeamDayAgendaPanel agenda={operationalAgenda} enableSchedulingActions />
+
 
           <aside className="gestor-side-stack">
             <article className="gestor-panel">
