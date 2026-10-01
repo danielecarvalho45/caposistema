@@ -279,3 +279,71 @@
     min-height: 44px;
   }
 }
+
+
+/* CAPO — agenda do dia mantém estrutura tabular também no celular.
+   Evita regressão para cartões que escondem a relação Paciente + Confirmar/Falta. */
+@media (max-width: 760px) {
+  .agenda-day-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .agenda-day-table {
+    display: table;
+    min-width: 760px;
+    width: 100%;
+  }
+
+  .agenda-day-table thead {
+    display: table-header-group;
+  }
+
+  .agenda-day-table tbody {
+    display: table-row-group;
+  }
+
+  .agenda-day-table tr {
+    display: table-row;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .agenda-day-table th,
+  .agenda-day-table td {
+    display: table-cell;
+    width: auto;
+    padding: 0.65rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+
+  .agenda-day-table td::before {
+    content: none;
+  }
+
+  .agenda-day-table td[data-label='Paciente'] {
+    min-width: 230px;
+  }
+
+  .agenda-day-table .agenda-home-patient-line {
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .agenda-day-table .agenda-home-patient-actions {
+    display: inline-flex;
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .agenda-day-table .agenda-attendance-confirm,
+  .agenda-day-table .agenda-attendance-absence {
+    width: auto;
+    min-width: 82px;
+    min-height: 40px;
+  }
+}
