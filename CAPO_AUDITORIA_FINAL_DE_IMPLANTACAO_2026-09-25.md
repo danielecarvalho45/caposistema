@@ -6311,3 +6311,117 @@ A abertura direta por `appointment_id` foi necessária especificamente no fluxo 
 Após a migration de homologação, foram executados os Advisors do Supabase. Há avisos de segurança/performance preexistentes no projeto, incluindo funções `SECURITY DEFINER` expostas a perfis autenticados. Nenhuma permissão nova foi ampliada nesta manutenção além da visibilidade controlada entre registros `is_test=true` para conta de homologação habilitada; produção continua isolada.
 
 **Estado:** **CAUSAS IDENTIFICADAS / NOME DO PACIENTE CORRIGIDO NA HOMOLOGAÇÃO / FALTA COM FOLLOWUP FÍSICO COMPROVADO / CONFIRMAR SEM NOVA PESQUISA / HOME SEM TEXTO EXPLICATIVO / MOBILE PRESERVA TABELA CANÔNICA / DEPLOY VISUAL AINDA DEVE SER CONFIRMADO NO AMBIENTE PUBLICADO**.
+
+
+### 28.115 FLUXO DE AFASTAMENTO/ALTERAÇÃO ESTRUTURAL — GERAÇÃO AUTOMÁTICA DE SOLICITAÇÃO ADMINISTRATIVA DE BLOQUEIO (01/10/2026)
+
+**Origem:** definição da responsável de que, após aprovação da Coordenação, deve aparecer automaticamente uma solicitação de bloqueio/efetivação de agenda:
+- para o Administrativo Operacional executar;
+- para o profissional solicitante acompanhar.
+
+#### Fontes confrontadas
+A Especificação Funcional/Estrutural de 12/09 confirma que:
+- férias, afastamentos, mudança de turno, carga e demais alterações estruturais pertencem à Gestão de Agenda da Coordenação;
+- o profissional encaminha alteração estrutural à Coordenação.
+
+O Documento Mestre §§28.24–28.26 já estabelece:
+- **Coordenação → anuência → efetivação administrativa**;
+- a Coordenação não efetiva diretamente;
+- o Gestor/Titular mantém a visão de alterações estruturais aprovadas.
+
+A estrutura canônica existente para trabalho administrativo é `public.administrative_requests`, que já é:
+- visível integralmente ao Administrativo Operacional;
+- visível ao próprio profissional quando `requesting_professional_id` corresponde ao seu vínculo;
+- agregada por `get_pending_items_for_interface` como pendência administrativa.
+
+#### Divergência comprovada
+A aprovação de afastamento registrada para **Homologação — Assistência Social**:
+- decisão `1123af84-6639-41e5-a336-ffa4858df733`;
+- tipo `afastamento`;
+- período 30/09/2026;
+- decisão `aprovar`;
+
+ficou somente em `coordination_team_decisions` e não gerou solicitação administrativa.
+
+#### Correção
+Migration aplicada:
+- `20261001022545_route_approved_agenda_changes_to_admin_requests`.
+
+Foram adicionados vínculos rastreáveis em `administrative_requests`:
+- `source_agenda_change_request_id`;
+- `source_coordination_decision_id`.
+
+Índices únicos parciais impedem geração duplicada da mesma solicitação por uma mesma origem.
+
+Criado helper privado:
+- `private.capo_ensure_agenda_block_admin_request(...)`.
+
+O helper:
+- reutiliza a solicitação existente quando já houver uma para a mesma origem;
+- cria solicitação `pending`;
+- usa o profissional afetado como `requesting_professional_id`;
+- registra assunto e descrição do bloqueio/efetivação;
+- mantém rastreabilidade até a aprovação de origem;
+- não cria paciente fictício nem vínculo com paciente.
+
+#### Aprovação canônica
+`decide_agenda_change_request_for_interface` passa a:
+- ao **aprovar**, gerar automaticamente a solicitação administrativa;
+- devolver `administrative_request_id`;
+- continuar notificando o profissional;
+- informar que a aprovação gerou solicitação administrativa de bloqueio/efetivação.
+
+#### Decisão de equipe da Coordenação
+`register_coordination_team_decision_for_interface` passa a:
+- ao **aprovar** férias, afastamento, mudança de horário/turno, carga, bloqueio, substituição ou outra providência estrutural;
+- criar automaticamente a mesma solicitação administrativa;
+- devolver `administrative_request_id`;
+- não gerar solicitação em decisão `devolver`.
+
+Isso corrige também o caminho atualmente usado pela tela da Coordenação que havia permitido aprovação avulsa sem `agenda_change_request` vinculada.
+
+#### Recuperação do afastamento já aprovado
+A migration recuperou a decisão já existente de homologação e gerou:
+
+- solicitação administrativa: `0332930d-2ff4-46a1-a239-6be7adbb374c`;
+- assunto: **Bloqueio de agenda — Afastamento aprovado**;
+- profissional: **Homologação — Assistência Social**;
+- status: `pending`;
+- origem: decisão `1123af84-6639-41e5-a336-ffa4858df733`.
+
+#### Validação física — Administrativo Operacional
+Com a `manuteste` no contexto `administrativo_operacional`, a RPC canônica:
+
+`get_pending_items_for_interface(50,0)`
+
+retornou a solicitação:
+- `pending_type = administrative_request`;
+- título **Bloqueio de agenda — Afastamento aprovado**;
+- `status = pending`;
+- `responsible_role = administrativo_operacional`;
+- `context_module = administrative_requests`.
+
+**RESULTADO: PASS.**
+
+#### Validação física — profissional solicitante
+Em transação com rollback, a `manuteste` foi simulada como **Homologação — Assistência Social** e a RPC:
+
+`get_administrative_requests_for_interface('pending',50,0)`
+
+retornou a mesma solicitação `0332930d-2ff4-46a1-a239-6be7adbb374c` para o profissional.
+
+**RESULTADO: PASS.**
+
+A troca temporária de contexto foi revertida por `ROLLBACK`; o contexto persistente da conta não foi alterado por esse teste.
+
+#### Preservação do Titular
+Esta correção não remove o fluxo já documentado do Gestor/Titular para alterações estruturais aprovadas. A nova solicitação administrativa é o desdobramento operacional automático da aprovação, enquanto a governança/efetivação estrutural continua preservada conforme os contratos existentes.
+
+#### Sincronização
+Migration sincronizada no GitHub:
+- `supabase/migrations/20261001022545_route_approved_agenda_changes_to_admin_requests.sql`.
+
+Commit:
+- `5209b9c0b3c5b886a216deee3fc801b98aba01e1` — `fix: encaminha aprovação de agenda ao administrativo`.
+
+**Estado:** **FLUXO AUTOMÁTICO CORRIGIDO / APROVAÇÃO DA COORDENAÇÃO GERA SOLICITAÇÃO DE BLOQUEIO PARA AO E PROFISSIONAL SOLICITANTE / AFASTAMENTO JÁ APROVADO RECUPERADO / TESTE FÍSICO AO PASS / TESTE FÍSICO PROFISSIONAL PASS / TITULAR PRESERVADO**.
