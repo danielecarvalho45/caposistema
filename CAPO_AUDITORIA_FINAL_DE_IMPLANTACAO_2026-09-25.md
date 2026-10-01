@@ -5872,3 +5872,38 @@ O teste existente que confirma pela grade foi reforçado para exigir que **Confi
 **Preservado:** Supabase, RPCs, permissões, isolamento de homologação, fluxo de abertura do paciente após Confirmar, fluxo administrativo de Faltosos e demais telas fora do Home.
 
 **Estado:** **MANUTENÇÃO CIRÚRGICA APLICADA NO COMPONENTE CANÔNICO / CONFIRMAR E FALTA JUNTO AO NOME DO PACIENTE NA HOME / SEM ALTERAÇÃO DE BANCO / TESTE DE REGRESSÃO ATUALIZADO**.
+
+
+### 28.109 INTERFACE — REGRA TRANSVERSAL DE MANUTENÇÃO APLICADA À AGENDA (30/09/2026)
+
+**Origem:** confirmação da responsável de que mudanças estruturais comuns não podem ficar restritas a uma única tela, Home ou ambiente de homologação.
+
+#### Regra reafirmada
+Toda alteração estrutural compartilhada deve ser aplicada no componente canônico para refletir em todas as telas pertinentes, preservando somente as particularidades e permissões de cada perfil.
+
+#### Ajuste complementar desta etapa
+A alteração do §28.108, que posicionou **Confirmar** e **Falta** imediatamente ao lado do nome do paciente na Agenda da Home, foi ampliada no mesmo componente `AgendaPage` para deixar de depender do modo `embeddedHome`.
+
+Assim, sempre que a Agenda canônica apresentar um paciente agendado e o contexto autenticado estiver autorizado a registrar presença:
+- **Confirmar** aparece junto ao nome do paciente;
+- **Falta** aparece junto ao nome do paciente;
+- as ações não ficam duplicadas na coluna Ações;
+- após presença/falta registrada, os botões deixam de aparecer conforme regra anterior;
+- horário ocupado por paciente fora do contexto permanece sem nome e sem Confirmar/Falta;
+- permissões de cada perfil continuam sendo respeitadas.
+
+#### Alcance
+A regra passa a valer no componente compartilhado para as telas pertinentes de:
+- Clínico Geral;
+- Assistência Social;
+- Nutrição;
+- Psicologia;
+- Fisioterapia;
+- demais especialidades futuras que utilizem a Agenda canônica;
+- homologação e produção, sem tela paralela.
+
+#### Commits
+- `146d09f39064f50c871d8c6cab7d5fa1575b64ed` — `fix: aplica ações junto ao paciente em todas as agendas`;
+- `4405c9dda8c76235bcd260e041b9a1a28d049f25` — `test: protege ações junto ao paciente em toda agenda`.
+
+**Estado:** **REGRA TRANSVERSAL REAFIRMADA / ALTERAÇÃO NÃO RESTRITA À HOME / COMPONENTE CANÔNICO ATUALIZADO / SEM ALTERAÇÃO DE BANCO OU PERMISSÕES**.
