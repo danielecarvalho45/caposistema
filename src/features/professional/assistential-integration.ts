@@ -3,6 +3,7 @@ import {
   type AgendaAppointment,
   type AssistentialOperationalReport,
   type AssistentialPatient,
+  type ProfessionalAppointmentContext,
   type AssistentialSpecialty,
   type AsyncState,
 } from '../../lib/supabase/rpc'
@@ -19,6 +20,9 @@ export type CAPOProfissionalAssistencialIntegration = Readonly<{
     endDate: string,
     professionalId?: string | null,
   ) => Promise<AsyncState<readonly AgendaAppointment[]>>
+  loadAppointmentContext: (
+    appointmentId: string,
+  ) => Promise<AsyncState<ProfessionalAppointmentContext>>
   loadReport: (
     specialtyId: string,
     startDate: string,
@@ -35,6 +39,8 @@ export function createAssistentialIntegration(
       service.searchMyAssistentialPatients(query, limit, offset),
     loadAgenda: (startDate, endDate, professionalId = null) =>
       service.getAgenda(startDate, endDate, professionalId),
+    loadAppointmentContext: (appointmentId) =>
+      service.getProfessionalAppointmentContext(appointmentId),
     loadReport: (specialtyId, startDate, endDate) =>
       service.getMySpecialtyOperationalReport(specialtyId, startDate, endDate),
   }
