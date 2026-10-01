@@ -29,6 +29,11 @@ function pluralizeCapabilities(total: number) {
 type HomePageProps = Readonly<{
   accessContext: AccessContext
   loadBirthdays?: () => Promise<AsyncState<BirthdayOverview>>
+  loadOperationalAgendaGrid?: (
+    startDate: string,
+    endDate: string,
+    professionalId: string | null,
+  ) => Promise<AsyncState<readonly AgendaScheduleSlot[]>>
 }>
 
 function formatDateOnly(value: string) {
@@ -66,6 +71,7 @@ function slotTime(value: string) {
 export function HomePage({
   accessContext,
   loadBirthdays = getRpcService().getBirthdays,
+  loadOperationalAgendaGrid = getRpcService().getAgendaScheduleGrid,
 }: HomePageProps) {
   const [birthdays, setBirthdays] =
     useState<AsyncState<BirthdayOverview>>(loadingState())
@@ -106,7 +112,7 @@ export function HomePage({
       timeZone: 'America/Sao_Paulo',
     })
     const rpc = getRpcService()
-    void rpc.getAgendaScheduleGrid(today, today, null).then((state) => {
+    void loadOperationalAgendaGrid(today, today, null).then((state) => {
       if (active) setOperationalAgenda(state)
     })
     void rpc.getPendingItems(8, 0).then((state) => {
@@ -118,7 +124,7 @@ export function HomePage({
     return () => {
       active = false
     }
-  }, [isAdministrativeOperational])
+  }, [isAdministrativeOperational, loadOperationalAgendaGrid])
 
   return (
     <div className="home-page home-mobile-standard">
