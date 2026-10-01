@@ -476,6 +476,22 @@ export type AgendaAppointment = Readonly<{
   reschedule_origin: string | null
 }>
 
+export type ProfessionalAppointmentContext = Readonly<{
+  appointment_id: string
+  patient_id: string
+  patient_name: string
+  patient_number: string | null
+  cms: string | null
+  professional_id: string
+  professional_name: string
+  specialty_id: string | null
+  specialty_name: string | null
+  appointment_date: string
+  appointment_end: string | null
+  appointment_type: string
+  attendance_status: string
+}>
+
 export type CreatedPatient = Readonly<{
   patient_id: string
   patient_number: string
@@ -1792,6 +1808,28 @@ function parseAgendaAppointments(value: unknown): readonly AgendaAppointment[] {
   })
 }
 
+function parseProfessionalAppointmentContext(
+  value: unknown,
+): ProfessionalAppointmentContext {
+  const operation = 'get_professional_appointment_context_for_interface'
+  if (!isRecord(value)) throw contractError(operation, 'objeto esperado.')
+  return {
+    appointment_id: requiredString(value, 'appointment_id', operation),
+    patient_id: requiredString(value, 'patient_id', operation),
+    patient_name: requiredString(value, 'patient_name', operation),
+    patient_number: nullableString(value, 'patient_number', operation),
+    cms: nullableString(value, 'cms', operation),
+    professional_id: requiredString(value, 'professional_id', operation),
+    professional_name: requiredString(value, 'professional_name', operation),
+    specialty_id: nullableString(value, 'specialty_id', operation),
+    specialty_name: nullableString(value, 'specialty_name', operation),
+    appointment_date: requiredString(value, 'appointment_date', operation),
+    appointment_end: nullableString(value, 'appointment_end', operation),
+    appointment_type: requiredString(value, 'appointment_type', operation),
+    attendance_status: requiredString(value, 'attendance_status', operation),
+  }
+}
+
 function parseOperationalReportSection(
   value: unknown,
   operation: string,
@@ -3006,6 +3044,13 @@ export function createRpcService(transport: RpcTransport) {
           p_professional_id: professionalId,
         },
         parse: parseAgendaAppointments,
+      }),
+    getProfessionalAppointmentContext: (appointmentId: string) =>
+      execute({
+        transport,
+        operation: 'get_professional_appointment_context_for_interface',
+        args: { p_appointment_id: appointmentId },
+        parse: parseProfessionalAppointmentContext,
       }),
     getAgendaScheduleGrid: (
       startDate: string,
