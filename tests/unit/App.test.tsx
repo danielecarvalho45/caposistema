@@ -116,6 +116,7 @@ function renderShell(
           }),
           searchPatients: vi.fn().mockResolvedValue({ status: 'empty' }),
           loadAgenda: vi.fn().mockResolvedValue({ status: 'empty' }),
+          loadAppointmentContext: vi.fn().mockResolvedValue({ status: 'empty' }),
           loadReport: vi.fn().mockResolvedValue({
             status: 'success',
             data: {
