@@ -517,6 +517,56 @@ it('confirma pela grade e abre o fluxo do paciente mesmo quando a lista paralela
   )
 })
 
+it('mantém Confirmar e Falta junto ao paciente também fora da Home', async () => {
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'clinical-professional-id',
+      professional_name: 'Profissional autorizado',
+      slot_date: '2026-09-30',
+      weekday: 3,
+      slot_start: '2026-09-30T14:00:00.000Z',
+      slot_end: '2026-09-30T14:30:00.000Z',
+      duration_minutes: 30,
+      slot_status: 'agendado',
+      appointment_id: 'appointment-visible-full',
+      patient_id: 'patient-visible-full',
+      patient_name: 'Paciente visível agenda completa',
+      appointment_type: 'retorno',
+      block_type: null,
+    }],
+  })
+
+  const context = {
+    roles: [{ code: 'profissional', name: 'Profissional' }],
+    primary_context: { code: 'profissional', name: 'Profissional' },
+    professional_id: 'clinical-professional-id',
+  } as unknown as AccessContext
+
+  render(
+    <MemoryRouter>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+      />
+    </MemoryRouter>,
+  )
+
+  const patientCell = (await screen.findByText('Paciente visível agenda completa')).closest('td')
+  expect(patientCell).not.toBeNull()
+  expect(
+    within(patientCell as HTMLElement).getByRole('button', {
+      name: 'Confirmar consulta de Paciente visível agenda completa',
+    }),
+  ).toBeVisible()
+  expect(
+    within(patientCell as HTMLElement).getByRole('button', {
+      name: 'Marcar falta de Paciente visível agenda completa',
+    }),
+  ).toBeVisible()
+})
+
 it('não oferece Confirmar ou Falta para horário ocupado por paciente fora do contexto visível', async () => {
   rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
   rpc.getAgendaScheduleGrid.mockResolvedValue({
