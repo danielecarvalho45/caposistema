@@ -295,6 +295,78 @@ describe('App', () => {
     expect(screen.queryByRole('region', { name: 'Resumo do seu contexto' })).not.toBeInTheDocument()
   })
 
+  it('exibe na Home operacional a grade dos profissionais com horários livres, bloqueados e agendados', async () => {
+    render(
+      <MemoryRouter>
+        <HomePage
+          accessContext={context}
+          loadBirthdays={async () => ({ status: 'empty' })}
+          loadOperationalPending={async () => ({ status: 'empty' })}
+          loadOperationalNoShows={async () => ({ status: 'empty' })}
+          loadOperationalAgendaGrid={async () => ({
+            status: 'success',
+            data: [
+              {
+                professional_id: 'p1',
+                professional_name: 'Médico Clínico',
+                slot_date: '2026-09-30',
+                weekday: 3,
+                slot_start: '2026-09-30T12:00:00.000Z',
+                slot_end: '2026-09-30T12:30:00.000Z',
+                duration_minutes: 30,
+                slot_status: 'livre',
+                appointment_id: null,
+                patient_id: null,
+                patient_name: null,
+                appointment_type: null,
+                block_type: null,
+              },
+              {
+                professional_id: 'p2',
+                professional_name: 'Nutricionista',
+                slot_date: '2026-09-30',
+                weekday: 3,
+                slot_start: '2026-09-30T13:00:00.000Z',
+                slot_end: '2026-09-30T13:30:00.000Z',
+                duration_minutes: 30,
+                slot_status: 'bloqueado',
+                appointment_id: null,
+                patient_id: null,
+                patient_name: null,
+                appointment_type: null,
+                block_type: 'alimentacao',
+              },
+              {
+                professional_id: 'p1',
+                professional_name: 'Médico Clínico',
+                slot_date: '2026-09-30',
+                weekday: 3,
+                slot_start: '2026-09-30T14:00:00.000Z',
+                slot_end: '2026-09-30T14:30:00.000Z',
+                duration_minutes: 30,
+                slot_status: 'agendado',
+                appointment_id: 'a1',
+                patient_id: 'patient-1',
+                patient_name: 'Paciente agendado',
+                appointment_type: 'retorno',
+                block_type: null,
+              },
+            ],
+          })}
+        />
+      </MemoryRouter>,
+    )
+
+    const agendas = await screen.findByLabelText('Agendas dos profissionais')
+    expect(within(agendas).getByText('Médico Clínico')).toBeVisible()
+    expect(within(agendas).getByText('Nutricionista')).toBeVisible()
+    expect(within(agendas).getByText('Livre')).toBeVisible()
+    expect(within(agendas).getByText('🍽️ Almoço')).toBeVisible()
+    expect(within(agendas).getByText('Paciente agendado')).toBeVisible()
+    expect(within(agendas).getByRole('link', { name: 'Agendar' })).toBeVisible()
+    expect(within(agendas).getByRole('link', { name: 'Abrir' })).toBeVisible()
+  })
+
   it('prioriza o primary_context real do backend para o painel inicial mesmo quando o cargo legado sugere operacional', () => {
     const adminWithLegacyOperationalRole: AccessContext = {
       ...context,
