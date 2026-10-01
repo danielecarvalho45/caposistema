@@ -371,9 +371,15 @@ export function FamilyCaregiverPage({
                   ? 'Nome completo'
                   : field === 'relationship'
                     ? 'Relação'
-                    : field === 'birth_date'
-                      ? 'Data de nascimento'
-                      : field}
+                    : field === 'phone'
+                      ? 'Telefone'
+                      : field === 'email'
+                        ? 'E-mail'
+                        : field === 'birth_date'
+                          ? 'Data de nascimento'
+                          : field === 'address'
+                            ? 'Endereço'
+                            : field}
                 <input
                   type={field === 'birth_date' ? 'date' : 'text'}
                   value={form[field] ?? ''}
