@@ -6103,3 +6103,52 @@ Commit:
 - `a080efeba4d37f467d10adbe9854db0e550ef065` — `fix: permite busca de paciente no administrativo homologação`.
 
 **Estado:** **CAUSA COMPROVADA / PACIENTE TESTE 0002 SELECIONADO NO CONTEXTO / BUSCA DO AO SIMULADO CORRIGIDA / ISOLAMENTO PRODUÇÃO × HOMOLOGAÇÃO PRESERVADO / TESTE FÍSICO AUTENTICADO PASS**.
+
+
+### 28.113 INTERFACE — TRADUÇÃO DA TELA FAMILIAR/CUIDADOR DO ADMINISTRATIVO OPERACIONAL (01/10/2026)
+
+**Origem:** solicitação da responsável para colocar em português a tela de Familiar/Cuidador acessada pelo Administrativo Operacional.
+
+#### Diagnóstico físico
+Foi verificado o componente canônico:
+- `src/features/social/FamilyCaregiverPage.tsx`.
+
+A maior parte da interface já estava em português, porém o formulário ainda exibia diretamente nomes técnicos internos de campos:
+- `phone`;
+- `email`;
+- `address`.
+
+Esses identificadores pertencem ao contrato interno do frontend/backend e não devem ser apresentados ao usuário final.
+
+#### Correção cirúrgica
+Foram alterados somente os rótulos visíveis:
+- `phone` → **Telefone**;
+- `email` → **E-mail**;
+- `address` → **Endereço**.
+
+Foram preservados:
+- nomes internos dos campos;
+- payload enviado ao backend;
+- RPCs;
+- Supabase;
+- permissões;
+- fluxo de vínculo/substituição;
+- busca de paciente;
+- busca de familiar existente;
+- WhatsApp;
+- solicitação de avaliação psicológica;
+- histórico.
+
+#### Proteção de regressão
+O teste `tests/unit/family-caregiver-page.test.tsx` passou a exigir os rótulos:
+- **Telefone**;
+- **E-mail**;
+- **Endereço**;
+
+e a ausência dos rótulos técnicos `phone` e `address`.
+
+#### Commits
+- `6279fdafe545372cfa401953c116bad14d9b32a8` — `fix: traduz campos do familiar cuidador`;
+- `1b4c54857b05f76c01ebaf074462ff50011d9137` — `test: protege tradução do familiar cuidador`.
+
+**Estado:** **TEXTOS VISÍVEIS CORRIGIDOS PARA PORTUGUÊS / SEM ALTERAÇÃO FUNCIONAL OU DE BANCO**.
