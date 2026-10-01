@@ -5968,3 +5968,68 @@ O teste de `App.test.tsx` passou a proteger que a Home operacional consiga rende
 **Preservado:** regras de autorização, isolamento de homologação, agendamento, cancelamento, Faltosos, pendências, Supabase e contratos existentes.
 
 **Estado:** **CAUSA IDENTIFICADA / HOME DO AO MIGRADA DE LISTA DE AGENDAMENTOS PARA GRADE CANÔNICA DOS PROFISSIONAIS / HORÁRIOS LIVRES, BLOQUEADOS E AGENDADOS PASSAM A SER REPRESENTADOS / SEM ALTERAÇÃO DE BANCO**.
+
+
+### 28.111 HOME DA COORDENAÇÃO — AGENDA GERAL DO DIA COMPARTILHADA COM O OPERACIONAL (30/09/2026)
+
+**Origem:** a responsável informou que a Home do Coordenador não mostrava a agenda geral do dia dos profissionais.
+
+#### Diagnóstico físico
+Foi comprovado em `src/features/coordination/CoordinationDashboard.tsx` que a Home da Coordenação carregava:
+- `getCoordinatorAgendaOverview(date, date)`.
+
+Esse contrato fornece visão resumida/configurada da agenda, com campos como capacidade, ocupação e status, mas não entrega a grade diária completa com todos os horários livres, bloqueados e agendados.
+
+A grade diária canônica já existente no sistema é:
+- `getAgendaScheduleGrid(date, date, null)`.
+
+#### Correção estrutural compartilhada
+Para evitar dois desenhos independentes, foi criado um componente único:
+- `src/features/home/TeamDayAgendaPanel.tsx`.
+
+Esse componente passa a ser usado por:
+- Home do Administrativo Operacional;
+- Home da Coordenação.
+
+O painel compartilhado mostra:
+- **Agenda Geral do Dia**;
+- horários de todos os profissionais autorizados;
+- profissional;
+- horário livre;
+- horário bloqueado com tipo do bloqueio;
+- horário agendado com paciente quando visível no contexto;
+- acesso à Agenda Geral.
+
+As diferenças de permissão são preservadas:
+- o Administrativo Operacional recebe ação **Agendar** em vaga livre;
+- a Coordenação recebe a mesma visão de agenda, sem ganhar permissão administrativa de agendamento por essa mudança.
+
+#### Contrato da Coordenação
+A Home da Coordenação passou de:
+- `getCoordinatorAgendaOverview(date, date)`
+
+para:
+- `getAgendaScheduleGrid(date, date, null)`
+
+no painel da Agenda Geral do Dia.
+
+Os demais contratos gerenciais da Coordenação permanecem preservados.
+
+#### Commits
+- `3f402bfdedd40f7e82315a7d8add06a5c6029dba` — `feat: cria painel compartilhado da agenda geral do dia`;
+- `1ef3e92b92471ed455e7f038aa4f08357edef7d9` — `refactor: reutiliza painel canônico de agenda no operacional`;
+- `6a0564f99358bf741684dd6347715dd99bb6b5d2` — `fix: exibe agenda geral diária na coordenação`;
+- `8cae9e7934b9d7b59d681d62358a4a31e705662e` — `test: protege agenda geral compartilhada`.
+
+#### Proteção de regressão
+Foi criado teste específico do painel compartilhado para exigir:
+- múltiplos profissionais;
+- horário livre;
+- horário bloqueado;
+- paciente agendado;
+- título **Agenda Geral do Dia**;
+- ação **Agendar** apenas quando explicitamente habilitada pelo contexto.
+
+**Preservado:** Supabase, migrations, RPCs existentes, permissões de Coordenação e Administrativo Operacional, demais funções do painel da Coordenação e isolamento de homologação.
+
+**Estado:** **HOME DA COORDENAÇÃO MIGRADA PARA A GRADE DIÁRIA CANÔNICA / AO E COORDENAÇÃO COMPARTILHAM O MESMO PAINEL FÍSICO DE AGENDA GERAL DO DIA / SEM ALTERAÇÃO DE BANCO**.
