@@ -5907,3 +5907,64 @@ A regra passa a valer no componente compartilhado para as telas pertinentes de:
 - `4405c9dda8c76235bcd260e041b9a1a28d049f25` — `test: protege ações junto ao paciente em toda agenda`.
 
 **Estado:** **REGRA TRANSVERSAL REAFIRMADA / ALTERAÇÃO NÃO RESTRITA À HOME / COMPONENTE CANÔNICO ATUALIZADO / SEM ALTERAÇÃO DE BANCO OU PERMISSÕES**.
+
+
+### 28.110 HOME DO ADMINISTRATIVO OPERACIONAL — AGENDAS DOS PROFISSIONAIS NA TELA INICIAL (30/09/2026)
+
+**Origem:** a responsável informou que a Home do Administrativo Operacional não exibia as agendas dos profissionais.
+
+#### Diagnóstico físico
+Foi comprovado em `src/features/home/HomePage.tsx` que a Home operacional carregava:
+- `getAgenda(today, today)`.
+
+Esse contrato retorna os **agendamentos existentes**, mas não representa a grade completa das agendas profissionais. Por isso a Home não mostrava corretamente:
+- horários livres;
+- horários bloqueados;
+- agendas configuradas sem paciente;
+- a visão diária consolidada de todos os profissionais.
+
+O projeto já possuía o contrato canônico adequado, utilizado também pelo painel do Gestor:
+- `getAgendaScheduleGrid(date, date, null)`.
+
+#### Correção cirúrgica
+A Home do Administrativo Operacional passou a consultar:
+- `getAgendaScheduleGrid(today, today, null)`.
+
+Com isso, a tela inicial passa a apresentar a grade do dia de todos os profissionais autorizados, incluindo:
+- profissional;
+- horário;
+- horário livre;
+- horário bloqueado e respectivo tipo;
+- horário agendado com paciente quando o contexto puder visualizá-lo;
+- ação **Agendar** para horário livre;
+- ação **Abrir** para horário agendado.
+
+Não foi criada RPC nova e não houve alteração no Supabase.
+
+#### Responsividade
+Foi incluída estrutura responsiva em `home-page.css`, mantendo a grade legível no desktop e reorganizada em duas colunas/uma ação por linha no celular.
+
+#### Testabilidade e proteção de regressão
+Foram adicionados pontos de injeção para as consultas da Home operacional sem alterar o contrato real em produção:
+- grade de agenda;
+- pendências;
+- faltosos.
+
+O teste de `App.test.tsx` passou a proteger que a Home operacional consiga renderizar simultaneamente:
+- mais de um profissional;
+- horário livre;
+- horário bloqueado;
+- horário agendado;
+- ação de agendamento;
+- abertura do horário agendado.
+
+#### Commits
+- `17317d1783d5c71c1069536b10b0fb4c4ea024e7` — `fix: exibe grade dos profissionais na Home operacional`;
+- `7a299afbe543505b29543a06fad930d2542a4cbf` — `style: organiza agendas profissionais no painel operacional`;
+- `4e4c0a84db4c45ff98b3df5cedabdf4c79d637ab` — `refactor: torna grade operacional testável`;
+- `fd9aa7b78975f3863e0bda1a0d981af43e619b01` — `refactor: injeta consultas da home operacional`;
+- `d154264071d79ed3fc0c035d01f89b49b3605166` — `test: protege agendas profissionais na home operacional`.
+
+**Preservado:** regras de autorização, isolamento de homologação, agendamento, cancelamento, Faltosos, pendências, Supabase e contratos existentes.
+
+**Estado:** **CAUSA IDENTIFICADA / HOME DO AO MIGRADA DE LISTA DE AGENDAMENTOS PARA GRADE CANÔNICA DOS PROFISSIONAIS / HORÁRIOS LIVRES, BLOQUEADOS E AGENDADOS PASSAM A SER REPRESENTADOS / SEM ALTERAÇÃO DE BANCO**.
