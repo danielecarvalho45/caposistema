@@ -34,6 +34,12 @@ type HomePageProps = Readonly<{
     endDate: string,
     professionalId: string | null,
   ) => Promise<AsyncState<readonly AgendaScheduleSlot[]>>
+  loadOperationalPending?: (limit: number, offset: number) => Promise<AsyncState<readonly PendingItem[]>>
+  loadOperationalNoShows?: (
+    status: string | null,
+    limit: number,
+    offset: number,
+  ) => Promise<AsyncState<readonly NoShowFollowup[]>>
 }>
 
 function formatDateOnly(value: string) {
@@ -72,6 +78,8 @@ export function HomePage({
   accessContext,
   loadBirthdays = getRpcService().getBirthdays,
   loadOperationalAgendaGrid = getRpcService().getAgendaScheduleGrid,
+  loadOperationalPending = getRpcService().getPendingItems,
+  loadOperationalNoShows = getRpcService().getNoShowFollowups,
 }: HomePageProps) {
   const [birthdays, setBirthdays] =
     useState<AsyncState<BirthdayOverview>>(loadingState())
@@ -111,20 +119,24 @@ export function HomePage({
     const today = new Date().toLocaleDateString('en-CA', {
       timeZone: 'America/Sao_Paulo',
     })
-    const rpc = getRpcService()
     void loadOperationalAgendaGrid(today, today, null).then((state) => {
       if (active) setOperationalAgenda(state)
     })
-    void rpc.getPendingItems(8, 0).then((state) => {
+    void loadOperationalPending(8, 0).then((state) => {
       if (active) setOperationalPending(state)
     })
-    void rpc.getNoShowFollowups(null, 8, 0).then((state) => {
+    void loadOperationalNoShows(null, 8, 0).then((state) => {
       if (active) setOperationalNoShows(state)
     })
     return () => {
       active = false
     }
-  }, [isAdministrativeOperational, loadOperationalAgendaGrid])
+  }, [
+    isAdministrativeOperational,
+    loadOperationalAgendaGrid,
+    loadOperationalNoShows,
+    loadOperationalPending,
+  ])
 
   return (
     <div className="home-page home-mobile-standard">
