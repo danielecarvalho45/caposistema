@@ -610,6 +610,9 @@ describe('App', () => {
       quickAccess.compareDocumentPosition(agenda) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
     expect(agenda).toBeVisible()
+    expect(
+      screen.queryByText('Agenda própria com visualização por dia, semana e mês.'),
+    ).not.toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Dia' })).toBeVisible()
     expect(screen.getByRole('tab', { name: 'Semana' })).toBeVisible()
     expect(screen.getByRole('tab', { name: 'Mês' })).toBeVisible()
