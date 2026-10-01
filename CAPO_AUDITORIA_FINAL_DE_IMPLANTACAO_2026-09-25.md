@@ -6152,3 +6152,162 @@ e a ausência dos rótulos técnicos `phone` e `address`.
 - `1b4c54857b05f76c01ebaf074462ff50011d9137` — `test: protege tradução do familiar cuidador`.
 
 **Estado:** **TEXTOS VISÍVEIS CORRIGIDOS PARA PORTUGUÊS / SEM ALTERAÇÃO FUNCIONAL OU DE BANCO**.
+
+
+### 28.114 REGRESSÃO TRANSVERSAL — HOME/AGENDA PROFISSIONAL, NOMES DOS PACIENTES E FLUXO DE FALTA (01/10/2026)
+
+**Origem:** evidência visual enviada pela responsável em celular, nos contextos de homologação de Assistência Social, Fisioterapia e Médico Clínico Geral.
+
+#### Sintomas comprovados nas imagens
+Foram observados:
+- bloco explicativo antigo **Atendimentos de hoje** na Assistência Social;
+- texto explicativo de presença/falta que não pertence ao padrão final da Home;
+- agenda aparecendo antes de **Acessos rápidos** em telas assistenciais;
+- visão Dia degradada para cartões grandes no celular;
+- horários agendados exibindo apenas **Agendado** e o tipo (`outro`, `primeiro_capo`) sem nome do paciente;
+- botões reduzidos a ícones de confirmação/falta;
+- percepção de que a ação **Falta** não gerava continuidade administrativa.
+
+#### Fontes normativas confrontadas
+Foram confrontados:
+- Documento Mestre atual;
+- `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`;
+- `CAPO_Manual_Tecnico_Integrado_Banco_Interface_ATUALIZADO_2026-09-15_v5(1).md`;
+- Especificação Funcional Estrutural de 12/09 localizada fisicamente na Library, apesar de o arquivo não estar presente no `main`;
+- HTMLs aprovados de Assistência Social, Nutrição e Médico Clínico Geral.
+
+A regra canônica permanece:
+- Home profissional usa **Acessos rápidos → Minha Agenda → Aniversariantes**, preservando funções próprias depois;
+- a Agenda liga o horário ao **nome do paciente** e às ações **Confirmar** / **Falta**;
+- **Confirmar** registra presença e abre imediatamente o paciente no fluxo da própria especialidade, sem nova pesquisa por nome;
+- **Falta** gera o fluxo administrativo de **Faltosos**, cuja responsabilidade operacional pertence ao Administrativo Operacional;
+- Falta não alimenta Busca Ativa.
+
+#### Diagnóstico 1 — imagens não correspondem ao código atual do main
+A inspeção física do `main` comprovou que:
+- `AssistentialPage.tsx` já posiciona **Acessos rápidos** antes de `AgendaPage`;
+- `SocialPage.tsx` já posiciona atalhos antes da agenda;
+- o texto **Atendimentos de hoje** não existe mais nesses componentes;
+- os testes atuais inclusive exigem que esse título não esteja presente;
+- `AgendaPage.tsx` já usa textos completos **Confirmar** e **Falta**.
+
+Portanto, as telas capturadas no celular representam uma versão visual anterior à fonte atual do `main`. Esta manutenção adiciona proteção adicional, mas a atualização do ambiente publicado precisa refletir os commits atuais para que a homologação mostre o mesmo desenho.
+
+#### Diagnóstico 2 — causa real do nome oculto
+No Supabase oficial foram conferidos fisicamente os agendamentos de homologação de 30/09/2026. Os horários das imagens pertencem a mais de um paciente de teste:
+- `TESTE-CAPO-0001`;
+- `TESTE-CAPO-0002`.
+
+A função `capo_patient_visible_in_current_context(patient_id)` restringia uma conta de homologação ao único `test_patient_id` selecionado no contexto.
+
+Consequência:
+- o agendamento permanecia na grade;
+- o join com `patients` eliminava o nome do outro paciente de teste;
+- a tela recebia `patient_name = null`;
+- o frontend mostrava apenas horário ocupado / agendado, impedindo a homologação do fluxo real.
+
+Essa regra também escondia fluxos administrativos criados para outro paciente de teste, como Faltosos.
+
+#### Correção de isolamento da homologação
+Foi aplicada no Supabase e sincronizada no GitHub a migration:
+- `20261001014612_homologation_show_all_test_patients.sql`.
+
+Nova regra de visibilidade:
+- produção continua vendo apenas pacientes reais;
+- conta de homologação com contexto desabilitado continua fora do conjunto de teste;
+- conta de homologação com contexto habilitado enxerga **todos os pacientes marcados `is_test=true`**;
+- pacientes reais continuam invisíveis para a homologação por essa regra.
+
+Isso permite que a mesma interface real seja testada com vários pacientes de teste sem mistura com produção.
+
+Commit:
+- `002ee651102c42e82e9ceab828de545acd344a99` — `fix: permite fluxo completo entre pacientes de homologação`.
+
+#### Validação física do nome do paciente
+Foi executada leitura autenticada no contexto simulado de Médico Clínico Geral, sem persistir a troca de contexto.
+
+O agendamento:
+- `f5766a39-bd69-42b1-98d8-e385757e38e7`
+
+passou a retornar na grade canônica:
+- `patient_id = bd16625f-0040-4c6a-96d3-dcc953093fdc`;
+- `patient_name = PACIENTE SIMULADO CAPO — HOMOLOGAÇÃO`;
+- tipo `outro`.
+
+**VALIDAÇÃO DO NOME NA GRADE: PASS.**
+
+#### Diagnóstico e validação da Falta
+O mesmo agendamento do Clínico foi conferido fisicamente no banco:
+- `attendance_status = faltou`.
+
+Também existe o acompanhamento correspondente em `patient_no_show_followups`:
+- `followup_id = 5be3356f-cd29-4008-866f-90856b0e6b2c`;
+- status operacional `pendente`;
+- zero tentativas de contato no momento da inspeção.
+
+Foi confirmado o trigger canônico:
+- `trg_patient_no_show`;
+- ao registrar `attendance_status='faltou'`, executa `handle_patient_no_show()`;
+- a função cria/atualiza `patient_no_show_followups` e registra evento de timeline.
+
+Portanto, a ação **Falta estava gerando o fluxo**, mas a regra anterior de visibilidade de homologação podia escondê-lo quando o paciente não era o único `test_patient_id` ativo.
+
+A tentativa de validar a leitura da RPC de Faltosos com troca temporária para AO foi bloqueada pela ferramenta por envolver alteração de contexto. Não foi registrado PASS desse teste específico. A autorização existente permanece baseada no papel efetivo e não foi ampliada.
+
+#### Correção do Confirmar — sem nova pesquisa
+Foi encontrada divergência real em `AssistentialPage.tsx`: após Confirmar, o componente fazia uma nova pesquisa do paciente pelo nome.
+
+Isso contrariava a Matriz, que determina continuidade direta sem nova busca.
+
+O projeto já possuía a RPC:
+- `get_professional_appointment_context_for_interface(p_appointment_id)`.
+
+Foi integrada ao frontend:
+- novo parser/tipo `ProfessionalAppointmentContext` em `rpc.ts`;
+- novo `loadAppointmentContext` na integração assistencial;
+- `AssistentialPage` passa a abrir o contexto do paciente pelo **appointment_id** confirmado, sem pesquisar novamente pelo nome.
+
+Commits:
+- `64f80c886e1ced3f3aab4cdf72bd7f2aa2cf62e4` — `fix: expõe contexto direto do atendimento profissional`;
+- `2f68ba1edb5f33681765f1f5d8085e3eb192bbd0` — `refactor: abre atendimento confirmado por contexto direto`;
+- `61d74b044fbc9562277f6a0c4cddfa2c42748923` — `fix: abre paciente confirmado sem nova busca`;
+- `679460a71351badc66329184ad50248d67e5af8b` — atualização do mock de teste.
+
+#### Correção visual transversal da Home e mobile
+Foi removido do modo `embeddedHome` o texto:
+- `Agenda própria com visualização por dia, semana e mês.`
+
+A Home mantém apenas o título funcional da agenda, sem texto explicativo desnecessário.
+
+No mobile, `agenda-day-table` recebeu regra específica para **não herdar a transformação genérica de tabela em cartões** de `assistential-page.css`. A visão Dia permanece como tabela canônica rolável horizontalmente, preservando:
+- Horário;
+- Paciente;
+- Especialidades;
+- Tipo;
+- Situação;
+- ações;
+- **Confirmar** verde;
+- **Falta** vermelho;
+- ações imediatamente junto ao paciente.
+
+Commits:
+- `b2aa5c61f63cabbf3d5cec62190ff10e576ca2f0` — `fix: remove texto explicativo da agenda na Home`;
+- `82b3dfd337f2cc4987b064eee32466ee1777ff5c` — `style: preserva tabela da agenda profissional no celular`;
+- `eb686c2adb4378ee711cb4a812b45083cc0d7c37` — `test: protege home profissional sem texto explicativo`.
+
+#### Escopo transversal
+As correções compartilhadas alcançam:
+- Médico Clínico Geral;
+- Assistência Social;
+- Nutrição;
+- Psicologia;
+- Fisioterapia;
+- futuras especialidades que reutilizem a Agenda canônica;
+- homologação e produção pelo mesmo código físico.
+
+A abertura direta por `appointment_id` foi necessária especificamente no fluxo assistencial compartilhado de Clínico/Psicologia/Fisioterapia; Nutrição e Social já possuíam continuidade direta própria após confirmação.
+
+#### Segurança
+Após a migration de homologação, foram executados os Advisors do Supabase. Há avisos de segurança/performance preexistentes no projeto, incluindo funções `SECURITY DEFINER` expostas a perfis autenticados. Nenhuma permissão nova foi ampliada nesta manutenção além da visibilidade controlada entre registros `is_test=true` para conta de homologação habilitada; produção continua isolada.
+
+**Estado:** **CAUSAS IDENTIFICADAS / NOME DO PACIENTE CORRIGIDO NA HOMOLOGAÇÃO / FALTA COM FOLLOWUP FÍSICO COMPROVADO / CONFIRMAR SEM NOVA PESQUISA / HOME SEM TEXTO EXPLICATIVO / MOBILE PRESERVA TABELA CANÔNICA / DEPLOY VISUAL AINDA DEVE SER CONFIRMADO NO AMBIENTE PUBLICADO**.
