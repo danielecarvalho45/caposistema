@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getRpcService, loadingState, type AsyncState } from '../../lib/supabase/rpc'
+import { getRpcService, loadingState, type AgendaScheduleSlot, type AsyncState } from '../../lib/supabase/rpc'
 import { canAccessAppRoute } from '../../app/route-access'
 import type { AccessContext } from '../../types/access'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
+import { TeamDayAgendaPanel } from '../home/TeamDayAgendaPanel'
 import '../../styles/quick-access.css'
 
 type Row = Record<string, unknown>
@@ -52,7 +53,7 @@ function Panel({ title, state, fields }: { title: string; state: AsyncState<unkn
 }
 export function CoordinationDashboard({ accessContext }: { accessContext: AccessContext }) {
   const [team, setTeam] = useState<AsyncState<unknown>>(loadingState)
-  const [agenda, setAgenda] = useState<AsyncState<unknown>>(loadingState)
+  const [agenda, setAgenda] = useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [requests, setRequests] = useState<AsyncState<unknown>>(loadingState)
   const [pending, setPending] = useState<AsyncState<unknown>>(loadingState)
   const [decisions, setDecisions] = useState<AsyncState<unknown>>(loadingState)
@@ -70,7 +71,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     const rpc = getRpcService()
     const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
     void rpc.getCoordinatorTeamOverview(null, null, null, null, null, 50, 0).then((result) => { if (active) setTeam(result) })
-    void rpc.getCoordinatorAgendaOverview(date, date).then((result) => { if (active) setAgenda(result) })
+    void rpc.getAgendaScheduleGrid(date, date, null).then((result) => { if (active) setAgenda(result) })
     void rpc.getCoordinationTeamDecisions(null, null, 50, 0).then((result) => { if (active) setDecisions(result) })
     void rpc.getPendingItems(50, 0).then((result) => { if (active) setPending(result) })
     void rpc.getAgendaChangeRequests(null, null, 50).then((result) => { if (active) setRequests(result) })
@@ -108,7 +109,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
         <strong>{value(row, 'full_name')}</strong> · {value(row, 'function_title')} · Especialidades: {specialtyNames(row)} · Situação: {value(row, 'work_status')} · Atividades: {value(row, 'activity_count')} · Atendimentos realizados: {value(row, 'productivity_count')} · Dias com disponibilidade: {value(row, 'available_slots_count')}
       </li>)}</ul> : <p>Nenhum registro retornado.</p>)}
     </section>
-    <Panel title="Agendas da Equipe" state={agenda} fields={['agenda_date', 'professional_name', 'specialty_name', 'occupied_count', 'configured_capacity', 'agenda_status']} />
+    <TeamDayAgendaPanel agenda={agenda} />
     <BirthdayPanel title="Aniversariantes de hoje" />
     <section className="home-profile"><h2>Registrar decisão da equipe</h2>
       <label>Profissional<select value={professionalId} onChange={(event) => setProfessionalId(event.target.value)}><option value="">Selecione da equipe</option>{team.status === 'success' && rows(team.data).map((row) => <option key={value(row, 'professional_id')} value={value(row, 'professional_id')}>{value(row, 'full_name')}</option>)}</select></label>
