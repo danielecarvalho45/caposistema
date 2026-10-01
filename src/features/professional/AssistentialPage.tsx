@@ -167,12 +167,23 @@ export function AssistentialPage({
   async function openConfirmedPatient(appointment: AgendaAppointment) {
     setQuery(appointment.patient_name)
     setSearchState(loadingState())
-    const result = await integration.searchPatients(appointment.patient_name)
+    const result = await integration.loadAppointmentContext(appointment.appointment_id)
     if (result.status === 'success') {
-      const patient = result.data.find((item) => item.patient_id === appointment.patient_id)
-      setSearchState(patient ? { status: 'success', data: [patient] } : { status: 'empty' })
-      if (patient) globalThis.document.getElementById('assistential-patients')?.scrollIntoView?.({ block: 'start' })
-    } else setSearchState(result)
+      setSearchState({
+        status: 'success',
+        data: [{
+          patient_id: result.data.patient_id,
+          full_name: result.data.patient_name,
+          patient_number: result.data.patient_number,
+          cms: result.data.cms,
+          status: 'ativo',
+          total_count: 1,
+        }],
+      })
+      globalThis.document.getElementById('assistential-patients')?.scrollIntoView?.({ block: 'start' })
+    } else {
+      setSearchState(result.status === 'error' ? result : { status: 'empty' })
+    }
   }
 
   if (!isProfessional) {
