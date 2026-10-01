@@ -5,7 +5,7 @@ import {
   loadingState,
   type AsyncState,
   type BirthdayOverview,
-  type AgendaAppointment,
+  type AgendaScheduleSlot,
   type PendingItem,
   type NoShowFollowup,
 } from '../../lib/supabase/rpc'
@@ -37,6 +37,32 @@ function formatDateOnly(value: string) {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(year, month - 1, day))
 }
 
+function agendaBlockLabel(value: string | null) {
+  switch (value) {
+    case 'intervalo': return '☕ Intervalo / Café'
+    case 'alimentacao': return '🍽️ Almoço'
+    case 'estudo_caso': return '📚 Estudo de caso'
+    case 'atendimento_online': return '💻 Atendimentos online'
+    case 'rotina_administrativa': return '📋 Rotinas administrativas'
+    case 'reuniao': return '👥 Reunião'
+    case 'relatorio': return '📊 Relatório'
+    case 'atividade': return '📋 Atividade interna'
+    case 'bloqueio': return '⛔ Bloqueio'
+    default: return value ?? 'Bloqueado'
+  }
+}
+
+function slotTime(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
+      }).format(date)
+}
+
 export function HomePage({
   accessContext,
   loadBirthdays = getRpcService().getBirthdays,
@@ -44,7 +70,7 @@ export function HomePage({
   const [birthdays, setBirthdays] =
     useState<AsyncState<BirthdayOverview>>(loadingState())
   const [operationalAgenda, setOperationalAgenda] =
-    useState<AsyncState<readonly AgendaAppointment[]>>(loadingState())
+    useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState())
   const [operationalPending, setOperationalPending] =
     useState<AsyncState<readonly PendingItem[]>>(loadingState())
   const [operationalNoShows, setOperationalNoShows] =
@@ -80,7 +106,7 @@ export function HomePage({
       timeZone: 'America/Sao_Paulo',
     })
     const rpc = getRpcService()
-    void rpc.getAgenda(today, today).then((state) => {
+    void rpc.getAgendaScheduleGrid(today, today, null).then((state) => {
       if (active) setOperationalAgenda(state)
     })
     void rpc.getPendingItems(8, 0).then((state) => {
@@ -107,40 +133,60 @@ export function HomePage({
                 <h2>Agenda do dia</h2>
               </div>
             </header>
-            {operationalAgenda.status === 'loading' && <p>Carregando agenda…</p>}
+            {operationalAgenda.status === 'loading' && <p>Carregando agendas dos profissionais…</p>}
             {operationalAgenda.status === 'error' && (
-              <p role="alert">Não foi possível carregar a agenda do dia.</p>
+              <p role="alert">Não foi possível carregar as agendas dos profissionais.</p>
             )}
             {(operationalAgenda.status === 'empty' ||
               (operationalAgenda.status === 'success' && operationalAgenda.data.length === 0)) && (
-              <div className="gestor-empty-state">Nenhum agendamento encontrado.</div>
+              <div className="gestor-empty-state">Nenhum horário cadastrado para os profissionais neste dia.</div>
             )}
             {operationalAgenda.status === 'success' && operationalAgenda.data.length > 0 && (
-              <div className="gestor-table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Horário</th>
-                      <th>Paciente</th>
-                      <th>Profissional</th>
-                      <th>Especialidade</th>
-                      <th>Tipo</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {operationalAgenda.data.map((appointment) => (
-                      <tr key={appointment.appointment_id}>
-                        <td>{new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(appointment.appointment_date))}</td>
-                        <td>{appointment.patient_name}</td>
-                        <td>{appointment.professional_name}</td>
-                        <td>{appointment.specialty_name ?? '—'}</td>
-                        <td>{appointment.appointment_type}</td>
-                        <td>{appointment.attendance_status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="operational-agenda-slot-list" aria-label="Agendas dos profissionais">
+                {operationalAgenda.data.map((slot) => (
+                  <div
+                    className={`operational-agenda-slot is-${slot.slot_status}`}
+                    key={`${slot.professional_id}:${slot.slot_start}`}
+                  >
+                    <strong>{slotTime(slot.slot_start)}</strong>
+                    <span className="operational-agenda-professional">{slot.professional_name}</span>
+                    <span className="operational-agenda-status">
+                      {slot.slot_status === 'livre'
+                        ? 'Livre'
+                        : slot.slot_status === 'bloqueado'
+                          ? agendaBlockLabel(slot.block_type)
+                          : slot.patient_name ?? 'Horário ocupado'}
+                    </span>
+                    {slot.slot_status === 'livre' && (
+                      <Link
+                        className="operational-agenda-action"
+                        to="/agenda"
+                        state={{
+                          origin: 'home_free_slot',
+                          professionalId: slot.professional_id,
+                          slotDate: slot.slot_date,
+                          slotStart: slot.slot_start,
+                        }}
+                      >
+                        Agendar
+                      </Link>
+                    )}
+                    {slot.slot_status === 'agendado' && slot.appointment_id && (
+                      <Link
+                        className="operational-agenda-action"
+                        to="/agenda"
+                        state={{
+                          origin: 'home_cancel_appointment',
+                          appointmentId: slot.appointment_id,
+                          professionalId: slot.professional_id,
+                          slotDate: slot.slot_date,
+                        }}
+                      >
+                        Abrir
+                      </Link>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
             <Link className="gestor-panel-foot" to="/agenda">Abrir Agenda Geral ›</Link>
