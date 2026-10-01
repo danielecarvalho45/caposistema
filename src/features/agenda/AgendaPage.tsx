@@ -1501,19 +1501,15 @@ export function AgendaPage({
               {isProfessional ? 'Operacional assistencial' : 'Operacional geral'}
             </p>
             <h2 id="agenda-title">
-              {isProfessional
-                ? embeddedHome
-                  ? 'Minha Agenda'
-                  : 'Minha Agenda'
-                : 'Agenda Geral'}
+              {isProfessional ? 'Minha Agenda' : 'Agenda Geral'}
             </h2>
-            <p>
-              {isProfessional
-                ? embeddedHome
-                  ? 'Agenda própria com visualização por dia, semana e mês.'
-                  : 'Seus atendimentos no período selecionado.'
-                : 'Atendimentos e movimentações autorizados no período selecionado.'}
-            </p>
+            {!embeddedHome && (
+              <p>
+                {isProfessional
+                  ? 'Seus atendimentos no período selecionado.'
+                  : 'Atendimentos e movimentações autorizados no período selecionado.'}
+              </p>
+            )}
           </div>
           {!embeddedHome && (
           <div className="assistential-filters">
