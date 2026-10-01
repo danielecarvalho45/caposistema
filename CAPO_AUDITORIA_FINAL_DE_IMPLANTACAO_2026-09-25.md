@@ -6033,3 +6033,73 @@ Foi criado teste específico do painel compartilhado para exigir:
 **Preservado:** Supabase, migrations, RPCs existentes, permissões de Coordenação e Administrativo Operacional, demais funções do painel da Coordenação e isolamento de homologação.
 
 **Estado:** **HOME DA COORDENAÇÃO MIGRADA PARA A GRADE DIÁRIA CANÔNICA / AO E COORDENAÇÃO COMPARTILHAM O MESMO PAINEL FÍSICO DE AGENDA GERAL DO DIA / SEM ALTERAÇÃO DE BANCO**.
+
+
+### 28.112 HOMOLOGAÇÃO — BUSCA DO PACIENTE TESTE NO ADMINISTRATIVO OPERACIONAL (01/10/2026)
+
+**Origem:** a responsável informou que o paciente cadastrado na homologação não era localizado pela busca do Administrativo Operacional. Paciente informado: CAPO Homologação 02.
+
+#### Diagnóstico físico no Supabase
+Foi confirmado no projeto oficial `fftebavlhbfcrvrtnrld` que o paciente existe fisicamente:
+
+- `patient_number = TESTE-CAPO-0002`;
+- `full_name = daniele carvalho`;
+- `cms = 101510`;
+- `status = ativo`;
+- `is_test = true`;
+- rótulo: `Paciente criado em homologação controlada`.
+
+Foram comprovadas duas causas combinadas:
+
+1. o contexto atual da conta `manuteste`, embora estivesse habilitado e simulando `administrativo_operacional`, estava com `test_patient_id = null`;
+2. a função `public.search_patients_for_interface` autorizava somente os papéis reais por `has_app_role(...)` e não reconhecia o papel administrativo simulado de uma conta de homologação.
+
+Também foi confirmado que a migration de banco já aplicada:
+- `20260930195004_select_new_test_patient_in_homologation_context`
+
+faz com que pacientes de teste cadastrados depois dela sejam automaticamente selecionados como paciente ativo da homologação. O `TESTE-CAPO-0002` foi criado antes dessa migration, por isso ficou sem vínculo ativo no contexto.
+
+#### Correção cirúrgica no contexto atual
+O contexto da `manuteste` foi atualizado para selecionar fisicamente o paciente:
+- `TESTE-CAPO-0002`.
+
+Após a correção, `homologation_contexts.test_patient_id` aponta para esse paciente enquanto o contexto segue:
+- `is_enabled = true`;
+- papel simulado = `administrativo_operacional`.
+
+#### Correção da busca
+Foi aplicada a migration:
+- `20261001012929_allow_homologation_admin_patient_search`.
+
+A função `public.search_patients_for_interface` agora:
+- mantém a autorização real existente para Administrador, Administrativo Operacional e Coordenador;
+- para conta marcada como homologação, aceita somente contexto habilitado e papel simulado entre:
+  - `administrador`;
+  - `administrativo_operacional`;
+  - `coordenador`;
+- continua usando `capo_patient_visible_in_current_context(patient_id)`, portanto não mistura pacientes reais e pacientes de teste;
+- mantém exigência de autenticação e aceite do termo;
+- mantém ACL restrita a `authenticated` e `service_role`.
+
+#### Validação física
+A busca foi executada em transação simulando a identidade autenticada real da `manuteste` e consultando:
+
+`search_patients_for_interface('TESTE-CAPO-0002',20,0)`
+
+Resultado físico retornado:
+- paciente localizado;
+- Nº CAPO `TESTE-CAPO-0002`;
+- nome `daniele carvalho`;
+- CMS `101510`;
+- status `ativo`.
+
+**VALIDAÇÃO: PASS.**
+
+#### Sincronização com GitHub
+A migration aplicada no Supabase foi sincronizada no repositório oficial em:
+- `supabase/migrations/20261001012929_allow_homologation_admin_patient_search.sql`.
+
+Commit:
+- `a080efeba4d37f467d10adbe9854db0e550ef065` — `fix: permite busca de paciente no administrativo homologação`.
+
+**Estado:** **CAUSA COMPROVADA / PACIENTE TESTE 0002 SELECIONADO NO CONTEXTO / BUSCA DO AO SIMULADO CORRIGIDA / ISOLAMENTO PRODUÇÃO × HOMOLOGAÇÃO PRESERVADO / TESTE FÍSICO AUTENTICADO PASS**.
