@@ -331,8 +331,7 @@ function HomeScheduleGrid({
                   <td data-label="Paciente">
                     <div className="agenda-home-patient-line">
                       <strong>{patientName}</strong>
-                      {embeddedHome &&
-                        slot.slot_status === 'agendado' &&
+                      {slot.slot_status === 'agendado' &&
                         patientIsVisible &&
                         slot.appointment_id &&
                         onAttendance &&
@@ -373,31 +372,6 @@ function HomeScheduleGrid({
                         Agendar
                       </button>
                     )}
-                    {!embeddedHome &&
-                      slot.slot_status === 'agendado' &&
-                      patientIsVisible &&
-                      slot.appointment_id &&
-                      onAttendance &&
-                      (!appointment || appointment.attendance_status === 'agendado') && (
-                        <>
-                          <button
-                            type="button"
-                            className="agenda-attendance-confirm"
-                            disabled={busyAppointmentId === slot.appointment_id}
-                            onClick={() => onAttendance(slot.appointment_id!, 'confirmado')}
-                          >
-                            Confirmar
-                          </button>
-                          <button
-                            type="button"
-                            className="agenda-attendance-absence"
-                            disabled={busyAppointmentId === slot.appointment_id}
-                            onClick={() => onAttendance(slot.appointment_id!, 'faltou')}
-                          >
-                            Falta
-                          </button>
-                        </>
-                      )}
                     {appointment && onReturn && appointment.attendance_status === 'confirmado' && (
                       <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>
                         Agendar retorno
