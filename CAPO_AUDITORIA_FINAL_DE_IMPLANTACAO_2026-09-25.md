@@ -6425,3 +6425,14 @@ Commit:
 - `5209b9c0b3c5b886a216deee3fc801b98aba01e1` — `fix: encaminha aprovação de agenda ao administrativo`.
 
 **Estado:** **FLUXO AUTOMÁTICO CORRIGIDO / APROVAÇÃO DA COORDENAÇÃO GERA SOLICITAÇÃO DE BLOQUEIO PARA AO E PROFISSIONAL SOLICITANTE / AFASTAMENTO JÁ APROVADO RECUPERADO / TESTE FÍSICO AO PASS / TESTE FÍSICO PROFISSIONAL PASS / TITULAR PRESERVADO**.
+
+
+### Manutenção de disponibilidade — login da Titular (06/10/2026)
+
+**Relato:** Titular não conseguia entrar com usuário e senha. **Evidência física:** site oficial abriu a tela de login e respondeu HTTP 200; projeto Supabase oficial `fftebavlhbfcrvrtnrld` retornou `INACTIVE`, com timeout de acesso ao banco. Não foi comprovado erro de senha.
+
+**Ação:** solicitada reativação do mesmo projeto pelo controle oficial do Supabase. Retorno `success: true`; acompanhada a progressão `COMING_UP` → `RESTORING` → `ACTIVE_HEALTHY`. Nenhuma senha, identidade, papel, autorização, SQL estrutural, RPC ou dado operacional foi alterado.
+
+**Verificação física após restauração:** conta `daniele` ativa, vinculada ao Auth em `administrativo.capo@gmail.com`, e-mail confirmado, sem bloqueio de acesso por banimento; papel principal `administrador` (Gestor/Titular). Função `login-by-username` em estado `ACTIVE`. Banco voltou a responder às consultas. A razão administrativa original da inativação não foi fornecida pelo serviço e não foi presumida.
+
+**Estado:** **DISPONIBILIDADE RESTABELECIDA / CONTA TITULAR VERIFICADA / AGUARDANDO NOVA TENTATIVA REAL DE LOGIN PELA TITULAR COM SUA SENHA EXISTENTE**. Nenhuma senha foi solicitada ou testada pelo agente; autenticação de ponta a ponta ainda depende do teste real da Titular.
