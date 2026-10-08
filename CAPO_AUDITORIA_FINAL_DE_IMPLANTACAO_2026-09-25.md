@@ -7429,3 +7429,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Commits:** `55c73db0455c634e22aac951c7c42508e20f98a1` (interface), `9140ecc098f02f6e3d8b1858dfd394da5a7dda56` (regressão). O teste foi adicionado mas não executado nesta sessão; build e deploy não foram confirmados.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO TESTES, PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL EM `manuteste`**.
+
+
+### 28.132 NOTIFICAÇÕES — SINO, LEITURA E PROTEÇÃO CONTRA RESOLUÇÃO INDEVIDA (08/10/2026)
+
+**Regra funcional expressa da Titular:** o sino sinaliza apenas não lidas; ler retira do contador, mas a demanda permanece acompanhável na Central. Solicitações não expiram automaticamente. Apenas conclusão/cancelamento efetivo do fluxo permite retirada das notificações ativas; histórico/auditoria mantidos.
+
+**Inspeção física Supabase:** `get_my_notifications_for_interface(p_only_unread,...)` usa `read_at is null` no filtro de não lidas e retorna também registros com `resolved_at` preenchido. `update_my_notification_for_interface('resolvida')` grava `resolved_at` sem verificar o estado da entidade referenciada. O dado real inclui uma notificação com `entity_type='administrative_requests'`, `resolved_at` preenchido, porém solicitação administrativa `status='pending'`. Portanto **resolver o aviso não resolve nem cancela a demanda** e houve fechamento manual prematuro de aviso. As notificações de papel podem ter `user_id` ausente; `read_at` no registro é global e não individual por destinatário, ponto técnico adicional a preservar para análise própria.
+
+**Frontend:** os dois shells já consultam `getNotifications(true,1,0)`, apresentam o contador apenas se >0 e ouvem `capo:notifications-updated`; `NotificationsPage.tsx` emite o evento após marcar leitura. Não refazer essa parte já existente. Proteção adicionada em `NotificationsPage.tsx`: **Marcar como resolvida** somente para avisos sem `entity_type` vinculado; uma demanda com entidade deve ser concluída/cancelada no seu fluxo canônico, não na Central. Teste anterior que esperava botão para notificação vinculada foi ajustado. Nenhum dado prévio foi apagado/reclassificado e nenhuma RPC foi alterada.
+
+**Commits:** `04853e27911ad450d46464d79ad8e04baf781218` (interface), `2efeede194dfb435e2df878430816cd51a5b5e14` (teste).
+
+**Pendência real de continuidade:** alinhar o backend de apresentação e sincronização ao estado da solicitação de origem (inclusive avisos vinculados já marcados `resolved_at` indevidamente), preservar rastreabilidade de qualquer acerto histórico e impedir que resolução manual ou cancelamento deixe aviso inconsistente. Validar separadamente a semântica de `read_at` para notificações destinadas a um papel com múltiplos usuários; não inventar leitura individual nem migrar dados sem contrato revisado. Os testes de regressão e build não foram executados nesta sessão e a publicação não foi comprovada.
+
+**Estado:** **PROTEÇÃO CIRÚRGICA APLICADA NO CÓDIGO / PENDÊNCIA DE SINCRONIZAÇÃO BACKEND E HOMOLOGAÇÃO OPERACIONAL**.
