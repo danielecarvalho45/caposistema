@@ -7178,3 +7178,18 @@ No momento deste registro, o GitHub ainda não retornou execução/status do wor
 - não declarar este bloco como homologado até o Cloudflare publicar o novo `main` e a conta `manuteste` confirmar visualmente o padrão.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / REGRA TRANSVERSAL APLICADA / FUNÇÕES ESPECÍFICAS PRESERVADAS NAS ROTAS PRÓPRIAS / TESTES DE REGRESSÃO ATUALIZADOS / AGUARDANDO BUILD-PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL**.
+
+
+#### Homologação operacional publicada
+A responsável confirmou na conta `manuteste` que a correção ficou correta no ambiente publicado.
+
+Validação operacional confirmada:
+- Home profissional exibindo o padrão enxuto esperado;
+- módulos extensos de atuação não ocupam mais a tela inicial;
+- Agenda permanece em destaque;
+- acessos rápidos preservados;
+- resumo discreto da Agenda presente;
+- acesso à manutenção/suporte disponível;
+- mesma correção refletida no ambiente permanente de homologação.
+
+**Estado atualizado:** **PUBLICADO E HOMOLOGADO OPERACIONALMENTE NA `manuteste` / PADRÃO DA HOME PROFISSIONAL APROVADO / MÓDULOS ESPECÍFICOS PRESERVADOS NAS ROTAS PRÓPRIAS**.
