@@ -113,9 +113,11 @@ describe('montagem interna das rotas físicas sem dados operacionais', () => {
     const birthdays = screen.getByRole('heading', { name: 'Aniversariantes de hoje' })
     expect(agenda.compareDocumentPosition(birthdays) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(container.querySelector('.home-profile-grid')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Plano Alimentar e PDF oficial' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Solicitar manutenção/ })).toHaveAttribute('href', '/suporte')
   })
 
-  it('mostra agenda e aniversariantes antes do acompanhamento Social', async () => {
+  it('mantém a Home Social restrita ao painel inicial', async () => {
     access.current = { ...admin,
       roles: [{ code: 'profissional', name: 'Profissional' }],
       primary_context: { ...admin.primary_context, code: 'profissional', name: 'Profissional' },
@@ -126,9 +128,22 @@ describe('montagem interna das rotas físicas sem dados operacionais', () => {
     const birthdays = screen.getByRole('heading', { name: 'Aniversariantes de hoje' })
     const followup = container.querySelector('#acompanhamento-social')
     expect(agenda.compareDocumentPosition(birthdays) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(followup).toBeInTheDocument()
-    expect(birthdays.compareDocumentPosition(followup!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(followup).not.toBeInTheDocument()
     expect(screen.getAllByRole('link', { name: /Familiar \/ Cuidador/ }).some((link) => link.getAttribute('href') === '/familiar-cuidador')).toBe(true)
+    expect(screen.getByRole('link', { name: /Solicitar manutenção/ })).toHaveAttribute('href', '/suporte')
+  })
+
+  it('mantém a Home assistencial sem relatórios e blocos operacionais extensos', async () => {
+    access.current = { ...admin,
+      roles: [{ code: 'profissional', name: 'Profissional' }],
+      primary_context: { ...admin.primary_context, code: 'profissional', name: 'Profissional' },
+      primary_specialty_name: 'Fisioterapia', specialties: [{ specialty_id: 'physio', specialty_name: 'Fisioterapia', is_primary: true }],
+    }
+    render(<MemoryRouter><App /></MemoryRouter>)
+    await screen.findByRole('heading', { name: 'Minha agenda' })
+    expect(screen.queryByRole('heading', { name: 'Resumo operacional' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Registros clínicos continuam nos fluxos próprios/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Solicitar manutenção/ })).toHaveAttribute('href', '/suporte')
   })
 
   it('organiza equipe, agendas e aniversariantes na Coordenação', () => {
