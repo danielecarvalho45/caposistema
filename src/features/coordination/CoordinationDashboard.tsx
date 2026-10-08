@@ -84,7 +84,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
   const [team, setTeam] = useState<AsyncState<unknown>>(loadingState)
   const [agenda, setAgenda] = useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [requests, setRequests] = useState<AsyncState<unknown>>(loadingState)
-  const [reason, setReason] = useState('')
+  const [rejectionReasons, setRejectionReasons] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState('')
   const reloadRequests = useCallback(async () => setRequests(await getRpcService().getAgendaChangeRequests(null, null, 50)), [])
@@ -98,14 +98,16 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     return () => { active = false }
   }, [])
   async function decide(requestId: string, action: 'aprovar' | 'rejeitar') {
-    if (!requestId || busy || (action === 'rejeitar' && reason.trim().length < 5)) return
+    const decisionReason = rejectionReasons[requestId]?.trim() ?? ''
+    if (!requestId || busy || (action === 'rejeitar' && decisionReason.length < 5)) return
     setBusy(true); setFeedback('')
     const rpc = getRpcService()
-    const result = await rpc.decideAgendaChangeRequest(requestId, action, reason.trim() || null)
+    const result = await rpc.decideAgendaChangeRequest(requestId, action, action === 'rejeitar' ? decisionReason : null)
     if (result.status !== 'success') { setFeedback(result.status === 'error' ? result.error.message : 'O backend não confirmou a operação.'); setBusy(false); return }
     setRequests(loadingState())
     await reloadRequests()
-    setFeedback(action === 'aprovar' ? 'Anuência registrada. A alteração aguarda efetivação administrativa.' : 'Solicitação devolvida pela Coordenação.')
+    setFeedback(action === 'aprovar' ? 'Anuência registrada. A alteração aguarda efetivação administrativa.' : 'Solicitação rejeitada com justificativa e devolvida ao profissional.')
+    if (action === 'rejeitar') setRejectionReasons((current) => ({ ...current, [requestId]: '' }))
     setBusy(false)
   }
   return <div className="home-page home-mobile-standard"><header className="home-welcome"><p className="eyebrow">Coordenação</p><h1>Painel da Coordenação</h1><p>Visão gerencial da equipe e dos fluxos autorizados.</p></header>
@@ -138,9 +140,15 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
           {status === 'pendente' && <div className="coordination-agenda-decision">
             <button disabled={busy || id === '—'} onClick={() => void decide(id, 'aprovar')}>Aprovar e encaminhar ao Administrativo</button>
             <label>Justificativa da rejeição
-              <textarea value={reason} minLength={5} maxLength={1000} onChange={(event) => setReason(event.target.value)} placeholder="Obrigatória somente para rejeitar" />
+              <textarea
+                value={rejectionReasons[id] ?? ''}
+                minLength={5}
+                maxLength={1000}
+                onChange={(event) => setRejectionReasons((current) => ({ ...current, [id]: event.target.value }))}
+                placeholder="Obrigatória somente para rejeitar"
+              />
             </label>
-            <button disabled={busy || id === '—' || reason.trim().length < 5} onClick={() => void decide(id, 'rejeitar')}>Rejeitar e devolver ao profissional</button>
+            <button disabled={busy || id === '—' || (rejectionReasons[id]?.trim().length ?? 0) < 5} onClick={() => void decide(id, 'rejeitar')}>Rejeitar e devolver ao profissional</button>
           </div>}
           {status === 'aprovada' && <p><strong>Fluxo:</strong> Aprovada pela Coordenação · aguardando efetivação administrativa.</p>}
           {['rejeitada', 'devolvida'].includes(status) && <p><strong>Fluxo:</strong> Rejeitada pela Coordenação · devolvida ao profissional com justificativa.</p>}
