@@ -189,4 +189,52 @@ describe('RequestsPage', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar solicitação' }))
     expect(await screen.findByRole('status')).toHaveTextContent('ainda não apareceu na lista retornada pelo banco')
   })
+
+  it('encaminha Recusar ao backend como refuse e só confirma após recarga', async () => {
+    const user = userEvent.setup()
+    const gestorContext: AccessContext = {
+      ...professionalContext,
+      professional_id: null,
+      roles: [{ code: 'administrador', name: 'Administrador' }],
+      primary_context: {
+        ...professionalContext.primary_context,
+        code: 'administrador',
+        name: 'Administrador',
+      },
+    }
+    const pending = {
+      request_id: 'agenda-request-id', patient_id: null, patient_name: null,
+      patient_number: null, cms: null, requesting_professional_id: 'professional-id',
+      requesting_professional_name: 'Assistência Social',
+      subject: 'Bloqueio de agenda — Afastamento aprovado',
+      description: 'Providenciar bloqueio.', status: 'pending',
+      administrative_response: null, counter_reference: null,
+      created_at: '2026-10-01T12:00:00Z', updated_at: '2026-10-01T12:00:00Z',
+      completed_at: null, cancelled_at: null, total_count: 1,
+    }
+    const refused = { ...pending, status: 'refused', administrative_response: 'Não autorizado pelo Titular.' }
+    const service = requestService({ status: 'success', data: [pending] })
+    service.getAdministrativeRequests
+      .mockResolvedValueOnce({ status: 'success', data: [pending] })
+      .mockResolvedValue({ status: 'success', data: [refused] })
+    service.updateAdministrativeRequest.mockResolvedValue({
+      status: 'success',
+      data: { request_id: 'agenda-request-id', status: 'refused' },
+    })
+
+    renderWithRouter(<RequestsPage accessContext={gestorContext} service={service} />)
+    await screen.findByText('Bloqueio de agenda — Afastamento aprovado')
+    await user.click(screen.getByText('Bloqueio de agenda — Afastamento aprovado'))
+    await user.type(screen.getByLabelText('Providência / justificativa'), 'Não autorizado pelo Titular.')
+    await user.click(screen.getByRole('button', { name: 'Recusar' }))
+
+    expect(service.updateAdministrativeRequest).toHaveBeenCalledWith(
+      'agenda-request-id',
+      'refuse',
+      'Não autorizado pelo Titular.',
+      null,
+    )
+    expect(await screen.findByRole('status')).toHaveTextContent('Solicitação atualizada e registrada no histórico.')
+  })
+
 })
