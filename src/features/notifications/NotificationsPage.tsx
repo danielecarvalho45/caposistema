@@ -219,7 +219,7 @@ export function NotificationsPage({
                       Marcar como lida
                     </button>
                   )}
-                  {item.resolved_at === null && (
+                  {item.resolved_at === null && !item.entity_type && (
                     <button
                       type="button"
                       disabled={busy}
