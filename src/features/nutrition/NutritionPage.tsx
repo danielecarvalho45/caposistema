@@ -610,7 +610,7 @@ export function NutritionPage({
               </button>
             </div>
           )}
-          {managementFeedback && <p role="status">{managementFeedback}</p>
+          {managementFeedback && <p role="status">{managementFeedback}</p>}
           {managementDocuments.length === 0 && <p>Nenhum documento nutricional oficial encontrado.</p>}
           {managementDocuments.length > 0 && (
             <ul>
