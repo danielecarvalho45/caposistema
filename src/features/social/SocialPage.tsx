@@ -163,6 +163,7 @@ export function SocialPage({
             <h2 id="quick-title">Acessos rápidos</h2>
             <div className="social-quick-grid">
               <Link className="social-quick-card social-quick-card--agenda" to="/agenda"><span className="social-quick-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
+              <Link className="social-quick-card social-quick-card--requests" to="/minha-agenda/solicitar-alteracao"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
               <Link className="social-quick-card social-quick-card--followup" to="/assistencia-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></Link>
               <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
               <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
