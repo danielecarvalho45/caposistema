@@ -7074,3 +7074,107 @@ No instante desta atualização, o GitHub ainda não retornava execução do wor
 4. manter separadas as classificações **implementado**, **publicado** e **homologado**.
 
 **Estado:** **PUBLICAÇÃO AUTOMÁTICA RESTABELECIDA / MAIN ATUAL PUBLICADO / CORREÇÕES ACUMULADAS QUE PERMANECEM NO MAIN AGORA ESTÃO PUBLICADAS / HOMOLOGAÇÃO OPERACIONAL PENDENTE NOS ITENS INDICADOS / CHECK AUTOMÁTICO DE BUILD ADICIONADO AO GITHUB**.
+
+
+### 28.125 HOME PROFISSIONAL — PADRÃO INICIAL ENXUTO, RESUMO RÁPIDO E MANUTENÇÃO ACESSÍVEL (08/10/2026)
+
+**Origem:** homologação publicada após a retomada do deploy. A responsável apresentou evidência visual da Home de Nutrição e Fisioterapia mostrando módulos operacionais extensos no painel inicial, incluindo Plano Alimentar completo, resumo operacional, Encaminhamentos/Encerramentos e texto explicativo.
+
+#### Regra reafirmada
+A Home profissional deve priorizar:
+1. Acessos rápidos;
+2. Minha Agenda, com Dia/Semana/Mês;
+3. resumo discreto de Agendados, Confirmados e Faltosos;
+4. Notificações/Faltosos como indicadores auxiliares;
+5. Aniversariantes;
+6. acesso fácil para Solicitar manutenção/suporte.
+
+Funções próprias da especialidade permanecem disponíveis nos módulos correspondentes e não devem ocupar permanentemente a Home inicial.
+
+A regra vale para:
+- Clínico Geral;
+- Nutrição;
+- Assistência Social;
+- Psicologia;
+- Fisioterapia;
+- futuras especialidades que reutilizem o padrão assistencial;
+- mesmos componentes em produção e homologação.
+
+#### Correção aplicada
+
+**Roteamento da Home**
+- `App.tsx` passa `homeOnly` somente quando Nutrição ou componente assistencial padrão estão sendo renderizados na rota inicial `/`.
+- as rotas próprias `/nutricao` e `/atuacao` continuam exibindo os módulos completos.
+
+**Nutrição**
+- a Home inicial deixa de renderizar permanentemente o formulário completo “Plano Alimentar e PDF oficial”;
+- o módulo continua disponível em `/nutricao`;
+- quando um paciente é confirmado na Agenda da Home, o fluxo específico pode ser apresentado para continuidade do atendimento;
+- Acessos rápidos agora incluem Minha Agenda, Planejamento Alimentar, Solicitações, Relatórios e Solicitar manutenção.
+
+Commit:
+- `2339115c6b09bd68c3397f6f4c94aa9d210b4a4e`.
+
+**Clínico Geral / Psicologia / Fisioterapia / padrão assistencial**
+- a Home inicial deixa de apresentar permanentemente:
+  - busca extensa de pacientes;
+  - Resumo operacional;
+  - blocos de Encaminhamentos/Encerramentos derivados do relatório;
+  - texto explicativo “Registros clínicos continuam...”;
+- busca/contexto do paciente pode aparecer após Confirmação real de atendimento;
+- módulos completos permanecem em `/atuacao`;
+- Acessos rápidos incluem Agenda, Pacientes/Atuação, Gerenciar minha agenda, Solicitações conforme autorização, Encaminhamentos conforme capability, Renovação de Receita somente Clínico quando autorizada, Relatórios e Solicitar manutenção.
+
+Commits:
+- `9eaaaf4e605c2bbe26120cf468a703224a1a25e4`;
+- `6b19521c2e4c851754513bc9f80b9e6cc344b540`.
+
+**Assistência Social**
+- o módulo completo “Acompanhamento Social no Serviço CAPO” deixa de ser exibido permanentemente na Home;
+- permanece acessível em `/assistencia-social`;
+- na Home, após confirmação de paciente, o fluxo pode ser aberto para continuidade do atendimento;
+- leitura completa do acompanhamento não é carregada passivamente na Home;
+- Acessos rápidos receberam Relatórios e Solicitar manutenção.
+
+Commits:
+- `9bf0946475497a43f7e7ad299c9bb625fe2b0f2b`;
+- `13bceb38080812794ddd4974bedffa4e87c712dc`.
+
+**Resumo rápido transversal da Agenda**
+No componente canônico `AgendaPage`, quando embutido na Home profissional, foi adicionado resumo discreto:
+- Agendados;
+- Confirmados;
+- Faltosos.
+
+Os números são calculados exclusivamente a partir dos agendamentos reais já retornados para o período/visão atualmente carregado. Nenhum indicador é fabricado.
+
+Os indicadores já existentes de Notificações e Faltosos foram preservados.
+
+Commits:
+- `63cd9c4110b28810fa0b22b450b2211e7746d3de`;
+- `a7034177b2d30584b3d46734cb3c4d6e3ca69d62`.
+
+**Separação Home × módulo**
+Commit de roteamento:
+- `39eb3500bb93e9d34d574a3e9f1b93b6dbb86cf6`.
+
+#### Proteção de regressão
+Foram atualizados testes para exigir:
+- Home de Nutrição sem Plano Alimentar completo no estado inicial;
+- Home Social sem módulo completo de acompanhamento no estado inicial;
+- Home assistencial sem Resumo operacional/texto genérico extenso;
+- atalho Solicitar manutenção;
+- resumo rápido da Agenda com Agendados, Confirmados e Faltosos.
+
+Commits:
+- `730c862fc6e5cc634fe7a70477d34540840da261`;
+- `998628f4bb57783679f1b1e5ebd1d9bd8b7dfa4a`.
+
+#### Validação
+Os arquivos modificados foram relidos fisicamente no `main` e a separação Home × módulos está presente.
+
+No momento deste registro, o GitHub ainda não retornou execução/status do workflow de build recém-criado. Portanto:
+- não declarar a suíte automatizada como PASS;
+- não declarar este bloco como homologado até o Cloudflare publicar o novo `main` e a conta `manuteste` confirmar visualmente o padrão.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / REGRA TRANSVERSAL APLICADA / FUNÇÕES ESPECÍFICAS PRESERVADAS NAS ROTAS PRÓPRIAS / TESTES DE REGRESSÃO ATUALIZADOS / AGUARDANDO BUILD-PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL**.
