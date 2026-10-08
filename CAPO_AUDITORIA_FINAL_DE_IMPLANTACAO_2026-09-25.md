@@ -7193,3 +7193,72 @@ Validação operacional confirmada:
 - mesma correção refletida no ambiente permanente de homologação.
 
 **Estado atualizado:** **PUBLICADO E HOMOLOGADO OPERACIONALMENTE NA `manuteste` / PADRÃO DA HOME PROFISSIONAL APROVADO / MÓDULOS ESPECÍFICOS PRESERVADOS NAS ROTAS PRÓPRIAS**.
+
+
+### 28.126 COORDENAÇÃO — SIMPLIFICAÇÃO DA DECISÃO SOBRE ALTERAÇÃO DE AGENDA (08/10/2026)
+
+**Origem:** a responsável identificou na tela publicada da Coordenação um desenho confuso para mudança de agenda e solicitou confronto com o Manual Estrutural.
+
+#### Manual estrutural confrontado
+Foi consultada fisicamente a `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12`.
+
+O documento define:
+- **Solicitações**: análise e acompanhamento das solicitações que exigem ciência, decisão ou autorização da Coordenação;
+- **Gestão de Agenda**: autorizar alterações estruturais de disponibilidade, férias, afastamentos, ampliação/redução de carga, mudança de turno e demais mudanças gerenciais;
+- alterações estruturais de jornada/disponibilidade devem tramitar pela Coordenação e permanecer auditadas;
+- estados de devolução/recusa devem exigir justificativa quando aplicável.
+
+#### Divergência física encontrada
+`src/features/coordination/CoordinationDashboard.tsx` mantinha simultaneamente:
+1. um formulário **“Registrar decisão da equipe”**, em que a Coordenação escolhia novamente profissional, tipo, início, fim e justificativa;
+2. a lista real **“Solicitações de alteração de agenda”**, já oriunda do pedido profissional e com ações Aprovar/Rejeitar.
+
+Para alteração de agenda, o primeiro fluxo duplicava a informação enviada pelo profissional e induzia a interpretação de que o Coordenador criava a mudança.
+
+#### Regra operacional consolidada
+O fluxo da alteração estrutural fica:
+
+`PROFISSIONAL`
+→ informa a alteração solicitada, incluindo configuração/período/dia/horário conforme o contrato do pedido
+→ envia justificativa
+→ `COORDENAÇÃO`
+→ consulta o pedido sem redigitar os dados estruturais
+→ **Aprovar** ou **Rejeitar**
+→ se **Aprovado**: segue para efetivação administrativa pelo fluxo já existente
+→ se **Rejeitado**: justificativa obrigatória e devolução ao profissional solicitante.
+
+A aprovação não exige que o Coordenador recrie datas, horários ou tipo de mudança.
+
+#### Correção cirúrgica na interface
+Foi removido da Home da Coordenação o formulário duplicado **“Registrar decisão da equipe”** e seu fluxo paralelo de decisão para mudanças de agenda.
+
+A área **“Solicitações de alteração de agenda”** foi mantida e simplificada para cada solicitação mostrar:
+- profissional solicitante;
+- resumo da alteração registrada no pedido;
+- justificativa do profissional;
+- situação atual;
+- **Aprovar e encaminhar ao Administrativo**;
+- **Rejeitar e devolver ao profissional**.
+
+A justificativa é obrigatória somente na rejeição e passou a ser vinculada individualmente ao pedido, evitando compartilhamento acidental de texto entre solicitações diferentes.
+
+A aprovação continua usando o contrato existente:
+- `decide_agenda_change_request_for_interface`.
+
+O backend já existente que transforma a aprovação em demanda administrativa foi preservado; não foi criada migration nem fluxo paralelo.
+
+Commits:
+- `55dab5325e0218c9df2936f0d56c83644d859f5a` — simplificação da decisão da Coordenação;
+- `fcd9a0bb009d8fd80fac7d9fc4b5cc97c2aeac1c` — justificativa vinculada à solicitação;
+- `eba8c9a8d552933e116bc95fdb07a2a58d8b34b2` — proteção de regressão da interface.
+
+#### Validação
+O código atual foi relido fisicamente no `main` após a alteração.
+
+O teste de regressão passou a exigir:
+- presença de **Solicitações de alteração de agenda**;
+- ausência de **Registrar decisão da equipe** na Home da Coordenação.
+
+A suíte não foi executada fisicamente nesta intervenção; não registrar PASS automatizado sem execução.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / FLUXO VISUAL SIMPLIFICADO CONFORME MANUAL E REGRA OPERACIONAL / BACKEND CANÔNICO PRESERVADO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL NA `manuteste`**.
