@@ -29,6 +29,35 @@ function specialtyNames(row: Row) {
     return []
   }).join(', ') || '—'
 }
+function requestedChanges(row: Row) {
+  const changes = row.requested_changes
+  return changes && typeof changes === 'object' && !Array.isArray(changes) ? changes as Row : null
+}
+function changeValue(row: Row, ...keys: string[]) {
+  const changes = requestedChanges(row)
+  if (!changes) return '—'
+  const found = keys.map((key) => changes[key]).find((item) => typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean')
+  if (found === undefined) return '—'
+  if (typeof found === 'boolean') return found ? 'Sim' : 'Não'
+  return String(found)
+}
+function requestSummary(row: Row) {
+  const type = value(row, 'request_type', 'action_type')
+  const startDate = changeValue(row, 'start_date', 'effective_date', 'date')
+  const endDate = changeValue(row, 'end_date')
+  const startTime = changeValue(row, 'start_time')
+  const endTime = changeValue(row, 'end_time')
+  const weekdays = requestedChanges(row)?.weekdays
+  const weekdayText = Array.isArray(weekdays) ? weekdays.join(', ') : '—'
+  const parts = [
+    type !== '—' ? `Tipo: ${type.replaceAll('_', ' ')}` : null,
+    startDate !== '—' ? `Início/vigência: ${startDate}` : null,
+    endDate !== '—' ? `Fim: ${endDate}` : null,
+    startTime !== '—' ? `Horário: ${startTime}${endTime !== '—' ? `–${endTime}` : ''}` : null,
+    weekdayText !== '—' ? `Dias: ${weekdayText}` : null,
+  ].filter(Boolean)
+  return parts.length ? parts.join(' · ') : 'Detalhes estruturais conforme solicitação registrada.'
+}
 const links = [
   { path: '/pacientes', title: 'Pacientes em Acompanhamento', description: 'Consultar pacientes autorizados', icon: '👥', tone: 'quick-blue' },
   { path: '/agenda', title: 'Agenda Geral', description: 'Visualizar agendas da equipe', icon: '▣', tone: 'quick-green' },
@@ -55,14 +84,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
   const [team, setTeam] = useState<AsyncState<unknown>>(loadingState)
   const [agenda, setAgenda] = useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [requests, setRequests] = useState<AsyncState<unknown>>(loadingState)
-  const [pending, setPending] = useState<AsyncState<unknown>>(loadingState)
-  const [decisions, setDecisions] = useState<AsyncState<unknown>>(loadingState)
   const [reason, setReason] = useState('')
-  const [professionalId, setProfessionalId] = useState('')
-  const [actionType, setActionType] = useState('mudanca_horario')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [decisionReason, setDecisionReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState('')
   const reloadRequests = useCallback(async () => setRequests(await getRpcService().getAgendaChangeRequests(null, null, 50)), [])
@@ -72,8 +94,6 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
     void rpc.getCoordinatorTeamOverview(null, null, null, null, null, 50, 0).then((result) => { if (active) setTeam(result) })
     void rpc.getAgendaScheduleGrid(date, date, null).then((result) => { if (active) setAgenda(result) })
-    void rpc.getCoordinationTeamDecisions(null, null, 50, 0).then((result) => { if (active) setDecisions(result) })
-    void rpc.getPendingItems(50, 0).then((result) => { if (active) setPending(result) })
     void rpc.getAgendaChangeRequests(null, null, 50).then((result) => { if (active) setRequests(result) })
     return () => { active = false }
   }, [])
@@ -88,17 +108,6 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     setFeedback(action === 'aprovar' ? 'Anuência registrada. A alteração aguarda efetivação administrativa.' : 'Solicitação devolvida pela Coordenação.')
     setBusy(false)
   }
-  async function register(decision: 'aprovar' | 'devolver') {
-    if (busy || !professionalId || !startDate || endDate < startDate || decisionReason.trim().length < 5) return
-    setBusy(true); setFeedback('')
-    const result = await getRpcService().registerCoordinationTeamDecision(professionalId, actionType, startDate, endDate, decisionReason.trim(), decision)
-    if (result.status !== 'success') { setFeedback(result.status === 'error' ? result.error.message : 'O backend não confirmou a decisão.'); setBusy(false); return }
-    setDecisions(loadingState())
-    const reloaded = await getRpcService().getCoordinationTeamDecisions(null, null, 50, 0)
-    setDecisions(reloaded)
-    setFeedback(reloaded.status === 'error' ? 'Decisão confirmada, mas a recarga falhou.' : 'Decisão confirmada e histórico recarregado do banco.')
-    setBusy(false)
-  }
   return <div className="home-page home-mobile-standard"><header className="home-welcome"><p className="eyebrow">Coordenação</p><h1>Painel da Coordenação</h1><p>Visão gerencial da equipe e dos fluxos autorizados.</p></header>
     <section className="home-profile home-profile-standard"><h2>Acessos rápidos</h2><div className="home-profile-grid">{links.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title, description, icon, tone }) => <Link className={`home-profile-card ${tone}`} to={path} key={path}><span className="home-profile-icon" aria-hidden="true">{icon}</span><strong>{title}</strong><span>{description}</span></Link>)}</div></section>
     <section className="home-profile"><h2>Equipe e Profissionais</h2>
@@ -111,31 +120,32 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     </section>
     <TeamDayAgendaPanel agenda={agenda} />
     <BirthdayPanel title="Aniversariantes de hoje" />
-    <section className="home-profile"><h2>Registrar decisão da equipe</h2>
-      <label>Profissional<select value={professionalId} onChange={(event) => setProfessionalId(event.target.value)}><option value="">Selecione da equipe</option>{team.status === 'success' && rows(team.data).map((row) => <option key={value(row, 'professional_id')} value={value(row, 'professional_id')}>{value(row, 'full_name')}</option>)}</select></label>
-      <label>Tipo<select value={actionType} onChange={(event) => setActionType(event.target.value)}>{['mudanca_horario', 'ferias', 'afastamento', 'mudanca_turno', 'carga', 'bloqueio', 'substituicao', 'outra'].map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}</select></label>
-      <label>Início<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label>
-      <label>Fim<input type="date" min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label>
-      <label>Justificativa<textarea value={decisionReason} onChange={(event) => setDecisionReason(event.target.value)} /></label>
-      <button type="button" disabled={busy || !professionalId || !startDate || !endDate || endDate < startDate || decisionReason.trim().length < 5} onClick={() => void register('aprovar')}>Aprovar</button>
-      <button type="button" disabled={busy || !professionalId || !startDate || !endDate || endDate < startDate || decisionReason.trim().length < 5} onClick={() => void register('devolver')}>Devolver</button>
-    </section>
-    <Panel title="Decisões da Coordenação" state={decisions} fields={['professional_name', 'action_type', 'status', 'reason']} />
-    <Panel title="Pendências" state={pending} fields={['title', 'patient_name', 'status', 'priority']} />
-    <section className="home-profile"><h2>Solicitações de alteração de agenda</h2>
-      <label>Justificativa para rejeição<textarea value={reason} onChange={(event) => setReason(event.target.value)} /></label>
+    <section className="home-profile" aria-labelledby="agenda-change-review-title"><h2 id="agenda-change-review-title">Solicitações de alteração de agenda</h2>
+      <p>O profissional informa a alteração. A Coordenação apenas analisa e decide.</p>
       {feedback && <p role="status">{feedback}</p>}
       {requests.status === 'loading' && <p>Carregando solicitações…</p>}
       {requests.status === 'error' && <p role="alert">{requests.error.message}</p>}
       {requests.status === 'empty' && <p>Nenhuma solicitação retornada.</p>}
-      {requests.status === 'success' && (rows(requests.data).length ? <ul>{rows(requests.data).map((row, index) => {
+      {requests.status === 'success' && (rows(requests.data).length ? <div className="coordination-agenda-requests">{rows(requests.data).map((row, index) => {
         const id = value(row, 'request_id', 'agenda_change_request_id')
         const status = value(row, 'status')
-        return <li key={id + index}><strong>{value(row, 'professional_name', 'professional_id')}</strong> · {status} · {value(row, 'justification', 'reason', 'description')}
-          {status === 'pendente' && <><button disabled={busy || id === '—'} onClick={() => void decide(id, 'aprovar')}>Aprovar</button><button disabled={busy || id === '—' || reason.trim().length < 5} onClick={() => void decide(id, 'rejeitar')}>Rejeitar</button></>}
-          {status === 'aprovada' && <span> · Aguardando efetivação administrativa</span>}
-        </li>
-      })}</ul> : <p>Nenhuma solicitação retornada.</p>)}
+        const justification = value(row, 'justification', 'description')
+        return <article className="coordination-agenda-request" key={id + index}>
+          <h3>{value(row, 'professional_name', 'professional_id')}</h3>
+          <p><strong>Solicitação:</strong> {requestSummary(row)}</p>
+          <p><strong>Justificativa do profissional:</strong> {justification}</p>
+          <p><strong>Situação:</strong> {status}</p>
+          {status === 'pendente' && <div className="coordination-agenda-decision">
+            <button disabled={busy || id === '—'} onClick={() => void decide(id, 'aprovar')}>Aprovar e encaminhar ao Administrativo</button>
+            <label>Justificativa da rejeição
+              <textarea value={reason} minLength={5} maxLength={1000} onChange={(event) => setReason(event.target.value)} placeholder="Obrigatória somente para rejeitar" />
+            </label>
+            <button disabled={busy || id === '—' || reason.trim().length < 5} onClick={() => void decide(id, 'rejeitar')}>Rejeitar e devolver ao profissional</button>
+          </div>}
+          {status === 'aprovada' && <p><strong>Fluxo:</strong> Aprovada pela Coordenação · aguardando efetivação administrativa.</p>}
+          {['rejeitada', 'devolvida'].includes(status) && <p><strong>Fluxo:</strong> Rejeitada pela Coordenação · devolvida ao profissional com justificativa.</p>}
+        </article>
+      })}</div> : <p>Nenhuma solicitação retornada.</p>)}
     </section>
   </div>
 }
