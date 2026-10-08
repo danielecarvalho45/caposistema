@@ -345,6 +345,10 @@ export type Database = {
         }
         Returns: Json
       }
+      complete_transport_request_with_closure_pdf_for_interface: {
+        Args: { p_request_id: string; p_storage_path: string }
+        Returns: Json
+      }
       register_transport_pdf_for_interface: {
         Args: { p_request_id: string; p_storage_path: string }
         Returns: Json
