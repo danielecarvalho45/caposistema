@@ -85,10 +85,12 @@ export function AssistentialPage({
   accessContext,
   profileKind = 'assistencial_padrao',
   integration = defaultIntegration,
+  homeOnly = false,
 }: Readonly<{
   accessContext: AccessContext
   profileKind?: Extract<ProfessionalScreenKind, 'clinico_geral' | 'assistencial_padrao'>
   integration?: CAPOProfissionalAssistencialIntegration
+  homeOnly?: boolean
 }>) {
   const [specialtiesState, setSpecialtiesState] =
     useState<AsyncState<readonly AssistentialSpecialty[]>>(loadingState)
@@ -208,12 +210,14 @@ export function AssistentialPage({
       <nav className="assistential-card home-profile-standard" aria-label="Acessos rápidos do profissional">
         <h2 id="assistential-title">Acessos rápidos</h2>
         <div className="home-profile-grid">
+          <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
+          <Link className="home-profile-card quick-blue" to="/atuacao"><span className="home-profile-icon" aria-hidden="true">♙</span><strong>Pacientes</strong><span>Consultar a própria atuação</span></Link>
           <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true">⏱</span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
-          <a className="home-profile-card quick-blue" href="#assistential-patients"><span className="home-profile-icon" aria-hidden="true">♙</span><strong>Pacientes</strong><span>Consultar pacientes vinculados</span></a>
           {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
           {canAccessAppRoute(accessContext, '/encaminhamentos') && accessContext.capabilities.includes('encaminhamento_interprofissional') && <Link className="home-profile-card quick-mint" to="/encaminhamentos"><span className="home-profile-icon" aria-hidden="true">↗</span><strong>Encaminhamentos</strong><span>Consultar e encaminhar</span></Link>}
           {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/receita') && <Link className="home-profile-card quick-yellow" to="/receita"><span className="home-profile-icon" aria-hidden="true">▰</span><strong>Renovação de Receita</strong><span>Solicitações recebidas</span></Link>}
-          <a className="home-profile-card quick-violet" href="#assistential-summary"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Resumo operacional</strong><span>Consultar a própria atuação</span></a>
+          <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores da própria atuação</span></Link>
+          <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true">?</span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
         </div>
       </nav>
 
@@ -258,6 +262,7 @@ export function AssistentialPage({
 
       <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp />
 
+      {(!homeOnly || searchState !== null) && (
       <article id="assistential-patients" className="assistential-card">
         <h3>Pacientes sob sua atuação</h3>
         <p className="assistential-muted">
@@ -350,8 +355,9 @@ export function AssistentialPage({
           )}
         </div>
       </article>
+      )}
 
-      {selectedSpecialty && (
+      {!homeOnly && selectedSpecialty && (
         <article id="assistential-summary" className="assistential-card">
           <div className="assistential-heading">
             <div>
@@ -429,10 +435,12 @@ export function AssistentialPage({
         </article>
       )}
 
-      <aside className="assistential-notice">
-        Registros clínicos continuam nos fluxos próprios de cada especialidade;
-        esta área não cria conteúdo clínico genérico nem dados simulados.
-      </aside>
+      {!homeOnly && (
+        <aside className="assistential-notice">
+          Registros clínicos continuam nos fluxos próprios de cada especialidade;
+          esta área não cria conteúdo clínico genérico nem dados simulados.
+        </aside>
+      )}
     </section>
   )
 }
