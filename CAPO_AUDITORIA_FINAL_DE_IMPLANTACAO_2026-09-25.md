@@ -6681,3 +6681,96 @@ Commits principais:
 **Limite da validação nesta sessão:** não foi executada suíte `npm test`, `typecheck` ou `build` fisicamente nesta conexão; também ainda não foi concluído um Transporte real/homologado pela interface após o novo fluxo. Não declarar PASS desses itens.
 
 **Estado:** **CORREÇÕES IMPLEMENTADAS NO CÓDIGO E BANCO / PDF DE SOLICITAÇÃO PADRONIZADO / PDF DE ENCERRAMENTO CRIADO / FUNÇÃO DO EMISSOR INCLUÍDA / TIMBRE CORRIGIDO NO GERADOR COMPARTILHADO / ESTRUTURA DO BANCO VALIDADA / AGUARDANDO SUÍTE E HOMOLOGAÇÃO OPERACIONAL PUBLICADA**.
+
+
+### 28.119 HOMOLOGAÇÃO PUBLICADA — HOME PROFISSIONAL AINDA SERVE VERSÃO ANTERIOR DA AGENDA (08/10/2026)
+
+**Origem:** nova evidência visual real enviada pela responsável, no celular, em `https://caposistema.pages.dev/`, contexto **Homologação — Assistência Social**.
+
+#### Evidência observada na publicação
+A tela publicada ainda apresenta simultaneamente:
+- bloco **Atendimentos de hoje**;
+- faixa verde explicativa **Confirmar / Falta → fluxo administrativo de Faltosos**;
+- texto **Agenda própria com visualização por dia, semana e mês.**;
+- **Minha Agenda** antes de **Acessos rápidos**.
+
+Esses elementos são incompatíveis com o estado atual do `main` e com as correções já registradas nos §§28.105, 28.108, 28.109 e 28.114.
+
+#### Regra normativa reconfirmada
+A Matriz Funcional de 12/09 estabelece padrão transversal para:
+- Assistência Social;
+- Nutrição;
+- Clínico Geral;
+- Psicologia;
+- Fisioterapia;
+- futuras especialidades.
+
+Cada paciente agendado deve ter, ligado ao próprio nome:
+- **Confirmar**;
+- **Falta**.
+
+Fluxos:
+- **Confirmar** → registra presença → abre imediatamente o paciente → inicia o fluxo operacional da especialidade, sem nova busca;
+- **Falta** → registra ausência → **Faltosos → Administrativo Operacional**;
+- Falta **não** alimenta Busca Ativa.
+
+A Especificação Funcional/Estrutural consultada na Library confirma para Assistência Social que Minha Agenda contém presença/falta/retorno, enquanto Faltosos não é responsabilidade operacional da Assistência Social.
+
+#### Estado físico atual do código
+No `main` atual:
+- `SocialPage.tsx` usa **Acessos rápidos → AgendaPage → Aniversariantes**;
+- `NutritionPage.tsx` reutiliza `AgendaPage` em `embeddedHome`;
+- `AssistentialPage.tsx` reutiliza a mesma `AgendaPage` para Clínico Geral, Psicologia e Fisioterapia;
+- `AgendaPage.tsx` coloca **Confirmar** e **Falta** imediatamente ao lado do nome do paciente na visão Dia;
+- classes canônicas:
+  - `agenda-attendance-confirm`;
+  - `agenda-attendance-absence`;
+- `agenda-page.css` define:
+  - Confirmar com fundo verde;
+  - Falta com fundo vermelho;
+- o texto **Atendimentos de hoje** não existe nos componentes atuais;
+- o texto **Agenda própria com visualização por dia, semana e mês.** não existe no modo `embeddedHome`;
+- a faixa explicativa mostrada na imagem não existe no código de produção atual.
+
+#### Fluxo físico do backend reconfirmado
+`update_appointment_attendance_for_interface(uuid,text,text,text)`:
+- autoriza o profissional quando o agendamento pertence ao próprio `professional_id`;
+- `confirmado` grava presença;
+- `faltou` grava ausência.
+
+Trigger físico:
+- `trg_patient_no_show`;
+- ao receber `attendance_status='faltou'`, executa `handle_patient_no_show()`.
+
+`handle_patient_no_show()`:
+- cria `patient_no_show_followups` se ainda não existir;
+- status inicial `pendente`;
+- registra evento de falta na timeline;
+- mantém o acompanhamento como responsabilidade administrativa.
+
+#### Por que a solicitação anterior parece “não realizada”
+O Documento Mestre comprova que a solicitação **foi feita e implementada no código**:
+- §28.105 — remoção de **Atendimentos de hoje**, restauração da ordem da Home e tabela canônica;
+- §28.108 — Confirmar/Falta imediatamente junto ao paciente;
+- §28.109 — comportamento comum dentro e fora da Home;
+- §28.114 — remoção do texto explicativo, preservação da tabela no mobile, abertura direta do paciente e fluxo de Falta validado.
+
+As correções §§28.105–28.114 ocorreram em 30/09 e 01/10.
+
+O último deploy explicitamente documentado antes dessas correções, no próprio Documento Mestre, é anterior a esse conjunto. Não existe workflow de Cloudflare Pages no repositório que permita comprovar por GitHub o deploy automático atual, e a ferramenta disponível nesta sessão não acessou o histórico da conta Cloudflare.
+
+A evidência física de 08/10, entretanto, prova que a versão servida no endereço público está **atrasada em relação ao `main` atual** ou está entregando artefato anterior. Não há Service Worker/PWA no repositório que justifique retenção deliberada desse layout antigo pela aplicação.
+
+**Conclusão técnica:** não refazer os componentes corretos. O próximo passo operacional é garantir que o build/deploy do `main` atual seja efetivamente publicado no Cloudflare Pages e então repetir a homologação nos cinco perfis.
+
+#### Proteção adicional
+`tests/unit/social-page.test.tsx` foi reforçado para exigir ausência de:
+- qualquer texto combinando **Confirmar / Falta / Faltosos** como faixa explicativa;
+- **Agenda própria com visualização por dia, semana e mês.**;
+- além da proteção já existente contra **Atendimentos de hoje** e contra ordem invertida da Home.
+
+Commit:
+- `d4e969a1388205495b20928a516db7640a20003c`.
+
+#### Estado
+**IMPLEMENTAÇÃO CANÔNICA PRESENTE NO `main` / BACKEND DO CONFIRMAR E FALTA CONFORME / PUBLICAÇÃO VISUAL DIVERGENTE COMPROVADA / NÃO REFAZER CÓDIGO COMPARTILHADO / NECESSÁRIO DEPLOY DO `main` ATUAL E NOVO TESTE OPERACIONAL NOS CINCO PERFIS**.
