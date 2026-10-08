@@ -6774,3 +6774,69 @@ Commit:
 
 #### Estado
 **IMPLEMENTAÇÃO CANÔNICA PRESENTE NO `main` / BACKEND DO CONFIRMAR E FALTA CONFORME / PUBLICAÇÃO VISUAL DIVERGENTE COMPROVADA / NÃO REFAZER CÓDIGO COMPARTILHADO / NECESSÁRIO DEPLOY DO `main` ATUAL E NOVO TESTE OPERACIONAL NOS CINCO PERFIS**.
+
+
+### 28.120 HOMOLOGAÇÃO PERMANENTE — `manuteste` DEVE USAR AS MESMAS TELAS REAIS DOS PROFISSIONAIS (08/10/2026)
+
+**Definição permanente da responsável:** o ambiente de homologação `manuteste` será mantido permanentemente durante o uso do sistema e será o canal oficial para testar futuras manutenções.
+
+#### Regra arquitetural obrigatória
+A homologação **não pode possuir tela, JSX, CSS, Home, Agenda, botão, fluxo ou componente alternativo** em relação ao perfil real.
+
+A única diferença admitida é:
+- identidade/contexto simulado;
+- profissional/especialidade simulados;
+- isolamento dos dados de teste.
+
+Toda manutenção feita no componente canônico deve refletir automaticamente:
+- no perfil real;
+- na `manuteste` quando o mesmo perfil for selecionado.
+
+É proibido criar:
+- cópia de tela para homologação;
+- componente `Test...` para representar perfil real;
+- layout exclusivo de teste;
+- correção somente no perfil real sem alcançar homologação;
+- correção somente em homologação sem alcançar produção.
+
+#### Verificação física do roteamento atual
+No `main` atual, `src/features/professional/professional-screen.ts` resolve a especialidade efetiva. Quando:
+- `is_homologation_account=true`;
+- homologação está habilitada;
+- papel simulado = `profissional`;
+
+a especialidade simulada é usada somente para determinar **qual tela profissional real** deve ser aberta.
+
+`src/app/App.tsx` usa exatamente os mesmos componentes:
+- Assistência Social → `SocialPage`;
+- Nutrição → `NutritionPage`;
+- Clínico Geral → `AssistentialPage profileKind='clinico_geral'`;
+- Psicologia/Fisioterapia e demais assistenciais → `AssistentialPage profileKind='assistencial_padrao'`;
+- Agenda → `AgendaPage`.
+
+Não foi localizado componente específico de homologação substituindo essas telas.
+
+#### Estado físico atual da conta
+No Supabase oficial, `manuteste` está:
+- ativa;
+- `is_homologation_account=true`;
+- contexto de homologação habilitado;
+- papel simulado: `profissional`;
+- profissional simulado: **Homologação — Assistência Social**;
+- especialidade simulada: **Assistência Social**.
+
+Portanto, no `main` atual, essa conta deve renderizar o mesmo `SocialPage` e a mesma `AgendaPage` usados pelo perfil real da Assistência Social.
+
+#### Relação com a divergência publicada do §28.119
+A imagem publicada enviada em 08/10 não demonstra uma tela de homologação paralela no código atual. Ela demonstra que `caposistema.pages.dev` está servindo uma versão anterior do frontend.
+
+Assim:
+- não duplicar a correção no `manuteste`;
+- não criar workaround exclusivo para homologação;
+- corrigir/publicar o componente canônico uma única vez;
+- depois validar pela `manuteste`.
+
+#### Regra de aceitação futura
+Nenhuma manutenção de tela profissional deve ser considerada operacionalmente validada até ser conferida pela `manuteste` no ambiente publicado vigente.
+
+**Estado:** **HOMOLOGAÇÃO PERMANENTE FORMALIZADA / MESMOS COMPONENTES REAIS COMPROVADOS NO `main` / ISOLAMENTO RESTRITO A CONTEXTO E DADOS / PROIBIDA TELA PARALELA DE TESTE / PUBLICAÇÃO ATUAL AINDA PRECISA SER ALINHADA AO `main`**.
