@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import type { AccessContext } from '../../types/access'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getRpcService } from '../../lib/supabase/rpc'
-import { getNotificationsService } from '../notifications/notifications-integration'
+import { getNotificationsService, NOTIFICATIONS_UPDATED_EVENT } from '../notifications/notifications-integration'
 import { ProfileShortcuts } from '../../components/shell/ProfileShortcuts'
 import './gestor.css'
 
@@ -113,12 +113,19 @@ export function GestorShell({
   useEffect(() => {
     if (!canAccessAppRoute(accessContext, '/notificacoes')) return
     let active = true
-    void getNotificationsService().getNotifications(true, 1, 0).then((state) => {
-      if (!active) return
-      setUnreadNotifications(state.status === 'success' ? (state.data[0]?.total_count ?? 0) : null)
-    })
-    return () => { active = false }
-  }, [accessContext])
+    const refreshUnread = () => {
+      void getNotificationsService().getNotifications(true, 1, 0).then((state) => {
+        if (!active) return
+        setUnreadNotifications(state.status === 'success' ? (state.data[0]?.total_count ?? 0) : 0)
+      })
+    }
+    refreshUnread()
+    globalThis.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshUnread)
+    return () => {
+      active = false
+      globalThis.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshUnread)
+    }
+  }, [accessContext, activePath])
 
   const profileLabel = accessContext.primary_context.name?.trim() || 'Administrador'
 
