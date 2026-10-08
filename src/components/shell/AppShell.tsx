@@ -309,7 +309,7 @@ export function AppShell({
 
         {accessContext.is_homologation_account && (
           <aside className="app-homologation" aria-label="Conta de homologação">
-            <strong>Ambiente de homologação</strong>
+            <strong>Ambiente de teste e manutenção</strong>
             <span>
               {homologation?.enabled
                 ? `Atuação controlada${homologation.role_name ? ` como ${homologation.role_name}` : ''}.`
