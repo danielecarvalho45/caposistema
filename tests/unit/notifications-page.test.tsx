@@ -175,7 +175,8 @@ describe('NotificationsPage', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('abre contexto por navegação interna sem recarregar a aplicação', async () => {
+  it('marca a notificação como lida antes de abrir o contexto por navegação interna', async () => {
+    const user = userEvent.setup()
     const service = serviceWith({ status: 'success', data: [notification] })
     renderPage(
       <NotificationsPage
@@ -184,7 +185,12 @@ describe('NotificationsPage', () => {
       />,
     )
 
-    const link = await screen.findByRole('link', { name: 'Abrir contexto' })
-    expect(link).toHaveAttribute('href', '/transporte')
+    const open = await screen.findByRole('button', { name: 'Abrir contexto' })
+    await user.click(open)
+    expect(service.updateNotification).toHaveBeenCalledWith(
+      'notification-id',
+      'lida',
+      '',
+    )
   })
 })
