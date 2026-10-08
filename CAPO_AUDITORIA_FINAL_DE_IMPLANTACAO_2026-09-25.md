@@ -6840,3 +6840,94 @@ Assim:
 Nenhuma manutenção de tela profissional deve ser considerada operacionalmente validada até ser conferida pela `manuteste` no ambiente publicado vigente.
 
 **Estado:** **HOMOLOGAÇÃO PERMANENTE FORMALIZADA / MESMOS COMPONENTES REAIS COMPROVADOS NO `main` / ISOLAMENTO RESTRITO A CONTEXTO E DADOS / PROIBIDA TELA PARALELA DE TESTE / PUBLICAÇÃO ATUAL AINDA PRECISA SER ALINHADA AO `main`**.
+
+
+### 28.121 COORDENADOR → TI/MANUTENÇÃO — CHAMADO NÃO CHEGAVA À FILA TÉCNICA (08/10/2026)
+
+**Relato operacional:** a responsável abriu uma solicitação de manutenção pelo perfil Coordenador, mas o chamado não apareceu no perfil TI/Manutenção.
+
+#### Fontes confrontadas
+Antes da correção foram relidos:
+- Documento Mestre atual;
+- Matriz Funcional de 12/09;
+- Manual Técnico Integrado v5;
+- referência estrutural da tela TI/Manutenção localizada fisicamente na Library.
+
+A regra canônica permanece:
+- solicitar suporte técnico é funcionalidade disponível aos usuários;
+- a solicitação deve chegar ao TI/Manutenção e ao Administrador/Controlador;
+- o perfil TI mantém a caixa de **Chamados recebidos**;
+- fluxo canônico: pendente → em atendimento → aguardando teste → resolvida/cancelada.
+
+#### Verificação física do banco
+No momento da auditoria:
+- `public.technical_support_requests` estava sem registros;
+- portanto a solicitação relatada pelo Coordenador **não havia sido persistida**;
+- não se tratava apenas de problema de leitura do perfil TI.
+
+Também foi localizado log técnico recente:
+- `SYSTEM_STATUS.SUPPORT_DEGRADED`;
+- mensagem: **Camada canônica do suporte técnico incompleta.**
+
+#### Causa comprovada na interface
+`TechnicalSupportRequest.tsx` oferecia categorias:
+- `acesso`;
+- `erro`;
+- `orientacao`;
+- `infraestrutura`.
+
+A RPC física `create_technical_support_request_for_interface` aceita o catálogo canônico:
+- `suporte_tecnico`;
+- `erro_interface`;
+- `erro_acesso`;
+- `erro_dados`;
+- `erro_automacao`;
+- `seguranca`;
+- `outro`;
+- além de alguns códigos legados específicos já tolerados pelo backend.
+
+Assim, categorias visíveis como **Acesso**, **Orientação** e **Infraestrutura** podiam ser rejeitadas antes da criação do chamado.
+
+#### Correção
+`src/components/forms/TechnicalSupportRequest.tsx` foi alinhado ao catálogo canônico:
+- Suporte técnico;
+- Erro de interface;
+- Erro de acesso;
+- Erro de dados;
+- Erro de automação;
+- Segurança;
+- Outro.
+
+Commit:
+- `cc59ef06e5f155eb853c56a78295889a43df0915`.
+
+#### Validação transacional reversível
+Foi executado teste autenticado com a conta `manuteste`:
+1. chamada a `create_technical_support_request_for_interface` com categoria canônica `erro_interface`;
+2. leitura por `get_technical_support_requests_for_interface`;
+3. o chamado retornou para a fila técnica com:
+   - requester: `manuteste`;
+   - category: `erro_interface`;
+   - priority: `normal`;
+   - status: `pendente`.
+
+**RESULTADO BACKEND: PASS.**
+
+A transação terminou em `ROLLBACK`. Consulta posterior confirmou:
+- `remaining = 0`.
+
+Nenhum chamado artificial permaneceu no banco.
+
+#### Proteção de regressão
+Criado:
+- `tests/unit/technical-support-request.test.tsx`.
+
+O teste exige:
+- envio de código canônico `erro_interface`;
+- ausência das opções incompatíveis **Orientação** e **Infraestrutura**.
+
+Commit:
+- `17f4e57c96f9563fb18bc59e5fd74a38ec2879b9`.
+
+#### Estado
+**CAUSA IDENTIFICADA / FORMULÁRIO ALINHADO AO BACKEND / FLUXO BACKEND COORDENADOR→TI VALIDADO TRANSACIONALMENTE / NENHUM DADO DE TESTE PERSISTIDO / AGUARDANDO PUBLICAÇÃO DO MAIN E NOVO TESTE OPERACIONAL PELA MANUTESTE**.
