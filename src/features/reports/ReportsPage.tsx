@@ -306,6 +306,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
       reportType: selectedOption?.label ?? 'Visão geral',
       issuedAt: new Date().toLocaleString('pt-BR'),
       generatedBy: accessContext.full_name?.trim() || accessContext.username,
+      generatedByRole: accessContext.primary_context.code === 'administrador' ? 'Gestor/Titular' : (accessContext.primary_context.name?.trim() || accessContext.function_title?.trim() || 'Função não informada'),
       sections: [
         ...availableSections.filter(([key, section]) => (!selectedManagerReport || key === selectedManagerReport) && dashboardEntries(section).length > 0).map(([key, section]) => ({ title: dashboardLabel(key), metrics: dashboardEntries(section).map(([metric, value]) => [dashboardLabel(metric), String(value)] as const) })),
         ...(specialtyRows.length && (!selectedManagerReport || selectedManagerReport === 'agenda_by_specialty') ? [{ title: 'Agenda por especialidade', metrics: specialtyRows.map((row) => [String(row.specialty_name ?? 'Sem especialidade'), `Válidos: ${row.valid_period ?? 0}; Realizados: ${row.realized_period ?? 0}; Faltas: ${row.no_show_period ?? 0}; Retornos: ${row.returns_period ?? 0}; Absenteísmo: ${row.absenteeism_rate_pct ?? 0}%`] as const) }] : []),
