@@ -7399,3 +7399,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Commit:** `90672da09cd9bbcd8e18656ea370e46670158ce6`.
 
 **Estado:** **TEXTO CORRIGIDO NO MAIN / AGUARDANDO BUILD, PUBLICAÇÃO E CONFERÊNCIA VISUAL NA `manuteste`**. Nenhum teste ou deploy foi declarado PASS nesta intervenção.
+
+
+### 28.130 NOTIFICAÇÕES TRANSVERSAIS — EVITAR DESCONEXÃO POR ERRO DE RPC SEM SESSÃO EXPIRADA COMPROVADA (08/10/2026)
+
+**Relato operacional:** ao clicar para ler/abrir uma solicitação recebida por notificação, usuários de todos os perfis, incluindo Gestor/Titular, são enviados ao login e precisam informar a senha novamente. Os §§28.96, 28.97 e 28.116 já tratavam de persistência de sessão, navegação interna e atualização do sino; não reimplementar esses fluxos.
+
+**Confronto físico no `main`:** `NotificationsPage.tsx` já usa `useNavigate` e leitura pela RPC; `client.ts` já persiste a sessão na aba via `sessionStorage`. Em `src/features/access/access-context.tsx`, entretanto, erros nas RPCs de contexto/termo classificados por texto como `session`/`jwt`/`não autenticado` disparavam `signOut('local')` diretamente, sem confirmar se o Supabase Auth ainda possuía sessão, eliminando a possibilidade de continuidade/retry em um erro transitório ou mal classificado.
+
+**Correção cirúrgica de proteção:** nas duas rotas de falha (contexto de acesso e termo), confirmar com `authApi.getSession()` se realmente não há sessão antes de chamar `signOut('local')`. Se a consulta confirmar ausência de sessão, preservar o logout e a tela de login; se houver sessão ou não for possível consultar o estado por falha transitória, manter o bloqueio de acesso existente, sem desconectar por inferência. Não foi alterada a navegação compartilhada de notificações, RLS, MFA ou banco.
+
+**Commit:** `49a0bb847966b59a6eb51bf0b68cc47fc33c46a7`.
+
+**Limites e validação:** o comportamento autenticado no Cloudflare não pôde ser reproduzido nesta sessão; não há comprovação de que esta seja a única causa do relato. O CI de build não retornou status para o commit consultado; execução local indisponível neste ambiente. **Não declarar correção homologada nem build PASS** até o deployment correspondente e o teste operacional na conta `manuteste` e, quando pertinente, Gestor/Titular.
+
+**Estado:** **PROTEÇÃO DE SESSÃO CORRIGIDA NO CÓDIGO / AGUARDANDO BUILD, PUBLICAÇÃO E REPRODUÇÃO OPERACIONAL DO FLUXO DE NOTIFICAÇÕES**.
