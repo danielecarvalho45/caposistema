@@ -53,11 +53,11 @@ export function SocialPage({
   }, [eligibleForSocial, accessContext.professional_id, loadSpecialties])
 
   useEffect(() => {
-    if (!canOperateSocial) return
+    if (!canOperateSocial || (mode === 'home' && !selectedAppointment)) return
     let active = true
     void integration.loadSocial(null).then((result) => { if (active) setSocial(result) })
     return () => { active = false }
-  }, [integration, canOperateSocial])
+  }, [integration, canOperateSocial, mode, selectedAppointment])
 
   async function reloadSocial() {
     const result = await integration.loadSocial(null)
@@ -144,7 +144,7 @@ export function SocialPage({
 
   return (
     <section className={mode === 'home' ? 'social-page home-mobile-standard' : 'social-page'} aria-labelledby="social-title">
-      {mode !== 'home' && (
+      {(mode !== 'home' || selectedAppointment !== null) && (
         <header className="social-header">
           <div>
             <p className="eyebrow">Assistência Social</p>
