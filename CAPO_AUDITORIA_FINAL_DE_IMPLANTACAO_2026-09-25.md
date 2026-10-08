@@ -7414,3 +7414,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Limites e validação:** o comportamento autenticado no Cloudflare não pôde ser reproduzido nesta sessão; não há comprovação de que esta seja a única causa do relato. O CI de build não retornou status para o commit consultado; execução local indisponível neste ambiente. **Não declarar correção homologada nem build PASS** até o deployment correspondente e o teste operacional na conta `manuteste` e, quando pertinente, Gestor/Titular.
 
 **Estado:** **PROTEÇÃO DE SESSÃO CORRIGIDA NO CÓDIGO / AGUARDANDO BUILD, PUBLICAÇÃO E REPRODUÇÃO OPERACIONAL DO FLUXO DE NOTIFICAÇÕES**.
+
+
+### 28.131 NOTIFICAÇÕES → SOLICITAÇÕES ADMINISTRATIVAS — ABERTURA DO REGISTRO CORRETO (08/10/2026)
+
+**Relato:** ao marcar notificação como lida não se iniciava atendimento no Administrativo. Consultados a Especificação Estrutural/Funcional de 12/09, a Matriz Funcional e o código atual do `main`.
+
+**Regra canônica preservada:** `lida` acusa ciência da notificação, `resolvida` encerra apenas o aviso, e nenhuma dessas ações, isoladamente, pode aceitar/iniciar/concluir a solicitação administrativa. O atendimento é iniciado/concluído explicitamente no módulo `/solicitacoes`, por `updateAdministrativeRequest`, com histórico, auditoria e feedback. Resolver notificação não equivale a concluir demanda.
+
+**Divergência física comprovada:** o mapeamento `notificationContextHref` enviava notificações `administrative_request` ao módulo `/solicitacoes`, porém o `NotificationsPage` navegava sem transportar `entity_id`. O destino `RequestsPage` já possui contrato de `initialContextId` e o `App.tsx` já o alimenta por `location.state.contextId`; logo a notificação levava a uma lista sem selecionar o pedido, interrompendo a continuidade operacional.
+
+**Correção mínima:** `NotificationsPage.tsx` agora transmite `state.contextId=notification.entity_id` ao abrir notificações de `administrative_request`/`administrative_requests`, reutilizando o contrato físico de seleção já existente; o botão é identificado como **Abrir solicitação no Administrativo**. As ações separadas **Marcar como lida** e **Marcar como resolvida** permanecem restritas ao estado da notificação. Não há mutations adicionais nem fluxo paralelo.
+
+**Commits:** `55c73db0455c634e22aac951c7c42508e20f98a1` (interface), `9140ecc098f02f6e3d8b1858dfd394da5a7dda56` (regressão). O teste foi adicionado mas não executado nesta sessão; build e deploy não foram confirmados.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO TESTES, PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL EM `manuteste`**.
