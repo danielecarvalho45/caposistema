@@ -56,7 +56,7 @@ export function TechnicalSupportRequest({
   return (
     <form onSubmit={(event) => void submit(event)}>
       <label>Assunto<input value={subject} onChange={(event) => setSubject(event.target.value)} /></label>
-      <label>Categoria<select value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Selecione</option><option value="acesso">Acesso</option><option value="erro">Erro</option><option value="orientacao">Orientação</option><option value="infraestrutura">Infraestrutura</option></select></label>
+      <label>Categoria<select value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Selecione</option><option value="suporte_tecnico">Suporte técnico</option><option value="erro_interface">Erro de interface</option><option value="erro_acesso">Erro de acesso</option><option value="erro_dados">Erro de dados</option><option value="erro_automacao">Erro de automação</option><option value="seguranca">Segurança</option><option value="outro">Outro</option></select></label>
       <label>Prioridade<select value={priority} onChange={(event) => setPriority(event.target.value)}><option value="baixa">Baixa</option><option value="normal">Normal</option><option value="alta">Alta</option></select></label>
       <label>Descrição<textarea rows={4} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
       <button type="submit" disabled={busy}>{busy ? 'Enviando...' : 'Solicitar suporte'}</button>
