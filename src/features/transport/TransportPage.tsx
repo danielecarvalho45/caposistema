@@ -62,6 +62,7 @@ function buildTransportPdfBlob(input: Readonly<{
   cms: string | null
   reason: string
   requester: string
+  requesterRole: string
   appointmentLabel: string | null
 }>) {
   const lines = [
@@ -69,19 +70,60 @@ function buildTransportPdfBlob(input: Readonly<{
     '',
     'Ao Setor de Transportes da Secretaria Municipal de Saúde.',
     '',
-    `Solicitamos transporte para ${input.patientName}${input.cms ? `, CMS ${input.cms}` : ''}, paciente em acompanhamento pela equipe multiprofissional do CAPO - Centro de Acolhimento ao Paciente Oncológico.`,
-    '',
-    'A solicitação decorre da necessidade de acessibilidade do paciente para continuidade do acompanhamento.',
+    `Paciente: ${input.patientName}${input.cms ? ` · CMS ${input.cms}` : ''}`,
     input.appointmentLabel ? `Atendimento vinculado: ${input.appointmentLabel}` : '',
+    '',
+    'Declara-se, para os devidos fins, que o(a) paciente identificado(a) neste documento encontra-se em acompanhamento pelo Centro de Apoio ao Paciente Oncológico – CAPO e apresenta necessidade de utilização de transporte para viabilizar o deslocamento relacionado ao seu acompanhamento e/ou tratamento de saúde.',
+    '',
+    'A presente solicitação tem por finalidade formalizar a necessidade de transporte, possibilitando o encaminhamento ao setor responsável para análise, organização e demais providências cabíveis.',
     '',
     `Motivo da solicitação: ${input.reason}`,
     '',
-    'Os dias e horários do transporte ficam sob responsabilidade do CAPO, que os informará com antecedência por meio de relatório e/ou outro meio de comunicação estabelecido com o Setor de Transportes da Secretaria Municipal de Saúde.',
+    'As informações específicas acima consideram a situação individual do paciente e a necessidade que originou esta solicitação.',
     '',
-    `Solicitante: ${input.requester}`,
+    `Responsável pela emissão: ${input.requester}`,
+    `Função: ${input.requesterRole}`,
   ].flatMap((line) => wrapLine(line))
 
-  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40, generatedBy: input.requester })
+  return buildCapoDocumentPdf(lines, {
+    fontSize: 10,
+    lineHeight: 14,
+    linesPerPage: 40,
+    generatedBy: input.requester,
+    generatedByRole: input.requesterRole,
+  })
+}
+
+function buildTransportClosurePdfBlob(input: Readonly<{
+  patientName: string
+  cms: string | null
+  channel: string | null
+  reference: string | null
+  requester: string
+  requesterRole: string
+}>) {
+  const lines = [
+    'ENCERRAMENTO DE SOLICITAÇÃO DE TRANSPORTE',
+    '',
+    'Ao Setor de Transportes da Secretaria Municipal de Saúde.',
+    '',
+    `Paciente: ${input.patientName}${input.cms ? ` · CMS ${input.cms}` : ''}`,
+    '',
+    'Informamos, para os devidos fins, o encerramento da solicitação de transporte vinculada ao paciente identificado neste documento, após conclusão do acompanhamento administrativo correspondente no CAPO.',
+    input.channel ? `Canal de encaminhamento: ${input.channel}` : '',
+    input.reference ? `Referência / protocolo: ${input.reference}` : '',
+    '',
+    `Responsável pela emissão: ${input.requester}`,
+    `Função: ${input.requesterRole}`,
+  ].flatMap((line) => wrapLine(line))
+
+  return buildCapoDocumentPdf(lines, {
+    fontSize: 10,
+    lineHeight: 14,
+    linesPerPage: 40,
+    generatedBy: input.requester,
+    generatedByRole: input.requesterRole,
+  })
 }
 
 export function TransportPage({ accessContext }: Props) {
@@ -107,6 +149,11 @@ export function TransportPage({ accessContext }: Props) {
     isManager || (isSocialProfessional && hasTransportCapability)
   const canAdminister = isManager || isAdministrativeOperational
   const canForwardExternally = isManager || isAdministrativeOperational
+  const issuerRole = isManager
+    ? 'Gestor/Titular'
+    : isAdministrativeOperational
+      ? 'Auxiliar Administrativo / Administrativo Operacional'
+      : accessContext.function_title?.trim() || accessContext.primary_context.name?.trim() || 'Profissional CAPO'
   const authorized = canCreateRequest || canAdminister
 
   const [query, setQuery] = useState('')
@@ -271,6 +318,7 @@ export function TransportPage({ accessContext }: Props) {
       cms: field(patient, 'cms'),
       reason: notes,
       requester: accessContext.full_name ?? accessContext.username,
+      requesterRole: issuerRole,
       appointmentLabel,
     })
     const storagePath = `transport/${id}/solicitacao-transporte-${Date.now()}.pdf`
@@ -311,7 +359,52 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(false)
   }
 
-  async function openPdf(request: TransportRecord, download: boolean) {
+  async function completeWithClosurePdf(request: TransportRecord) {
+    const id = requestId(request)
+    if (!id || !canForwardExternally || busy) return
+
+    const blob = buildTransportClosurePdfBlob({
+      patientName: patientName || field(patient, 'full_name') || 'Paciente',
+      cms: field(patient, 'cms'),
+      channel: field(request, 'external_channel'),
+      reference: field(request, 'external_reference'),
+      requester: accessContext.full_name ?? accessContext.username,
+      requesterRole: issuerRole,
+    })
+    const storagePath = `transport/${id}/encerramento-transporte-${Date.now()}.pdf`
+
+    setBusy(true)
+    setFeedback('Gerando PDF de encerramento e concluindo solicitação…')
+    const { error: uploadError } = await getSupabaseClient()
+      .storage.from('capo-documents')
+      .upload(storagePath, blob, { contentType: 'application/pdf', upsert: false })
+
+    if (uploadError) {
+      setFeedback(uploadError.message)
+      setBusy(false)
+      return
+    }
+
+    const result = await getRpcService()
+      .completeTransportRequestWithClosurePdf(id, storagePath)
+    if (result.status === 'success') {
+      setFeedback('Transporte concluído com PDF de encerramento vinculado.')
+      await loadContext(patientId, patientName)
+    } else {
+      setFeedback(
+        result.status === 'error'
+          ? result.error.message
+          : 'O banco não confirmou a conclusão documental do transporte.',
+      )
+    }
+    setBusy(false)
+  }
+
+  async function openPdf(
+    request: TransportRecord,
+    download: boolean,
+    documentKind: 'request' | 'closure' = 'request',
+  ) {
     const id = requestId(request)
     if (!id || busy) return
     setBusy(true)
@@ -322,9 +415,13 @@ export function TransportPage({ accessContext }: Props) {
       return
     }
     const documentRecord = documentState.data as TransportRecord
-    const path = field(documentRecord, 'request_pdf_path')
+    const path = documentKind === 'closure'
+      ? field(documentRecord, 'closure_pdf_path')
+      : field(documentRecord, 'request_pdf_path')
     if (!path) {
-      setFeedback('O PDF oficial ainda não foi gerado.')
+      setFeedback(documentKind === 'closure'
+        ? 'O PDF de encerramento ainda não foi gerado.'
+        : 'O PDF oficial ainda não foi gerado.')
       setBusy(false)
       return
     }
@@ -505,7 +602,13 @@ export function TransportPage({ accessContext }: Props) {
                       <button type="button" disabled={busy || channel.trim().length < 2} onClick={() => void manage(request, 'forward')}>Registrar encaminhamento</button>
                     )}
                     {canForwardExternally && status === 'confirmado' && forwarded && (
-                      <button type="button" disabled={busy} onClick={() => void manage(request, 'complete')}>Concluir</button>
+                      <button type="button" disabled={busy} onClick={() => void completeWithClosurePdf(request)}>Concluir e gerar PDF de encerramento</button>
+                    )}
+                    {status === 'realizado' && (
+                      <>
+                        <button type="button" disabled={busy} onClick={() => void openPdf(request, false, 'closure')}>Visualizar PDF de encerramento</button>
+                        <button type="button" disabled={busy} onClick={() => void openPdf(request, true, 'closure')}>Baixar PDF de encerramento</button>
+                      </>
                     )}
                     {canAdminister && ['solicitado', 'confirmado'].includes(status) && (
                       <button type="button" disabled={busy || cancellationReason.trim().length < 5} onClick={() => void manage(request, 'cancel')}>Cancelar</button>
