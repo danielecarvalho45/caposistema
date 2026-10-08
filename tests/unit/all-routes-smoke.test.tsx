@@ -159,5 +159,7 @@ describe('montagem interna das rotas físicas sem dados operacionais', () => {
     const birthdays = within(main).getByRole('heading', { name: 'Aniversariantes de hoje' })
     expect(team.compareDocumentPosition(agenda) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(agenda.compareDocumentPosition(birthdays) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(main).getByRole('heading', { name: 'Solicitações de alteração de agenda' })).toBeVisible()
+    expect(within(main).queryByRole('heading', { name: 'Registrar decisão da equipe' })).not.toBeInTheDocument()
   })
 })
