@@ -7388,3 +7388,14 @@ Não houve alteração de schema ou migration no Supabase.
 **Validação:** mudança textual conferida no código-fonte; build e homologação operacional após publicação ainda não executados nesta intervenção.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO BUILD, PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL NA `manuteste`**.
+
+
+### 28.129 IDENTIFICAÇÃO VISUAL DO AMBIENTE DE TESTE E MANUTENÇÃO (08/10/2026)
+
+**Solicitação da responsável:** alterar o texto exibido na faixa da conta `manuteste` de **Ambiente de homologação** para **Ambiente de teste e manutenção**.
+
+**Correção cirúrgica:** alterado somente o rótulo visível em `src/components/shell/AppShell.tsx`, preservando `is_homologation_account`, contexto, isolamento de dados, autorização, fluxo e componentes de produção/homologação. Os termos técnicos internos e os documentos históricos não foram renomeados.
+
+**Commit:** `90672da09cd9bbcd8e18656ea370e46670158ce6`.
+
+**Estado:** **TEXTO CORRIGIDO NO MAIN / AGUARDANDO BUILD, PUBLICAÇÃO E CONFERÊNCIA VISUAL NA `manuteste`**. Nenhum teste ou deploy foi declarado PASS nesta intervenção.
