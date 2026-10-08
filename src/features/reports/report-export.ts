@@ -9,6 +9,7 @@ export type ReportExport = Readonly<{
   reportType?: string
   issuedAt: string
   generatedBy?: string
+  generatedByRole?: string
   generatedAt?: Date
   sections: readonly Readonly<{ title: string; metrics: readonly (readonly [string, string])[] }>[]
 }>
@@ -42,5 +43,5 @@ export function buildReportPdf(report: ReportExport): Blob {
     if (current) result.push(current)
     return result
   })
-  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 15, linesPerPage: 40, generatedBy: report.generatedBy ?? 'Autoria não informada', generatedAt: report.generatedAt })
+  return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 15, linesPerPage: 40, generatedBy: report.generatedBy ?? 'Autoria não informada', generatedByRole: report.generatedByRole ?? report.scope, generatedAt: report.generatedAt })
 }
