@@ -135,7 +135,7 @@ export function AssistentialPage({
   }, [integration, isProfessional])
 
   useEffect(() => {
-    if (!isProfessional || !selectedSpecialty || endDate < startDate) return
+    if (!isProfessional || homeOnly || !selectedSpecialty || endDate < startDate) return
     let active = true
     void integration
       .loadReport(selectedSpecialty, startDate, endDate)
@@ -145,7 +145,7 @@ export function AssistentialPage({
     return () => {
       active = false
     }
-  }, [endDate, integration, isProfessional, selectedSpecialty, startDate])
+  }, [endDate, homeOnly, integration, isProfessional, selectedSpecialty, startDate])
 
   const loadReport = useCallback(async () => {
     if (!selectedSpecialty) return
