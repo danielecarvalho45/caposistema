@@ -623,6 +623,15 @@ describe('App', () => {
       screen.getByRole('complementary', { name: 'Indicadores da agenda' }),
     ).toHaveTextContent('Faltosos')
     expect(
+      screen.getByLabelText('Resumo rápido da agenda'),
+    ).toHaveTextContent('Agendados')
+    expect(
+      screen.getByLabelText('Resumo rápido da agenda'),
+    ).toHaveTextContent('Confirmados')
+    expect(
+      screen.getByLabelText('Resumo rápido da agenda'),
+    ).toHaveTextContent('Faltosos')
+    expect(
       await screen.findByText('Nenhum agendamento encontrado no período.'),
     ).toBeVisible()
     expect(screen.queryByRole('link', { name: 'Minha atuação' })).not.toBeInTheDocument()
