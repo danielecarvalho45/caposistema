@@ -195,11 +195,22 @@ export function AccessProvider({
     }))
   }, [])
 
+  // A falha de uma RPC não comprova, sozinha, que a sessão foi encerrada.
+  // Confirme o estado do Auth antes de descartar a sessão do usuário.
+  const confirmExpiredSession = useCallback(async () => {
+    try {
+      return !(await authApi.getSession())
+    } catch {
+      // Falhas transitórias de consulta/refresh não autorizam logout forçado.
+      return false
+    }
+  }, [authApi])
+
   const loadAccessContext = useCallback(async () => {
     setLoading('Identificando sua conta e permissões…')
     const result = await rpcService.getMyAccessContext()
     if (result.status !== 'success') {
-      if (result.status === 'error' && isExpiredSessionError(result.error)) {
+      if (result.status === 'error' && isExpiredSessionError(result.error) && await confirmExpiredSession()) {
         try {
           await authApi.signOut('local')
         } catch {
@@ -261,13 +272,13 @@ export function AccessProvider({
       feedback: null,
       busy: false,
     }))
-  }, [authApi, rpcService, setLoading])
+  }, [authApi, confirmExpiredSession, rpcService, setLoading])
 
   const runPostPasswordAccessGate = useCallback(async () => {
     setLoading('Verificando o Termo vigente…')
     const result = await rpcService.getCurrentLegalTerm()
     if (result.status !== 'success') {
-      if (result.status === 'error' && isExpiredSessionError(result.error)) {
+      if (result.status === 'error' && isExpiredSessionError(result.error) && await confirmExpiredSession()) {
         try {
           await authApi.signOut('local')
         } catch {
@@ -307,7 +318,7 @@ export function AccessProvider({
       return
     }
     await loadAccessContext()
-  }, [authApi, loadAccessContext, rpcService, setLoading])
+  }, [authApi, confirmExpiredSession, loadAccessContext, rpcService, setLoading])
 
   const runProtectedAccessGate = useCallback(async () => {
     setLoading('Verificando segurança da sessão…')
