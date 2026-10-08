@@ -7262,3 +7262,116 @@ O teste de regressão passou a exigir:
 A suíte não foi executada fisicamente nesta intervenção; não registrar PASS automatizado sem execução.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / FLUXO VISUAL SIMPLIFICADO CONFORME MANUAL E REGRA OPERACIONAL / BACKEND CANÔNICO PRESERVADO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL NA `manuteste`**.
+
+
+### 28.127 PERFIS PROFISSIONAIS — SOLICITAÇÃO COMPLETA DE MUDANÇA ESTRUTURAL DE AGENDA (08/10/2026)
+
+**Origem:** após simplificar a decisão da Coordenação (§28.126), foi verificado o ponto de origem da solicitação nos perfis profissionais.
+
+#### Documentação e contrato físico confrontados
+O fluxo estrutural estabelece que o profissional solicita a mudança e a Coordenação decide.
+
+Foi verificado no projeto oficial que todos os perfis profissionais usam a mesma rota canônica:
+- `/minha-agenda/solicitar-alteracao`.
+
+A autorização dessa rota é transversal ao papel `profissional`, portanto atende:
+- Clínico Geral;
+- Nutrição;
+- Assistência Social;
+- Psicologia;
+- Fisioterapia;
+- futuras especialidades profissionais vinculadas.
+
+Foi consultado fisicamente no Supabase oficial `fftebavlhbfcrvrtnrld` o contrato:
+`public.create_agenda_change_request_for_interface(p_agenda_config_id uuid, p_request_type text, p_requested_changes jsonb, p_justification text)`.
+
+O backend já aceita `p_request_type='configuracao'` com:
+- `start_date`;
+- `end_date`;
+- `start_time`;
+- `end_time`;
+- `duration_minutes`;
+- `weekdays`;
+- `notes`.
+
+Também foi conferida `apply_agenda_change_request_for_interface`, que efetiva esses mesmos campos depois da aprovação.
+
+#### Divergência encontrada
+A interface `AgendaChangeRequestPage.tsx` e o wrapper `rpc.ts` estavam reduzidos ao tipo `status`, enviando somente:
+- ativar/inativar;
+- data de vigência;
+- justificativa.
+
+Assim, o profissional não conseguia informar na interface o novo dia/período/horário que a Coordenação deveria somente analisar.
+
+#### Correção aplicada
+O wrapper `createAgendaChangeRequest` foi alinhado ao contrato físico existente e agora recebe:
+- configuração;
+- tipo da solicitação;
+- objeto de alterações;
+- justificativa.
+
+Commit:
+- `da9e182f08cb1db33bd0ae037283f8f85ae184c1`.
+
+A tela compartilhada **Solicitar alteração de agenda** passou a permitir, para mudança estrutural de horário/padrão:
+- seleção da configuração atual;
+- data inicial;
+- data final;
+- horário inicial;
+- horário final;
+- duração da consulta;
+- dias da semana;
+- observações;
+- justificativa da solicitação.
+
+Os valores atuais são carregados da configuração selecionada e o profissional informa a alteração desejada antes de enviar.
+
+O envio utiliza o contrato canônico `request_type='configuracao'`, sem migration nova e sem bypass do fluxo:
+`Profissional → Coordenação → Administrativo/efetivação`.
+
+Commit:
+- `246405d13d2997bfd5e0f663c0233011dd969e38`.
+
+#### Acesso nos perfis
+Foi incluído o atalho **Solicitar alteração de agenda** nas Homes:
+- Clínico Geral / Psicologia / Fisioterapia / padrão assistencial:
+  `299b24cb87103e3cb35346eb3af01ba992b09ed9`;
+- Nutrição:
+  `09241d94b17fe73109e88e433c517850943088ed`;
+- Assistência Social:
+  `50112f1d818d9248c319b6b68661b8804eb96e32`.
+
+A rota lateral compartilhada já existia e foi preservada.
+
+#### Proteção de regressão
+O teste unitário da solicitação foi atualizado para exigir que o envio da mudança estrutural contenha:
+- datas;
+- horários;
+- duração;
+- dias da semana;
+- justificativa.
+
+Commit:
+- `8aeb04c68533902066827fe47fd2f08bc6a8644c`.
+
+#### Limite físico ainda não encerrado
+Os HTMLs estruturais históricos preveem também tipos gerenciais como:
+- férias;
+- afastamento;
+- mudança de turno;
+- alteração de carga.
+
+O backend físico atual possui tratamento direto completo para `configuracao`, `status`, `bloqueio_recorrente` e `excecao_estrutural`, porém não existe hoje, no fluxo profissional compartilhado, um contrato específico completo de **férias/afastamento com período inicial e final** que possa ser declarado equivalente sem ampliar o backend.
+
+Portanto:
+- **mudança de horário/padrão semanal:** corrigida no fluxo profissional;
+- **férias/afastamento por período:** manter como pendência funcional separada até definição/implementação do contrato adequado;
+- não simular férias/afastamento apenas com rótulo visual.
+
+#### Validação
+Os arquivos foram relidos no `main` após as alterações.
+Não foi executada a suíte automatizada nesta intervenção; não declarar PASS sem execução.
+Não houve alteração de schema ou migration no Supabase.
+
+**Estado:** **MUDANÇA DE HORÁRIO/PADRÃO CORRIGIDA NO CÓDIGO PARA TODOS OS PERFIS PROFISSIONAIS / ATALHOS TRANSVERSAIS INCLUÍDOS / BACKEND CANÔNICO REUTILIZADO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO NA `manuteste` / FÉRIAS-AFASTAMENTO MULTIDIA PERMANECEM PENDÊNCIA FUNCIONAL EXPLÍCITA**.
