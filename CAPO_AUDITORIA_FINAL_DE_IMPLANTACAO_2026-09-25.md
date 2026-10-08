@@ -7375,3 +7375,16 @@ Não foi executada a suíte automatizada nesta intervenção; não declarar PASS
 Não houve alteração de schema ou migration no Supabase.
 
 **Estado:** **MUDANÇA DE HORÁRIO/PADRÃO CORRIGIDA NO CÓDIGO PARA TODOS OS PERFIS PROFISSIONAIS / ATALHOS TRANSVERSAIS INCLUÍDOS / BACKEND CANÔNICO REUTILIZADO / AGUARDANDO PUBLICAÇÃO E HOMOLOGAÇÃO NA `manuteste` / FÉRIAS-AFASTAMENTO MULTIDIA PERMANECEM PENDÊNCIA FUNCIONAL EXPLÍCITA**.
+
+
+### 28.128 COORDENAÇÃO — REMOÇÃO DE TEXTO EXPLICATIVO REDUNDANTE EM SOLICITAÇÕES DE AGENDA (08/10/2026)
+
+**Origem:** homologação visual publicada na conta `manuteste`: o quadro de solicitações exibia permanentemente o texto "O profissional informa a alteração. A Coordenação apenas analisa e decide.", sem necessidade operacional.
+
+**Correção cirúrgica:** retirada apenas a frase explicativa fixa de `src/features/coordination/CoordinationDashboard.tsx`. Preservados título, estados de carregamento/erro/lista vazia, solicitações recebidas, justificativas individualizadas, ações Aprovar/Rejeitar e respectivo fluxo canônico de Coordenação → Administrativo ou devolução justificada ao profissional. Nenhum backend, permissão ou componente de homologação paralelo foi alterado.
+
+**Commit de interface:** `d37df5bba4ef7b78ea44f486a81486105697db66`.
+
+**Validação:** mudança textual conferida no código-fonte; build e homologação operacional após publicação ainda não executados nesta intervenção.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO BUILD, PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL NA `manuteste`**.
