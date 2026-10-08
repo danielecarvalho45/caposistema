@@ -166,6 +166,8 @@ export function SocialPage({
               <Link className="social-quick-card social-quick-card--followup" to="/assistencia-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></Link>
               <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
               <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
+              <Link className="social-quick-card social-quick-card--reports" to="/relatorios"><span className="social-quick-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores da própria atuação</span></Link>
+              <Link className="social-quick-card social-quick-card--support" to="/suporte"><span className="social-quick-icon" aria-hidden="true">?</span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
             </div>
           </section>
 
@@ -181,6 +183,7 @@ export function SocialPage({
         </>
       )}
 
+      {mode !== 'home' && (
       <section
         id="acompanhamento-social"
         className="social-modules social-followups"
@@ -280,6 +283,7 @@ export function SocialPage({
           </div>
         )}
       </section>
+      )}
 
     </section>
   )
