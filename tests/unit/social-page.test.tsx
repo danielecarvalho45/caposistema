@@ -61,6 +61,12 @@ describe('SocialPage', () => {
     expect(
       screen.queryByRole('heading', { name: 'Atendimentos de hoje' }),
     ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/Confirmar.*Falta.*Faltosos/i),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('Agenda própria com visualização por dia, semana e mês.'),
+    ).not.toBeInTheDocument()
     const quickAccess = screen.getByRole('heading', { name: 'Acessos rápidos' })
     const agenda = screen.getByRole('heading', { name: 'Minha Agenda' })
     expect(
