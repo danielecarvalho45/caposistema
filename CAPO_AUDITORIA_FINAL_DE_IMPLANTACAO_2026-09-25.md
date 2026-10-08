@@ -6436,3 +6436,248 @@ Commit:
 **Verificação física após restauração:** conta `daniele` ativa, vinculada ao Auth em `administrativo.capo@gmail.com`, e-mail confirmado, sem bloqueio de acesso por banimento; papel principal `administrador` (Gestor/Titular). Função `login-by-username` em estado `ACTIVE`. Banco voltou a responder às consultas. A razão administrativa original da inativação não foi fornecida pelo serviço e não foi presumida.
 
 **Estado:** **DISPONIBILIDADE RESTABELECIDA / CONTA TITULAR VERIFICADA / AGUARDANDO NOVA TENTATIVA REAL DE LOGIN PELA TITULAR COM SUA SENHA EXISTENTE**. Nenhuma senha foi solicitada ou testada pelo agente; autenticação de ponta a ponta ainda depende do teste real da Titular.
+
+
+### 28.116 GESTOR/TITULAR — NOTIFICAÇÕES: ABERTURA INTERNA E SINCRONIZAÇÃO DO SINO (08/10/2026)
+
+**Relato operacional:** na conta Gestor/Titular, ao abrir uma notificação pelo atalho de Notificações o ambiente publicado redirecionava para a tela de login; além disso, mesmo após visualizar a notificação, o sino permanecia exibindo-a como não lida.
+
+#### Fontes confrontadas
+Foram relidos antes da correção:
+- Documento Mestre atual;
+- `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`;
+- `CAPO_Manual_Tecnico_Integrado_Banco_Interface_ATUALIZADO_2026-09-15_v5(1).md`;
+- Especificação Funcional/Estrutural de 12/09 localizada fisicamente na Library.
+
+O contrato vigente de Notificações permanece:
+- leitura por `get_my_notifications_for_interface`;
+- atualização por `update_my_notification_for_interface`;
+- estado `lida` para leitura;
+- recarga/sincronização após mutation.
+
+#### Diagnóstico físico
+A conta Gestor/Titular usa `src/features/gestor/GestorShell.tsx`, e não apenas o `AppShell` compartilhado.
+
+A página `NotificationsPage.tsx` atualizava a própria lista após `lida`, porém:
+- o contador do sino do `GestorShell` era carregado em efeito independente;
+- esse efeito não era avisado quando uma notificação mudava de estado;
+- portanto o badge permanecia com contagem antiga até nova montagem/contexto.
+
+A fonte atual do `main` já utilizava navegação React interna para os contextos; não foi reproduzida no código atual uma chamada explícita de `window.location` ou reload que justificasse, por si só, a volta ao login. O relato publicado é tratado como divergência operacional/deploy; o fluxo foi endurecido para atualização backend + navegação interna explícita.
+
+#### Correção
+Criado evento compartilhado:
+- `capo:notifications-updated`.
+
+`NotificationsPage.tsx` passa a:
+- ao clicar **Abrir contexto**, se a notificação ainda estiver não lida, chamar `updateNotification(..., 'lida', '')` antes da navegação;
+- somente navegar depois da confirmação do backend;
+- não navegar em caso de falha da marcação;
+- disparar o evento de atualização após leitura/resolução;
+- usar `useNavigate` para navegação interna.
+
+`GestorShell.tsx` e `AppShell.tsx` passam a:
+- recarregar a contagem ao receber o evento;
+- recarregar a contagem também quando muda `activePath`;
+- remover corretamente o listener ao desmontar.
+
+#### Proteção de regressão
+`tests/unit/notifications-page.test.tsx` foi atualizado para exigir que **Abrir contexto** marque a notificação como `lida` antes da navegação.
+
+**Commits:**
+- `6550ce1a184ac0f5f5ac024d74e7ada79f8889bf`;
+- `2a372b4e42320a747045aaabbb1e72a89a535327`;
+- `a9fbd850ba04392b388dc5796a95d2a2ca9aa9a6`;
+- `c4914e3587b933bde106ff3ec80a58d9a75e8792`;
+- `63b9475d4c6bec0f932b79ee7cff4dd6b2ec0cd9`.
+
+**Estado:** **CAUSA DO SINO IDENTIFICADA E CORRIGIDA NO CÓDIGO / ABERTURA ENDURECIDA PARA LEITURA + NAVEGAÇÃO INTERNA / AGUARDANDO TESTE OPERACIONAL NO AMBIENTE PUBLICADO E EXECUÇÃO DA SUÍTE**.
+
+
+### 28.117 GESTOR/TITULAR — RECUSA DA DEMANDA DE AGENDA DA ASSISTÊNCIA SOCIAL (08/10/2026)
+
+**Relato operacional:** a Titular informou ter recusado uma demanda da Coordenação relativa à agenda da Assistência Social, porém a interface apresentou indicação de solicitação aprovada.
+
+#### Verificação física do banco
+Foram conferidas:
+- `coordination_team_decisions`;
+- `agenda_change_requests`;
+- `administrative_requests`;
+- `administrative_request_events`.
+
+Para **Homologação — Assistência Social**, o banco mantém duas decisões históricas de 01/10/2026:
+1. `7ce8a837-6601-421f-b0a8-0d75b6359701` → `decision='devolver'`, `status='devolvidas'`;
+2. `1123af84-6639-41e5-a336-ffa4858df733` → `decision='aprovar'`, `status='aprovadas'`.
+
+A aprovação gerou posteriormente a solicitação administrativa:
+- `0332930d-2ff4-46a1-a239-6be7adbb374c`;
+- assunto: **Bloqueio de agenda — Afastamento aprovado**;
+- status físico atual: `pending`.
+
+No histórico dessa solicitação existe apenas o evento:
+- `created`;
+- `to_status='pending'`;
+- data 01/10/2026.
+
+**Não existe evento físico posterior de `refused`/recusa no banco.**
+
+Portanto o banco **não entendeu a ação recente como aprovação nem como recusa**: a ação relatada não foi persistida nessa solicitação e o estado canônico permaneceu pendente. A aprovação da Coordenação é um registro anterior e separado.
+
+#### Código atual
+`RequestsPage.tsx` já envia o botão **Recusar** ao backend com a ação técnica:
+- `refuse`.
+
+A interface só deve confirmar a atualização após mutation e recarga da lista oficial.
+
+Foi adicionada proteção de regressão em:
+- `tests/unit/requests-page.test.tsx`;
+
+exigindo que **Recusar** envie `refuse` e só apresente confirmação após recarga.
+
+Commit:
+- `f8fc7a1d8290decb710f3c3a41c934ef9c832908`.
+
+**Decisão de segurança:** nenhum status histórico foi alterado retroativamente, pois não existe transação de recusa persistida que autorize reescrever a decisão anterior.
+
+**Estado:** **BANCO CONFERIDO / RECUSA RECENTE NÃO PERSISTIDA / APROVAÇÃO HISTÓRICA PRESERVADA / CONTRATO ATUAL DE RECUSA PROTEGIDO POR TESTE / AGUARDANDO NOVA HOMOLOGAÇÃO OPERACIONAL NO DEPLOY ATUALIZADO**.
+
+
+### 28.118 TRANSPORTE — PDF PADRÃO, PDF DE ENCERRAMENTO, FUNÇÃO DO EMISSOR E TIMBRE DOS PDFs (08/10/2026)
+
+**Relatos e definição funcional da Titular:**
+1. retirar do PDF de solicitação o texto explicativo interno do fluxo de Transporte;
+2. manter texto institucional padrão, deixando variável o **Motivo da solicitação** conforme cada paciente;
+3. ao concluir Transporte, gerar PDF de encerramento para encaminhamento ao setor de Transportes;
+4. toda autoria/assinatura de PDF deve exibir também a função de quem gerou o documento;
+5. em todos os PDFs, a identificação institucional do timbre deve usar **Centro de Apoio ao Paciente Oncológico**.
+
+#### Fontes confrontadas
+Manual/Especificação Estrutural e Matriz confirmam que:
+- o PDF acompanha a solicitação de Transporte no fluxo operacional;
+- o Administrativo acompanha o encaminhamento externo até conclusão/cancelamento;
+- o histórico deve ser preservado;
+- Gestor/Titular acumula o fluxo administrativo autorizado.
+
+#### Divergências físicas encontradas
+`TransportPage.tsx` gerava apenas o PDF inicial e continha texto explicativo sobre funcionamento interno do fluxo.
+
+`transport_requests` possuía somente metadados do PDF inicial:
+- `request_pdf_path`;
+- `request_pdf_generated_at`;
+- `request_pdf_generated_by`.
+
+A ação `complete` apenas gravava `status='realizado'` e autoria/data de conclusão. **Não existia PDF de encerramento.**
+
+No timbre físico compartilhado:
+- abaixo do logo já constava **CENTRO DE APOIO AO PACIENTE ONCOLÓGICO**;
+- porém o título central da própria arte ainda dizia **CASA DE APOIO AO PACIENTE ONCOLÓGICO**.
+
+O gerador compartilhado também mantinha constante textual antiga com “Acolhimento”.
+
+#### PDF de solicitação — texto institucional
+O PDF de Transporte foi padronizado para:
+- identificação do paciente/CMS;
+- texto institucional fixo de necessidade de transporte;
+- texto fixo de finalidade da solicitação;
+- **Motivo da solicitação** como informação particular do caso;
+- responsável pela emissão;
+- função do responsável.
+
+Foi retirado do documento o texto explicativo interno sobre como CAPO informa dias/horários e sobre o funcionamento do fluxo.
+
+A identificação institucional utilizada no corpo passa a ser:
+- **Centro de Apoio ao Paciente Oncológico – CAPO**.
+
+#### Função do emissor — gerador compartilhado
+`src/lib/pdf/capo-document-pdf.ts` passou a aceitar:
+- `generatedBy`;
+- `generatedByRole`.
+
+O rodapé registra:
+- nome de quem gerou;
+- **Função** de quem gerou.
+
+Os geradores ativos foram alinhados:
+- Transporte;
+- Relatórios;
+- Encaminhamento Odontológico;
+- Plano Alimentar da Nutrição.
+
+Para Transporte:
+- contexto Gestor → **Gestor/Titular**;
+- contexto AO → **Auxiliar Administrativo / Administrativo Operacional**.
+
+#### Correção visual do timbre em todos os PDFs compartilhados
+A arte original permanece preservada como ativo institucional, porém o gerador central passou a corrigir a área textual central ao renderizar cada página, apresentando:
+- **CENTRO DE APOIO AO**
+- **PACIENTE ONCOLÓGICO**
+
+A constante textual compartilhada também passou para:
+- **CAPO — Centro de Apoio ao Paciente Oncológico · Secretaria Municipal de Saúde de Pouso Alegre-MG**.
+
+Assim, a correção alcança todos os PDFs que utilizam `buildCapoDocumentPdf`, sem criar versões divergentes por módulo.
+
+#### PDF de encerramento do Transporte
+Migration aplicada no Supabase:
+- `20261008184024_transport_closure_pdf_document`.
+
+Novos metadados em `transport_requests`:
+- `closure_pdf_path`;
+- `closure_pdf_generated_at`;
+- `closure_pdf_generated_by`.
+
+Criada RPC:
+- `complete_transport_request_with_closure_pdf_for_interface(p_request_id uuid, p_storage_path text)`.
+
+Regras:
+- exige autenticação e termo vigente;
+- somente Gestor/Titular ou Administrativo Operacional;
+- solicitação deve estar `confirmado`;
+- encaminhamento externo deve ter sido registrado;
+- arquivo deve existir no bucket seguro `capo-documents`;
+- caminho deve pertencer ao próprio request;
+- somente PDF;
+- conclusão e vínculo do PDF são persistidos na mesma transação do contrato.
+
+`get_transport_document_for_interface` passou a expor também o documento de encerramento.
+
+A interface:
+- gera o PDF antes da conclusão;
+- envia para o Storage seguro;
+- chama a nova RPC;
+- só então considera a solicitação `realizado`;
+- apresenta **Visualizar PDF de encerramento** e **Baixar PDF de encerramento** no histórico.
+
+#### Validação física de estrutura
+Após a migration foram comprovadas as colunas:
+- `closure_pdf_path text`;
+- `closure_pdf_generated_at timestamptz`;
+- `closure_pdf_generated_by uuid`.
+
+A RPC física existe:
+- `complete_transport_request_with_closure_pdf_for_interface(uuid,text)`;
+- `anon_execute=false`;
+- `authenticated_execute=true`;
+- a própria função valida os papéis autorizados.
+
+Advisors de segurança e performance foram executados. Permanecem avisos amplos preexistentes do projeto sobre funções `SECURITY DEFINER` e índices; a nova RPC aparece no aviso genérico de funções autenticadas, mas possui validação interna de autenticação, termo e papel. Nenhuma limpeza ampla fora do escopo foi executada.
+
+#### Sincronização e commits
+Migration sincronizada:
+- `supabase/migrations/20261008184024_transport_closure_pdf_document.sql`.
+
+Commits principais:
+- `a4b7586a062d444a04c5bef95ec35dfdf4a54aae` — migration;
+- `80c08ee265629fa23fd297f2c1d52be1244ec848` — integração RPC;
+- `2d69d614d3fe03077e961ea453afb99c816979a2` — tipos;
+- `5e7d443c0ac0f50991250654a90eaf3844afb00e` — PDF padrão + encerramento na interface;
+- `4fe1fcdfe5e38c54684020f15250a4fc5a1eb54c` — timbre + função no gerador compartilhado;
+- `0070ca8813fc3730bf98cbb62393d807e498c7c1` — Odontologia;
+- `02a66c256429d6c6e5571c4c58b9688b344f3f42` — Nutrição;
+- `2774ff9da8bbba7c19246d352e8dadcd10cdb12e` — exportação de relatórios;
+- `91c89d505b23e2e4a239deb3d96ae2262801ee34` — função do emissor em Relatórios;
+- `599ce67080c80babfd78b2c0b739d65dd84c491d` — proteção do timbre/rodapé.
+
+**Limite da validação nesta sessão:** não foi executada suíte `npm test`, `typecheck` ou `build` fisicamente nesta conexão; também ainda não foi concluído um Transporte real/homologado pela interface após o novo fluxo. Não declarar PASS desses itens.
+
+**Estado:** **CORREÇÕES IMPLEMENTADAS NO CÓDIGO E BANCO / PDF DE SOLICITAÇÃO PADRONIZADO / PDF DE ENCERRAMENTO CRIADO / FUNÇÃO DO EMISSOR INCLUÍDA / TIMBRE CORRIGIDO NO GERADOR COMPARTILHADO / ESTRUTURA DO BANCO VALIDADA / AGUARDANDO SUÍTE E HOMOLOGAÇÃO OPERACIONAL PUBLICADA**.
