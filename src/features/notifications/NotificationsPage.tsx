@@ -104,7 +104,12 @@ export function NotificationsPage({
       globalThis.dispatchEvent(new Event(NOTIFICATIONS_UPDATED_EVENT))
       setBusyId(null)
     }
-    navigate(contextHref)
+    // Entrega a solicitação específica ao módulo canônico, sem criar atendimento ao ler.
+    navigate(contextHref, {
+      state: item.entity_id && ['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
+        ? { contextId: item.entity_id }
+        : undefined,
+    })
   }
 
   function changeFilter(value: string) {
@@ -200,7 +205,9 @@ export function NotificationsPage({
                       disabled={busy}
                       onClick={() => void openContext(item, contextHref)}
                     >
-                      Abrir contexto
+                      {['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
+                        ? 'Abrir solicitação no Administrativo'
+                        : 'Abrir contexto'}
                     </button>
                   )}
                   {isUnread(item) && (
