@@ -2,7 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { NotificationsPage } from '../../src/features/notifications/NotificationsPage'
 import {
   createNotificationsService,
@@ -185,7 +185,7 @@ describe('NotificationsPage', () => {
       />,
     )
 
-    const open = await screen.findByRole('button', { name: 'Abrir contexto' })
+    const open = await screen.findByRole('button', { name: 'Abrir solicitação no Administrativo' })
     await user.click(open)
     expect(service.updateNotification).toHaveBeenCalledWith(
       'notification-id',
@@ -193,4 +193,22 @@ describe('NotificationsPage', () => {
       '',
     )
   })
+  it('abre a solicitação administrativa pelo ID sem confundir leitura com atendimento', async () => {
+    const user = userEvent.setup()
+    const service = serviceWith({ status: 'success', data: [notification] })
+    function Destination() {
+      const location = useLocation()
+      return <output data-testid="destination">{location.pathname}:{String(location.state?.contextId ?? '')}</output>
+    }
+    renderPage(
+      <>
+        <NotificationsPage service={service} getContextHref={() => '/solicitacoes'} />
+        <Destination />
+      </>,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Abrir solicitação no Administrativo' }))
+    expect(await screen.findByTestId('destination')).toHaveTextContent('/solicitacoes:request-id')
+    expect(service.updateNotification).toHaveBeenCalledWith('notification-id', 'lida', '')
+  })
+
 })
