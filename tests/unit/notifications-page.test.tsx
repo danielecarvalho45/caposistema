@@ -163,13 +163,14 @@ describe('NotificationsPage', () => {
     ).toBeVisible()
   })
 
-  it('exibe ação de resolução e mantém contexto quando não há rota mapeada', async () => {
+  it('não permite resolver notificação ligada a solicitação sem concluir o fluxo', async () => {
     const service = serviceWith({ status: 'success', data: [notification] })
     renderPage(<NotificationsPage service={service} />)
 
     expect(
-      await screen.findByRole('button', { name: 'Marcar como resolvida' }),
+      await screen.findByText('Solicitação concluída'),
     ).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Marcar como resolvida' })).not.toBeInTheDocument()
     expect(
       screen.queryByRole('link', { name: 'Abrir contexto' }),
     ).not.toBeInTheDocument()
