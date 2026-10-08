@@ -7028,3 +7028,49 @@ Não refazer automaticamente correções desse período apenas porque não apare
 Primeiro verificar se a correção já existe no `main` atual; somente corrigir de novo se houver divergência funcional comprovada no código atual ou após o novo deploy.
 
 **Estado:** **NENHUM DEPLOY VÁLIDO DESDE 30/09 / PRODUÇÃO-HOMOLOGAÇÃO PERMANECEU PRESA EM VERSÃO DE 29/09 / TODAS AS CORREÇÕES POSTERIORES DEVEM SER TRATADAS COMO NÃO PUBLICADAS E NÃO HOMOLOGADAS ATÉ NOVO DEPLOY VERDE**.
+
+
+### 28.124 PUBLICAÇÃO RESTABELECIDA + PROTEÇÃO CONTRA NOVO BUILD QUEBRADO (08/10/2026)
+
+**Evidência operacional fornecida pela responsável:** o Cloudflare Pages publicou com sucesso o commit `04935e060c28b38232a05be712a0517482b6c46c`, em produção, após as correções de sintaxe registradas no §28.122. A responsável confirmou também que as três implantações imediatamente anteriores já haviam concluído com sucesso.
+
+#### Consequência do primeiro deploy verde
+O marco do §28.123 permanece como histórico do período em que nenhuma publicação passava desde 30/09, porém deixa de representar o estado atual.
+
+Como o deployment verde contém o `main` acumulado, as correções registradas desde 30/09 que continuam fisicamente presentes no `main` deixam de ser classificadas como **não publicadas**.
+
+Nesta vistoria foram relidos fisicamente e permanecem presentes no `main`:
+- §28.96 — persistência da sessão na mesma aba via `sessionStorage`;
+- §28.97 — navegação interna das notificações sem reload;
+- §§28.104/108/109 — Agenda compartilhada com Confirmar/Falta junto ao paciente;
+- §§28.105–107 — padrão canônico das Homes profissionais;
+- §28.110 — Home do Administrativo Operacional usando a grade diária canônica;
+- §28.111 — Home da Coordenação usando `TeamDayAgendaPanel` e a grade diária canônica;
+- §§28.112–28.118 e §28.121 — correções de homologação, notificações, fluxo administrativo, documentos e suporte continuam registradas no código/banco conforme seus blocos próprios.
+
+**Importante:** publicado não significa homologado. Os itens que exigem teste operacional permanecem como **PUBLICADOS / AGUARDANDO HOMOLOGAÇÃO OPERACIONAL** até conferência pela conta `manuteste` ou perfil real correspondente.
+
+#### Proteção adicionada ao repositório
+Foi criada a validação automática:
+- `.github/workflows/validate-build.yml`.
+
+Ela executa em push e pull request para `main`:
+1. checkout;
+2. Node.js 24.21.0;
+3. `npm ci`;
+4. `npm run build`.
+
+Objetivo: tornar visível no próprio GitHub qualquer commit que deixe o bundle de produção sem compilar, antes de depender exclusivamente do log do Cloudflare.
+
+Commit:
+- `a8e4c56bdcedf20c358bb1ed4b658be9b2681f34` — `ci: valida build de producao no main`.
+
+No instante desta atualização, o GitHub ainda não retornava execução do workflow para o commit recém-criado; portanto não declarar o novo check como PASS até a execução aparecer.
+
+#### Regra de continuidade
+1. não refazer correções de 30/09 em diante que estejam fisicamente presentes no `main`;
+2. executar homologação operacional no deployment atual;
+3. corrigir somente divergência que permanecer reproduzível após a publicação restaurada;
+4. manter separadas as classificações **implementado**, **publicado** e **homologado**.
+
+**Estado:** **PUBLICAÇÃO AUTOMÁTICA RESTABELECIDA / MAIN ATUAL PUBLICADO / CORREÇÕES ACUMULADAS QUE PERMANECEM NO MAIN AGORA ESTÃO PUBLICADAS / HOMOLOGAÇÃO OPERACIONAL PENDENTE NOS ITENS INDICADOS / CHECK AUTOMÁTICO DE BUILD ADICIONADO AO GITHUB**.
