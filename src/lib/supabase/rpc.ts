@@ -3446,6 +3446,13 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'sign_transport_pdf_for_interface', args: { p_request_id: requestId }, parse: parseConfirmedJson }),
     getTransportDocument: (requestId: string) =>
       execute({ transport, operation: 'get_transport_document_for_interface', args: { p_request_id: requestId }, parse: parseConfirmedJson }),
+    completeTransportRequestWithClosurePdf: (requestId: string, storagePath: string) =>
+      execute({
+        transport,
+        operation: 'complete_transport_request_with_closure_pdf_for_interface',
+        args: { p_request_id: requestId, p_storage_path: storagePath },
+        parse: parseConfirmedJson,
+      }),
     manageTransportRequest: (args: ConfirmedJsonArgs) =>
       execute({ transport, operation: 'manage_transport_request_for_interface', args, parse: parseConfirmedJson }),
     getMySpecialtyOperationalReport: (
