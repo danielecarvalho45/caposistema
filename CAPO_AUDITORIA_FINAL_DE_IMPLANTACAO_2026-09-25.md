@@ -6981,3 +6981,50 @@ Como o Cloudflare Pages está com implantação automática habilitada, os novos
 
 #### Estado
 **AUTOMAÇÃO GITHUB→CLOUDFLARE COMPROVADAMENTE ATIVA / CAUSA DO NÃO-DEPLOY IDENTIFICADA COMO BUILD QUEBRADO / DOIS DEFEITOS DE SINTAXE CORRIGIDOS NO MAIN / AGUARDANDO NOVO BUILD AUTOMÁTICO DO CLOUDFLARE PARA PASS DEFINITIVO**.
+
+
+### 28.123 MARCO DE PUBLICAÇÃO — NENHUM DEPLOY APROVADO DESDE 30/09/2026 (08/10/2026)
+
+**Confirmação operacional da responsável:** no painel do Cloudflare Pages, todas as implantações desde **30/09/2026** aparecem em vermelho/erro.
+
+#### Marco físico
+Último deploy válido conhecido:
+- commit `d47b47209b83e1b325ee3e8aef8d0890414c1cdf`;
+- data: 29/09/2026;
+- mensagem: `feat: adiciona leitura gerencial do PDF nutricional`.
+
+Primeiro build com erro confirmado:
+- commit `a190aaa33aa11bfeaa2f6069d3d22f87ba1ac85b`;
+- data: 30/09/2026;
+- erro de sintaxe em `src/features/nutrition/NutritionPage.tsx`;
+- Cloudflare executou clone, instalação e `npm run build`, porém o build falhou.
+
+A responsável confirmou que **todas as tentativas posteriores permaneceram vermelhas**.
+
+#### Consequência de auditoria
+A partir de 30/09/2026, nenhuma correção deve ser classificada como:
+- publicada;
+- homologada no ambiente real;
+- operacionalmente aprovada;
+- validada pela `manuteste` publicada;
+
+apenas com base em commit no GitHub, migration no Supabase ou teste isolado de backend.
+
+As correções desse período devem ser distinguidas em:
+1. **CORRIGIDA NO CÓDIGO/BANCO** — quando houver evidência física no repositório/Supabase;
+2. **NÃO PUBLICADA** — enquanto não existir deploy Cloudflare com sucesso contendo o commit;
+3. **NÃO HOMOLOGADA** — enquanto a `manuteste` publicada não permitir o teste operacional da função.
+
+#### Regra de retomada
+Antes de reavaliar funcionalmente todas as pendências acumuladas desde 30/09:
+1. restaurar `npm run build` verde no `main`;
+2. obter primeiro deployment Cloudflare com **Success** após 30/09;
+3. confirmar que `caposistema.pages.dev` está servindo o commit atual;
+4. executar homologação permanente pela `manuteste`;
+5. somente então atualizar o estado de cada correção antiga para publicada/homologada.
+
+#### Regra anti-loop
+Não refazer automaticamente correções desse período apenas porque não apareceram na publicação antiga.
+Primeiro verificar se a correção já existe no `main` atual; somente corrigir de novo se houver divergência funcional comprovada no código atual ou após o novo deploy.
+
+**Estado:** **NENHUM DEPLOY VÁLIDO DESDE 30/09 / PRODUÇÃO-HOMOLOGAÇÃO PERMANECEU PRESA EM VERSÃO DE 29/09 / TODAS AS CORREÇÕES POSTERIORES DEVEM SER TRATADAS COMO NÃO PUBLICADAS E NÃO HOMOLOGADAS ATÉ NOVO DEPLOY VERDE**.
