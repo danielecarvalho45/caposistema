@@ -7,7 +7,9 @@ import {
   SupabaseOperationError,
 } from '../../lib/supabase/errors'
 
-export const NOTIFICATIONS_UPDATED_EVENT = 'capo:notifications-updated'\n\nexport type Notification = Readonly<{
+export const NOTIFICATIONS_UPDATED_EVENT = 'capo:notifications-updated'
+
+export type Notification = Readonly<{
   notification_id: string
   notification_type: string
   title: string
