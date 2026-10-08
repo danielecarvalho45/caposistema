@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import type { AsyncState } from '../../lib/supabase/rpc'
 import {
   getNotificationsService,
+  NOTIFICATIONS_UPDATED_EVENT,
   type Notification,
   type NotificationsService,
 } from './notifications-integration'
@@ -30,6 +31,7 @@ export function NotificationsPage({
   service = getNotificationsService(),
   getContextHref,
 }: Props) {
+  const navigate = useNavigate()
   const [onlyUnread, setOnlyUnread] = useState(false)
   const [page, setPage] = useState(0)
   const [state, setState] = useState<AsyncState<readonly Notification[]>>({
@@ -69,6 +71,7 @@ export function NotificationsPage({
       page * pageSize,
     )
     setState(refreshed)
+    globalThis.dispatchEvent(new Event(NOTIFICATIONS_UPDATED_EVENT))
     setFeedback(
       refreshed.status === 'error'
         ? refreshed.error.message
@@ -77,6 +80,31 @@ export function NotificationsPage({
           : 'Notificação marcada como resolvida.',
     )
     setBusyId(null)
+  }
+
+  async function openContext(item: Notification, contextHref: string) {
+    if (busyId) return
+    if (isUnread(item)) {
+      setBusyId(item.notification_id)
+      setFeedback(null)
+      const result = await service.updateNotification(
+        item.notification_id,
+        'lida',
+        '',
+      )
+      if (result.status !== 'success') {
+        setFeedback(
+          result.status === 'error'
+            ? result.error.message
+            : 'O banco não confirmou a leitura da notificação.',
+        )
+        setBusyId(null)
+        return
+      }
+      globalThis.dispatchEvent(new Event(NOTIFICATIONS_UPDATED_EVENT))
+      setBusyId(null)
+    }
+    navigate(contextHref)
   }
 
   function changeFilter(value: string) {
@@ -166,7 +194,15 @@ export function NotificationsPage({
                   </small>
                 </div>
                 <div className="notification-actions">
-                  {contextHref && <Link to={contextHref}>Abrir contexto</Link>}
+                  {contextHref && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void openContext(item, contextHref)}
+                    >
+                      Abrir contexto
+                    </button>
+                  )}
                   {isUnread(item) && (
                     <button
                       type="button"
