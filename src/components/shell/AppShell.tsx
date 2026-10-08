@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import { authorizedNavigationItems } from '../navigation/navigation-config'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
-import { getNotificationsService } from '../../features/notifications/notifications-integration'
+import { getNotificationsService, NOTIFICATIONS_UPDATED_EVENT } from '../../features/notifications/notifications-integration'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { ProfileShortcuts } from './ProfileShortcuts'
 import './app-shell.css'
@@ -118,19 +118,24 @@ export function AppShell({
     if (!canAccessNotifications) return
 
     let active = true
-    void getNotificationsService()
-      .getNotifications(true, 1, 0)
-      .then((state) => {
-        if (!active) return
-        setUnreadNotifications(
-          state.status === 'success' ? (state.data[0]?.total_count ?? 0) : null,
-        )
-      })
+    const refreshUnread = () => {
+      void getNotificationsService()
+        .getNotifications(true, 1, 0)
+        .then((state) => {
+          if (!active) return
+          setUnreadNotifications(
+            state.status === 'success' ? (state.data[0]?.total_count ?? 0) : 0,
+          )
+        })
+    }
+    refreshUnread()
+    globalThis.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshUnread)
 
     return () => {
       active = false
+      globalThis.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshUnread)
     }
-  }, [canAccessNotifications])
+  }, [canAccessNotifications, activePath])
 
   async function logout() {
     if (loggingOut) return
