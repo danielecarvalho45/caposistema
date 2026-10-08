@@ -81,7 +81,8 @@ function buildNutritionPdf(document: NutritionRecord) {
 
 export function NutritionPage({
   accessContext,
-}: Readonly<{ accessContext: AccessContext }>) {
+  homeOnly = false,
+}: Readonly<{ accessContext: AccessContext; homeOnly?: boolean }>) {
   const [specialtyResult, setSpecialtyResult] = useState<{ professionalId: string; hasNutritionSpecialty: boolean } | null>(null)
   const eligibleForSpecialty = accessContext.is_active && Boolean(accessContext.professional_id) && accessContext.roles.some((role) => role.code === 'profissional')
   const hasNutritionSpecialty = !eligibleForSpecialty ? false : specialtyResult?.professionalId === accessContext.professional_id ? specialtyResult.hasNutritionSpecialty : null
@@ -461,9 +462,11 @@ export function NutritionPage({
           <nav className="home-profile home-profile-standard" aria-label="Acessos rápidos da Nutrição">
             <h2>Acessos rápidos</h2>
             <div className="home-profile-grid">
-              <a className="home-profile-card quick-green" href="#nutrition-plan-title"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Planejamento Alimentar</strong><span>Abrir o plano do paciente selecionado.</span></a>
-              <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Demandas da própria atuação.</span></Link>
-              <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores autorizados da Nutrição.</span></Link>
+              <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
+              <Link className="home-profile-card quick-green" to="/nutricao"><span className="home-profile-icon" aria-hidden="true">◉</span><strong>Planejamento Alimentar</strong><span>Abrir o módulo da Nutrição</span></Link>
+              <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Demandas da própria atuação</span></Link>
+              <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores da Nutrição</span></Link>
+              <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true">?</span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
             </div>
           </nav>
 
@@ -485,6 +488,7 @@ export function NutritionPage({
 ))}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<h3>Equipe CAPO</h3>{birthdays.data.team.length ? <ul>{birthdays.data.team.map((member) => <li key={member.professional_id}>{member.full_name}</li>)}</ul> : <p>Nenhum integrante da equipe faz aniversário hoje.</p>}</>}
           </section>
 
+          {(!homeOnly || patientId) && (
           <section className="home-profile" aria-labelledby="nutrition-plan-title">
             <p className="eyebrow">Planejamento Alimentar</p>
             <h2 id="nutrition-plan-title">Plano Alimentar e PDF oficial</h2>
@@ -524,6 +528,7 @@ export function NutritionPage({
               </div>
             )}
           </section>
+          )}
         </>
       )}
 
