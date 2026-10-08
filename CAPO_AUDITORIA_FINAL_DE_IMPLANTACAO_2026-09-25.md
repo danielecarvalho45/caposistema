@@ -6931,3 +6931,53 @@ Commit:
 
 #### Estado
 **CAUSA IDENTIFICADA / FORMULÁRIO ALINHADO AO BACKEND / FLUXO BACKEND COORDENADOR→TI VALIDADO TRANSACIONALMENTE / NENHUM DADO DE TESTE PERSISTIDO / AGUARDANDO PUBLICAÇÃO DO MAIN E NOVO TESTE OPERACIONAL PELA MANUTESTE**.
+
+
+### 28.122 CLOUDFLARE PAGES — DEPLOY AUTOMÁTICO ATIVO, MAS BUILD BLOQUEADO POR ERROS DE SINTAXE (08/10/2026)
+
+**Evidência operacional fornecida pela responsável:** log real do Cloudflare Pages para o commit `9e567c6419c1501449ba2578816bb99ecfedc9c6`.
+
+#### Conclusão sobre a automação
+O log comprova que a publicação automática **está habilitada e funcionando até a etapa de build**:
+1. Cloudflare clonou o repositório oficial;
+2. buscou exatamente o commit do `main`;
+3. instalou Node 24.21.0;
+4. executou `npm clean-install`;
+5. executou `npm run build`.
+
+Portanto, a causa da publicação antiga não era desconexão GitHub↔Cloudflare.
+
+#### Falha comprovada
+O build Vite falhou com quatro mensagens, concentradas em dois defeitos de sintaxe:
+
+1. `src/features/nutrition/NutritionPage.tsx`, linha aproximada 614:
+   - bloco `managementFeedback` sem fechamento `}` da expressão JSX.
+
+2. `src/features/notifications/notifications-integration.ts`, linha aproximada 10:
+   - caracteres literais `\\n\\n` inseridos entre a constante `NOTIFICATIONS_UPDATED_EVENT` e o tipo `Notification`;
+   - isso gerou mensagens derivadas de `Invalid Unicode escape sequence` e ausência de ponto-e-vírgula.
+
+#### Correções cirúrgicas
+`notifications-integration.ts`:
+- removidos os caracteres literais `\\n\\n`;
+- restauradas quebras de linha reais TypeScript.
+
+Commit:
+- `4187a09e170394252feb4270a1abba1ee96392c2`.
+
+`NutritionPage.tsx`:
+- restaurado o fechamento correto:
+  `{managementFeedback && <p role="status">{managementFeedback}</p>}`.
+
+Commit:
+- `80a5374a35845b2a36106e45f96101f565f45ba7`.
+
+#### Conferência física pós-correção
+O `main` atual foi relido via GitHub e os dois trechos estão sintaticamente normalizados.
+
+Foi tentada uma execução local independente de `npm run build`, porém o ambiente de execução desta sessão não conseguiu resolver `github.com` para clonar o repositório. Portanto, **não declarar build local PASS** com base nessa tentativa.
+
+Como o Cloudflare Pages está com implantação automática habilitada, os novos commits devem disparar novo build automaticamente. A validação definitiva deste bloco é o próximo log/deployment do Cloudflare retornar sucesso.
+
+#### Estado
+**AUTOMAÇÃO GITHUB→CLOUDFLARE COMPROVADAMENTE ATIVA / CAUSA DO NÃO-DEPLOY IDENTIFICADA COMO BUILD QUEBRADO / DOIS DEFEITOS DE SINTAXE CORRIGIDOS NO MAIN / AGUARDANDO NOVO BUILD AUTOMÁTICO DO CLOUDFLARE PARA PASS DEFINITIVO**.
