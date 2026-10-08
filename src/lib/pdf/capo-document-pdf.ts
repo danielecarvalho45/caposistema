@@ -5,24 +5,29 @@ import {
 } from './capo-document-brand'
 
 export const CAPO_DOCUMENT_HEADER_LABEL =
-  'CAPO — Centro de Acolhimento Oncológico de Pouso Alegre · Secretaria Municipal de Saúde de Pouso Alegre-MG'
+  'CAPO — Centro de Apoio ao Paciente Oncológico · Secretaria Municipal de Saúde de Pouso Alegre-MG'
 
 type CapoPdfOptions = Readonly<{
   fontSize?: number
   lineHeight?: number
   linesPerPage?: number
   generatedBy: string
+  generatedByRole?: string
   generatedAt?: Date
 }>
 
-export function capoPdfFooter(generatedBy: string, generatedAt: Date): string {
+export function capoPdfFooter(
+  generatedBy: string,
+  generatedAt: Date,
+  generatedByRole = 'Função não informada',
+): string {
   const date = new Intl.DateTimeFormat('pt-BR', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo',
   }).format(generatedAt)
   const time = new Intl.DateTimeFormat('pt-BR', {
     hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo',
   }).format(generatedAt)
-  return `Documento gerado em ${date}, às ${time}, por ${generatedBy.trim() || 'Autoria não informada'}.`
+  return `Documento gerado em ${date}, às ${time}, por ${generatedBy.trim() || 'Autoria não informada'} — Função: ${generatedByRole.trim() || 'Função não informada'}.`
 }
 
 function pdfSafe(value: string) {
@@ -70,7 +75,11 @@ export function buildCapoDocumentPdf(
   const fontSize = options.fontSize ?? 10
   const lineHeight = options.lineHeight ?? 14
   const linesPerPage = options.linesPerPage ?? 40
-  const footer = capoPdfFooter(options.generatedBy, options.generatedAt ?? new Date())
+  const footer = capoPdfFooter(
+    options.generatedBy,
+    options.generatedAt ?? new Date(),
+    options.generatedByRole,
+  )
   const pages = Array.from(
     { length: Math.max(1, Math.ceil(lines.length / linesPerPage)) },
     (_, page) => lines.slice(page * linesPerPage, (page + 1) * linesPerPage),
@@ -92,7 +101,7 @@ export function buildCapoDocumentPdf(
 
   pages.forEach((page, index) => {
     const stream = bytes(
-      `q\n505 0 0 ${logoHeight.toFixed(2)} 45 745 cm\n/Logo Do\nQ\nBT\n/F1 ${fontSize} Tf\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\nBT\n/F1 8 Tf\n11 TL\n45 54 Td\n${footerLines(footer).map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
+      `q\n505 0 0 ${logoHeight.toFixed(2)} 45 745 cm\n/Logo Do\nQ\nq\n1 1 1 rg\n220 789 158 31 re f\nQ\nBT\n/F1 8 Tf\n0 0.27 0.53 rg\n241 807 Td\n(CENTRO DE APOIO AO) Tj\n0 -11 Td\n(PACIENTE ONCOLÓGICO) Tj\nET\nBT\n/F1 ${fontSize} Tf\n0 0 0 rg\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\nBT\n/F1 8 Tf\n0 0 0 rg\n11 TL\n45 54 Td\n${footerLines(footer).map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
     )
     const contentId = pageIds[index] + 1
     objects.push(
