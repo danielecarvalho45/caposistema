@@ -210,11 +210,11 @@ export function App() {
   ) : isCoordinationRoute ? (
     <CoordinationDashboard accessContext={accessContext} />
   ) : isNutritionHome ? (
-    <NutritionPage accessContext={accessContext} />
+    <NutritionPage accessContext={accessContext} homeOnly />
   ) : isSocialHome ? (
     <SocialPage accessContext={accessContext} mode="home" />
   ) : isAssistentialHome ? (
-    <AssistentialPage accessContext={accessContext} profileKind={professionalScreen} />
+    <AssistentialPage accessContext={accessContext} profileKind={professionalScreen} homeOnly />
   ) : location.pathname === '/gestor/social' ? (
     <GestorSocialOverview />
   ) : location.pathname === '/gestor/luto' ? (
