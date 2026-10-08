@@ -2282,8 +2282,23 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'get_coordinator_agenda_overview_for_interface', args: { p_start_date: startDate, p_end_date: endDate, p_specialty_id: specialtyId, p_professional_id: professionalId }, parse: (value) => value }),
     getAgendaChangeRequests: (status: string | null = null, professionalId: string | null = null, limit = 50) =>
       execute({ transport, operation: 'get_agenda_change_requests_for_interface', args: { p_status: status, p_professional_id: professionalId, p_limit: limit }, parse: (value) => value }),
-    createAgendaChangeRequest: (configId: string, changes: { is_active: boolean; effective_date: string }, justification: string) =>
-      execute({ transport, operation: 'create_agenda_change_request_for_interface', args: { p_agenda_config_id: configId, p_request_type: 'status', p_requested_changes: changes, p_justification: justification }, parse: parseConfirmedJson }),
+    createAgendaChangeRequest: (
+      configId: string | null,
+      requestType: 'configuracao' | 'status' | 'bloqueio_recorrente' | 'excecao_estrutural',
+      changes: Readonly<Record<string, unknown>>,
+      justification: string,
+    ) =>
+      execute({
+        transport,
+        operation: 'create_agenda_change_request_for_interface',
+        args: {
+          p_agenda_config_id: configId,
+          p_request_type: requestType,
+          p_requested_changes: changes,
+          p_justification: justification,
+        },
+        parse: parseConfirmedJson,
+      }),
     getPatientCareSpecialties: (patientId: string) =>
       execute({ transport, operation: 'get_patient_care_specialties_for_professional_interface', args: { p_patient_id: patientId }, parse: (value) => value }),
     decideAgendaChangeRequest: (requestId: string, decision: 'aprovar' | 'rejeitar', reason: string | null) =>
