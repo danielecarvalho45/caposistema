@@ -780,6 +780,18 @@ export function AgendaPage({
   const professionalId = isProfessional
     ? accessContext.professional_id
     : selectedProfessionalId || null
+  const periodScheduled =
+    state.status === 'success'
+      ? state.data.filter((appointment) => appointment.attendance_status === 'agendado').length
+      : state.status === 'empty'
+        ? 0
+        : null
+  const periodConfirmed =
+    state.status === 'success'
+      ? state.data.filter((appointment) => appointment.attendance_status === 'confirmado').length
+      : state.status === 'empty'
+        ? 0
+        : null
   const periodNoShows =
     state.status === 'success'
       ? state.data.filter((appointment) => appointment.attendance_status === 'faltou').length
@@ -2053,6 +2065,11 @@ export function AgendaPage({
       </div>
       {embeddedHome && isProfessional && (
         <aside className="agenda-home-side" aria-label="Indicadores da agenda">
+          <div className="agenda-home-summary" aria-label="Resumo rápido da agenda">
+            <article><span>Agendados</span><strong>{periodScheduled ?? '—'}</strong></article>
+            <article><span>Confirmados</span><strong>{periodConfirmed ?? '—'}</strong></article>
+            <article><span>Faltosos</span><strong>{periodNoShows ?? '—'}</strong></article>
+          </div>
           <Link className="agenda-home-indicator agenda-home-indicator--notifications" to="/notificacoes">
             <span>Notificações</span>
             <strong>{unreadNotifications ?? '—'}</strong>
