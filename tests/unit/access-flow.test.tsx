@@ -163,6 +163,34 @@ describe('entrada única CAPO', () => {
     expect(authApi.loginByUsername).toHaveBeenCalledWith('usuario', 'Capo2026')
   })
 
+  it('permite reconectar após falha transitória sem logout nem pular o termo', async () => {
+    const authApi = createAuthApi({
+      getSession: vi.fn().mockResolvedValue(session),
+    })
+    const getMyAccessContext = vi.fn()
+      .mockResolvedValueOnce({
+        status: 'error',
+        error: { message: 'Failed to fetch', status: 503 },
+      })
+      .mockResolvedValue({
+        status: 'success',
+        data: context,
+      })
+    const rpcService = createRpcService({ getMyAccessContext })
+    renderFlow(authApi, rpcService)
+    const user = userEvent.setup()
+
+    expect(await screen.findByRole('heading', {
+      name: 'Serviço CAPO temporariamente indisponível',
+    })).toBeVisible()
+    expect(authApi.signOut).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Tentar reconectar ao CAPO' }))
+    expect(await screen.findByRole('heading', { name: 'Área protegida' })).toBeVisible()
+    expect(rpcService.getCurrentLegalTerm).toHaveBeenCalledTimes(2)
+    expect(getMyAccessContext).toHaveBeenCalledTimes(2)
+    expect(authApi.signOut).not.toHaveBeenCalled()
+  })
+
   it('mantém erro de login visível', async () => {
     const authApi = createAuthApi({
       loginByUsername: vi
