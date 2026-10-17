@@ -7444,3 +7444,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Pendência real de continuidade:** alinhar o backend de apresentação e sincronização ao estado da solicitação de origem (inclusive avisos vinculados já marcados `resolved_at` indevidamente), preservar rastreabilidade de qualquer acerto histórico e impedir que resolução manual ou cancelamento deixe aviso inconsistente. Validar separadamente a semântica de `read_at` para notificações destinadas a um papel com múltiplos usuários; não inventar leitura individual nem migrar dados sem contrato revisado. Os testes de regressão e build não foram executados nesta sessão e a publicação não foi comprovada.
 
 **Estado:** **PROTEÇÃO CIRÚRGICA APLICADA NO CÓDIGO / PENDÊNCIA DE SINCRONIZAÇÃO BACKEND E HOMOLOGAÇÃO OPERACIONAL**.
+
+
+### 28.133 CONTINGÊNCIA SUPABASE — RECONEXÃO SEGURA SEM DESCONEXÃO COMPULSÓRIA (17/10/2026)
+
+**Relato:** o projeto oficial Supabase foi encontrado `INACTIVE`, restaurado mediante `restore_project`, transitou por `COMING_UP` e foi confirmado `ACTIVE_HEALTHY` em 17/10, inclusive consulta SQL de leitura bem-sucedida. Não presumir que ausência de resposta inicial do backend comprove falha de publicação estática ou credencial inválida.
+
+**Base documental:** Manual da Interface de 04/09, seção 25, estipula contingência de trabalho offline e sincronização, com preservação de pendências, estados `Salvo temporariamente — aguardando sincronização` e `Sincronizado com o banco CAPO — data/hora`. Essa arquitetura não foi comprovada no código implantado no GitHub: árvore do `main` sem service worker, fila de operações offline, mecanismo de replay/sincronização. Não é seguro inventar fila de dados sensíveis sem análise de autorização, persistência criptografada, reconciliação/idempotência e homologação. Nenhuma escrita offline de dados de paciente foi implementada.
+
+**Correção cirúrgica implementada no frontend:** a tela de bloqueio provocada por erro transitório de rede/backend agora diferencia `Serviço CAPO temporariamente indisponível` de `Acesso bloqueado`, informa que a operação não foi salva e oferece `Tentar reconectar ao CAPO`, sem chamar logout. Reconexão refaz **o gate inteiro de sessão + termo + contexto/permissões** (`runProtectedAccessGate`), sem permitir atalho de autorização. Botão de saída continua disponível; erros reais de acesso preservados. Modificados `src/components/auth/AccessGate.tsx` e `src/features/access/access-context.tsx`; incluído cenário de regressão em `tests/unit/access-flow.test.tsx` cobrindo falha 503, reconexão, rechecagem de termo e ausência de signOut.
+
+**Commits:** `72d5569d3a25fd7964ff3ed17cf8bc9196c30493`, `6a0c4150231ac17683ff61a8c0d8cc3882de847c`, `094880ec8e4db8d8beb9a44e98ca6e2e7acbe0d2`, `5129cd532a00d6370b94f01522c85ce2d7706775`.
+
+**Limite importante:** frontend não evita suspensão de instância Supabase Free nem garante disponibilidade 100% do host Cloudflare. Falta homologar build e autenticação online, falha simulada do banco, retorno da conexão e testes na `manuteste` e perfis reais. Avaliar infraestrutura com disponibilidade contratada e estratégia formal de contingência com escopo de operações offline aprovadas; não presumir que os registros operacionais já sincronizam offline.
+
+**Estado:** **RECONEXÃO SEGURA CORRIGIDA NO MAIN; OPERAÇÃO OFFLINE COM PERSISTÊNCIA E SINCRONIZAÇÃO NÃO IMPLEMENTADA/AGUARDANDO DECISÃO TÉCNICA E HOMOLOGAÇÃO.**
