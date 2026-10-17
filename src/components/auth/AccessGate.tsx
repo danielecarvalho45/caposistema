@@ -530,7 +530,7 @@ function LoadingStep() {
 }
 
 function BlockedStep() {
-  const { feedback, logout, refreshAccessContext, busy } = useAccessFlow()
+  const { feedback, logout, retryProtectedAccess, busy } = useAccessFlow()
   const temporaryFailure = Boolean(
     feedback?.message && /temporariamente indisponível|não foi possível conectar|verifique a conexão|não foi possível carregar|tente novamente/i.test(feedback.message),
   )
@@ -550,7 +550,7 @@ function BlockedStep() {
             className="auth-primary auth-full"
             type="button"
             disabled={busy}
-            onClick={() => void refreshAccessContext()}
+            onClick={() => void retryProtectedAccess()}
           >
             {busy ? 'Verificando conexão…' : 'Tentar reconectar ao CAPO'}
           </button>
