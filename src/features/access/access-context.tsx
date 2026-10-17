@@ -74,6 +74,7 @@ type AccessActions = Readonly<{
   ) => Promise<void>
   logout: () => Promise<void>
   refreshAccessContext: () => Promise<void>
+  retryProtectedAccess: () => Promise<void>
 }>
 
 type AccessContextValue = AccessFlow & AccessActions
@@ -810,6 +811,9 @@ export function AccessProvider({
       },
       async refreshAccessContext() {
         await loadAccessContext()
+      },
+      async retryProtectedAccess() {
+        await runProtectedAccessGate()
       },
     }),
     [
