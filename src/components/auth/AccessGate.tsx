@@ -530,17 +530,38 @@ function LoadingStep() {
 }
 
 function BlockedStep() {
-  const { feedback, logout } = useAccessFlow()
+  const { feedback, logout, refreshAccessContext, busy } = useAccessFlow()
+  const temporaryFailure = Boolean(
+    feedback?.message && /temporariamente indisponível|não foi possível conectar|verifique a conexão|não foi possível carregar|tente novamente/i.test(feedback.message),
+  )
   return (
     <section className="auth-step" aria-labelledby="auth-blocked-title">
-      <h1 id="auth-blocked-title">Acesso bloqueado</h1>
+      <h1 id="auth-blocked-title">
+        {temporaryFailure ? 'Serviço CAPO temporariamente indisponível' : 'Acesso bloqueado'}
+      </h1>
       <Feedback feedback={feedback} />
+      {temporaryFailure && (
+        <>
+          <p className="auth-subtitle">
+            Sua solicitação não foi salva. Aguarde a recuperação da conexão antes de tentar
+            novamente. Não é necessário sair da sua conta.
+          </p>
+          <button
+            className="auth-primary auth-full"
+            type="button"
+            disabled={busy}
+            onClick={() => void refreshAccessContext()}
+          >
+            {busy ? 'Verificando conexão…' : 'Tentar reconectar ao CAPO'}
+          </button>
+        </>
+      )}
       <button
-        className="auth-primary auth-full"
+        className="auth-link auth-back"
         type="button"
         onClick={() => void logout()}
       >
-        Sair
+        Sair da conta
       </button>
     </section>
   )
