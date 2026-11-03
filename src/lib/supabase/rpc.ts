@@ -2765,6 +2765,20 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_referral_id: referralId },
         parse: parseConfirmedJson,
       }),
+    getAppointmentPrevisitContacts: (startDate: string, endDate: string, professionalId: string | null) =>
+      execute({
+        transport,
+        operation: 'get_appointment_previsit_contacts_for_interface',
+        args: { p_start_date: startDate, p_end_date: endDate, p_professional_id: professionalId },
+        parse: parseConfirmedJson,
+      }),
+    registerAppointmentPrevisitContact: (appointmentId: string, result: string, notes: string | null = null) =>
+      execute({
+        transport,
+        operation: 'register_appointment_previsit_contact_for_interface',
+        args: { p_appointment_id: appointmentId, p_result: result, p_notes: notes },
+        parse: parseConfirmedJson,
+      }),
     getPatientContact: (patientId: string) =>
       execute({
         transport,
