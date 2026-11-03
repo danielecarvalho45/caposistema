@@ -619,7 +619,12 @@ export function AccessProvider({
 
         setFlow((current) => ({ ...current, busy: true, feedback: null }))
         try {
-          const recoveryUrl = new URL('/?capo_recovery=1', window.location.origin)
+          // Links de recuperação de produção voltam sempre ao domínio oficial.
+          // Evita dependência de endereços Workers antigos usados em testes.
+          const recoveryUrl = new URL(
+            '/?capo_recovery=1',
+            import.meta.env.DEV ? window.location.origin : 'https://caposistema.pages.dev',
+          )
           recoveryUrl.searchParams.set('capo_recovery', '1')
           await authApi.resetPasswordForEmail(
             cleanEmail,
