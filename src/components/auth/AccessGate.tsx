@@ -205,6 +205,53 @@ function RecoveryStep() {
   )
 }
 
+function RecoveryCodeStep() {
+  const { busy, feedback, sentStatus, recoveryEmail, verifyRecoveryCode, showRecovery, showLogin } = useAccessFlow()
+  const [code, setCode] = useState('')
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    void verifyRecoveryCode(code)
+  }
+
+  return (
+    <section className="auth-step" aria-labelledby="auth-recovery-code-title">
+      <h1 id="auth-recovery-code-title">Confirmar código de recuperação</h1>
+      <p className="auth-subtitle">{sentStatus}</p>
+      <p className="auth-subtitle">
+        Informe o código de 6 números enviado ao e-mail {recoveryEmail}.
+        Não compartilhe esse código.
+      </p>
+      <form onSubmit={submit} noValidate>
+        <div className="auth-field">
+          <label htmlFor="recoveryCode">Código recebido por e-mail</label>
+          <input
+            id="recoveryCode"
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            placeholder="000000"
+            value={code}
+            onChange={(event) => setCode(event.target.value.replace(/\\D/g, '').slice(0, 6))}
+            autoFocus
+          />
+        </div>
+        <Feedback feedback={feedback} />
+        <button className="auth-primary auth-full" type="submit" disabled={busy || code.length !== 6}>
+          {busy ? 'Verificando…' : 'Confirmar código'}
+        </button>
+      </form>
+      <button className="auth-link auth-back" type="button" onClick={showRecovery}>
+        Solicitar outro código
+      </button>
+      <button className="auth-link auth-back" type="button" onClick={showLogin}>
+        Voltar ao login
+      </button>
+    </section>
+  )
+}
+
 function EmailSentStep() {
   const { sentStatus, showLogin } = useAccessFlow()
   return (
@@ -579,6 +626,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
     login: <LoginStep />,
     recover: <RecoveryStep />,
     'email-sent': <EmailSentStep />,
+    'recovery-code': <RecoveryCodeStep />,
     'new-password': <NewPasswordStep />,
     'mfa-enroll': <MfaEnrollmentStep />,
     'mfa-challenge': <MfaChallengeStep />,
