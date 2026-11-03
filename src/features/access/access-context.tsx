@@ -22,6 +22,7 @@ export type AccessScreen =
   | 'login'
   | 'recover'
   | 'email-sent'
+  | 'recovery-code'
   | 'new-password'
   | 'mfa-enroll'
   | 'mfa-challenge'
@@ -48,6 +49,7 @@ type AccessFlow = Readonly<{
   loadingText: string
   feedback: AccessFeedback | null
   sentStatus: string
+  recoveryEmail: string | null
   legalTerm: LegalTerm | null
   accessContext: AccessContext | null
   mfaEnrollment: MfaTotpEnrollment | null
@@ -60,6 +62,7 @@ type AccessActions = Readonly<{
   showRecovery: () => void
   login: (username: string, password: string) => Promise<void>
   recoverPassword: (email: string) => Promise<void>
+  verifyRecoveryCode: (code: string) => Promise<void>
   updateRecoveredPassword: (
     password: string,
     confirmation: string,
@@ -86,6 +89,7 @@ const initialFlow: AccessFlow = {
   sentStatus:
     'Se o e-mail estiver cadastrado e autorizado, as instruções de recuperação serão enviadas.',
   legalTerm: null,
+  recoveryEmail: null,
   accessContext: null,
   mfaEnrollment: null,
   mfaFactors: [],
@@ -615,9 +619,7 @@ export function AccessProvider({
 
         setFlow((current) => ({ ...current, busy: true, feedback: null }))
         try {
-          const recoveryUrl = new URL(
-            window.location.origin + window.location.pathname,
-          )
+          const recoveryUrl = new URL('/?capo_recovery=1', window.location.origin)
           recoveryUrl.searchParams.set('capo_recovery', '1')
           await authApi.resetPasswordForEmail(
             cleanEmail,
@@ -633,7 +635,8 @@ export function AccessProvider({
           }
           setFlow((current) => ({
             ...current,
-            screen: 'email-sent',
+            screen: 'recovery-code',
+            recoveryEmail: cleanEmail,
             sentStatus: `Solicitação ${requests} de 2. Se o e-mail estiver cadastrado e autorizado, as instruções serão enviadas.`,
             feedback: null,
             busy: false,
@@ -646,6 +649,42 @@ export function AccessProvider({
           setFlow((current) => ({
             ...current,
             feedback: { type: 'error', message },
+            busy: false,
+          }))
+        }
+      },
+      async verifyRecoveryCode(code) {
+        const email = flow.recoveryEmail
+        if (!email) {
+          setFlow((current) => ({
+            ...current,
+            screen: 'recover',
+            feedback: { type: 'error', message: 'Informe o e-mail para solicitar um novo código.' },
+            busy: false,
+          }))
+          return
+        }
+        if (!/^\\d{6}$/.test(code.trim())) {
+          setFlow((current) => ({
+            ...current,
+            feedback: { type: 'error', message: 'Informe o código de 6 números recebido por e-mail.' },
+          }))
+          return
+        }
+        setFlow((current) => ({ ...current, busy: true, feedback: null }))
+        try {
+          await authApi.verifyRecoveryCode(email, code.trim())
+          setFlow((current) => ({
+            ...current,
+            screen: 'new-password',
+            feedback: null,
+            busy: false,
+          }))
+        } catch (error) {
+          setFlow((current) => ({
+            ...current,
+            screen: 'recovery-code',
+            feedback: { type: 'error', message: friendlyAuthError(error, 'recovery-code') },
             busy: false,
           }))
         }
@@ -820,6 +859,7 @@ export function AccessProvider({
       authApi,
       flow.accessContext?.username,
       flow.legalTerm,
+      flow.recoveryEmail,
       flow.mfaEnrollment?.id,
       flow.mfaFactors,
       loadAccessContext,
