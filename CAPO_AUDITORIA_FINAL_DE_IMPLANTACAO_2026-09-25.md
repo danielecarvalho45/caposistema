@@ -7708,3 +7708,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Correção cirúrgica:** tipo de consulta e indicador agora são agrupados em um único `<small className="agenda-schedule-details">` com `<span>` independentes, espaçamento e quebra de linha quando necessário; indicador `agenda-previsit-indicator` ganha legibilidade e cor verde discreta. Outras visualizações, dados, RPCs, botões Confirmar/Falta, cancelamento e fluxo profissional não foram alterados. Commits `04cdf51ec9890da84fc5f553f7ecb94be1b45c0d` e `3b6609195f15ff903c12dd609d14953064cf536f`.
 
 **Estado:** **CORREÇÃO VISUAL NO MAIN / VERIFICAÇÃO DE ARQUIVOS PENDENTE / BUILD E HOMOLOGAÇÃO VISUAL EM NAVEGADOR PENDENTES.**
+
+
+### 28.148 CLÍNICO GERAL — PENTE-FINO CONTROLADO, PRESENÇA PROFISSIONAL E ATALHO DE ODONTOLOGIA (03/11/2026)
+
+**Escopo solicitado pela Titular:** corrigir pontualmente pendências observadas na auditoria da tela de Clínico Geral, confrontando Manual Estrutural, Manual da Interface e Documento Mestre, sem reconstruções ou regressões. Foram revistos o componente compartilhado da agenda, Home assistencial, Renovação de Receita, Odontologia e testes unitários existentes.
+
+**Divergência comprovada 1 — presença/falta:** o código `AgendaPage.tsx` admitia `canRegisterAttendance = isProfessional || roleCodes.includes('administrador')`, deixando o Gestor puro executar Confirmar/Falta assistencial. Conforme a decisão da Titular consolidada no §28.145, aviso prévio é administrativo e confirmação de presença ocorre durante atendimento com especialista. Correção cirúrgica: `canRegisterAttendance = isProfessional`, mantendo acesso geral, agendamento, remarcação e cancelamento administrativo do Gestor. Commit `a3eb27d7f9fd1629e454a8db9ff1c8a8157381ba`. Teste anterior que exigia Confirmar/Falta no Gestor foi atualizado para verificar ausência da ação assistencial, commit `9f65321b8d9bc43b2a2c51a9faecbdef0d38f0a4`.
+
+**Divergência comprovada 2 — acesso rápido odontológico:** o Clínico tinha módulo e rota de Odontologia com capacidade controlada, mas não possuía atalho na Home. Incluído o card **Odontologia — Encaminhamento externo** em `AssistentialPage.tsx` somente se `profileKind === 'clinico_geral'` e `canAccessAppRoute(accessContext, '/odontologia')`. Não se concedeu capacidade nova nem se modificou fluxo/SQL. Commit `1e864417676897bb418983279cfe0f5cf2a5a7ba`.
+
+**Verificação pós-escrita:** arquivos `AgendaPage.tsx`, `AssistentialPage.tsx` e `AgendaPage.test.tsx` relidos fisicamente na `main`; presença restrita a contexto profissional, card odontológico protegido por rota/capacidade e asserção antiga removida. Suíte automatizada e build não executados nesta sessão; sem prova de publicação/homologação real.
+
+**Pendências ainda dependentes de validação, sem alteração especulativa:** apresentação transversal de Alta próxima na grade compacta e outras telas (com prevenção de consultas individuais excessivas); fluxo autenticado de Receita e Odontologia, incluindo PDFs; relatórios/encerramentos/agenda flexível e revisão visual geral. A existência de tela ou teste escrito não comprova êxito operacional. Manter congelados os demais fluxos sem falha demonstrada.
+
+**Estado:** **DUAS CORREÇÕES CIRÚRGICAS NO MAIN / TESTE DE REGRESSÃO AJUSTADO, NÃO EXECUTADO / BUILD, DEPLOY E HOMOLOGAÇÃO PENDENTES.**
