@@ -87,6 +87,7 @@ export function RequestsPage({
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [response, setResponse] = useState('')
+  const [responseRequired, setResponseRequired] = useState(false)
   const [counterReference, setCounterReference] = useState('')
   const [newSubject, setNewSubject] = useState('')
   const [newDescription, setNewDescription] = useState('')
@@ -233,11 +234,13 @@ export function RequestsPage({
     if (!selected || busy) return
     const needsText = action !== 'start'
     if (needsText && response.trim().length < 5) {
+      setResponseRequired(true)
       setFeedback(
         'Informe uma providência ou justificativa com pelo menos 5 caracteres.',
       )
       return
     }
+    setResponseRequired(false)
     setBusy(true)
     const result = await service.updateAdministrativeRequest(
       selected.request_id,
@@ -579,10 +582,20 @@ export function RequestsPage({
                     Providência, feedback ou justificativa
                     <textarea
                       value={response}
-                      onChange={(event) => setResponse(event.target.value)}
+                      onChange={(event) => {
+                        setResponse(event.target.value)
+                        if (event.target.value.trim().length >= 5) setResponseRequired(false)
+                      }}
+                      aria-invalid={responseRequired && response.trim().length < 5}
+                      aria-describedby="request-response-hint"
                       maxLength={1000}
                     />
                   </label>
+                  <p id="request-response-hint" role={responseRequired ? 'alert' : undefined}>
+                    {responseRequired && response.trim().length < 5
+                      ? 'Informe pelo menos 5 caracteres para executar a ação.'
+                      : 'Para concluir, devolver, recusar, registrar ou cancelar, informe uma providência ou justificativa (mínimo 5 caracteres).'}
+                  </p>
                   {canManage && (
                     <label>
                       Contrarreferência (opcional)
