@@ -233,7 +233,7 @@ function RecoveryCodeStep() {
             maxLength={6}
             placeholder="000000"
             value={code}
-            onChange={(event) => setCode(event.target.value.replace(/\\D/g, '').slice(0, 6))}
+            onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
             autoFocus
           />
         </div>
