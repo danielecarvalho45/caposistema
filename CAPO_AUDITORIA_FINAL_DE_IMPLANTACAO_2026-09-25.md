@@ -7581,3 +7581,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Demais pontos do pente-fino — NÃO EXECUTADOS nesta intervenção:** avaliação de apresentação Dia/Semana/Mês e distribuição visual da Home; contexto acumulado na oferta de relatórios; exportação da auditoria; PDFs e chamadas reais de todas as ações de administração/TI. Para cada um, confrontar antes com a regra mais recente e com o código atual, executar testes seguros, e modificar somente divergência comprovada; não reaplicar correções já registradas nos §§28.136–28.138.
 
 **Estado:** **ACESSO DE REAGENDAMENTO IMPLEMENTADO E CONFERIDO NO MAIN / BUILD EM FALHA / PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES.**
+
+
+### 28.140 GESTOR/COORDENAÇÃO — RELATÓRIOS DE PAPÉIS ACUMULADOS SEM ALTERAR CONTEXTO PRINCIPAL (03/11/2026)
+
+**Origem:** pente-fino do Gestor/Titular. Confrontadas as regras de acumulação de papéis da Matriz Funcional/Especificação Estrutural vigentes com `src/features/reports/ReportsPage.tsx` e RPCs reais no Supabase. Preservados §§28.136–28.139.
+
+**Divergência comprovada:** `AuthorizedReportsPage` selecionava a modalidade exclusivamente por `primary_context.code`. Contas com papéis `coordenador` + `profissional` tinham acesso a apenas uma modalidade, conforme a Home principal configurada pelo Gestor. O contexto principal deve definir a Home de entrada, mas não retirar acesso dos demais papéis acumulados. O backend dispõe de `get_reports_dashboard_for_interface` (gerencial) e `get_my_specialty_operational_report_for_interface`/`get_my_assistential_specialties_for_interface` (especialidade); as guardas verificadas são por vínculo/identidade/permissão de conta e especialidade, não exclusivamente pelo contexto principal.
+
+**Correção pontual aplicada:** `src/features/reports/ReportsPage.tsx` agora considera os papéis efetivamente presentes em `accessContext.roles` e vínculo profissional ao determinar modalidades autorizadas. Quando a conta reúne papel gerencial e profissional, oferece seleção explícita **Relatórios gerenciais / Relatórios da minha especialidade** dentro da mesma rota `/relatorios`, iniciando pela modalidade do contexto principal, sem alterar esse contexto no banco. Permanece um único tipo de relatório para contas de papel único. Mantidos filtros, visualização, gerador PDF, contratos e separação de escopo; nenhuma nova RPC. Commits `24776262cb4c03a50c258d5a27dcf18cf7edea3a` e `92c541a56606b5cb0800ec372bb2fd6a9e4f59fe`.
+
+**Proteção de regressão:** acrescentado caso em `tests/unit/reports-labels.test.tsx` simulando conta Coordenador + Profissional: entra em relatórios gerenciais, alterna para a própria especialidade sem mudar a Home e retorna ao gerencial. Commit `4863c4c8e312045745ba205fab72fa2ac822e451`. Teste escrito, execução **não comprovada** nesta sessão.
+
+**Limitações e próximos controles:** GitHub Actions `Validate production build` continua com conclusão `failure` em poucos segundos, inclusive nos commits desta etapa; API de jobs apresentou lista de etapas nula, e tentativa de obter logs retornou indisponibilidade. Não atribuir a falha ao TypeScript ou ao código sem log. A publicação Cloudflare e os PDFs de ambas as modalidades ainda exigem teste autenticado e download real. Exportação da Auditoria, ajuste visual da Home e demais ações da suíte abrangente permanecem sob análise separada, sem reconstrução nem alteração preventiva do backend.
+
+**Estado:** **CONTROLE DE MODALIDADE IMPLEMENTADO NO MAIN / TESTE DE REGRESSÃO ESCRITO / BUILD, DEPLOY E HOMOLOGAÇÃO PENDENTES.**
