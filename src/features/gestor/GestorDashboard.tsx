@@ -156,6 +156,22 @@ export function GestorDashboard() {
                       Agendar
                     </Link>
                   )}
+                  {slot.slot_status === 'agendado' && slot.appointment_id && slot.patient_id && (
+                    <Link
+                      className="gestor-agenda-slot-action"
+                      to="/agenda"
+                      state={{
+                        origin: 'home_reschedule_appointment',
+                        appointmentId: slot.appointment_id,
+                        patientId: slot.patient_id,
+                        patientName: slot.patient_name ?? '',
+                        professionalId: slot.professional_id,
+                        slotDate: slot.slot_date,
+                      }}
+                    >
+                      Reagendar
+                    </Link>
+                  )}
                   {slot.slot_status === 'agendado' && slot.appointment_id && (
                     <Link
                       className="gestor-agenda-slot-action gestor-agenda-slot-cancel-action"
