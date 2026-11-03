@@ -664,7 +664,7 @@ export function AccessProvider({
           }))
           return
         }
-        if (!/^\\d{6}$/.test(code.trim())) {
+        if (!/^\d{6}$/.test(code.trim())) {
           setFlow((current) => ({
             ...current,
             feedback: { type: 'error', message: 'Informe o código de 6 números recebido por e-mail.' },
