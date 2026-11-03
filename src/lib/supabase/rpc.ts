@@ -2428,6 +2428,13 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_professional_id: professionalId },
         parse: parseConfirmedJson,
       }),
+    getProfessionalCapabilitiesManagement: (professionalId: string) =>
+      execute({
+        transport,
+        operation: 'get_professional_capabilities_management_for_interface',
+        args: { p_professional_id: professionalId },
+        parse: parseConfirmedJson,
+      }),
     setProfessionalCapability: (professionalId: string, capabilityCode: string, isEnabled: boolean) =>
       execute({
         transport,
@@ -3623,6 +3630,7 @@ function createSupabaseTransport(
       case 'set_team_member_primary_context_for_interface':
       case 'get_capability_catalog_for_interface':
       case 'get_effective_professional_capabilities':
+      case 'get_professional_capabilities_management_for_interface':
       case 'set_professional_capability_for_interface':
       case 'remove_professional_capability_for_interface':
       case 'set_specialty_capability_status_for_interface':
