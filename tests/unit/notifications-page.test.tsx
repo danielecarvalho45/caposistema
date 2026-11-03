@@ -194,6 +194,42 @@ describe('NotificationsPage', () => {
       '',
     )
   })
+  it('abre o fluxo mesmo se a gravação de leitura falhar, sem simular sucesso', async () => {
+    const user = userEvent.setup()
+    const service = serviceWith({ status: 'success', data: [notification] })
+    service.updateNotification.mockResolvedValue({
+      status: 'error',
+      error: new SupabaseOperationError({
+        operation: 'update_my_notification_for_interface',
+        kind: 'permission',
+        message: 'Leitura não confirmada pelo banco.',
+      }),
+    })
+    function Destination() {
+      const location = useLocation()
+      return <output data-testid="destination">{location.pathname}:{String(location.state?.contextId ?? '')}</output>
+    }
+    renderPage(
+      <>
+        <NotificationsPage service={service} getContextHref={() => '/solicitacoes'} />
+        <Destination />
+      </>,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Abrir solicitação no Administrativo' }))
+    expect(await screen.findByTestId('destination')).toHaveTextContent('/solicitacoes:request-id')
+    expect(service.updateNotification).toHaveBeenCalledWith('notification-id', 'lida', '')
+  })
+
+  it('não informa leitura concluída quando RPC retorna vazio', async () => {
+    const user = userEvent.setup()
+    const service = serviceWith({ status: 'success', data: [notification] })
+    service.updateNotification.mockResolvedValue({ status: 'empty' })
+    renderPage(<NotificationsPage service={service} />)
+    await user.click(await screen.findByRole('button', { name: 'Marcar como lida' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('O banco não confirmou a atualização da notificação.')
+    expect(service.getNotifications).toHaveBeenCalledTimes(1)
+  })
+
   it('abre a solicitação administrativa pelo ID sem confundir leitura com atendimento', async () => {
     const user = userEvent.setup()
     const service = serviceWith({ status: 'success', data: [notification] })
