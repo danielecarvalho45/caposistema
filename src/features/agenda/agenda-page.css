@@ -1458,3 +1458,33 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Situação persistida após Confirmar/Falta; não são botões de nova ação. */
+.agenda-attendance-state {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.agenda-attendance-state.is-confirmed {
+  color: #166534;
+  background: #e8f7ec;
+  border: 1px solid #a6d9b2;
+}
+
+.agenda-attendance-state.is-absent {
+  color: #9f1239;
+  background: #fff1f2;
+  border: 1px solid #f9b4c0;
+}
+
+.agenda-schedule-details .agenda-attendance-state {
+  font-size: inherit;
+}
