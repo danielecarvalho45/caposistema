@@ -168,6 +168,7 @@ function AppointmentTable({
   onCancel,
   busyAppointmentId,
   patientSpecialties,
+  previsitContacts,
   embeddedHome,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
@@ -178,6 +179,7 @@ function AppointmentTable({
   onCancel?: (appointmentId: string) => void
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
+  previsitContacts?: Readonly<Record<string, { result: string }>>
   embeddedHome?: boolean
 }>) {
   return (
@@ -203,7 +205,7 @@ function AppointmentTable({
                   ? formatDateTime(appointment.appointment_date)
                   : formatTimeRange(appointment)}
               </td>
-              <td data-label="Paciente">{appointment.patient_name}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
+              <td data-label="Paciente">{appointment.patient_name}{previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
               {(onAttendance || onCancel) && (
                 <td data-label="Ações" className="agenda-attendance-actions">
                   {onAttendance && (
@@ -272,6 +274,7 @@ function HomeScheduleGrid({
   onSchedule,
   busyAppointmentId,
   patientSpecialties,
+  previsitContacts,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
   startDate: string
@@ -284,6 +287,7 @@ function HomeScheduleGrid({
   onSchedule?: (slot: AgendaScheduleSlot) => void
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
+  previsitContacts?: Readonly<Record<string, { result: string }>>
 }>) {
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
@@ -349,6 +353,7 @@ function HomeScheduleGrid({
                   <td data-label="Paciente">
                     <div className="agenda-home-patient-line">
                       <strong>{patientName}</strong>
+                      {slot.appointment_id && previsitContacts?.[slot.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[slot.appointment_id].result)}</small>}
                       {slot.slot_status === 'agendado' &&
                         patientIsVisible &&
                         slot.appointment_id &&
@@ -460,6 +465,7 @@ function HomeScheduleGrid({
                             ? 'Bloqueado'
                             : patientName}
                       </span>
+                      {slot.appointment_id && previsitContacts?.[slot.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[slot.appointment_id].result)}</small>}
                       {slot.slot_status === 'livre' && onSchedule && (
                         <button
                           type="button"
@@ -536,6 +542,7 @@ function AgendaResults({
   onCancel,
   busyAppointmentId,
   patientSpecialties,
+  previsitContacts,
   embeddedHome = false,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
@@ -548,6 +555,7 @@ function AgendaResults({
   onCancel?: (appointmentId: string) => void
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
+  previsitContacts?: Readonly<Record<string, { result: string }>>
   embeddedHome?: boolean
 }>) {
   if (view === 'day') {
@@ -560,6 +568,7 @@ function AgendaResults({
         onCancel={onCancel}
         busyAppointmentId={busyAppointmentId}
         patientSpecialties={patientSpecialties}
+        previsitContacts={previsitContacts}
       />
     )
   }
@@ -585,6 +594,7 @@ function AgendaResults({
                       <div className="agenda-week-home-item" key={appointment.appointment_id}>
                         <strong>{formatTimeRange(appointment)}</strong>
                         <span>{appointment.patient_name}</span>
+                        {previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}
                         <small>{appointment.appointment_type}</small>
                         {onAttendance && (
                           <div className="agenda-week-home-actions">
@@ -614,6 +624,7 @@ function AgendaResults({
                   onCancel={onCancel}
                   busyAppointmentId={busyAppointmentId}
                   patientSpecialties={patientSpecialties}
+                  previsitContacts={previsitContacts}
                 />
               ) : (
                 <p>Nenhum atendimento neste dia.</p>
@@ -658,6 +669,7 @@ function AgendaResults({
               >
                 <strong>{formatTimeRange(appointment)}</strong>
                 <span>{appointment.patient_name}</span>
+                {previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}
                 {patientSpecialties?.[appointment.patient_id] && <small>{specialtyText(patientSpecialties[appointment.patient_id])}</small>}
                 <small>
                   {showSpecialty
@@ -2220,6 +2232,7 @@ export function AgendaPage({
               }
               busyAppointmentId={busyAppointmentId}
               patientSpecialties={patientSpecialties}
+              previsitContacts={previsitContacts}
               embeddedHome={embeddedHome}
             />
           )}
@@ -2249,6 +2262,7 @@ export function AgendaPage({
                 onAttendance={canRegisterAttendance ? updateAttendance : undefined}
                 onCancel={prepareCancellation}
                 busyAppointmentId={busyAppointmentId}
+              previsitContacts={previsitContacts}
               />
             )}
         </div>
