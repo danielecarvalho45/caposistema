@@ -219,6 +219,7 @@ describe('GestorTeamPage', () => {
     const capability = await screen.findByRole('checkbox', {
       name: 'Autorizar Encaminhamento Interprofissional',
     })
+    await waitFor(() => expect(capability).toBeEnabled())
     expect(capability).not.toBeChecked()
 
     fireEvent.click(capability)
@@ -270,6 +271,53 @@ describe('GestorTeamPage', () => {
     await waitFor(() => expect(setCapability).toHaveBeenCalledWith(id, 'encaminhamento_interprofissional', false))
     await waitFor(() => expect(checkbox).not.toBeChecked())
     expect(screen.getByText('Permissão salva e conferida no banco.')).toBeInTheDocument()
+  })
+
+  it('reconsulta permissões ao voltar ao cadastro do mesmo profissional', async () => {
+    const firstId = '67f1f8fb-cc4e-45be-a567-828186d56f76'
+    const secondId = 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0'
+    const getContext = vi.fn().mockResolvedValue({
+      status: 'success',
+      data: {
+        team: [firstId, secondId].map((id, i) => ({
+          professional_id: id, user_account_id: `account-${i}`,
+          full_name: i === 0 ? 'Profissional A' : 'Profissional B',
+          function_title: 'Atendimento', status: 'ativo', is_professional: true,
+          roles: [{ code: 'profissional' }], specialties: [],
+        })),
+        roles: [{ code: 'profissional', name: 'Profissional' }],
+        specialties: [],
+      },
+    })
+    const getCapabilities = vi.fn(async (id: string) => ({
+      status: 'success' as const,
+      data: { items: id === firstId
+        ? [{ capability_code: 'encaminhamento_interprofissional', is_enabled: true }]
+        : [] },
+    }))
+    const success = async () => ({ status: 'success' as const, data: { success: true } })
+    const service: TeamManagementService = {
+      getContext, create: success, update: success, setActive: success,
+      setPrimaryContext: success, getCapabilities, setCapability: success,
+      removeCapability: success, setSpecialtyCapability: success,
+      getCapabilityCatalog: async () => ({
+        status: 'success' as const,
+        data: { capabilities: [{
+          capability_code: 'encaminhamento_interprofissional',
+          individual_assignable: true,
+        }], specialty_capabilities: [] },
+      }),
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional A/ }))
+    const capability = await screen.findByRole('checkbox', { name: 'Autorizar Encaminhamento Interprofissional' })
+    await waitFor(() => expect(capability).toBeChecked())
+    fireEvent.click(screen.getByRole('button', { name: /Profissional B/ }))
+    await waitFor(() => expect(capability).not.toBeChecked())
+    fireEvent.click(screen.getByRole('button', { name: /Profissional A/ }))
+    await waitFor(() => expect(capability).toBeChecked())
+    expect(getCapabilities).toHaveBeenCalledWith(firstId)
+    expect(getCapabilities).toHaveBeenCalledTimes(3)
   })
 
   it('mostra o contexto principal existente e salva o novo código de papel sem perder a seleção', async () => {
