@@ -161,6 +161,20 @@ export function GestorDashboard() {
                       className="gestor-agenda-slot-action"
                       to="/agenda"
                       state={{
+                        origin: 'home_previsit_appointment',
+                        appointmentId: slot.appointment_id,
+                        professionalId: slot.professional_id,
+                        slotDate: slot.slot_date,
+                      }}
+                    >
+                      💬 Avisar / confirmar
+                    </Link>
+                  )}
+                  {slot.slot_status === 'agendado' && slot.appointment_id && slot.patient_id && (
+                    <Link
+                      className="gestor-agenda-slot-action"
+                      to="/agenda"
+                      state={{
                         origin: 'home_reschedule_appointment',
                         appointmentId: slot.appointment_id,
                         patientId: slot.patient_id,
