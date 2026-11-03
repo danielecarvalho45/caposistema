@@ -59,6 +59,7 @@ export function PatientsPage({
   const [offerNextContactTime, setOfferNextContactTime] = useState('')
   const [offerNotes, setOfferNotes] = useState('')
   const [offerFeedback, setOfferFeedback] = useState<string | null>(null)
+  const [offerCycleConfirmation, setOfferCycleConfirmation] = useState<{ patientId: string; cycleId: string } | null>(null)
   const [offerHistory, setOfferHistory] = useState<readonly Record<string, unknown>[]>([])
   const [offerBusy, setOfferBusy] = useState(false)
   const [query, setQuery] = useState('')
@@ -135,6 +136,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       origin: patientOrigin.trim() || null,
     })
     if (next.status === 'success') {
+      setOfferCycleConfirmation(null)
       setCreatedPatientId(next.data.patient_id)
       setCreatedPatientNumber(next.data.patient_number)
       setCreatedPatientStatus(next.data.status)
@@ -199,6 +201,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         : null
 
     setOfferBusy(true)
+    setOfferCycleConfirmation(null)
     setOfferFeedback('Registrando desfecho no banco…')
     const result = await getRpcService().registerInitialActiveSearchAttempt({
       patientId: offerPatientId,
@@ -214,7 +217,18 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       closureReason,
     })
     if (result.status === 'success') {
-      setOfferFeedback('Desfecho da Oferta CAPO registrado no banco.')
+      const payload = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+        ? result.data as Record<string, unknown>
+        : null
+      const cycleId = typeof payload?.care_cycle_id === 'string' ? payload.care_cycle_id : ''
+      if (acceptedService && cycleId) {
+        setOfferCycleConfirmation({ patientId: offerPatientId, cycleId })
+        setOfferFeedback('Oferta CAPO aceita e ciclo de acompanhamento confirmado pelo banco. Agora é possível agendar.')
+      } else if (acceptedService) {
+        setOfferFeedback('O aceite retornou, mas o banco não confirmou um ciclo CAPO aberto. Não prossiga com o agendamento; verifique a integração.')
+      } else {
+        setOfferFeedback('Desfecho da Oferta CAPO registrado no banco.')
+      }
       setOfferNotes('')
       setOfferNextContactDate('')
       setOfferNextContactTime('')
@@ -231,6 +245,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     setEditingPatientId(null)
     setOfferHistory([])
     setOfferFeedback(null)
+    setOfferCycleConfirmation(null)
     if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
       setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       setResult(emptyState)
@@ -251,6 +266,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
   async function openPatientEditor(patientId: string) {
     setOfferOutcome('')
     setOfferFeedback(null)
+    setOfferCycleConfirmation(null)
     setOfferHistory([])
     setEditBusy(true)
     setFeedback(null)
@@ -480,7 +496,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             <div className="patients-offer-status">
               <strong>Telefone informado</strong>
               <span>{offerPhone.trim() || 'Telefone não informado no cadastro.'}</span>
-              <small>O cadastro confirmado pelo banco é obrigatório para registrar o desfecho.</small>
+              <small>Selecionar uma resposta não registra o aceite. Clique em salvar e aguarde a confirmação do banco antes de agendar.</small>
 
               <fieldset disabled={!offerPatientId || offerBusy}>
                 <legend>Desfecho do contato</legend>
@@ -504,9 +520,16 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                 <textarea rows={3} value={offerNotes} onChange={(event) => setOfferNotes(event.target.value)} />
               </label>
               <button type="button" disabled={!offerPatientId || !offerOutcome || offerBusy} onClick={() => void registerOfferOutcome()}>
-                {offerBusy ? 'Registrando…' : 'Registrar contato da Oferta'}
+                {offerBusy ? 'Registrando…' : offerOutcome === 'aceitou' ? 'Salvar aceite e abrir ciclo CAPO' : 'Registrar contato da Oferta'}
               </button>
               {offerFeedback && <p role="status">{offerFeedback}</p>}
+              {offerCycleConfirmation?.patientId === offerPatientId && canAccessAppRoute(accessContext, '/agenda') && (
+                <Link to="/agenda" state={{
+                  patientId: offerPatientId,
+                  patientName: offerPatientName,
+                  origin: 'patient_record',
+                }}>Agendar consulta — ciclo CAPO confirmado</Link>
+              )}
               <div aria-label="Histórico da Oferta CAPO">
                 <strong>Histórico</strong>
                 {offerHistory.length === 0 ? <small>Nenhum contato registrado nesta consulta.</small> : (
