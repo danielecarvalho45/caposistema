@@ -228,12 +228,22 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
   const [selectedProfessionalReport, setSelectedProfessionalReport] =
     useState<keyof AssistentialOperationalReport>('agenda')
   const [printGeneratedAt, setPrintGeneratedAt] = useState<Date | null>(null)
-  const isProfessional =
-    accessContext.primary_context.code === 'profissional' &&
-    Boolean(accessContext.professional_id)
-  const isManager =
-    accessContext.primary_context.code === 'administrador' ||
-    accessContext.primary_context.code === 'coordenador'
+  const hasManagerRole = accessContext.roles.some((role) =>
+    role.code === 'administrador' || role.code === 'coordenador',
+  )
+  const hasProfessionalRole = Boolean(accessContext.professional_id) &&
+    accessContext.is_active && accessContext.roles.some((role) => role.code === 'profissional')
+  const [reportView, setReportView] = useState<'gerencial' | 'especialidade'>(
+    accessContext.primary_context.code === 'profissional' ? 'especialidade' : 'gerencial',
+  )
+  const isProfessional = hasProfessionalRole && (!hasManagerRole || reportView === 'especialidade')
+  const isManager = hasManagerRole && (!hasProfessionalRole || reportView === 'gerencial')
+  const viewSelector = hasManagerRole && hasProfessionalRole ? (
+    <nav className="reports-card reports-export-actions" aria-label="Escopo dos relatórios autorizados">
+      <button type="button" aria-pressed={reportView === 'gerencial'} onClick={() => setReportView('gerencial')}>Relatórios gerenciais</button>
+      <button type="button" aria-pressed={reportView === 'especialidade'} onClick={() => setReportView('especialidade')}>Relatórios da minha especialidade</button>
+    </nav>
+  ) : null
 
   useEffect(() => {
     if (!isProfessional) return
@@ -324,6 +334,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     }
     return (
       <section className="reports-page" aria-labelledby="manager-reports-title">
+        {viewSelector}
         <div className="reports-print-brand"><img src={documentHeader} alt="CAPO, Secretaria Municipal de Saúde e Prefeitura de Pouso Alegre" /></div>
         <header className="reports-card reports-heading">
           <div>
@@ -386,6 +397,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
 
   return (
     <section className="reports-page" aria-labelledby="reports-title">
+      {viewSelector}
       <header className="reports-card reports-heading">
         <div>
           <p className="eyebrow">Relatorios autorizados</p>
