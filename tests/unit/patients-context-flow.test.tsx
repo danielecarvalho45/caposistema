@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { PatientsPage } from '../../src/features/patients/PatientsPage'
+import { PatientWhatsAppButton } from '../../src/components/contact/PatientWhatsAppButton'
 import { RegisterPatientDeath } from '../../src/components/patients/RegisterPatientDeath'
 import type { AccessContext } from '../../src/types/access'
 
@@ -13,6 +14,7 @@ const rpc = vi.hoisted(() => ({
   createPatient: vi.fn(),
   getInitialActiveSearches: vi.fn(),
   registerInitialActiveSearchAttempt: vi.fn(),
+  getPatientContact: vi.fn(),
   getPatientDeathContext: vi.fn(),
   registerPatientDeath: vi.fn(),
   correctPatientDeath: vi.fn(),
@@ -216,4 +218,31 @@ it('permite registrar a Oferta CAPO de paciente já cadastrado sem novo cadastro
   expect(rpc.createPatient).not.toHaveBeenCalled()
   expect(await screen.findByText('Oferta CAPO aceita e ciclo de acompanhamento confirmado pelo banco. Agora é possível agendar.')).toBeVisible()
   expect(screen.getByRole('link', { name: 'Agendar consulta — ciclo CAPO confirmado' })).toHaveAttribute('href', '/agenda')
+})
+
+it('abre WhatsApp com comunicação de consulta pré-preenchida e envio manual', async () => {
+  rpc.getPatientContact.mockResolvedValue({
+    status: 'success',
+    data: { phone: '(35) 99999-9999' },
+  })
+  const open = vi.fn()
+  vi.stubGlobal('open', open)
+  try {
+    const user = userEvent.setup()
+    const message = 'Olá, paciente. Consulta CAPO: 04/11/2026 às 09:00 com profissional.'
+    render(<PatientWhatsAppButton patientId="patient-existing" message={message} />)
+    await user.click(screen.getByRole('button', { name: 'WhatsApp' }))
+    expect(rpc.getPatientContact).toHaveBeenCalledWith('patient-existing')
+    expect(open).toHaveBeenCalledOnce()
+    const [url, target, features] = open.mock.calls[0]
+    expect(target).toBe('_blank')
+    expect(features).toBe('noopener,noreferrer')
+    const targetUrl = new URL(url)
+    expect(targetUrl.origin).toBe('https://web.whatsapp.com')
+    expect(targetUrl.searchParams.get('phone')).toBe('5535999999999')
+    expect(targetUrl.searchParams.get('text')).toBe(message)
+    expect(await screen.findByText(/Confira os dados e envie manualmente/)).toBeVisible()
+  } finally {
+    vi.unstubAllGlobals()
+  }
 })
