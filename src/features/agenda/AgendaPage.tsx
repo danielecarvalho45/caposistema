@@ -79,6 +79,24 @@ function formatPeriod(startDate: string, endDate: string, view: AgendaView) {
   return `${formatter.format(localDate(startDate))} a ${formatter.format(localDate(endDate))}`
 }
 
+function previsitIndicator(result?: string) {
+  switch (result) {
+    case 'avisado': return '💬 Avisado previamente'
+    case 'confirmou': return '✓ Confirmou antecipadamente'
+    case 'sem_resposta': return '◌ Aviso sem resposta'
+    case 'solicitou_cancelamento': return '✕ Solicitou cancelamento'
+    case 'solicitou_remarcacao': return '↻ Solicitou remarcação'
+    default: return ''
+  }
+}
+
+function formatCAPOMessageDateTime(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short',
+  }).format(date)
+}
+
 function formatDateTime(value: string) {
   const date = new Date(value)
   return Number.isNaN(date.getTime())
@@ -1909,7 +1927,7 @@ export function AgendaPage({
               <PatientWhatsAppButton
                 patientId={lastScheduledContact.patientId}
                 label="WhatsApp — confirmar agendamento"
-                message={`Olá, ${lastScheduledContact.patientName}. Seu atendimento no CAPO está agendado para ${new Date(lastScheduledContact.slotStart).toLocaleString('pt-BR')} com ${lastScheduledContact.professionalName}.`}
+                message={`Olá, ${lastScheduledContact.patientName}. Seu atendimento no CAPO está agendado para ${formatCAPOMessageDateTime(lastScheduledContact.slotStart)} com ${lastScheduledContact.professionalName}.`}
               />
             )}
             <p className="agenda-contract-note">
@@ -2075,7 +2093,7 @@ export function AgendaPage({
                 <tbody>
                   {state.data.filter((item) => item.attendance_status === 'agendado').map((item) => {
                     const contact = previsitContacts[item.appointment_id]
-                    const reminderMessage = `Olá, ${item.patient_name}! Lembramos sua consulta no CAPO em ${formatDateTime(item.appointment_date)}, com ${item.professional_name}. Por favor, confirme se poderá comparecer. Caso precise cancelar ou remarcar, avise a equipe do CAPO.`
+                    const reminderMessage = `Olá, ${item.patient_name}! Lembramos sua consulta no CAPO em ${formatCAPOMessageDateTime(item.appointment_date)}, com ${item.professional_name}. Por favor, confirme se poderá comparecer. Caso precise cancelar ou remarcar, avise a equipe do CAPO.`
                     return (
                       <tr key={item.appointment_id}>
                         <td>{formatDateTime(item.appointment_date)} — {item.professional_name}</td>
