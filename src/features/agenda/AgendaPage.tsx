@@ -1366,6 +1366,20 @@ export function AgendaPage({
       typeof stateValue?.slotStart === 'string' ? stateValue.slotStart : ''
 
     if (
+      origin === 'home_previsit_appointment' &&
+      requestedAppointmentId && requestedProfessionalId && requestedSlotDate
+    ) {
+      setShowScheduleForm(false)
+      setShowRescheduleForm(false)
+      setSelectedProfessionalId(requestedProfessionalId)
+      setConsultationStartDate(requestedSlotDate)
+      setConsultationEndDate(requestedSlotDate)
+      setAnchorDate(requestedSlotDate)
+      setAppointmentFeedback(null)
+      return
+    }
+
+    if (
       origin === 'home_cancel_appointment' &&
       requestedAppointmentId &&
       requestedProfessionalId &&
