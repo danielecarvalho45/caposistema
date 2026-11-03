@@ -7521,3 +7521,22 @@ Não houve alteração de schema ou migration no Supabase.
 **Conferência disponível:** funções, contratos, propriedades e permissões SQL lidos fisicamente, sem mutação de dados reais. Os testes de regressão foram escritos mas não executados localmente; o fluxo de build GitHub permanece em `failure` em commits recentes, impedindo classificação PASS. Não há comprovação de publicação no Cloudflare ou homologação com Gestor/manuteste. É necessário verificar no ambiente publicado se os checks persistem após recarregar e se o contexto principal continua selecionado.
 
 **Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO BUILD, PUBLICAÇÃO E TESTE OPERACIONAL.**
+
+
+### 28.137 GESTOR — CHECKBOX DE PERMISSÃO DESMARCADO APÓS REABRIR CADASTRO (03/11/2026)
+
+**Nova evidência operacional da Titular:** mesmo após manutenção do §28.136, ao sair do cadastro e voltar ao profissional, a caixa de autorização aparece desmarcada/desativada. Não considerar §28.136 homologado nem repetir intervenções no banco por suposição.
+
+**Conferência física sem mutação:** consulta somente leitura no projeto Supabase oficial `fftebavlhbfcrvrtnrld` confirmou **um registro de `encaminhamento_interprofissional` com `is_enabled=true` para profissional ativo** na tabela `public.professional_capabilities`. Isso comprova persistência de ao menos uma concessão real, sem identificar pela imagem qual profissional foi aberto. A tela `GestorTeamPage` obtém o estado via `get_professional_capabilities_management_for_interface`, guarda resultados em `capabilities`, limpa o estado ao selecionar profissional e consulta novamente em efeito assíncrono. Antes deste ajuste, enquanto a consulta estivesse pendente ou falhasse, mostrava o checkbox desmarcado como se a permissão não existisse.
+
+**Correção mínima no frontend:**
+1. Criado estado explícito `capabilitiesStatus` (`idle/loading/ready/error`); ao selecionar/reselecionar, a interface mostra **Consultando permissões salvas no banco…**, com caixa desabilitada até resposta efetiva. Falha da consulta gera aviso explícito, não um falso `desativado`.
+2. Após marcar/desmarcar, a UI relê a permissão gravada e compara `is_enabled` com a operação solicitada, exibindo confirmação **somente quando coincide**, ou erro de divergência/conferência caso contrário. O estado do checkbox segue a leitura real, não inferência otimista.
+3. Adicionado teste dirigido ao fluxo **Profissional A → Profissional B → Profissional A**, que exige releitura e restauração da marcação concedida; ajustada espera do teste legado para aguardar o fim da consulta antes de clicar.
+4. Sem alteração de permissões, funções, registros, `GRANT` ou estrutura Supabase e sem alterar o contexto principal.
+
+**Arquivos:** `src/features/gestor/GestorTeamPage.tsx`, `tests/unit/gestor-team-page.test.tsx`. **Commits:** `db283183d49b4c7c0978bef8480649d4f21f2258`, `f5d7789ce18fcd2116e1a62f20e1dd0b5be44e90`.
+
+**Validação:** testes escritos mas execução/build e deploy Cloudflare não comprovados. O workflow GitHub `Validate production build` estava em `failure` na sessão; confrontar os logs do Cloudflare ou executar build independente antes de classificar como publicado. Teste operacional obrigatório com o profissional real afetado, sem mudar outra conta: reabrir e aguardar consulta, verificar marcação, salvar/desmarcar apenas quando autorizado, confirmar persistência. Persistência de outro profissional não prova correspondência do caso observado.
+
+**Estado:** **CORREÇÃO PONTUAL NO CÓDIGO / REGRESSÃO VISUAL AINDA AGUARDANDO BUILD E TESTE REAL; NÃO CONGELAR.**
