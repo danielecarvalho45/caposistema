@@ -754,6 +754,11 @@ export function AgendaPage({
   const [scheduleGrid, setScheduleGrid] =
     useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
+  const [previsitContacts, setPrevisitContacts] = useState<Readonly<Record<string, { result: string; recorded_at: string }>>>({})
+  const [previsitFeedback, setPrevisitFeedback] = useState<string | null>(null)
+  const [previsitBusyId, setPrevisitBusyId] = useState<string | null>(null)
+  const [previsitOutcomes, setPrevisitOutcomes] = useState<Readonly<Record<string, string>>>({})
+  const [previsitLoadError, setPrevisitLoadError] = useState<string | null>(null)
   const [specialtyResult, setSpecialtyResult] = useState<{ agenda: AsyncState<readonly AgendaAppointment[]>; byPatient: Record<string, AsyncState<readonly { specialty_id: string; specialty_name: string }[]>> } | null>(null)
   const requestSequence = useRef(0)
   const automaticBounds = agendaBounds(anchorDate, view)
@@ -904,6 +909,65 @@ export function AgendaPage({
     if (requestId === requestSequence.current) setState(nextState)
     return nextState
   }, [endDate, loadAgenda, professionalId, startDate])
+
+  const loadPrevisitContacts = useCallback(async () => {
+    const rpc = getRpcService()
+    if (typeof rpc.getAppointmentPrevisitContacts !== 'function') return
+    const result = await rpc.getAppointmentPrevisitContacts(startDate, endDate, professionalId)
+    if (result.status !== 'success') {
+      setPrevisitLoadError(result.status === 'error' ? result.error.message : 'Avisos prévios não disponíveis.')
+      return
+    }
+    const data = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+      ? result.data as Record<string, unknown>
+      : null
+    const items = Array.isArray(data?.items) ? data.items : []
+    const next: Record<string, { result: string; recorded_at: string }> = {}
+    for (const item of items) {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) continue
+      const row = item as Record<string, unknown>
+      if (typeof row.appointment_id !== 'string' || typeof row.result !== 'string') continue
+      next[row.appointment_id] = {
+        result: row.result,
+        recorded_at: typeof row.recorded_at === 'string' ? row.recorded_at : '',
+      }
+    }
+    setPrevisitContacts(next)
+    setPrevisitLoadError(null)
+  }, [startDate, endDate, professionalId])
+
+  useEffect(() => {
+    if (!canAccess || state.status !== 'success') return
+    void loadPrevisitContacts()
+  }, [canAccess, state, loadPrevisitContacts])
+
+  async function registerPrevisitContact(appointmentId: string) {
+    const outcome = previsitOutcomes[appointmentId]
+    if (!outcome || previsitBusyId) return
+    setPrevisitBusyId(appointmentId)
+    setPrevisitFeedback(null)
+    const result = await getRpcService().registerAppointmentPrevisitContact(appointmentId, outcome)
+    if (result.status === 'success') {
+      setPrevisitFeedback('Contato prévio registrado. Isso não registra presença nem inicia atendimento.')
+      await loadPrevisitContacts()
+    } else {
+      setPrevisitFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o contato prévio.')
+    }
+    setPrevisitBusyId(null)
+  }
+
+  function preparePrevisitReschedule(appointment: AgendaAppointment) {
+    setShowScheduleForm(false)
+    setShowRescheduleForm(true)
+    setAppointmentPatientId(appointment.patient_id)
+    setAppointmentPatientQuery(appointment.patient_name)
+    setSelectedProfessionalId(appointment.professional_id)
+    setSelectedReschedulableId(appointment.appointment_id)
+    setRescheduleOrigin('confirmacao_previa')
+    setRescheduleReason('Remarcação solicitada pelo paciente após contato prévio.')
+    setRescheduleTargetDate(dateInputValue(new Date()))
+    setAppointmentFeedback(null)
+  }
 
   const loadScheduleGrid = useCallback(async () => {
     if (!professionalId) {
@@ -1982,6 +2046,75 @@ export function AgendaPage({
             {formatPeriod(startDate, endDate, view)}
           </strong>
         </div>
+
+        {state.status === 'success' && state.data.some((item) => item.attendance_status === 'agendado') && (
+          <section className="agenda-schedule-form" aria-label="Avisos prévios das consultas">
+            <h3>Avisos prévios das consultas</h3>
+            {previsitLoadError && <p role="alert">{previsitLoadError}</p>}
+            {previsitFeedback && <p role="status">{previsitFeedback}</p>}
+            <div className="assistential-table-wrap">
+              <table className="assistential-table">
+                <thead><tr>
+                  <th>Consulta</th><th>Paciente</th><th>Contato prévio</th>
+                  {!isProfessional && <th>Ações administrativas</th>}
+                </tr></thead>
+                <tbody>
+                  {state.data.filter((item) => item.attendance_status === 'agendado').map((item) => {
+                    const contact = previsitContacts[item.appointment_id]
+                    const reminderMessage = `Olá, ${item.patient_name}! Lembramos sua consulta no CAPO em ${formatDateTime(item.appointment_date)}, com ${item.professional_name}. Por favor, confirme se poderá comparecer. Caso precise cancelar ou remarcar, avise a equipe do CAPO.`
+                    return (
+                      <tr key={item.appointment_id}>
+                        <td>{formatDateTime(item.appointment_date)} — {item.professional_name}</td>
+                        <td>{item.patient_name}</td>
+                        <td>
+                          {contact
+                            ? ({
+                                avisado: 'Avisado previamente',
+                                confirmou: 'Confirmou que comparecerá',
+                                sem_resposta: 'Contato sem resposta',
+                                solicitou_cancelamento: 'Solicitou cancelamento',
+                                solicitou_remarcacao: 'Solicitou remarcação',
+                              } as Record<string, string>)[contact.result] ?? 'Contato registrado'
+                            : 'Ainda sem registro de contato prévio'}
+                        </td>
+                        {!isProfessional && (
+                          <td className="agenda-attendance-actions">
+                            <PatientWhatsAppButton
+                              patientId={item.patient_id}
+                              label="💬 Lembrar e pedir confirmação"
+                              message={reminderMessage}
+                            />
+                            <select
+                              aria-label={`Resultado do contato com ${item.patient_name}`}
+                              value={previsitOutcomes[item.appointment_id] ?? ''}
+                              onChange={(event) => setPrevisitOutcomes((current) => ({
+                                ...current, [item.appointment_id]: event.target.value,
+                              }))}
+                            >
+                              <option value="">Resultado do contato</option>
+                              <option value="avisado">Paciente avisado</option>
+                              <option value="confirmou">Confirmou que comparecerá</option>
+                              <option value="sem_resposta">Sem resposta</option>
+                              <option value="solicitou_cancelamento">Solicitou cancelamento</option>
+                              <option value="solicitou_remarcacao">Solicitou remarcação</option>
+                            </select>
+                            <button
+                              type="button"
+                              disabled={!previsitOutcomes[item.appointment_id] || previsitBusyId !== null}
+                              onClick={() => void registerPrevisitContact(item.appointment_id)}
+                            >✓ Registrar resposta</button>
+                            <button type="button" onClick={() => preparePrevisitReschedule(item)}>↻ Remarcar</button>
+                            <button type="button" onClick={() => prepareCancellation(item.appointment_id)}>✕ Cancelar</button>
+                          </td>
+                        )}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         {isProfessional && !embeddedHome && (
           <div className="agenda-attendance-notes">
