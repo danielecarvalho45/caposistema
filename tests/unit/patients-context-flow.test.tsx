@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { PatientsPage } from '../../src/features/patients/PatientsPage'
 import { RegisterPatientDeath } from '../../src/components/patients/RegisterPatientDeath'
 import type { AccessContext } from '../../src/types/access'
@@ -39,6 +39,10 @@ const context = {
     requires_configuration: false,
   },
 } as unknown as AccessContext
+
+beforeEach(() => {
+  rpc.getInitialActiveSearches.mockResolvedValue({ status: 'success', data: { items: [] } })
+})
 
 afterEach(() => {
   cleanup()
@@ -184,3 +188,31 @@ it('abre diretamente o paciente recebido pela notificação administrativa', asy
   expect(rpc.getPatientForEdit).toHaveBeenCalledWith('patient-1')
 })
 
+
+
+it('permite registrar a Oferta CAPO de paciente já cadastrado sem novo cadastro', async () => {
+  rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [
+    { patient_id: 'patient-existing', full_name: 'Paciente existente', patient_number: 'TESTE-CAPO', cms: null },
+  ] })
+  rpc.getPatientForEdit.mockResolvedValue({ status: 'success', data: [
+    { patient_id: 'patient-existing', patient_number: 'TESTE-CAPO', full_name: 'Paciente existente', birth_date: '1980-01-01', phone: '35999999999', status: 'ativo' },
+  ] })
+  rpc.registerInitialActiveSearchAttempt.mockResolvedValue({ status: 'success', data: {
+    success: true, care_cycle_id: 'cycle-real', cycle_created: true,
+  } })
+
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByRole('button', { name: 'Consultar' }))
+  await user.type(screen.getByPlaceholderText('Nome, CMS ou Nº CAPO exato'), 'TESTE-CAPO')
+  await user.click(screen.getByRole('button', { name: 'Buscar' }))
+  expect(await screen.findByRole('heading', { name: 'Paciente existente' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'Oferta CAPO — primeiro contato' })).toBeVisible()
+  await user.click(screen.getByLabelText('Aceitou'))
+  await user.click(screen.getByRole('button', { name: 'Registrar contato da Oferta' }))
+  expect(rpc.registerInitialActiveSearchAttempt).toHaveBeenCalledWith(expect.objectContaining({
+    patientId: 'patient-existing', acceptedService: true, closeFlow: true,
+  }))
+  expect(rpc.createPatient).not.toHaveBeenCalled()
+  expect(await screen.findByText('Desfecho da Oferta CAPO registrado no banco.')).toBeVisible()
+})
