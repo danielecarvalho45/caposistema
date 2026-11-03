@@ -16,7 +16,7 @@ import {
 } from './assistential-integration'
 import './assistential-page.css'
 import '../../styles/quick-access.css'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
@@ -99,6 +99,7 @@ export function AssistentialPage({
   const [endDate, setEndDate] = useState(() => dateInputValue(new Date()))
   const [reportState, setReportState] =
     useState<AsyncState<AssistentialOperationalReport>>(loadingState)
+  const location = useLocation()
   const [query, setQuery] = useState('')
   const [searchState, setSearchState] = useState<AsyncState<
     readonly AssistentialPatient[]
@@ -187,6 +188,34 @@ export function AssistentialPage({
       setSearchState(result.status === 'error' ? result : { status: 'empty' })
     }
   }
+
+  useEffect(() => {
+    if (!isProfessional || homeOnly) return
+    const routeState = location.state && typeof location.state === 'object'
+      ? location.state as Record<string, unknown>
+      : null
+    const appointmentId = routeState?.confirmedAppointmentId
+    if (typeof appointmentId !== 'string' || !appointmentId) return
+    let active = true
+    setSearchState(loadingState())
+    void integration.loadAppointmentContext(appointmentId).then((result) => {
+      if (!active) return
+      if (result.status === 'success') {
+        setQuery(result.data.patient_name)
+        setSearchState({ status: 'success', data: [{
+          patient_id: result.data.patient_id,
+          full_name: result.data.patient_name,
+          patient_number: result.data.patient_number,
+          cms: result.data.cms,
+          status: 'ativo',
+          total_count: 1,
+        }] })
+      } else {
+        setSearchState(result.status === 'error' ? result : { status: 'empty' })
+      }
+    })
+    return () => { active = false }
+  }, [homeOnly, integration, isProfessional, location.state])
 
   if (!isProfessional) {
     return (
