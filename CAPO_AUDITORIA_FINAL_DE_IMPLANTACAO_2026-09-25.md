@@ -7723,3 +7723,16 @@ Não houve alteração de schema ou migration no Supabase.
 **Pendências ainda dependentes de validação, sem alteração especulativa:** apresentação transversal de Alta próxima na grade compacta e outras telas (com prevenção de consultas individuais excessivas); fluxo autenticado de Receita e Odontologia, incluindo PDFs; relatórios/encerramentos/agenda flexível e revisão visual geral. A existência de tela ou teste escrito não comprova êxito operacional. Manter congelados os demais fluxos sem falha demonstrada.
 
 **Estado:** **DUAS CORREÇÕES CIRÚRGICAS NO MAIN / TESTE DE REGRESSÃO AJUSTADO, NÃO EXECUTADO / BUILD, DEPLOY E HOMOLOGAÇÃO PENDENTES.**
+
+
+### 28.149 CLÍNICO GERAL — CONFIRMAR PRESENÇA NA MINHA AGENDA NÃO ABRIA ATUAÇÃO (03/11/2026)
+
+**Reclamação da Titular:** ao entrar na Agenda do Clínico Geral e clicar em Confirmar, o atendimento não era aberto.
+
+**Causa física comprovada:** a Home profissional utiliza `<AgendaPage onConfirmed={...} embeddedHome />` e `AssistentialPage.openConfirmedPatient` recupera o contexto do paciente. Já a rota `/agenda`, em `src/app/App.tsx`, instanciava `<AgendaPage accessContext={accessContext} />` sem `onConfirmed`. Assim, `updateAttendance` registrava presença e recarregava a agenda, mas não executava abertura de atuação nessa rota. Não se comprovou falha da RPC de presença nesta ocorrência.
+
+**Correção cirúrgica:** `App.tsx` passa callback `onConfirmed` somente se o contexto principal for `profissional` e a tela for `clinico_geral` ou `assistencial_padrao`; após confirmação efetiva da RPC e recarga, navega para `/atuacao` com `confirmedAppointmentId` no estado do roteador. Em `AssistentialPage.tsx`, efeito restrito à rota de atuação e ao profissional recupera `loadAppointmentContext(appointmentId)`, popula o mesmo painel de paciente já existente e preserva erros/estado vazio reais. Nenhuma tela paralela, prontuário, conduta médica, dado fictício, SQL ou autorização nova foi criada. Comportamento dos perfis de Nutrição, Social, Gestor e Administrativo não foi alterado. Commits `3a591d028f1b2e0fd133cd0dbc05f461b325cf5f` e `48b9338e7bf2658e09e9ee3ab61f6d042fbd96f6`.
+
+**Conferência:** arquivos relidos fisicamente na `main`, confirmando callback condicional, navegação e carregamento de contexto por agendamento. Teste automatizado, build, deploy e homologação autenticada **não executados/comprovados** nesta sessão. Próximo teste controlado: agendamento ainda `agendado` do Clínico → Minha Agenda → Confirmar → verificar gravação de `confirmado` e abertura da Atuação do paciente correspondente; assegurar que Falta não abre atendimento e que outro paciente não aparece.
+
+**Estado:** **CORREÇÃO DO VÍNCULO DE NAVEGAÇÃO NO MAIN / HOMOLOGAÇÃO REAL PENDENTE.**
