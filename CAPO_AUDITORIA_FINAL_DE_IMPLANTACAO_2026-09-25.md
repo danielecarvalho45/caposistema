@@ -7751,3 +7751,20 @@ Não houve alteração de schema ou migration no Supabase.
 **Validação:** arquivos relidos no GitHub; testes adicionados, porém suíte, build, deploy e teste autenticado após atualização **não executados/comprovados** neste contexto. Homologar no perfil do profissional: Confirmar → atendimento do paciente correto e marcador verde ao retornar à agenda; Falta → fila AO e marcador vermelho, inclusive após atualizar página e pesquisar paciente. Sem usar dados fictícios de pacientes em produção.
 
 **Estado:** **CORREÇÃO DE EXIBIÇÃO REGISTRADA NO MAIN / HOMOLOGAÇÃO DE PERSISTÊNCIA, NAVEGAÇÃO E REGRESSÃO PENDENTE.**
+
+
+### 28.151 RETORNO PROFISSIONAL — AÇÃO NÃO ABRIA HORÁRIOS APÓS CONFIRMAÇÃO (03/11/2026)
+
+**Relato da Titular:** após confirmar paciente na Agenda do Clínico Geral, o comando Marcar/Agendar retorno não abria visivelmente a seleção de horários. Solicitada correção cirúrgica transversal à agenda dos perfis profissionais, sem reconstrução nem expansão de permissões.
+
+**Confronto normativo:** Especificação Estrutural da Interface de 12/09, seção de regras de atendimento: primeiro atendimento é organizado pelo Administrativo; profissional pode agendar ou remarcar o próprio retorno em sua agenda e pode optar por solicitar apoio administrativo. Documentação Mestre §§28.114, 28.149 e 28.150: confirmação efetiva inicia atuação da especialidade; aviso prévio não substitui presença; falta pertence ao fluxo de Faltosos. O fluxo de retorno preserva paciente e profissional e consulta apenas horários livres autorizados pelo banco.
+
+**Causas de interface localizadas:** em `AgendaPage.tsx`, a ação Agendar retorno da grade compacta da semana e da lista semanal da Home estava aninhada sob a condição `attendance_status === 'agendado'` da presença/falta, ficando logicamente inacessível quando a consulta já estava `confirmado`. Na grade do dia o botão existia, mas abrir o formulário acima da agenda não deslocava o foco/rolagem para o formulário, produzindo aparência de clique sem resposta. Nenhuma falha ou permissão adicional foi atribuída à RPC sem teste autenticado.
+
+**Correção aplicada no frontend (main):** retirado Agendar retorno de dentro da condição de presença/falta nas duas visões semanais, condicionando-o explicitamente a consulta confirmada; reutilizado o estilo institucional do botão de agendamento. Ao preparar retorno de um paciente confirmado, um efeito restrito ao fluxo profissional `retorno_profissional` leva a tela até o formulário real de Agendar retorno já existente, preenchido com paciente, especialidade e profissional de origem. A seleção de data, consulta de horários pela RPC `get_available_appointment_slots` e salvamento pela RPC `create_appointment_for_interface` continuam nos mesmos componentes/contratos. Nenhuma migração SQL, novo formulário paralelo, dado fictício persistido ou alteração no fluxo administrativo. Commits `75a11b1b465d2b442039c702db0fb59abf3a3163` e `f43dcd71122b2830c3960030d6aea1dd411c2f17`.
+
+**Regressão documentada:** novo teste em `tests/unit/agenda-queue-context.test.tsx` exercita consulta confirmada na Semana da Home profissional, verifica presença da ação de retorno sem botões de presença/falta, abertura do formulário, pré-preenchimento e chamada de horários disponíveis. Commit `9c513914bf33fae7905deae0d4a20e94b824fd80`. Teste foi escrito, mas sua execução não foi comprovada nesta sessão.
+
+**Verificação read-only do Supabase:** estão presentes `public.get_available_appointment_slots(p_professional_id,p_date)` e `public.create_appointment_for_interface(...)`. Na inspeção anterior, consulta inicial de 03/11 às 16h30 constava Confirmado, e não havia novo retorno daquele paciente gravado; isso não foi tratado como evidência de falha da RPC de criação, pois o clique ainda não havia alcançado o formulário. Não foi criado agendamento real durante manutenção.
+
+**Estado:** **CORREÇÃO CIRÚRGICA DE INTERFACE E TESTE DE REGRESSÃO NO MAIN / EXECUÇÃO DE SUÍTE, BUILD, DEPLOY E HOMOLOGAÇÃO AUTENTICADA DE AGENDAMENTO DE RETORNO PENDENTES.**
