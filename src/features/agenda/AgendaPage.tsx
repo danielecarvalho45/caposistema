@@ -1115,6 +1115,17 @@ export function AgendaPage({
         typeof resultRecord?.appointment_id === 'string'
           ? resultRecord.appointment_id
           : ''
+      if (appointmentId) {
+        const professionalName =
+          professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
+          'Profissional CAPO'
+        setLastScheduledContact({
+          patientId: appointmentPatientId,
+          patientName: appointmentPatientQuery,
+          professionalName,
+          slotStart: validSlotStart,
+        })
+      }
       if (prefillWaitingListId && appointmentId) {
         const completed = await getRpcService().completeWaitingListScheduling(
           prefillWaitingListId,
@@ -1146,15 +1157,6 @@ export function AgendaPage({
         }
         setPrefillRenewalId('')
       }
-      const professionalName =
-        professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
-        'Profissional CAPO'
-      setLastScheduledContact({
-        patientId: appointmentPatientId,
-        patientName: appointmentPatientQuery,
-        professionalName,
-        slotStart: validSlotStart,
-      })
       setAppointmentFeedback('Agendamento criado. Agenda recarregada do banco.')
       setAppointmentPatientId('')
       setAppointmentPatientQuery('')
