@@ -84,13 +84,16 @@ export function PatientsPage({
     role.code === 'administrador' || role.code === 'administrativo_operacional',
   )
 
-  const whatsappDigits = patientPhone.replace(/\D/g, '')
+  const offerPatientId = activeView === 'search' ? editingPatientId : createdPatientId
+  const offerPhone = activeView === 'search' ? (editForm.phone ?? '') : patientPhone
+  const offerPatientName = activeView === 'search' ? (editForm.full_name ?? '') : patientName
+  const whatsappDigits = offerPhone.replace(/\D/g, '')
   const whatsappNumber = whatsappDigits.startsWith('55')
     ? whatsappDigits
     : `55${whatsappDigits}`
   const greeting = new Date().getHours() < 12 ? 'Bom dia' : 'Boa tarde'
   const operatorName = accessContext.full_name ?? accessContext.username
-  const offerMessage = `${greeting}, ${patientName.trim() || '[nome do paciente]'}! Tudo bem?
+  const offerMessage = `${greeting}, ${offerPatientName.trim() || '[nome do paciente]'}! Tudo bem?
 
 Estou entrando em contato para apresentar o CAPO – Centro de Acolhimento ao Paciente Oncológico, serviço multiprofissional da Secretaria Municipal de Saúde de Pouso Alegre – MG.
 
@@ -169,7 +172,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
   }
 
   async function registerOfferOutcome() {
-    if (!createdPatientId || !offerOutcome || offerBusy) return
+    if (!offerPatientId || !offerOutcome || offerBusy) return
     if (offerOutcome === 'novo_contato' && !offerNextContactDate) {
       setOfferFeedback('Informe a data do próximo contato.')
       return
@@ -198,7 +201,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     setOfferBusy(true)
     setOfferFeedback('Registrando desfecho no banco…')
     const result = await getRpcService().registerInitialActiveSearchAttempt({
-      patientId: createdPatientId,
+      patientId: offerPatientId,
       contactMethod: 'whatsapp',
       contactResult: resultText[offerOutcome],
       acceptedService,
@@ -216,7 +219,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       setOfferNextContactDate('')
       setOfferNextContactTime('')
       setOfferOutcome('')
-      await loadOfferHistory(createdPatientId)
+      await loadOfferHistory(offerPatientId)
     } else {
       setOfferFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o registro da Oferta CAPO.')
     }
@@ -225,6 +228,9 @@ ${operatorName} – ADMINISTRATIVO CAPO`
 
   async function searchPatients() {
     const cleanQuery = query.trim()
+    setEditingPatientId(null)
+    setOfferHistory([])
+    setOfferFeedback(null)
     if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
       setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       setResult(emptyState)
@@ -243,6 +249,9 @@ ${operatorName} – ADMINISTRATIVO CAPO`
   }
 
   async function openPatientEditor(patientId: string) {
+    setOfferOutcome('')
+    setOfferFeedback(null)
+    setOfferHistory([])
     setEditBusy(true)
     setFeedback(null)
     const next = await getRpcService().getPatientForEdit(patientId)
@@ -251,6 +260,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       if (row && typeof row === 'object' && !Array.isArray(row)) {
         const source = row as Record<string, unknown>
         setEditingPatientId(patientId)
+        void loadOfferHistory(patientId)
         setEditForm({
           patient_number: String(source.patient_number ?? ''),
           full_name: String(source.full_name ?? ''),
@@ -437,13 +447,13 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         </section>
       )}
 
-      {activeView === 'register' && (
+      {(activeView === 'register' || (activeView === 'search' && Boolean(editingPatientId) && canEditPatient)) && (
         <section className="home-profile patients-offer" aria-labelledby="patients-offer-title">
           <div className="patients-section-heading">
             <div>
               <p className="eyebrow">Cadastro + Oferta CAPO</p>
               <h2 id="patients-offer-title">Oferta CAPO — primeiro contato</h2>
-              <p>Esta etapa permanece integrada ao cadastro do paciente.</p>
+              <p>{activeView === 'search' ? `Oferta CAPO do paciente selecionado: ${offerPatientName}. Registre o desfecho real do contato antes de agendar.` : 'Esta etapa permanece integrada ao cadastro do paciente.'}</p>
             </div>
           </div>
           <div className="patients-offer-grid">
@@ -469,10 +479,10 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             </div>
             <div className="patients-offer-status">
               <strong>Telefone informado</strong>
-              <span>{patientPhone.trim() || 'Informe o telefone/WhatsApp no cadastro.'}</span>
+              <span>{offerPhone.trim() || 'Telefone não informado no cadastro.'}</span>
               <small>O cadastro confirmado pelo banco é obrigatório para registrar o desfecho.</small>
 
-              <fieldset disabled={!createdPatientId || offerBusy}>
+              <fieldset disabled={!offerPatientId || offerBusy}>
                 <legend>Desfecho do contato</legend>
                 <label><input type="radio" name="offer-outcome" checked={offerOutcome === 'aceitou'} onChange={() => setOfferOutcome('aceitou')} /> Aceitou</label>
                 <label><input type="radio" name="offer-outcome" checked={offerOutcome === 'novo_contato'} onChange={() => setOfferOutcome('novo_contato')} /> Novo contato necessário</label>
@@ -493,7 +503,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
               <label>Observação administrativa do contato
                 <textarea rows={3} value={offerNotes} onChange={(event) => setOfferNotes(event.target.value)} />
               </label>
-              <button type="button" disabled={!createdPatientId || !offerOutcome || offerBusy} onClick={() => void registerOfferOutcome()}>
+              <button type="button" disabled={!offerPatientId || !offerOutcome || offerBusy} onClick={() => void registerOfferOutcome()}>
                 {offerBusy ? 'Registrando…' : 'Registrar contato da Oferta'}
               </button>
               {offerFeedback && <p role="status">{offerFeedback}</p>}
