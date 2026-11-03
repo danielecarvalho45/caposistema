@@ -7697,3 +7697,14 @@ Não houve alteração de schema ou migration no Supabase.
 **Preservação funcional:** permanece o §28.145 (somente Paciente avisado / Solicitou cancelamento na etapa administrativa), com confirmação de presença exclusivamente pelo especialista. Nenhuma mudança em banco, status assistencial, paciente, agendamento ou registros históricos.
 
 **Estado:** **CAUSA COMPROVADA E ROTEAMENTO CORRIGIDO NO MAIN; TESTE EM NAVEGADOR AUTENTICADO, BUILD, DEPLOY E GRAVAÇÃO REAL AINDA PENDENTES.** Após publicação, repetir o mesmo agendamento teste: registrar Paciente avisado, observar retorno de sucesso, consultar a marcação 💬 Avisado previamente na agenda do Clínico Geral e confirmar por consulta de leitura a existência do registro, sem alterar `attendance_status`.
+
+
+### 28.147 AGENDA DO CLÍNICO — INDICADOR DE PACIENTE AVISADO SOBREPOSTO (03/11/2026)
+
+**Evidência visual da Titular:** captura da agenda do Médico Clínico Geral mostra o indicador de aviso prévio já presente ao lado/abaixo do paciente, porém sobreposto ao tipo de consulta, tornando a leitura ruim. A imagem confirma que a marcação agora chegou à interface, mas não substitui validação da persistência nem da publicação do último commit.
+
+**Causa comprovada no código:** na grade compacta `HomeScheduleGrid` de `src/features/agenda/AgendaPage.tsx`, o tipo do agendamento e o aviso prévio eram renderizados em dois elementos irmãos `<small>`. O CSS `.agenda-schedule-slot.is-agendado > small` atribuía a ambos `grid-column:2;grid-row:2`, causando sobreposição na mesma célula da grade.
+
+**Correção cirúrgica:** tipo de consulta e indicador agora são agrupados em um único `<small className="agenda-schedule-details">` com `<span>` independentes, espaçamento e quebra de linha quando necessário; indicador `agenda-previsit-indicator` ganha legibilidade e cor verde discreta. Outras visualizações, dados, RPCs, botões Confirmar/Falta, cancelamento e fluxo profissional não foram alterados. Commits `04cdf51ec9890da84fc5f553f7ecb94be1b45c0d` e `3b6609195f15ff903c12dd609d14953064cf536f`.
+
+**Estado:** **CORREÇÃO VISUAL NO MAIN / VERIFICAÇÃO DE ARQUIVOS PENDENTE / BUILD E HOMOLOGAÇÃO VISUAL EM NAVEGADOR PENDENTES.**
