@@ -232,7 +232,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     role.code === 'administrador' || role.code === 'coordenador',
   )
   const hasProfessionalRole = Boolean(accessContext.professional_id) &&
-    accessContext.is_active && accessContext.roles.some((role) => role.code === 'profissional')
+    accessContext.roles.some((role) => role.code === 'profissional')
   const [reportView, setReportView] = useState<'gerencial' | 'especialidade'>(
     accessContext.primary_context.code === 'profissional' ? 'especialidade' : 'gerencial',
   )
