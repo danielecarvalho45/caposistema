@@ -7736,3 +7736,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Conferência:** arquivos relidos fisicamente na `main`, confirmando callback condicional, navegação e carregamento de contexto por agendamento. Teste automatizado, build, deploy e homologação autenticada **não executados/comprovados** nesta sessão. Próximo teste controlado: agendamento ainda `agendado` do Clínico → Minha Agenda → Confirmar → verificar gravação de `confirmado` e abertura da Atuação do paciente correspondente; assegurar que Falta não abre atendimento e que outro paciente não aparece.
 
 **Estado:** **CORREÇÃO DO VÍNCULO DE NAVEGAÇÃO NO MAIN / HOMOLOGAÇÃO REAL PENDENTE.**
+
+
+### 28.150 AGENDA PROFISSIONAL — ESTADO VISUAL PERSISTENTE DE CONFIRMADO / FALTA (03/11/2026)
+
+**Relato da Titular:** após clicar em Falta, o Administrativo recebe o evento, mas a agenda do profissional continua exibindo os botões Confirmar e Falta, aparentemente estáticos. O esperado é exibir exclusivamente o marcador verde **✓ Confirmado** após confirmação de presença, com abertura da atuação da especialidade; ou exclusivamente o marcador vermelho **✕ Falta** após ausência, conservando o encaminhamento ao fluxo administrativo de Faltosos. Aviso administrativo prévio de consulta não é confirmação de presença nem abre atendimento.
+
+**Causa localizada no frontend:** em `src/features/agenda/AgendaPage.tsx`, a grade do dia e os cartões compactos de semana/mês renderizavam ações de presença independentemente do estado de comparecimento persistido no agendamento ou atualizado pela RPC. A tabela de agendamentos tinha a mesma lacuna. Além disso, a grade de horários não possui coluna explícita de `attendance_status`; deve cruzar os agendamentos reais retornados por `get_agenda_for_interface` e reagir à confirmação da mutação sem perder o estado ao recarregar dados.
+
+**Alterações pontuais em `main`:** componentes `AppointmentTable`, `HomeScheduleGrid` e `AgendaResults` passam a mostrar os marcadores de situação e somente oferecem os botões Confirmar/Falta para `attendance_status='agendado'`. `AgendaPage` mantém sobreposição local por ID de agendamento após sucesso da RPC, recarrega dados e usa o estado atualizado em grade, listagem e contadores. Cores institucionais e classes próprias incluídas em `agenda-page.css`. Acrescentado teste de regressão para marcação verde após confirmar e marcação vermelha após falta, ambas sem repetição dos botões. Commits: `1fac63860a5aa783cf7967f74fc3206da0862837`, `a672931c9955aebab1cf36326797aa349f3120e1` e `52f47567e9fb245643332adb5257d903426e023e`.
+
+**Conferência de contrato no banco (somente leitura):** `get_agenda_schedule_grid_for_interface` conserva agendamentos com presença ou falta, excluindo os cancelados/remarcados; `get_agenda_for_interface` expõe `attendance_status`. Nenhuma alteração de SQL, política ou registro assistencial foi feita. A ligação entre Confirmar e a abertura da atuação na rota /agenda para Clínico/Assistencial Padrão foi tratada em §28.149; Nutrição e Assistência Social nessa rota ainda requerem homologação de integração específica e não devem ser declaradas corrigidas por esta entrada.
+
+**Validação:** arquivos relidos no GitHub; testes adicionados, porém suíte, build, deploy e teste autenticado após atualização **não executados/comprovados** neste contexto. Homologar no perfil do profissional: Confirmar → atendimento do paciente correto e marcador verde ao retornar à agenda; Falta → fila AO e marcador vermelho, inclusive após atualizar página e pesquisar paciente. Sem usar dados fictícios de pacientes em produção.
+
+**Estado:** **CORREÇÃO DE EXIBIÇÃO REGISTRADA NO MAIN / HOMOLOGAÇÃO DE PERSISTÊNCIA, NAVEGAÇÃO E REGRESSÃO PENDENTE.**
