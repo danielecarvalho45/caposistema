@@ -7476,3 +7476,27 @@ Não houve alteração de schema ou migration no Supabase.
 **VALIDAÇÃO PENDENTE:** as execuções do workflow GitHub Actions para commits recentes em 03/11/2026 resultaram `failure` em 2–3 segundos; o conector retornou jobs sem etapas e a busca de logs falhou com `BlobNotFound`. Não se pode atribuir essa falha a erro de compilação nem afirmar build aprovado sem logs/execução independente. Não há comprovação de publicação Cloudflare nem de teste real da mensagem de e-mail/código. NENHUMA senha foi alterada pela manutenção.
 
 **Estado:** **FRONTEND E TESTE DE REGRESSÃO ATUALIZADOS NO MAIN; PENDENTES TEMPLATE/URL AUTH NO SUPABASE, BUILD/PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL.**
+
+
+### 28.135 NOTIFICAÇÕES — BOTÕES SEM CONTINUIDADE OPERACIONAL (03/11/2026)
+
+**Relato da Titular:** na Central de Notificações, clicar para concluir ou executar ações não efetiva a tarefa. Continuidade controlada do §28.132 e §28.131, sem reconstruir fluxo, sem alterar registros reais.
+
+**Diagnóstico físico (GitHub `main` + RPCs existentes no Supabase oficial):**
+- Em `NotificationsPage.openContext`, ao clicar em **Abrir contexto** ou **Abrir solicitação no Administrativo**, a tela chamava `update_my_notification_for_interface('lida')` e fazia `return` caso a RPC falhasse, **impedindo a navegação** ao módulo onde a tarefa de fato deve ser concluída. Leitura de aviso e execução da tarefa são contratos distintos.
+- `NotificationsPage.update` verificava apenas `status === 'error'`; retorno `empty` podia prosseguir com atualização e feedback de sucesso sem confirmação do banco.
+- `RequestsPage` exibia botões executores para `coordenador`, enquanto `update_administrative_request_for_interface` autoriza `start/record/return/complete/refuse` apenas a Administrador ou Administrativo Operacional. Botões estavam visíveis a papel indevido e RPC negaria a operação.
+- Para executar `complete/record/return/refuse/cancel/resubmit`, a RPC exige providência/justificativa mínima de cinco caracteres. A tela emitia aviso apenas no topo, distante dos botões, deixando a impressão de ação sem resultado.
+
+**Manutenção cirúrgica concluída no código:**
+1. A falha de confirmação da leitura não interrompe mais a navegação interna já autorizada para a solicitação; o aviso só é sinalizado como lido quando a RPC confirma. Nenhuma ação administrativa é implicitamente disparada pelo clique no aviso.
+2. Resultado `empty` na atualização de notificação deixa de produzir feedback de sucesso. Exige confirmação `success`.
+3. Os botões de execução na tela de Solicitações ficam restritos aos papéis compatíveis com a RPC do banco; Coordenação mantém consulta e acompanhamento, sem acesso a mutações indevidas.
+4. Campo obrigatório de providência/justificativa passa a explicar requisito mínimo junto aos botões, usando mensagem de validação acessível ao tentar executar com texto insuficiente.
+5. Testes dirigidos adicionados para navegação apesar de falha na leitura, ausência de falso sucesso em retorno vazio e restrição de botão de conclusão no Coordenador. Corrigida referência de label de teste legado.
+
+**Commits:** `d1c3b1e4692d8d7d93e1d701c7f4adacea00f93b`, `2e8311e4d82daa4d154c3f52df6907291ce4f679`, `93619dba66ebf0c129f1a5fb44699e643a634aab`, `9a71116ff506132fa53b575423a0eaffc212bad4`, `bc50734901e7a365c253ec3706bf0908b0a308dc`, `e24cb85833171186c8e0114719ee849a45030301`.
+
+**Regra preservada:** marcar como lida não conclui solicitação, nem a retira da Central de pendências; conclusão/cancelamento real só por módulo canônico e autorização do backend, com auditoria. A pendência antiga de sincronizar o estado da notificação com o encerramento real da entidade e a leitura por destinatário em notificações por papel permanece aberta (ver §28.132), sem apagamento/reclassificação de dados.
+
+**Limite de validação:** workflow `Validate production build` dos commits recentes está retornando `failure` (também nos commits anteriores de autenticação); logs não disponíveis nesta conexão. Não há comprovação de build nem publicação Cloudflare/homologação `manuteste`. Nenhuma mutação de dados reais Supabase foi feita. **Estado: CORREÇÕES NO MAIN; AGUARDANDO BUILD/PUBLICAÇÃO E TESTE OPERACIONAL.**
