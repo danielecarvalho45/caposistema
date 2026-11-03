@@ -133,3 +133,32 @@ it('profissional gera relatório da própria especialidade sem chamar dashboard 
   expect(loadDashboard).not.toHaveBeenCalled()
   expect(screen.queryByText(/Perfil sem autorização para Relatórios gerenciais do CAPO/)).not.toBeInTheDocument()
 })
+
+
+it('permite alternar relatórios gerenciais e da própria especialidade sem mudar o contexto principal', async () => {
+  const user = userEvent.setup()
+  const loadDashboard = vi.fn().mockResolvedValue({ status: 'success', data: {
+    patients: { total_current: 2 },
+  } })
+  const loadSpecialties = vi.fn().mockResolvedValue({ status: 'success', data: [
+    { specialty_id: 'clinica-geral', specialty_name: 'Clínica Geral', is_current_context: true },
+  ] })
+  const loadReport = vi.fn().mockResolvedValue({ status: 'success', data: {
+    agenda: { agendado: 1 }, retornos: { agendado: 0 },
+    fila_especialidade: {}, solicitacoes: {}, encaminhamentos: {}, encerramentos: {},
+  } })
+
+  render(<ReportsPage accessContext={{
+    roles: [{ code: 'coordenador', name: 'Coordenador' }, { code: 'profissional', name: 'Profissional' }],
+    primary_context: { code: 'coordenador' }, professional_id: 'profissional-real',
+  } as unknown as AccessContext} integration={{ loadDashboard, loadSpecialties, loadReport }} />)
+
+  expect(await screen.findByRole('heading', { name: 'Relatórios Gerenciais' })).toBeVisible()
+  expect(loadDashboard).toHaveBeenCalledTimes(1)
+  await user.click(screen.getByRole('button', { name: 'Relatórios da minha especialidade' }))
+  expect(await screen.findByRole('heading', { name: 'Relatorio operacional' })).toBeVisible()
+  expect(loadSpecialties).toHaveBeenCalled()
+  expect(loadReport).toHaveBeenCalledWith('clinica-geral', expect.any(String), expect.any(String))
+  await user.click(screen.getByRole('button', { name: 'Relatórios gerenciais' }))
+  expect(await screen.findByRole('heading', { name: 'Relatórios Gerenciais' })).toBeVisible()
+})
