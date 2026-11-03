@@ -100,8 +100,7 @@ it('informa ao profissional a confirmação administrativa como indicador distin
         loadPatientSpecialties={async () => ({ status: 'success', data: [] })} />
     </MemoryRouter>,
   )
-  expect(await screen.findByText('Confirmou que comparecerá')).toBeVisible()
-  const panel = screen.getByRole('region', { name: 'Avisos prévios das consultas' })
-  expect(within(panel).queryByRole('button', { name: /Registrar resposta/ })).not.toBeInTheDocument()
-  expect(within(panel).queryByRole('button', { name: /Lembrar e pedir confirmação/ })).not.toBeInTheDocument()
+  expect(await screen.findByText('✓ Confirmou antecipadamente')).toBeVisible()
+  expect(screen.queryByRole('region', { name: 'Avisos prévios das consultas' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Registrar resposta/ })).not.toBeInTheDocument()
 })
