@@ -814,7 +814,8 @@ export function AgendaPage({
     Boolean(accessContext.professional_id) &&
     roleCodes.includes('profissional') &&
     accessContext.primary_context.code === 'profissional'
-  const canRegisterAttendance = isProfessional || roleCodes.includes('administrador')
+  // Presença/Falta inicia o fluxo assistencial: somente no contexto profissional ativo.
+  const canRegisterAttendance = isProfessional
   const canAccess = roleCodes.some((role) =>
     ['administrador', 'administrativo_operacional', 'coordenador', 'profissional'].includes(role),
   )
