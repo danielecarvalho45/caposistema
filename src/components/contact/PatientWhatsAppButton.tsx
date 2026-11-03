@@ -45,19 +45,17 @@ export function PatientWhatsAppButton({
       return
     }
 
-    if (message?.trim()) {
-      await globalThis.navigator?.clipboard?.writeText(message.trim())
-    }
-
     const normalizedPhone = phone.startsWith('55') ? phone : `55${phone}`
+    const preparedMessage = message?.trim() ?? ''
+    const whatsappUrl = `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalizedPhone)}${preparedMessage ? `&text=${encodeURIComponent(preparedMessage)}` : ''}`
     globalThis.open(
-      `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalizedPhone)}`,
+      whatsappUrl,
       '_blank',
       'noopener,noreferrer',
     )
     setFeedback(
-      message?.trim()
-        ? 'Mensagem copiada e WhatsApp aberto no contato autorizado.'
+      preparedMessage
+        ? 'WhatsApp aberto com a mensagem preparada. Confira os dados e envie manualmente.'
         : 'WhatsApp aberto no contato autorizado.',
     )
     setBusy(false)
