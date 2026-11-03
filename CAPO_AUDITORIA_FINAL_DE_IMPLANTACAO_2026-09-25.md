@@ -7671,3 +7671,16 @@ Não houve alteração de schema ou migration no Supabase.
 **Complemento de revisão cirúrgica:** `AgendaPage.tsx` passou a atribuir `lastScheduledContact` imediatamente quando a RPC confirma `appointment_id`, **antes** da baixa na Fila/ligação com Renovação de Receita. Assim, mesmo se a providência secundária falhar após o agendamento ter sido efetivamente criado, a opção WhatsApp de data/hora continua disponível. O link não aparece com `appointment_id` ausente. Commit `fa0b97abe55a5944c7e2ac20e6be8898e3b5ced7`. A migração continua sem dados de contato; leitura pós-implantação encontrou **0 registros** em `appointment_previsit_contacts`, como esperado sem intervenção real de operador.
 
 **Conferência dos fluxos na fonte GitHub:** funções RPC e migração presentes em `main`; `AgendaPage` repassa o status ao indicador junto ao nome do paciente na grade e nas listas de Dia/Semana/Mês e exibe ações de contato só na interface administrativa; `GestorDashboard` oferece acesso contextual ao fluxo canônico. Testes novos são apenas código escrito, sem execução. Execução GitHub Actions `41664554619` (commit do complemento) permaneceu em `failure`; o endpoint de logs do job respondeu 404, portanto o motivo exato da falha de CI segue **não confirmado**. Não confundir sucesso da migração com deploy do frontend.
+
+
+### 28.145 AGENDA — AVISO ADMINISTRATIVO SIMPLIFICADO, SEM CONFIRMAÇÃO ANTECIPADA (03/11/2026)
+
+**Decisão expressa da Titular:** após teste do fluxo implantado no §28.144, simplificar as respostas administrativas para **Paciente avisado** e **Solicitou cancelamento**. A confirmação de presença ocorre somente na consulta com o especialista, por meio do fluxo assistencial existente de Confirmar/Falta. Não interpretar o aviso administrativo como presença, não iniciar atendimento e não alterar `attendance_status` por aviso.
+
+**Correção cirúrgica no frontend:** em `src/features/agenda/AgendaPage.tsx`, a seleção de resultado de contato prévio apresenta apenas `avisado` e `solicitou_cancelamento`. O botão passa a ser **Registrar aviso**; o WhatsApp de lembrete usa **Lembrar consulta** e solicita que o paciente avise caso precise cancelar ou remarcar, sem pedir confirmação prévia. Os botões canônicos **Remarcar** e **Cancelar** permanecem. Registros históricos com outros resultados seguem legíveis para preservar auditoria; o antigo `confirmou` é exibido como **Avisado previamente**, nunca como confirmação de presença. A mesma Agenda é compartilhada por Administrativo Operacional e Gestor/Titular, sem duplicar fluxo ou alterar regras de acesso.
+
+**Banco:** nenhuma migration, RPC, permissão ou registro foi modificado. Os valores históricos existentes permanecem preservados; o novo formulário deixa de emitir os resultados retirados. Não se alegou homologação real.
+
+**Commits:** interface `179b75c90fd9ce3c6c1c4262f95f3cfccb0440f5`; regressão ajustada `4fddf4cf61533f8c1c0dcd3fcff950fdd149adaf` em `tests/unit/agenda-previsit-flow.test.tsx`, verificando apenas as duas opções e a mensagem sem pedido de confirmação.
+
+**Estado:** **CORREÇÃO REGISTRADA NO MAIN / TESTE ALTERADO, NÃO EXECUTADO / BUILD, PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES.**
