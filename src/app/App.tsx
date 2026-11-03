@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/shell/AppShell'
 import { useAccessFlow } from '../features/access/access-context'
 import { AgendaPage } from '../features/agenda/AgendaPage'
@@ -134,6 +134,7 @@ export function AccessDeniedPage() {
 export function App() {
   const { accessContext, logout, refreshAccessContext } = useAccessFlow()
   const location = useLocation()
+  const navigate = useNavigate()
   const pendingContextId = typeof location.state?.contextId === 'string'
     ? location.state.contextId
     : null
@@ -234,7 +235,15 @@ export function App() {
   ) : isPatientsRoute ? (
     <PatientsPage accessContext={accessContext} />
   ) : isAgendaRoute ? (
-    <AgendaPage accessContext={accessContext} />
+    <AgendaPage
+      accessContext={accessContext}
+      onConfirmed={
+        primaryContextCode === 'profissional' &&
+        (professionalScreen === 'clinico_geral' || professionalScreen === 'assistencial_padrao')
+          ? (appointment) => navigate('/atuacao', { state: { confirmedAppointmentId: appointment.appointment_id } })
+          : undefined
+      }
+    />
   ) : isManageOwnAgendaRoute ? (
     <AgendaPage accessContext={accessContext} initialManageOpen />
   ) : isAgendaChangeRequestRoute ? (
