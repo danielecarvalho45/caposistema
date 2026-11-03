@@ -645,3 +645,48 @@ it('mantém Falta em vermelho e não reabre os botões após registrar ausência
   expect(screen.queryByRole('button', { name: 'Marcar falta de Paciente em falta' })).not.toBeInTheDocument()
   expect(onConfirmed).not.toHaveBeenCalled()
 })
+
+
+it('abre o formulário de retorno para consulta confirmada na semana profissional sem reabrir presença/falta', async () => {
+  const now = new Date()
+  const day = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-')
+  const slotStart = new Date(`${day}T09:00:00`).toISOString()
+  const slotEnd = new Date(`${day}T09:30:00`).toISOString()
+  const appointment = {
+    appointment_id: 'appointment-return', patient_id: 'patient-return',
+    patient_name: 'Paciente com atendimento confirmado', patient_number: '101',
+    professional_id: 'professional-return', professional_name: 'Profissional autorizado',
+    specialty_name: 'Clínica Geral', appointment_date: slotStart, appointment_end: slotEnd,
+    appointment_type: 'primeiro_capo', attendance_status: 'confirmado', general_notes: null,
+    rescheduled_from_id: null, reschedule_reason: null, reschedule_origin: null,
+  }
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'empty' })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({ status: 'success', data: [{
+    professional_id: 'professional-return', professional_name: 'Profissional autorizado',
+    slot_date: day, weekday: now.getDay(), slot_start: slotStart, slot_end: slotEnd,
+    duration_minutes: 30, slot_status: 'agendado', appointment_id: appointment.appointment_id,
+    patient_id: appointment.patient_id, patient_name: appointment.patient_name,
+    appointment_type: appointment.appointment_type, block_type: null,
+  }] })
+  const context = {
+    roles: [{ code: 'profissional', name: 'Profissional' }],
+    primary_context: { code: 'profissional', name: 'Profissional' },
+    professional_id: 'professional-return',
+    specialties: [{ specialty_id: 'specialty-return', specialty_name: 'Clínica Geral', is_primary: true }],
+  } as unknown as AccessContext
+  const user = userEvent.setup()
+  render(<MemoryRouter><AgendaPage accessContext={context}
+    loadAgenda={async () => ({ status: 'success', data: [appointment] })} embeddedHome /></MemoryRouter>)
+  await user.click(screen.getByRole('tab', { name: 'Semana' }))
+  const openReturn = await screen.findByRole('button', { name: 'Agendar retorno de Paciente com atendimento confirmado' })
+  expect(openReturn).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Confirmar consulta de Paciente com atendimento confirmado' })).not.toBeInTheDocument()
+  await user.click(openReturn)
+  expect(await screen.findByRole('heading', { name: 'Agendar retorno' })).toBeVisible()
+  expect(screen.getByDisplayValue('Paciente com atendimento confirmado')).toBeVisible()
+  expect(screen.getByDisplayValue('Clínica Geral')).toBeVisible()
+  await waitFor(() => expect(rpc.getAvailableAppointmentSlots).toHaveBeenCalledWith(
+    'professional-return', expect.any(String),
+  ))
+})
