@@ -526,7 +526,7 @@ function HomeScheduleGrid({
                         </div>
                       )}
                       {appointment && onReturn && attendanceStatus === 'confirmado' && (
-                        <button type="button" className="agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${patientName}`}>Agendar retorno</button>
+                        <button type="button" className="agenda-slot-schedule-button agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${patientName}`}>Agendar retorno</button>
                       )}
                       {slot.slot_status === 'agendado' && patientIsVisible && slot.appointment_id && onCancel && (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
                         <button
@@ -622,7 +622,7 @@ function AgendaResults({
                           </div>
                         )}
                         {onReturn && appointment.attendance_status === 'confirmado' && (
-                          <button type="button" className="agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${appointment.patient_name}`}>Agendar retorno</button>
+                          <button type="button" className="agenda-slot-schedule-button agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${appointment.patient_name}`}>Agendar retorno</button>
                         )}
                         {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
                           <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onCancel(appointment.appointment_id)} aria-label={`Cancelar agendamento de ${appointment.patient_name}`}>Cancelar</button>
