@@ -465,7 +465,6 @@ function HomeScheduleGrid({
                             ? 'Bloqueado'
                             : patientName}
                       </span>
-                      {slot.appointment_id && previsitContacts?.[slot.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[slot.appointment_id].result)}</small>}
                       {slot.slot_status === 'livre' && onSchedule && (
                         <button
                           type="button"
@@ -475,8 +474,15 @@ function HomeScheduleGrid({
                           Agendar
                         </button>
                       )}
-                      {slot.slot_status === 'agendado' && slot.appointment_type && (
-                        <small>{slot.appointment_type}</small>
+                      {slot.slot_status === 'agendado' && (slot.appointment_type || (slot.appointment_id && previsitContacts?.[slot.appointment_id])) && (
+                        <small className="agenda-schedule-details">
+                          {slot.appointment_type && <span>{slot.appointment_type}</span>}
+                          {slot.appointment_id && previsitContacts?.[slot.appointment_id] && (
+                            <span className="agenda-previsit-indicator" title="Aviso administrativo prévio; não representa presença">
+                              {previsitIndicator(previsitContacts[slot.appointment_id].result)}
+                            </span>
+                          )}
+                        </small>
                       )}
                       {slot.slot_status === 'bloqueado' && slot.block_type && (
                         <small>{agendaBlockLabel(slot.block_type)}</small>
