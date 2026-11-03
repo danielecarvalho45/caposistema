@@ -82,7 +82,7 @@ function formatPeriod(startDate: string, endDate: string, view: AgendaView) {
 function previsitIndicator(result?: string) {
   switch (result) {
     case 'avisado': return '💬 Avisado previamente'
-    case 'confirmou': return '✓ Confirmou antecipadamente'
+    case 'confirmou': return '💬 Avisado previamente'
     case 'sem_resposta': return '◌ Aviso sem resposta'
     case 'solicitou_cancelamento': return '✕ Solicitou cancelamento'
     case 'solicitou_remarcacao': return '↻ Solicitou remarcação'
@@ -2107,7 +2107,7 @@ export function AgendaPage({
                 <tbody>
                   {state.data.filter((item) => item.attendance_status === 'agendado').map((item) => {
                     const contact = previsitContacts[item.appointment_id]
-                    const reminderMessage = `Olá, ${item.patient_name}! Lembramos sua consulta no CAPO em ${formatCAPOMessageDateTime(item.appointment_date)}, com ${item.professional_name}. Por favor, confirme se poderá comparecer. Caso precise cancelar ou remarcar, avise a equipe do CAPO.`
+                    const reminderMessage = `Olá, ${item.patient_name}! Lembramos sua consulta no CAPO em ${formatCAPOMessageDateTime(item.appointment_date)}, com ${item.professional_name}. Caso precise cancelar ou remarcar, avise a equipe do CAPO.`
                     return (
                       <tr key={item.appointment_id}>
                         <td>{formatDateTime(item.appointment_date)} — {item.professional_name}</td>
@@ -2116,7 +2116,7 @@ export function AgendaPage({
                           {contact
                             ? ({
                                 avisado: 'Avisado previamente',
-                                confirmou: 'Confirmou que comparecerá',
+                                confirmou: 'Avisado previamente',
                                 sem_resposta: 'Contato sem resposta',
                                 solicitou_cancelamento: 'Solicitou cancelamento',
                                 solicitou_remarcacao: 'Solicitou remarcação',
@@ -2127,7 +2127,7 @@ export function AgendaPage({
                           <td className="agenda-attendance-actions">
                             <PatientWhatsAppButton
                               patientId={item.patient_id}
-                              label="💬 Lembrar e pedir confirmação"
+                              label="💬 Lembrar consulta"
                               message={reminderMessage}
                             />
                             <select
@@ -2139,16 +2139,13 @@ export function AgendaPage({
                             >
                               <option value="">Resultado do contato</option>
                               <option value="avisado">Paciente avisado</option>
-                              <option value="confirmou">Confirmou que comparecerá</option>
-                              <option value="sem_resposta">Sem resposta</option>
                               <option value="solicitou_cancelamento">Solicitou cancelamento</option>
-                              <option value="solicitou_remarcacao">Solicitou remarcação</option>
                             </select>
                             <button
                               type="button"
                               disabled={!previsitOutcomes[item.appointment_id] || previsitBusyId !== null}
                               onClick={() => void registerPrevisitContact(item.appointment_id)}
-                            >✓ Registrar resposta</button>
+                            >✓ Registrar aviso</button>
                             <button type="button" onClick={() => preparePrevisitReschedule(item)}>↻ Remarcar</button>
                             <button type="button" onClick={() => prepareCancellation(item.appointment_id)}>✕ Cancelar</button>
                           </td>
