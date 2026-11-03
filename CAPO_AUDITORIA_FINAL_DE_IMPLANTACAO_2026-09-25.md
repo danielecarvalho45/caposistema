@@ -7557,3 +7557,27 @@ Não houve alteração de schema ou migration no Supabase.
 **Conferência de roteamento:** `src/app/App.tsx` seleciona a Home de Coordenação quando `primary_context.code='coordenador'`, ou a Home assistencial quando `primary_context.code='profissional'`; `resolveProfessionalScreenKind` identifica `clinico_geral` pela especialidade principal Clínica Geral. Banco confirmado, mas publicação/seleção da Home real ainda dependem de homologação operacional; preservar login atual e pedir novo acesso/reload de contexto após escolha para confirmar destino.
 
 **Estado:** **VÍNCULO DE PAPEL CORRIGIDO E CONFIRMADO NO BANCO / ROTULAGEM AJUSTADA NO MAIN / AGUARDANDO HOMOLOGAÇÃO VISUAL E DE ACESSO.**
+
+
+### 28.139 GESTOR/TITULAR — AUDITORIA DA AGENDA E REAGENDAMENTO ADMINISTRATIVO (03/11/2026)
+
+**Origem:** pente-fino solicitado pela Titular abrangendo interface, botões, integrações, manutenção e relatórios. Correção autorizada apenas após a ordem explícita `INICIAR`. Consultados a Especificação Estrutural da Interface (12/09), Matriz Funcional (12/09), Manual da Interface e os §§28.93, 28.136–28.138 deste Documento Mestre; examinados os componentes atuais no `main` e contratos no Supabase oficial.
+
+**Distinção canônica reafirmada:** a Home do Gestor/Titular executa providências administrativas na agenda geral (agendamento, cancelamento e remarcação/reagendamento); as ações de comparecimento **Confirmar/Falta** permanecem nos controles de Agenda das especialidades, sem obrigação de duplicá-las como botões de presença na Home gerencial. O Gestor preserva amplitude de contingência administrativa autorizada no módulo específico, sem substituir conduta profissional. Não confundir `Confirmar agendamento` com confirmação de presença.
+
+**Conferência antirregressão:**
+- `AgendaPage.tsx` já tem botão **Confirmar agendamento**, ação de cancelamento com justificativa, fluxo de **Aplicar remarcação**, leitura de horários e botões **Confirmar/Falta** no componente de Agenda; nenhum desses contratos foi duplicado.
+- `GestorDashboard.tsx` já enviava o cancelamento à rota `/agenda` com `home_cancel_appointment` e abertura de horário livre com `home_free_slot`.
+- Ausência física comprovada: acesso **Reagendar** diretamente ao lado do agendamento na Home do Gestor. A operação `rescheduleAppointment` e a leitura `getReschedulableAppointments` já existiam no módulo de Agenda e no backend; não foi criada nova RPC nem alterado registro real.
+
+**Alteração cirúrgica executada no GitHub:**
+1. `src/features/gestor/GestorDashboard.tsx`: adicionado link **Reagendar** somente quando há agendamento e paciente identificados; encaminha `appointmentId`, `patientId`, nome, profissional e data à rota canônica `/agenda`. Mantidos botões/links de Agendar e Cancelar existentes. Commit `935f23b5cbbdd4a8ff08cd464184678390caef6a`.
+2. `src/features/agenda/AgendaPage.tsx`: a origem `home_reschedule_appointment` abre o formulário administrativo existente com paciente, profissional e agendamento de origem, sem nova operação no banco. Na releitura de elegibilidade, a seleção é preservada somente se o backend retornar o mesmo agendamento, caso contrário fica vazia. Essa proteção também evita perda injustificada da seleção no fluxo preexistente de remarcação de faltosos. Commit `0c8a940ba8859612610f93e357ff7a6846e87d3e`.
+
+**Verificação:** os dois arquivos foram relidos no `main`; entrada e seleção condicionada presentes, e os controles antigos preservados. Não foi feita mutação de pacientes, agendas, status, permissões nem DDL do Supabase. A efetivação continua exclusivamente pela RPC já existente, dependente de validações do backend.
+
+**Limitação de homologação:** as execuções GitHub Actions `Validate production build` dos novos commits retornaram `failure` (última execução `41644193641`). A conexão não disponibilizou logs/etapas para determinar a causa. Não foi executado Vitest/Playwright nem comprovada publicação pelo Cloudflare ou clique autenticado na Home real. Não declarar PASS ou funcionalidade publicada sem validar a compilação, o deploy e a seleção/execução de reagendamento com registros de homologação autorizados.
+
+**Demais pontos do pente-fino — NÃO EXECUTADOS nesta intervenção:** avaliação de apresentação Dia/Semana/Mês e distribuição visual da Home; contexto acumulado na oferta de relatórios; exportação da auditoria; PDFs e chamadas reais de todas as ações de administração/TI. Para cada um, confrontar antes com a regra mais recente e com o código atual, executar testes seguros, e modificar somente divergência comprovada; não reaplicar correções já registradas nos §§28.136–28.138.
+
+**Estado:** **ACESSO DE REAGENDAMENTO IMPLEMENTADO E CONFERIDO NO MAIN / BUILD EM FALHA / PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES.**
