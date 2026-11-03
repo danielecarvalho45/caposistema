@@ -84,7 +84,7 @@ export function createTeamManagementService(): TeamManagementService {
     },
     createSpecialty: (name) => rpc.createSpecialty(name),
     setPrimaryContext: (userAccountId, roleCode) => rpc.setTeamMemberPrimaryContext(userAccountId, roleCode),
-    getCapabilities: (professionalId) => rpc.getEffectiveProfessionalCapabilities(professionalId),
+    getCapabilities: (professionalId) => rpc.getProfessionalCapabilitiesManagement(professionalId),
     getCapabilityCatalog: () => rpc.getCapabilityCatalog(),
     setCapability: (professionalId, capabilityCode, isEnabled) => rpc.setProfessionalCapability(professionalId, capabilityCode, isEnabled),
     removeCapability: (professionalId, capabilityCode) => rpc.removeProfessionalCapability(professionalId, capabilityCode),
@@ -250,7 +250,7 @@ export function GestorTeamPage({
   const effectiveCapabilityCodes = new Set(
     capabilities.flatMap((item) => {
       const code = text(item, 'capability_code', 'code')
-      return code ? [code] : []
+      return code && item.is_enabled !== false ? [code] : []
     }),
   )
   const selectedSpecialtyCapabilities = specialtyCapabilityRows.filter(
@@ -297,6 +297,7 @@ export function GestorTeamPage({
   useEffect(() => {
     const professionalId = selected?.professionalId
     if (!professionalId) return
+    setCapabilities([])
     let active = true
     void (async () => {
       const result = await service.getCapabilities(professionalId)
@@ -432,16 +433,13 @@ export function GestorTeamPage({
       return
     }
 
-    setCapabilities((current) => {
-      const withoutCode = current.filter((item) => text(item, 'capability_code', 'code') !== code)
-      return isEnabled ? [...withoutCode, { capability_code: code }] : withoutCode
-    })
-
     const refreshed = await service.getCapabilities(selected.professionalId)
-    if (refreshed.status === 'success') setCapabilities(capabilityRecords(refreshed.data))
-    setFeedback(refreshed.status === 'error'
-      ? 'Permissão gravada no banco; a conferência automática não pôde ser recarregada.'
-      : 'Permissão atualizada no banco.')
+    if (refreshed.status === 'success') {
+      setCapabilities(capabilityRecords(refreshed.data))
+      setFeedback('Permissão salva e conferida no banco.')
+    } else {
+      setFeedback('Permissão gravada no banco, mas a conferência falhou. Atualize o profissional para conferir.')
+    }
     setCapabilityBusyCode(null)
   }
 
