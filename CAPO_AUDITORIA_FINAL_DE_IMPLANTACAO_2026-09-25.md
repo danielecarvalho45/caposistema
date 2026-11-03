@@ -7540,3 +7540,20 @@ Não houve alteração de schema ou migration no Supabase.
 **Validação:** testes escritos mas execução/build e deploy Cloudflare não comprovados. O workflow GitHub `Validate production build` estava em `failure` na sessão; confrontar os logs do Cloudflare ou executar build independente antes de classificar como publicado. Teste operacional obrigatório com o profissional real afetado, sem mudar outra conta: reabrir e aguardar consulta, verificar marcação, salvar/desmarcar apenas quando autorizado, confirmar persistência. Persistência de outro profissional não prova correspondência do caso observado.
 
 **Estado:** **CORREÇÃO PONTUAL NO CÓDIGO / REGRESSÃO VISUAL AINDA AGUARDANDO BUILD E TESTE REAL; NÃO CONGELAR.**
+
+
+### 28.138 ILTON — CONTEXTO PRINCIPAL ENTRE CLÍNICO GERAL E COORDENADOR (03/11/2026)
+
+**Relato operacional:** no Gestor, a conta do profissional Ilton (Médico – Clínico Geral e Coordenador) só apresentava a opção Coordenador no seletor **Contexto principal**, impedindo escolher a Home Clínica como inicial.
+
+**Regras normativas:** Matriz Funcional de 12/09, seção 2, prevê conta única com papéis acumulados e contexto principal apenas como ambiente inicial prioritário; especialidade Clínica Geral define conteúdo assistencial quando o papel principal for `profissional`. Documento Mestre §§28.136/137 preservados.
+
+**Diagnóstico real no Supabase oficial:** profissional já está ativo, `is_professional=true`, com especialidade principal `Clínica Geral`, e conta vinculada ativa, mas `public.user_roles` possuía só `coordenador` com `is_primary=true`. O seletor filtrava corretamente os papéis existentes; portanto a causa era a falta do papel profissional na conta, e não uma falha de renderização.
+
+**Correção cirúrgica de dados, executada e relida:** inserido **somente o vínculo `profissional` com `is_primary=false`** em `public.user_roles`, por SQL condicionado à identidade específica, profissional ativo, vínculo ativo, especialidade principal Clínica Geral e contexto Coordenador existente; `roles_added=1`. A tabela possui gatilho de auditoria para INSERT de papéis. Releitura confirma exatamente os dois papéis (`coordenador` principal, `profissional` secundário). Nenhuma conta, senha, especialidade, paciente, outra permissão ou contexto principal foi alterado. A responsável continua podendo escolher explicitamente a Home inicial em Usuários e Contas.
+
+**Ajuste visual complementar no GitHub:** no seletor do contexto, o papel `profissional` passa a mostrar `Profissional — [função exercida]` quando cadastrada, permitindo identificar visualmente a Clínica Geral sem criar papel `clinico_geral` inexistente. A mesma regra vale para outros profissionais conforme sua função cadastrada; o valor enviado à RPC continua `profissional`. Arquivo `src/features/gestor/GestorTeamPage.tsx`; commit `21bd40f767b09e593e3960af7f218752789dc22f`.
+
+**Conferência de roteamento:** `src/app/App.tsx` seleciona a Home de Coordenação quando `primary_context.code='coordenador'`, ou a Home assistencial quando `primary_context.code='profissional'`; `resolveProfessionalScreenKind` identifica `clinico_geral` pela especialidade principal Clínica Geral. Banco confirmado, mas publicação/seleção da Home real ainda dependem de homologação operacional; preservar login atual e pedir novo acesso/reload de contexto após escolha para confirmar destino.
+
+**Estado:** **VÍNCULO DE PAPEL CORRIGIDO E CONFIRMADO NO BANCO / ROTULAGEM AJUSTADA NO MAIN / AGUARDANDO HOMOLOGAÇÃO VISUAL E DE ACESSO.**
