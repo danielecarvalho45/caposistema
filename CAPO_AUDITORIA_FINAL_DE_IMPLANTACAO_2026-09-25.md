@@ -7500,3 +7500,24 @@ Não houve alteração de schema ou migration no Supabase.
 **Regra preservada:** marcar como lida não conclui solicitação, nem a retira da Central de pendências; conclusão/cancelamento real só por módulo canônico e autorização do backend, com auditoria. A pendência antiga de sincronizar o estado da notificação com o encerramento real da entidade e a leitura por destinatário em notificações por papel permanece aberta (ver §28.132), sem apagamento/reclassificação de dados.
 
 **Limite de validação:** workflow `Validate production build` dos commits recentes está retornando `failure` (também nos commits anteriores de autenticação); logs não disponíveis nesta conexão. Não há comprovação de build nem publicação Cloudflare/homologação `manuteste`. Nenhuma mutação de dados reais Supabase foi feita. **Estado: CORREÇÕES NO MAIN; AGUARDANDO BUILD/PUBLICAÇÃO E TESTE OPERACIONAL.**
+
+
+### 28.136 GESTOR — CONTEXTO PRINCIPAL E PERSISTÊNCIA DAS PERMISSÕES INDIVIDUAIS (03/11/2026)
+
+**Relato e evidência visual:** na tela Usuários e Contas do Gestor, a seleção de Contexto principal aparece vazia; a caixa de Autorizar Encaminhamento Interprofissional é marcada, mas depois do retorno à página perde a marcação; rodapé acusa `permission denied for function get_effective_professional_capabilities`.
+
+**Fundamento normativo:** Matriz Funcional vigente de 12/09, seção inicial, estabelece conta única com papéis acumulados; **contexto principal é apenas o ambiente de entrada predominante, não altera papéis ou capacidades**. A autorização de encaminhamento interprofissional é individual, não automática pela especialidade. Preservar regras de administração, contratos do banco e telas de outros perfis.
+
+**Diagnóstico físico no Supabase oficial:** `public.get_effective_professional_capabilities(p_professional_id uuid)` é função interna `SECURITY DEFINER` com `EXECUTE` deliberadamente indisponível ao papel `authenticated`, portanto não deve ser exposta por `GRANT`. O banco já tem a RPC administrativa `public.get_professional_capabilities_management_for_interface(p_professional_id uuid)`, com `EXECUTE` para `authenticated` e guarda interna de papel Administrador e Termo. Essa RPC retorna JSON com `items`, inclusive `is_enabled`. `set_professional_capability_for_interface` já grava `true/false` com autorização adequada. `set_team_member_primary_context_for_interface` recebe **código do papel** e devolve `primary_context` confirmado. A tela anterior limpava o profissional selecionado após atualizar contexto e mantinha o select vazio pelo `defaultValue=""`.
+
+**Correção cirúrgica no GitHub, sem alteração no banco:**
+1. `src/lib/supabase/rpc.ts`: criada operação de serviço `getProfessionalCapabilitiesManagement`, encaminhando ao contrato administrativo físico canônico. Mantida a função auxiliar restrita intacta.
+2. `src/features/gestor/GestorTeamPage.tsx`: leitura das permissões do Gestor usa a RPC administrativa, interpreta apenas `is_enabled !== false` como habilitado e atualiza o checkbox após leitura confirmada. A interface exibe aviso explícito de que a permissão é gravada automaticamente ao marcar/desmarcar e feedback `Permissão salva e conferida no banco` após a consulta de verificação. Não chama `GRANT` indevido nem expõe permissão a outro perfil. Durante uma alteração, bloqueia cliques concorrentes; botão redundante Remover permissão individual foi retirado porque desmarcar já revoga a mesma capacidade.
+3. O seletor **Contexto principal** mostra o código atual de `primary_context` retornado pelo banco, envia à RPC o código de papel efetivamente atribuído e só atualiza a seleção depois de confirmar `primary_context.code` da resposta. Mantém o profissional aberto e mostra `Contexto principal salvo no banco`; informa que outras funções permanecem acessíveis.
+4. `tests/unit/gestor-team-page.test.tsx`: caso de permissão ativa/desativada retornada em `items`, com alteração confirmada pelo serviço; caso de contexto principal carregado e alterado sem limpar a seleção; ajuste do nome acessível do checkbox no teste legado.
+
+**Commits:** `c241265b693b78808214db1cf705c1ef5f84a023`, `064496aac93eae69ba08e157753ecb3bc5a22bf2`, `a3397ba0acb82c3cd5c47d90f9721b66694541f3`, `6bbce2731bac6cf0c81c76d1510dd7b5cd7639e2`, `c55253267c296865639baafd205a5ae1d0ddfc68`, `f70e21ac89b739e653795af292c85d2a442902a1`.
+
+**Conferência disponível:** funções, contratos, propriedades e permissões SQL lidos fisicamente, sem mutação de dados reais. Os testes de regressão foram escritos mas não executados localmente; o fluxo de build GitHub permanece em `failure` em commits recentes, impedindo classificação PASS. Não há comprovação de publicação no Cloudflare ou homologação com Gestor/manuteste. É necessário verificar no ambiente publicado se os checks persistem após recarregar e se o contexto principal continua selecionado.
+
+**Estado:** **CORRIGIDO NO CÓDIGO / AGUARDANDO BUILD, PUBLICAÇÃO E TESTE OPERACIONAL.**
