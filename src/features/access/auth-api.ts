@@ -163,6 +163,7 @@ export type AccessAuthApi = Readonly<{
   challengeAndVerifyMfa: (factorId: string, code: string) => Promise<void>
   verifyUsernamePassword: (username: string, password: string) => Promise<void>
   resetPasswordForEmail: (email: string, redirectTo: string) => Promise<void>
+  verifyRecoveryCode: (email: string, code: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
   signOut: (scope?: 'local' | 'global') => Promise<void>
   onAuthStateChange: (
@@ -243,6 +244,15 @@ export function createAccessAuthApi(
         redirectTo,
       })
       if (error) throw error
+    },
+    async verifyRecoveryCode(email, code) {
+      const { data, error } = await client.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'recovery',
+      })
+      if (error) throw error
+      if (!data.session) throw new AccessAuthError('O código não iniciou a sessão de recuperação.')
     },
     async updatePassword(password) {
       const { error } = await client.auth.updateUser({ password })
