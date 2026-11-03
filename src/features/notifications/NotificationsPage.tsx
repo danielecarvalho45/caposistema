@@ -60,8 +60,12 @@ export function NotificationsPage({
       action,
       '',
     )
-    if (result.status === 'error') {
-      setFeedback(result.error.message)
+    if (result.status !== 'success') {
+      setFeedback(
+        result.status === 'error'
+          ? result.error.message
+          : 'O banco não confirmou a atualização da notificação.',
+      )
       setBusyId(null)
       return
     }
