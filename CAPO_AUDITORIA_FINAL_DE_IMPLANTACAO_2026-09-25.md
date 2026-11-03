@@ -7630,3 +7630,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Próxima homologação real:** reparar/identificar falha de CI, conferir deploy e repetir **com o mesmo paciente teste** (sem novo cadastro) em Pacientes → Consultar → Oferta CAPO → Aceitou → Salvar aceite e abrir ciclo CAPO. Conferir a mensagem de retorno, exatamente um registro de aceite inicial e um ciclo `ativo` no Supabase; então agendar. Se o botão retornar erro, registrar a mensagem e a transação exata antes de alterar SQL. Não fabricar aceite pelo administrador para mascarar a falha.
 
 **Estado:** **AJUSTE DE INTERFACE REGISTRADO NO MAIN / BUILD FALHOU / GRAVAÇÃO REAL DO ACEITE E CICLO AINDA NÃO HOMOLOGADA.**
+
+
+### 28.143 ADMINISTRATIVO OPERACIONAL — WHATSAPP DE AGENDAMENTO COM MENSAGEM PRONTA (03/11/2026)
+
+**Origem e regra canônica:** a Titular informou que, após agendar consulta, a mensagem predefinida não aparecia na conversa do WhatsApp. Conferida a Matriz Funcional vigente, §18.5: após confirmação do agendamento pelo banco e entrada na agenda do profissional, o Administrativo aciona o WhatsApp Web do paciente **com comunicação de agendamento preparada**, revisa e **envia manualmente**. A regra §18.4 exige telefone do próprio paciente e veda envio automático.
+
+**Causa comprovada no GitHub:** `src/features/agenda/AgendaPage.tsx` já prepara mensagem com nome do paciente, data/hora e profissional e exibe botão `WhatsApp — confirmar agendamento` somente após sucesso da RPC de agendamento. Entretanto, o componente compartilhado `src/components/contact/PatientWhatsAppButton.tsx` abria `https://web.whatsapp.com/send?phone=...` **sem** parâmetro `text`; tentava apenas copiar a mensagem para a área de transferência. Assim o texto não aparecia pré-preenchido no WhatsApp Web. O defeito estava no componente de contato, não na gravação do agendamento.
+
+**Correção cirúrgica aplicada:** `PatientWhatsAppButton.tsx` agora constrói o endereço WhatsApp Web com `phone` do contato recuperado pela RPC segura e `text=encodeURIComponent(message.trim())` quando houver mensagem; mantém a abertura contextual, a ausência de envio automático e a informação ao operador de que deve conferir/enviar manualmente. Botões que não passam mensagem continuam abrindo apenas o contato, sem texto arbitrário. Removida a dependência de cópia para a área de transferência para essa operação. Commit `fdeccac324837f2d11249be292c1fb75bc046b75`. **Nenhum contrato SQL, paciente, agendamento ou permissão alterado.**
+
+**Teste de regressão escrito:** `tests/unit/patients-context-flow.test.tsx` exercita `PatientWhatsAppButton` com contato retornado pelo backend simulado; confirma telefone normalizado, mensagem Unicode recuperável via parâmetro `text`, destino WhatsApp Web e orientação de envio manual. Commit `8deee386a339f5fa99a7b6f1ef31698c647c9e25`.
+
+**Homologação pendente:** checar execução do teste, build GitHub Actions, atualização do Cloudflare Pages e clique autenticado após agendamento legítimo. A suíte/teste não foi executada nesta sessão e a série anterior de builds terminava em `failure`. Não afirmar publicação ou funcionamento operacional enquanto não houver comprovação. Não realizar envio de mensagens a pacientes nos testes.
+
+**Estado:** **CORREÇÃO DO PARÂMETRO DE MENSAGEM NO MAIN / TESTE ESCRITO / HOMOLOGAÇÃO REAL E BUILD PENDENTES.**
