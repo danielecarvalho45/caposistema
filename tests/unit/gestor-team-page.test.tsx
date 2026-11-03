@@ -217,7 +217,7 @@ describe('GestorTeamPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Profissional clínico/ }))
 
     const capability = await screen.findByRole('checkbox', {
-      name: 'encaminhamento_interprofissional',
+      name: 'Autorizar Encaminhamento Interprofissional',
     })
     expect(capability).not.toBeChecked()
 
@@ -232,4 +232,78 @@ describe('GestorTeamPage', () => {
     )
     await waitFor(() => expect(capability).toBeChecked())
   })
+  it('carrega permissões salvas no banco e só altera estado após confirmação', async () => {
+    const id = '67f1f8fb-cc4e-45be-a567-828186d56f76'
+    const getContext = vi.fn().mockResolvedValue({
+      status: 'success',
+      data: {
+        team: [{ professional_id: id, user_account_id: 'account-id', full_name: 'Profissional clínico',
+          username: 'profissional.clinico', function_title: 'Clínico Geral', status: 'ativo',
+          is_professional: true, roles: [{ code: 'profissional' }], specialties: [] }],
+        roles: [{ code: 'profissional', name: 'Profissional' }],
+        specialties: [],
+      },
+    })
+    const getCapabilities = vi.fn()
+      .mockResolvedValueOnce({ status: 'success', data: { items: [
+        { capability_code: 'encaminhamento_interprofissional', is_enabled: true },
+      ] } })
+      .mockResolvedValue({ status: 'success', data: { items: [
+        { capability_code: 'encaminhamento_interprofissional', is_enabled: false },
+      ] } })
+    const success = async () => ({ status: 'success' as const, data: { success: true } })
+    const setCapability = vi.fn(success)
+    const service: TeamManagementService = {
+      getContext, create: success, update: success, setActive: success,
+      setPrimaryContext: success, getCapabilities, setCapability,
+      removeCapability: success, setSpecialtyCapability: success,
+      getCapabilityCatalog: async () => ({ status: 'success', data: {
+        capabilities: [{ capability_code: 'encaminhamento_interprofissional', individual_assignable: true }],
+        specialty_capabilities: [],
+      } }),
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional clínico/ }))
+    const checkbox = await screen.findByRole('checkbox', { name: 'Autorizar Encaminhamento Interprofissional' })
+    await waitFor(() => expect(checkbox).toBeChecked())
+    fireEvent.click(checkbox)
+    await waitFor(() => expect(setCapability).toHaveBeenCalledWith(id, 'encaminhamento_interprofissional', false))
+    await waitFor(() => expect(checkbox).not.toBeChecked())
+    expect(screen.getByText('Permissão salva e conferida no banco.')).toBeInTheDocument()
+  })
+
+  it('mostra o contexto principal existente e salva o novo código de papel sem perder a seleção', async () => {
+    const getContext = vi.fn().mockResolvedValue({
+      status: 'success',
+      data: {
+        team: [{ professional_id: 'professional-id', user_account_id: 'account-id', full_name: 'Profissional duplo',
+          username: 'profissional.duplo', function_title: 'Administração', status: 'ativo',
+          is_professional: false, roles: [{ code: 'profissional' }, { code: 'administrativo_operacional' }],
+          primary_context: { code: 'profissional', name: 'Profissional' }, specialties: [] }],
+        roles: [{ code: 'profissional', name: 'Profissional' },
+          { code: 'administrativo_operacional', name: 'Administrativo Operacional' }],
+        specialties: [],
+      },
+    })
+    const setPrimaryContext = vi.fn().mockResolvedValue({ status: 'success', data: {
+      success: true, primary_context: { code: 'administrativo_operacional', name: 'Administrativo Operacional' },
+    } })
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext, create: success, update: success, setActive: success,
+      setPrimaryContext, getCapabilities: success, setCapability: success,
+      removeCapability: success, setSpecialtyCapability: success,
+      getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional duplo/ }))
+    const select = screen.getByLabelText('Contexto principal')
+    expect(select).toHaveValue('profissional')
+    fireEvent.change(select, { target: { value: 'administrativo_operacional' } })
+    await waitFor(() => expect(setPrimaryContext).toHaveBeenCalledWith('account-id', 'administrativo_operacional'))
+    await waitFor(() => expect(select).toHaveValue('administrativo_operacional'))
+    expect(screen.getByText('Contexto principal salvo no banco.')).toBeInTheDocument()
+    expect(screen.getByText('Profissional duplo')).toBeInTheDocument()
+  })
+
 })
