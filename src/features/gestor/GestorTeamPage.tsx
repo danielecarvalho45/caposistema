@@ -222,6 +222,7 @@ export function GestorTeamPage({
   const [newSpecialty, setNewSpecialty] = useState('')
   const [activeReason, setActiveReason] = useState('')
   const [capabilities, setCapabilities] = useState<readonly RecordValue[]>([])
+  const [capabilitiesStatus, setCapabilitiesStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [capabilityCatalog, setCapabilityCatalog] = useState<unknown>(null)
   const [specialtyForCapability, setSpecialtyForCapability] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -296,20 +297,33 @@ export function GestorTeamPage({
 
   useEffect(() => {
     const professionalId = selected?.professionalId
-    if (!professionalId) return
     setCapabilities([])
+    if (!professionalId) {
+      setCapabilitiesStatus('idle')
+      return
+    }
+    setCapabilitiesStatus('loading')
     let active = true
-    void (async () => {
-      const result = await service.getCapabilities(professionalId)
+    void service.getCapabilities(professionalId).then((result) => {
       if (!active) return
-      if (result.status === 'success') setCapabilities(capabilityRecords(result.data))
-      else if (result.status === 'error') setFeedback(result.error.message)
-    })()
+      if (result.status === 'success') {
+        setCapabilities(capabilityRecords(result.data))
+        setCapabilitiesStatus('ready')
+      } else {
+        setCapabilitiesStatus('error')
+        setFeedback(errorMessage(result) ?? 'O banco não retornou as permissões do profissional.')
+      }
+    }).catch(() => {
+      if (!active) return
+      setCapabilitiesStatus('error')
+      setFeedback('Não foi possível consultar as permissões deste profissional.')
+    })
     return () => { active = false }
   }, [selected?.professionalId, service])
 
   function chooseMember(member: TeamMember) {
     setCapabilities([])
+    setCapabilitiesStatus('loading')
     setSelected(member)
     setProfile(memberInput(member))
     setActiveReason(text(member.profile, 'deactivation_reason') ?? '')
@@ -460,10 +474,18 @@ export function GestorTeamPage({
 
     const refreshed = await service.getCapabilities(selected.professionalId)
     if (refreshed.status === 'success') {
-      setCapabilities(capabilityRecords(refreshed.data))
-      setFeedback('Permissão salva e conferida no banco.')
+      const confirmed = capabilityRecords(refreshed.data)
+      setCapabilities(confirmed)
+      setCapabilitiesStatus('ready')
+      const persisted = confirmed.some((item) =>
+        text(item, 'capability_code', 'code') === code && item.is_enabled !== false,
+      )
+      setFeedback(persisted === isEnabled
+        ? 'Permissão salva e conferida no banco.'
+        : 'A leitura do banco não corresponde à alteração solicitada. A permissão exibida é o estado real retornado.')
     } else {
-      setFeedback('Permissão gravada no banco, mas a conferência falhou. Atualize o profissional para conferir.')
+      setCapabilitiesStatus('error')
+      setFeedback('A alteração foi enviada, mas a conferência falhou. Não é possível confirmar a permissão.')
     }
     setCapabilityBusyCode(null)
   }
@@ -568,7 +590,7 @@ export function GestorTeamPage({
       )}
     </div>
 
-    {mode === 'administracao' && selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3><p>Define a área inicial da conta; as demais funções autorizadas continuam acessíveis.</p>{selected.userAccountId && <select aria-label="Contexto principal" value={text(asRecord(selected.profile.primary_context) ?? {}, 'code') ?? ''} disabled={submitting} onChange={(event) => { if (event.target.value) void changePrimaryContext(event.target.value) }}><option value="">Definir contexto principal</option>{roles.filter((role) => profile.roleCodes.includes(role.id)).map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3><p>As permissões são salvas automaticamente ao marcar ou desmarcar. Aguarde a confirmação abaixo antes de sair.</p><p>As capacidades são lidas do catálogo atual do banco. Nenhuma especialidade concede automaticamente Encaminhamento Interprofissional.</p>{capabilityOptions.filter((item) => item.individualAssignable).length === 0 ? <p>Nenhuma capacidade individual atribuível foi retornada pelo banco.</p> : <ul className="gestor-capability-list">{capabilityOptions.filter((item) => item.individualAssignable).map((item) => <li key={item.code}><label className="gestor-check"><input type="checkbox" checked={effectiveCapabilityCodes.has(item.code)} disabled={capabilityBusyCode !== null} onChange={(event) => void mutateProfessionalCapability(item.code, event.target.checked)} />{item.code === 'encaminhamento_interprofissional' ? 'Autorizar Encaminhamento Interprofissional' : item.code}</label></li>)}</ul>}<p>Capacidades próprias de especialidade são administradas somente nos vínculos que já existem no catálogo canônico.</p><label>Especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && (selectedSpecialtyCapabilities.length === 0 ? <p>Nenhuma capacidade específica cadastrada para esta especialidade.</p> : <ul className="gestor-capability-list">{selectedSpecialtyCapabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); const isEnabled = capability.is_enabled === true; if (!code) return null; if (code === 'encaminhamento_interprofissional') return <li key={code}><span>Encaminhamento Interprofissional</span><small>Permissão individual. Use o controle “Autorizar Encaminhamento Interprofissional” acima.</small></li>; return <li key={code}><label className="gestor-check"><input type="checkbox" checked={isEnabled} onChange={(event) => void mutateSpecialtyCapability(specialtyForCapability, code, event.target.checked)} />{code}</label></li> })}</ul>)}</article></section>}
+    {mode === 'administracao' && selected && <section className="gestor-team-actions" aria-label="Ações do profissional selecionado"><article className="gestor-panel"><h3>Contexto principal</h3><p>Define a área inicial da conta; as demais funções autorizadas continuam acessíveis.</p>{selected.userAccountId && <select aria-label="Contexto principal" value={text(asRecord(selected.profile.primary_context) ?? {}, 'code') ?? ''} disabled={submitting} onChange={(event) => { if (event.target.value) void changePrimaryContext(event.target.value) }}><option value="">Definir contexto principal</option>{roles.filter((role) => profile.roleCodes.includes(role.id)).map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>}</article><article className="gestor-panel"><h3>Permissões do profissional</h3><p>As permissões são salvas automaticamente ao marcar ou desmarcar. Aguarde a confirmação abaixo antes de sair.</p>{selected.userAccountId && capabilitiesStatus === 'loading' && <p role="status">Consultando permissões salvas no banco…</p>}{selected.userAccountId && capabilitiesStatus === 'error' && <p role="alert">Não foi possível confirmar as permissões. Saia e selecione novamente o profissional para consultar o banco.</p>}<p>As capacidades são lidas do catálogo atual do banco. Nenhuma especialidade concede automaticamente Encaminhamento Interprofissional.</p>{capabilityOptions.filter((item) => item.individualAssignable).length === 0 ? <p>Nenhuma capacidade individual atribuível foi retornada pelo banco.</p> : <ul className="gestor-capability-list">{capabilityOptions.filter((item) => item.individualAssignable).map((item) => <li key={item.code}><label className="gestor-check"><input type="checkbox" checked={effectiveCapabilityCodes.has(item.code)} disabled={capabilitiesStatus !== 'ready' || capabilityBusyCode !== null} onChange={(event) => void mutateProfessionalCapability(item.code, event.target.checked)} />{item.code === 'encaminhamento_interprofissional' ? 'Autorizar Encaminhamento Interprofissional' : item.code}</label></li>)}</ul>}<p>Capacidades próprias de especialidade são administradas somente nos vínculos que já existem no catálogo canônico.</p><label>Especialidade<select value={specialtyForCapability} onChange={(event) => setSpecialtyForCapability(event.target.value)}><option value="">Selecione especialidade</option>{specialties.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label>{specialtyForCapability && (selectedSpecialtyCapabilities.length === 0 ? <p>Nenhuma capacidade específica cadastrada para esta especialidade.</p> : <ul className="gestor-capability-list">{selectedSpecialtyCapabilities.map((capability) => { const code = text(capability, 'capability_code', 'code'); const isEnabled = capability.is_enabled === true; if (!code) return null; if (code === 'encaminhamento_interprofissional') return <li key={code}><span>Encaminhamento Interprofissional</span><small>Permissão individual. Use o controle “Autorizar Encaminhamento Interprofissional” acima.</small></li>; return <li key={code}><label className="gestor-check"><input type="checkbox" checked={isEnabled} onChange={(event) => void mutateSpecialtyCapability(specialtyForCapability, code, event.target.checked)} />{code}</label></li> })}</ul>)}</article></section>}
     {feedback && <p className="gestor-feedback" role="status">{feedback}</p>}
   </section>
 }
