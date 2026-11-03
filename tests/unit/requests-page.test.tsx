@@ -190,6 +190,30 @@ describe('RequestsPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('ainda não apareceu na lista retornada pelo banco')
   })
 
+  it('não oferece ações operacionais ao coordenador que a RPC proíbe', async () => {
+    const user = userEvent.setup()
+    const coordinator: AccessContext = {
+      ...professionalContext,
+      professional_id: null,
+      roles: [{ code: 'coordenador', name: 'Coordenador' }],
+      primary_context: { ...professionalContext.primary_context, code: 'coordenador', name: 'Coordenação' },
+    }
+    const request = {
+      request_id: 'request-id', patient_id: null, patient_name: null,
+      patient_number: null, cms: null, requesting_professional_id: 'another-professional',
+      requesting_professional_name: 'Profissional autorizado',
+      subject: 'Solicitação operacional', description: 'Pedido de providência', status: 'pending',
+      administrative_response: null, counter_reference: null,
+      created_at: '2026-10-01T12:00:00Z', updated_at: '2026-10-01T12:00:00Z',
+      completed_at: null, cancelled_at: null, total_count: 1,
+    }
+    const service = requestService({ status: 'success', data: [request] })
+    renderWithRouter(<RequestsPage accessContext={coordinator} service={service} />)
+    await user.click(await screen.findByText('Solicitação operacional'))
+    expect(screen.queryByRole('button', { name: 'Concluir' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Aceitar / iniciar' })).not.toBeInTheDocument()
+  })
+
   it('encaminha Recusar ao backend como refuse e só confirma após recarga', async () => {
     const user = userEvent.setup()
     const gestorContext: AccessContext = {
@@ -225,7 +249,7 @@ describe('RequestsPage', () => {
     renderWithRouter(<RequestsPage accessContext={gestorContext} service={service} />)
     await screen.findByText('Bloqueio de agenda — Afastamento aprovado')
     await user.click(screen.getByText('Bloqueio de agenda — Afastamento aprovado'))
-    await user.type(screen.getByLabelText('Providência / justificativa'), 'Não autorizado pelo Titular.')
+    await user.type(screen.getByLabelText('Providência, feedback ou justificativa'), 'Não autorizado pelo Titular.')
     await user.click(screen.getByRole('button', { name: 'Recusar' }))
 
     expect(service.updateAdministrativeRequest).toHaveBeenCalledWith(
