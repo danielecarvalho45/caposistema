@@ -214,5 +214,6 @@ it('permite registrar a Oferta CAPO de paciente já cadastrado sem novo cadastro
     patientId: 'patient-existing', acceptedService: true, closeFlow: true,
   }))
   expect(rpc.createPatient).not.toHaveBeenCalled()
-  expect(await screen.findByText('Desfecho da Oferta CAPO registrado no banco.')).toBeVisible()
+  expect(await screen.findByText('Oferta CAPO aceita e ciclo de acompanhamento confirmado pelo banco. Agora é possível agendar.')).toBeVisible()
+  expect(screen.getByRole('link', { name: 'Agendar consulta — ciclo CAPO confirmado' })).toHaveAttribute('href', '/agenda')
 })
