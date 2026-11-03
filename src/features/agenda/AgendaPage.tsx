@@ -2091,7 +2091,7 @@ export function AgendaPage({
           </strong>
         </div>
 
-        {state.status === 'success' && state.data.some((item) => item.attendance_status === 'agendado') && (
+        {!isProfessional && state.status === 'success' && state.data.some((item) => item.attendance_status === 'agendado') && (
           <section className="agenda-schedule-form" aria-label="Avisos prévios das consultas">
             <h3>Avisos prévios das consultas</h3>
             {previsitLoadError && <p role="alert">{previsitLoadError}</p>}
@@ -2262,7 +2262,7 @@ export function AgendaPage({
                 onAttendance={canRegisterAttendance ? updateAttendance : undefined}
                 onCancel={prepareCancellation}
                 busyAppointmentId={busyAppointmentId}
-              previsitContacts={previsitContacts}
+                previsitContacts={previsitContacts}
               />
             )}
         </div>
