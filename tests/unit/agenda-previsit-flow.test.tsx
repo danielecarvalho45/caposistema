@@ -7,6 +7,7 @@ import type { AccessContext } from '../../src/types/access'
 
 const rpc = vi.hoisted(() => ({
   getSchedulingCatalog: vi.fn(),
+  getAgendaScheduleGrid: vi.fn(),
   getAppointmentPrevisitContacts: vi.fn(),
   registerAppointmentPrevisitContact: vi.fn(),
   getPatientContact: vi.fn(),
@@ -81,6 +82,7 @@ it('registra confirmação prévia sem marcar comparecimento nem iniciar atendim
 })
 
 it('informa ao profissional a confirmação administrativa como indicador distinto da presença', async () => {
+  rpc.getAgendaScheduleGrid.mockResolvedValue({ status: 'success', data: [] })
   rpc.getAppointmentPrevisitContacts.mockResolvedValue({
     status: 'success',
     data: { items: [{ appointment_id: 'appointment-1', result: 'confirmou', recorded_at: '2026-11-03T14:00:00Z' }] },
