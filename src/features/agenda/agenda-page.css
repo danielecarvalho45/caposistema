@@ -1246,6 +1246,20 @@
   grid-row: 2;
 }
 
+.agenda-schedule-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  line-height: 1.4;
+}
+
+.agenda-previsit-indicator {
+  color: #176b53;
+  font-weight: 700;
+  white-space: normal;
+}
+
 .agenda-schedule-slot.is-agendado > .agenda-cancel-button {
   grid-column: 3;
   grid-row: 2;
