@@ -85,6 +85,7 @@ function createAuthApi(overrides: Partial<AccessAuthApi> = {}): AccessAuthApi {
     challengeAndVerifyMfa: vi.fn().mockResolvedValue(undefined),
     verifyUsernamePassword: vi.fn().mockResolvedValue(undefined),
     resetPasswordForEmail: vi.fn().mockResolvedValue(undefined),
+    verifyRecoveryCode: vi.fn().mockResolvedValue(undefined),
     updatePassword: vi.fn().mockResolvedValue(undefined),
     signOut: vi.fn().mockResolvedValue(undefined),
     onAuthStateChange: vi.fn().mockReturnValue(() => undefined),
@@ -246,13 +247,34 @@ describe('entrada única CAPO', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar instruções' }))
 
     expect(
-      await screen.findByRole('heading', { name: '✉ Instruções enviadas' }),
+      await screen.findByRole('heading', { name: 'Confirmar código de recuperação' }),
     ).toBeVisible()
     expect(screen.getByText(/Solicitação 1 de 2/)).toBeVisible()
     expect(authApi.resetPasswordForEmail).toHaveBeenCalledWith(
       'conta@capo.org',
       expect.stringContaining('capo_recovery=1'),
     )
+  })
+
+  it('valida o codigo de recuperacao antes de permitir definir nova senha', async () => {
+    const authApi = createAuthApi({
+      getSession: vi.fn().mockResolvedValue(session),
+    })
+    // O teste se inicia sem sessão; a confirmação do código criará a sessão de recuperação.
+    vi.mocked(authApi.getSession).mockResolvedValueOnce(null)
+    renderFlow(authApi)
+    const user = userEvent.setup()
+
+    await screen.findByRole('heading', { name: 'Bem-vindo ao Sistema CAPO' })
+    await user.click(screen.getByRole('button', { name: 'Esqueceu sua senha?' }))
+    await user.type(screen.getByLabelText('E-mail cadastrado'), 'conta@capo.org')
+    await user.click(screen.getByRole('button', { name: 'Enviar instruções' }))
+    await screen.findByRole('heading', { name: 'Confirmar código de recuperação' })
+    await user.type(screen.getByLabelText('Código recebido por e-mail'), '123456')
+    await user.click(screen.getByRole('button', { name: 'Confirmar código' }))
+    expect(await screen.findByRole('heading', { name: 'Definir nova senha' })).toBeVisible()
+    expect(authApi.verifyRecoveryCode).toHaveBeenCalledWith('conta@capo.org', '123456')
+    expect(authApi.updatePassword).not.toHaveBeenCalled()
   })
 
   it('exige e registra o termo vigente antes do contexto', async () => {
