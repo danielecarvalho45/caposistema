@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -515,6 +515,11 @@ it('confirma pela grade e abre o fluxo do paciente mesmo quando a lista paralela
       attendance_status: 'confirmado',
     }),
   )
+  expect(await screen.findByText('✓ Confirmado')).toBeVisible()
+  await waitFor(() => {
+    expect(screen.queryByRole('button', { name: 'Confirmar consulta de Paciente teste visível' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Marcar falta de Paciente teste visível' })).not.toBeInTheDocument()
+  })
 })
 
 it('mantém Confirmar e Falta junto ao paciente também fora da Home', async () => {
@@ -607,4 +612,36 @@ it('não oferece Confirmar ou Falta para horário ocupado por paciente fora do c
   expect(await screen.findByText('Horário ocupado')).toBeVisible()
   expect(screen.queryByRole('button', { name: /Confirmar consulta/ })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Marcar falta/ })).not.toBeInTheDocument()
+})
+
+it('mantém Falta em vermelho e não reabre os botões após registrar ausência na grade profissional', async () => {
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({ status: 'success', data: [{
+    professional_id: 'professional-id', professional_name: 'Profissional CAPO',
+    slot_date: '2026-09-30', weekday: 3,
+    slot_start: '2026-09-30T13:30:00.000Z', slot_end: '2026-09-30T14:00:00.000Z',
+    duration_minutes: 30, slot_status: 'agendado', appointment_id: 'appointment-falta',
+    patient_id: 'patient-falta', patient_name: 'Paciente em falta',
+    appointment_type: 'retorno', block_type: null,
+  }] })
+  rpc.updateAppointmentAttendance.mockResolvedValue({ status: 'success', data: {
+    appointment_id: 'appointment-falta', attendance_status: 'faltou',
+  } })
+  const context = {
+    roles: [{ code: 'profissional', name: 'Profissional' }],
+    primary_context: { code: 'profissional', name: 'Profissional' },
+    professional_id: 'professional-id',
+  } as unknown as AccessContext
+  const onConfirmed = vi.fn()
+  const user = userEvent.setup()
+  render(<MemoryRouter><AgendaPage accessContext={context}
+    loadAgenda={async () => ({ status: 'empty' })} onConfirmed={onConfirmed} embeddedHome /></MemoryRouter>)
+  await user.click(await screen.findByRole('button', { name: 'Marcar falta de Paciente em falta' }))
+  expect(rpc.updateAppointmentAttendance).toHaveBeenCalledWith({
+    appointmentId: 'appointment-falta', action: 'faltou', notes: '', reason: '',
+  })
+  expect(await screen.findByText('✕ Falta')).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Confirmar consulta de Paciente em falta' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Marcar falta de Paciente em falta' })).not.toBeInTheDocument()
+  expect(onConfirmed).not.toHaveBeenCalled()
 })
