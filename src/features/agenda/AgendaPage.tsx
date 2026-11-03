@@ -90,6 +90,12 @@ function previsitIndicator(result?: string) {
   }
 }
 
+function attendanceMarker(status?: string) {
+  if (status === 'confirmado') return <span className="agenda-attendance-state is-confirmed">✓ Confirmado</span>
+  if (status === 'faltou') return <span className="agenda-attendance-state is-absent">✕ Falta</span>
+  return null
+}
+
 function formatCAPOMessageDateTime(value: string) {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('pt-BR', {
@@ -205,10 +211,10 @@ function AppointmentTable({
                   ? formatDateTime(appointment.appointment_date)
                   : formatTimeRange(appointment)}
               </td>
-              <td data-label="Paciente">{appointment.patient_name}{previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
+              <td data-label="Paciente">{appointment.patient_name}{attendanceMarker(appointment.attendance_status)}{previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}{patientSpecialties?.[appointment.patient_id] && <small className="agenda-patient-specialties">{specialtyText(patientSpecialties[appointment.patient_id])}</small>}</td>
               {(onAttendance || onCancel) && (
                 <td data-label="Ações" className="agenda-attendance-actions">
-                  {onAttendance && (
+                  {onAttendance && appointment.attendance_status === 'agendado' && (
                     <>
                       <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}><span aria-hidden="true">✓</span> Confirmar</button>
                       <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}><span aria-hidden="true">✕</span> Falta</button>
@@ -275,6 +281,7 @@ function HomeScheduleGrid({
   busyAppointmentId,
   patientSpecialties,
   previsitContacts,
+  attendanceOverrides,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
   startDate: string
@@ -288,6 +295,7 @@ function HomeScheduleGrid({
   busyAppointmentId?: string | null
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
   previsitContacts?: Readonly<Record<string, { result: string }>>
+  attendanceOverrides?: Readonly<Record<string, string>>
 }>) {
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
@@ -333,14 +341,15 @@ function HomeScheduleGrid({
                   : slot.slot_status === 'agendado'
                     ? 'Horário ocupado'
                     : '—')
+              const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? 'agendado'
               const statusLabel =
                 slot.slot_status === 'livre'
                   ? 'Livre'
                   : slot.slot_status === 'bloqueado'
                     ? 'Bloqueado'
-                    : appointment?.attendance_status === 'confirmado'
+                    : attendanceStatus === 'confirmado'
                       ? 'Confirmado'
-                      : appointment?.attendance_status === 'faltou'
+                      : attendanceStatus === 'faltou'
                         ? 'Falta'
                         : 'Agendado'
               const typeLabel =
@@ -353,12 +362,13 @@ function HomeScheduleGrid({
                   <td data-label="Paciente">
                     <div className="agenda-home-patient-line">
                       <strong>{patientName}</strong>
+                      {attendanceMarker(attendanceStatus)}
                       {slot.appointment_id && previsitContacts?.[slot.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[slot.appointment_id].result)}</small>}
                       {slot.slot_status === 'agendado' &&
                         patientIsVisible &&
                         slot.appointment_id &&
                         onAttendance &&
-                        (!appointment || appointment.attendance_status === 'agendado') && (
+                        attendanceStatus === 'agendado' && (
                           <span className="agenda-home-patient-actions">
                             <button
                               type="button"
@@ -447,6 +457,7 @@ function HomeScheduleGrid({
                   const visiblePatientId = appointment?.patient_id ?? slot.patient_id
                   const visiblePatientName = appointment?.patient_name ?? slot.patient_name
                   const patientIsVisible = Boolean(visiblePatientId && visiblePatientName)
+                  const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? 'agendado'
                   const patientName =
                     visiblePatientName ??
                     (appointment?.patient_number
@@ -474,9 +485,10 @@ function HomeScheduleGrid({
                           Agendar
                         </button>
                       )}
-                      {slot.slot_status === 'agendado' && (slot.appointment_type || (slot.appointment_id && previsitContacts?.[slot.appointment_id])) && (
+                      {slot.slot_status === 'agendado' && (slot.appointment_type || attendanceStatus !== 'agendado' || (slot.appointment_id && previsitContacts?.[slot.appointment_id])) && (
                         <small className="agenda-schedule-details">
                           {slot.appointment_type && <span>{slot.appointment_type}</span>}
+                          {attendanceMarker(attendanceStatus)}
                           {slot.appointment_id && previsitContacts?.[slot.appointment_id] && (
                             <span className="agenda-previsit-indicator" title="Aviso administrativo prévio; não representa presença">
                               {previsitIndicator(previsitContacts[slot.appointment_id].result)}
@@ -491,7 +503,7 @@ function HomeScheduleGrid({
                         patientIsVisible &&
                         slot.appointment_id &&
                         onAttendance &&
-                        (!appointment || appointment.attendance_status === 'agendado') && (
+                        attendanceStatus === 'agendado' && (
                         <div className="agenda-week-home-actions">
                           <button
                             type="button"
@@ -602,7 +614,8 @@ function AgendaResults({
                         <span>{appointment.patient_name}</span>
                         {previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}
                         <small>{appointment.appointment_type}</small>
-                        {onAttendance && (
+                        {attendanceMarker(appointment.attendance_status)}
+                        {onAttendance && appointment.attendance_status === 'agendado' && (
                           <div className="agenda-week-home-actions">
                             <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')} aria-label={`Confirmar consulta de ${appointment.patient_name}`}>Confirmar</button>
                             <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')} aria-label={`Marcar falta de ${appointment.patient_name}`}>Falta</button>
@@ -675,6 +688,7 @@ function AgendaResults({
               >
                 <strong>{formatTimeRange(appointment)}</strong>
                 <span>{appointment.patient_name}</span>
+                {attendanceMarker(appointment.attendance_status)}
                 {previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}
                 {patientSpecialties?.[appointment.patient_id] && <small>{specialtyText(patientSpecialties[appointment.patient_id])}</small>}
                 <small>
@@ -790,6 +804,7 @@ export function AgendaPage({
   const [scheduleGrid, setScheduleGrid] =
     useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
+  const [attendanceOverrides, setAttendanceOverrides] = useState<Readonly<Record<string, string>>>({})
   const [previsitContacts, setPrevisitContacts] = useState<Readonly<Record<string, { result: string; recorded_at: string }>>>({})
   const [previsitFeedback, setPrevisitFeedback] = useState<string | null>(null)
   const [previsitBusyId, setPrevisitBusyId] = useState<string | null>(null)
@@ -822,21 +837,26 @@ export function AgendaPage({
   const professionalId = isProfessional
     ? accessContext.professional_id
     : selectedProfessionalId || null
+  const visibleAppointments = state.status === 'success'
+    ? state.data.map((appointment) => attendanceOverrides[appointment.appointment_id]
+      ? { ...appointment, attendance_status: attendanceOverrides[appointment.appointment_id] }
+      : appointment)
+    : []
   const periodScheduled =
     state.status === 'success'
-      ? state.data.filter((appointment) => appointment.attendance_status === 'agendado').length
+      ? visibleAppointments.filter((appointment) => appointment.attendance_status === 'agendado').length
       : state.status === 'empty'
         ? 0
         : null
   const periodConfirmed =
     state.status === 'success'
-      ? state.data.filter((appointment) => appointment.attendance_status === 'confirmado').length
+      ? visibleAppointments.filter((appointment) => appointment.attendance_status === 'confirmado').length
       : state.status === 'empty'
         ? 0
         : null
   const periodNoShows =
     state.status === 'success'
-      ? state.data.filter((appointment) => appointment.attendance_status === 'faltou').length
+      ? visibleAppointments.filter((appointment) => appointment.attendance_status === 'faltou').length
       : state.status === 'empty'
         ? 0
         : null
@@ -1279,6 +1299,7 @@ export function AgendaPage({
       reason: attendanceReason.trim(),
     })
     if (result.status === 'success') {
+      setAttendanceOverrides((current) => ({ ...current, [appointmentId]: action }))
       setAttendanceNotes('')
       setAttendanceReason('')
       const reloaded = await load()
@@ -2224,7 +2245,8 @@ export function AgendaPage({
               startDate={startDate}
               endDate={endDate}
               view={view}
-              appointments={state.status === 'success' ? state.data : []}
+              appointments={visibleAppointments}
+              attendanceOverrides={attendanceOverrides}
               onAttendance={canRegisterAttendance ? updateAttendance : undefined}
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
               onCancel={prepareCancellation}
@@ -2239,7 +2261,6 @@ export function AgendaPage({
               busyAppointmentId={busyAppointmentId}
               patientSpecialties={patientSpecialties}
               previsitContacts={previsitContacts}
-              embeddedHome={embeddedHome}
             />
           )}
 
@@ -2260,7 +2281,7 @@ export function AgendaPage({
           {!professionalId && (state.status === 'empty' || state.status === 'success') &&
             (view !== 'day' || (state.status === 'success' && state.data.length > 0)) && (
               <AgendaResults
-                appointments={state.status === 'success' ? state.data : []}
+                appointments={visibleAppointments}
                 startDate={startDate}
                 endDate={endDate}
                 view={view}
