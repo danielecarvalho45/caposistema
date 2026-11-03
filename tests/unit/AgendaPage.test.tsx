@@ -200,7 +200,7 @@ describe('AgendaPage', () => {
     )
   })
 
-  it('usa a visão geral de agenda para o Gestor e expõe Confirmar/Falta sem contexto assistencial', async () => {
+  it('usa a visão geral de agenda para o Gestor sem executar presença ou falta profissional', async () => {
     const loadAgenda = vi.fn().mockResolvedValue({ status: 'success', data: [appointment] })
     const gestorContext: AccessContext = {
       ...accessContext,
@@ -236,8 +236,8 @@ describe('AgendaPage', () => {
     expect(screen.getByRole('tab', { name: 'Dia' })).toBeVisible()
     expect(screen.getByRole('tab', { name: 'Semana' })).toBeVisible()
     expect(screen.getByRole('tab', { name: 'Mês' })).toBeVisible()
-    expect(screen.getByRole('button', { name: /Confirmar/ })).toBeVisible()
-    expect(screen.getByRole('button', { name: /Falta/ })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /Confirmar consulta/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Marcar falta/ })).not.toBeInTheDocument()
     await waitFor(() =>
       expect(loadAgenda).toHaveBeenLastCalledWith(
         '2026-09-17',
