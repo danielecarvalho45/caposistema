@@ -7684,3 +7684,16 @@ Não houve alteração de schema ou migration no Supabase.
 **Commits:** interface `179b75c90fd9ce3c6c1c4262f95f3cfccb0440f5`; regressão ajustada `4fddf4cf61533f8c1c0dcd3fcff950fdd149adaf` em `tests/unit/agenda-previsit-flow.test.tsx`, verificando apenas as duas opções e a mensagem sem pedido de confirmação.
 
 **Estado:** **CORREÇÃO REGISTRADA NO MAIN / TESTE ALTERADO, NÃO EXECUTADO / BUILD, PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES.**
+
+
+### 28.146 AVISO PRÉVIO — RPCS NÃO CADASTRADAS NA CAMADA CAPO (03/11/2026)
+
+**Evidência operacional:** captura de tela da Titular no fluxo de avisos prévios da Agenda de teste, com as mensagens **“Resposta inválida de get_appointment_previsit_contacts_for_interface: RPC não cadastrada na camada CAPO.”** e **“Resposta inválida de register_appointment_previsit_contact_for_interface: RPC não cadastrada na camada CAPO.”**. Nenhum aviso apareceu para o Clínico Geral.
+
+**Causa física confirmada:** a migração `20261103151938_appointment_previsit_contact_audit_separate_from_attendance.sql` e os métodos `getAppointmentPrevisitContacts` / `registerAppointmentPrevisitContact` já estavam no repositório, mas `createSupabaseTransport`, em `src/lib/supabase/rpc.ts`, não possuía os dois nomes de operação no `switch` de permissão/roteamento e terminava em `contractError(operation, 'RPC não cadastrada na camada CAPO.')`. Consulta somente leitura ao banco oficial antes da correção retornou **zero registros** em `appointment_previsit_contacts`.
+
+**Correção cirúrgica:** adicionados ao grupo já existente que delega a `confirmedRpc(operation, args)` os casos `get_appointment_previsit_contacts_for_interface` e `register_appointment_previsit_contact_for_interface`. O cliente mantém os argumentos e a autorização efetiva do banco/RLS; nenhuma outra operação foi habilitada. Commit `d6b8d1c6156cd64b4967e52514667352dff553de`.
+
+**Preservação funcional:** permanece o §28.145 (somente Paciente avisado / Solicitou cancelamento na etapa administrativa), com confirmação de presença exclusivamente pelo especialista. Nenhuma mudança em banco, status assistencial, paciente, agendamento ou registros históricos.
+
+**Estado:** **CAUSA COMPROVADA E ROTEAMENTO CORRIGIDO NO MAIN; TESTE EM NAVEGADOR AUTENTICADO, BUILD, DEPLOY E GRAVAÇÃO REAL AINDA PENDENTES.** Após publicação, repetir o mesmo agendamento teste: registrar Paciente avisado, observar retorno de sucesso, consultar a marcação 💬 Avisado previamente na agenda do Clínico Geral e confirmar por consulta de leitura a existência do registro, sem alterar `attendance_status`.
