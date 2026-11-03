@@ -523,10 +523,10 @@ function HomeScheduleGrid({
                           >
                             Falta
                           </button>
-                          {appointment && onReturn && appointment.attendance_status === 'confirmado' && (
-                            <button type="button" disabled={busyAppointmentId === slot.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${patientName}`}>Agendar retorno</button>
-                          )}
                         </div>
+                      )}
+                      {appointment && onReturn && attendanceStatus === 'confirmado' && (
+                        <button type="button" className="agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${patientName}`}>Agendar retorno</button>
                       )}
                       {slot.slot_status === 'agendado' && patientIsVisible && slot.appointment_id && onCancel && (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
                         <button
@@ -619,13 +619,13 @@ function AgendaResults({
                           <div className="agenda-week-home-actions">
                             <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')} aria-label={`Confirmar consulta de ${appointment.patient_name}`}>Confirmar</button>
                             <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')} aria-label={`Marcar falta de ${appointment.patient_name}`}>Falta</button>
-                            {onReturn && appointment.attendance_status === 'confirmado' && (
-                              <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${appointment.patient_name}`}>↻</button>
-                            )}
-                            {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
-                              <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onCancel(appointment.appointment_id)} aria-label={`Cancelar agendamento de ${appointment.patient_name}`}>Cancelar</button>
-                            )}
                           </div>
+                        )}
+                        {onReturn && appointment.attendance_status === 'confirmado' && (
+                          <button type="button" className="agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${appointment.patient_name}`}>Agendar retorno</button>
+                        )}
+                        {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
+                          <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onCancel(appointment.appointment_id)} aria-label={`Cancelar agendamento de ${appointment.patient_name}`}>Cancelar</button>
                         )}
                       </div>
                     ))}
@@ -1197,6 +1197,11 @@ export function AgendaPage({
       setAppointmentFeedback(result.error.message)
     }
   }
+
+  useEffect(() => {
+    if (!isProfessional || !showScheduleForm || appointmentOrigin !== 'retorno_profissional') return
+    document.getElementById('schedule-title')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  }, [isProfessional, showScheduleForm, appointmentOrigin])
 
   function prepareProfessionalReturn(appointment: AgendaAppointment) {
     if (!isProfessional || !accessContext.professional_id) return
