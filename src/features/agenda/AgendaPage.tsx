@@ -1320,6 +1320,27 @@ export function AgendaPage({
     }
 
     if (
+      origin === 'home_reschedule_appointment' &&
+      patientId && requestedAppointmentId && requestedProfessionalId
+    ) {
+      setShowScheduleForm(false)
+      setShowRescheduleForm(true)
+      setAppointmentPatientId(patientId)
+      setAppointmentPatientQuery(patientName)
+      setSelectedProfessionalId(requestedProfessionalId)
+      setSelectedReschedulableId(requestedAppointmentId)
+      setRescheduleOrigin('gestor_home')
+      setRescheduleReason('')
+      setRescheduleTargetDate(dateInputValue(new Date()))
+      setAppointmentFeedback(null)
+      if (requestedSlotDate) {
+        setConsultationStartDate(requestedSlotDate)
+        setConsultationEndDate(requestedSlotDate)
+      }
+      return
+    }
+
+    if (
       origin === 'home_free_slot' &&
       requestedProfessionalId &&
       requestedSlotDate &&
@@ -1454,7 +1475,11 @@ export function AgendaPage({
             : `${appointmentPatientId}:${rescheduleProfessionalId}`,
           rows: nextState.status === 'success' ? nextState.data : [],
         })
-        setSelectedReschedulableId('')
+        setSelectedReschedulableId((current) =>
+          nextState.status === 'success' && nextState.data.some((item) => item.appointment_id === current)
+            ? current
+            : '',
+        )
       })
     return () => {
       active = false
