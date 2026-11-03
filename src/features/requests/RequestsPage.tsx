@@ -102,8 +102,10 @@ export function RequestsPage({
     () => accessContext.roles.map((role) => role.code),
     [accessContext.roles],
   )
+  // O backend autoriza ações administrativas apenas ao Gestor ou AO.
+  // Coordenação consulta e acompanha, mas não executa essas mutações.
   const canManage = roleCodes.some((role) =>
-    ['administrador', 'administrativo_operacional', 'coordenador'].includes(role),
+    ['administrador', 'administrativo_operacional'].includes(role),
   )
   const canCreateProfessionalRequest =
     Boolean(accessContext.professional_id) && roleCodes.includes('profissional')
