@@ -92,16 +92,17 @@ export function NotificationsPage({
         'lida',
         '',
       )
-      if (result.status !== 'success') {
+      if (result.status === 'success') {
+        globalThis.dispatchEvent(new Event(NOTIFICATIONS_UPDATED_EVENT))
+      } else {
+        // Falha ao acusar leitura não deve impedir o acesso ao fluxo autorizado.
+        // A notificação permanece não lida se o banco não confirmar a operação.
         setFeedback(
           result.status === 'error'
             ? result.error.message
             : 'O banco não confirmou a leitura da notificação.',
         )
-        setBusyId(null)
-        return
       }
-      globalThis.dispatchEvent(new Event(NOTIFICATIONS_UPDATED_EVENT))
       setBusyId(null)
     }
     // Entrega a solicitação específica ao módulo canônico, sem criar atendimento ao ler.
