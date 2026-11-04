@@ -1488,3 +1488,24 @@
 .agenda-schedule-details .agenda-attendance-state {
   font-size: inherit;
 }
+
+
+/* Retorno profissional: a própria grade recorrente informa vagas e bloqueios. */
+.agenda-return-grid {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.agenda-return-grid > p {
+  margin: 0;
+}
+
+.agenda-return-slots .agenda-slot-schedule-button.is-selected {
+  color: #fff;
+  background: var(--color-brand-blue);
+}
+
+.agenda-return-slots td {
+  vertical-align: middle;
+}
