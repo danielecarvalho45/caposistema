@@ -8019,3 +8019,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Preservação e limites:** somente interface React modificada; sem migração de banco, sem alterações em pacientes, dados de produção, Resgate, Perda de Seguimento, Faltosos ou WhatsApp. A função existente de busca deve fornecer `history` para mostrar todos os registros; se não fornecer, a interface informa apenas a data inicial disponível, sem inventar ocorrências. Testes automatizados, build Cloudflare e homologação em produção não executados nesta etapa; é necessário verificar a publicação e a expansão com paciente real autorizado.
 
 **Commit:** `0dd1cc372e1702c09c18075f10d61296861ccdfe`.
+
+
+## §28.173 — Aceite expresso da Oferta Inicial abre agendamento do paciente (04/11/2026)
+
+**Solicitação da Titular:** paciente que aceitou expressamente a Oferta CAPO deve seguir imediatamente para a tela de agendamento, sem nova busca manual do cadastro.
+
+**Correção cirúrgica:** em `src/features/gestor/ActiveSearchPage.tsx`, após `registerInitialActiveSearchAttempt` retornar sucesso para a resposta administrativa `aceitou`, o fluxo navega à rota oficial `/agenda` passando `patientId`, `patientName` e `origin: 'patient_record'` no estado da navegação. O componente existente `src/features/agenda/AgendaPage.tsx` já interpreta esse contrato, abre o formulário de agendamento e preenche o paciente. Não agenda automaticamente: o administrativo escolhe especialidade/profissional, dia e horário e confirma o agendamento pelo processo vigente.
+
+**Segurança e preservação:** a navegação acontece somente após confirmação de gravação bem-sucedida pelo banco; se ocorrer erro, permanece na Oferta Inicial, sem abrir agendamento. Respostas recusou, novo contato ou sem resposta não redirecionam e conservam o fluxo de acompanhamento. Sem migração SQL ou alteração em outros perfis, Faltosos, Resgate ou dados reais.
+
+**Validação pendente:** contratos inspecionados diretamente no código GitHub; teste funcional com paciente autorizado, build e publicação Cloudflare ainda não comprovados nesta alteração. Não declarar homologação completa.
+
+**Commit:** `a9495e17b974769b786e8ac06afd7e6e49e4cf71`.
