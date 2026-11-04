@@ -239,7 +239,7 @@ export function AssistentialPage({
         <h2 id="assistential-title">Acessos rápidos</h2>
         <div className="home-profile-grid">
           <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
-          <Link className="home-profile-card quick-blue" to="/atuacao"><span className="home-profile-icon" aria-hidden="true">♙</span><strong>Pacientes</strong><span>Consultar a própria atuação</span></Link>
+          <Link className="home-profile-card quick-blue" to="/atuacao"><span className="home-profile-icon" aria-hidden="true">👥</span><strong>Pacientes</strong><span>Consultar a própria atuação</span></Link>
           <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true">⏱</span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
           <Link className="home-profile-card quick-purple" to="/minha-agenda/solicitar-alteracao"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
           {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
