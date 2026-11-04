@@ -380,8 +380,8 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       editingPatientId, editForm.phone ?? '',
     )
     if (result.status === 'success') {
-      setFeedback('Telefone atualizado com registro de auditoria.')
       await openPatientEditor(editingPatientId)
+      setFeedback('Telefone atualizado com registro de auditoria.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a atualização de telefone.')
     }
