@@ -7811,3 +7811,20 @@ Não houve alteração de schema ou migration no Supabase.
 **Validação:** arquivos relidos fisicamente em `main`, confirmando remoção dos acionadores profissionais e preservação dos administrativos. Suíte, build, deploy e validação autenticada nos quatro perfis profissionais **ainda não executados/comprovados**. Não enviar mensagens a pacientes reais durante testes técnicos.
 
 **Estado:** **RESTRIÇÃO VISUAL DOS PERFIS PROFISSIONAIS NO MAIN / HOMOLOGAÇÃO PENDENTE.**
+
+
+### 28.155 BUSCA ATIVA — VISÃO DE RESGATE DA OFERTA INICIAL, SEPARADA DO SEGUIMENTO E DOS FALTOSOS (04/11/2026)
+
+**Decisão expressa da Titular:** organizar três fluxos distintos no CAPO: (1) Busca Ativa — Perda de Seguimento, para quem já pertenceu ao serviço e interrompeu acompanhamento; (2) Busca Ativa — Oferta Inicial, para pacientes cadastrados sem resposta à Oferta CAPO ou aguardando novo contato; (3) Fila de Faltosos, originada pela falta em consulta. Faltosos permanece módulo/fila separado, não vira automaticamente Busca Ativa.
+
+**Base normativa:** Manual da Interface, §12.1 e §12.2: Oferta Inicial integra cadastro; sem resposta, contato não conseguido, não adesão e contato futuro compõem a Busca Ativa Inicial, diferente dos faltosos. Especificação Estrutural da Interface 12/09: primeiro contato não abre ciclo assistencial sem aceite; perda de seguimento e faltosos têm origens distintas. Documento Mestre §28.141: cadastro existente deve permitir retomar o desfecho da oferta, com vínculo CAPO somente após aceite confirmado pela RPC.
+
+**Diagnóstico:** `ActiveSearchPage.tsx` mostrava somente `getActiveSearches`, relativo à Perda de Seguimento, apesar de existir no contrato Supabase `get_initial_active_searches_for_interface` com estado, próxima data, paciente e histórico das tentativas de Oferta Inicial. `PatientsPage.tsx` já permitia recuperar a oferta do paciente cadastrado e registrar o aceite por `register_initial_active_search_attempt_for_interface`. Banco separa dados por `search_type='initial'` e não permite criar ciclo sem aceite.
+
+**Correção cirúrgica no main:** `src/features/gestor/ActiveSearchPage.tsx` passa a apresentar duas visões separadas e explicitamente identificadas: **Oferta Inicial** e **Perda de Seguimento**. A primeira consulta apenas `getInitialActiveSearches`, apresenta o paciente, resultado da tentativa, próxima data do contato e pendência, e oferece link **Continuar oferta / registrar resposta** para `/pacientes?patientId=...`, reutilizando o formulário de Oferta CAPO e a mesma RPC de aceite já existente. A segunda mantém intactas a consulta `getActiveSearches`, registro de tentativas e encerramento da perda de seguimento. A Fila de Faltosos, suas RPCs e a notificação de ausência não foram alteradas. `PatientsPage.tsx` adiciona link autorizado para visualizar as pendências da Oferta Inicial na Busca Ativa. O filtro existente Ativo/Encerrado/Todos atende a visão selecionada. Permissões existentes foram preservadas: Administrativo Operacional e Gestor/Titular executam; Coordenação tem consulta apenas na rota autorizada. Commits `2e10a5dc9ac96935b90161231d2bf5dfb1dd47ec`, `69db075f7731f1a41787e93d363bb2df7a8af70c`.
+
+**Regressão acrescentada:** `tests/unit/active-search-offer-routing.test.tsx` verifica alternância entre as duas visões, chamadas a RPCs distintas, não mistura de pacientes e link contextual para o cadastro. Commit `381d4bf19625ba05c189988b8c404d16c3022918`. Fixtures sintéticas exclusivamente em teste, nenhum paciente fictício criado na base real.
+
+**Limites e próximo teste:** suíte, build, deploy e homologação autenticada ainda não executados/comprovados. Testar com registro administrativo autorizado de Oferta Inicial `sem_resposta` ou `novo_contato`; ele deve aparecer na visão Oferta Inicial ordenado pela próxima data, permitir abrir o mesmo paciente e registrar aceite posterior; após aceite, sair do filtro Ativo, ter exatamente um ciclo inicial; Faltosos e Perda de Seguimento permanecem inalterados. Sem criar pacientes reais/fictícios durante testes técnicos.
+
+**Estado:** **REORGANIZAÇÃO DE VISÕES NO MAIN / TESTE DE REGRESSÃO ESCRITO, EXECUÇÃO E HOMOLOGAÇÃO PENDENTES.**
