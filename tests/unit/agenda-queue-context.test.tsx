@@ -661,13 +661,23 @@ it('abre o formulário de retorno para consulta confirmada na semana profissiona
     rescheduled_from_id: null, reschedule_reason: null, reschedule_origin: null,
   }
   rpc.getSchedulingCatalog.mockResolvedValue({ status: 'empty' })
-  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'empty' })
+  const freeStart = new Date(`${day}T10:00:00`).toISOString()
+  const freeEnd = new Date(`${day}T10:30:00`).toISOString()
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'success', data: [{
+    professional_id: 'professional-return', slot_date: day, slot_time: '10:00:00',
+    slot_start: freeStart, slot_end: freeEnd, duration_minutes: 30,
+  }] })
   rpc.getAgendaScheduleGrid.mockResolvedValue({ status: 'success', data: [{
     professional_id: 'professional-return', professional_name: 'Profissional autorizado',
     slot_date: day, weekday: now.getDay(), slot_start: slotStart, slot_end: slotEnd,
     duration_minutes: 30, slot_status: 'agendado', appointment_id: appointment.appointment_id,
     patient_id: appointment.patient_id, patient_name: appointment.patient_name,
     appointment_type: appointment.appointment_type, block_type: null,
+  }, {
+    professional_id: 'professional-return', professional_name: 'Profissional autorizado',
+    slot_date: day, weekday: now.getDay(), slot_start: freeStart, slot_end: freeEnd,
+    duration_minutes: 30, slot_status: 'livre', appointment_id: null,
+    patient_id: null, patient_name: null, appointment_type: null, block_type: null,
   }] })
   const context = {
     roles: [{ code: 'profissional', name: 'Profissional' }],
@@ -689,4 +699,11 @@ it('abre o formulário de retorno para consulta confirmada na semana profissiona
   await waitFor(() => expect(rpc.getAvailableAppointmentSlots).toHaveBeenCalledWith(
     'professional-return', expect.any(String),
   ))
+  const returnGrid = screen.getByLabelText('Agenda do profissional para retorno')
+  expect(await within(returnGrid).findByText('Horário ocupado')).toBeVisible()
+  expect(within(returnGrid).getByText('Livre')).toBeVisible()
+  const selectFree = within(returnGrid).getByRole('button', { name: 'Selecionar' })
+  await user.click(selectFree)
+  expect(within(returnGrid).getByRole('button', { name: 'Selecionado' })).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeEnabled()
 })
