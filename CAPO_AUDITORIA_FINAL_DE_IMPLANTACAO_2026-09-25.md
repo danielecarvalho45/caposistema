@@ -8070,3 +8070,10 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Situação de implantação neste registro:** normatização concluída; alterações do esquema Supabase, código de cadastro/agenda, geração de pendências e interface da Home **ainda não executadas** e portanto **não homologadas**. Proibido considerar a função disponível em produção com base apenas no registro documental. Resguardar as regras de produção/manuteste, os contratos das agendas, o histórico real e o funcionamento de Faltosos e Busca Ativa.
 
 **Próxima etapa aprovada:** avaliar fisicamente os contratos e o esquema atuais no Supabase oficial antes de qualquer migração; implementar apenas o delta necessário e verificar integridade, testes, interface e publicação.
+
+
+### Continuidade §28.175 — Inspeção do Supabase e bloqueio de migração (04/11/2026)
+
+**Inspeção real somente leitura:** tabelas `public.professionals` e `public.patient_appointments` ainda não possuem campo `care_location`; a tabela `appointment_location_notices` inexiste. Identificadas as funções existentes `create_appointment_for_interface`, `get_scheduling_catalog` e `update_team_member_profile_for_interface`; seus contratos vigentes devem permanecer intactos. Desenhada proposta aditiva com endereços e notificações, porém sua aplicação ao Supabase oficial exigiu confirmação de segurança que **expirou** (retorno `INVALID_ARGUMENT`). Consulta posterior confirmou **zero alteração estrutural aplicada**.
+
+**Estado real:** documentação normativa §18.16 concluída; implementação SQL, interface e testes **bloqueados pela confirmação da migração**. Nenhuma tabela, função ou dado de produção alterado por esta tentativa; nenhuma interface dependente das funções propostas foi publicada. A retomada requer nova autorização/confirmação operacional da migração no Supabase e revisão dos cenários de mudança sucessiva de endereço, antes de prosseguir. Não declarar funcionalidade implantada.
