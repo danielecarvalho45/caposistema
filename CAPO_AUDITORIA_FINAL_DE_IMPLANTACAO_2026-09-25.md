@@ -7931,3 +7931,20 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Evidência da Titular:** na tela real de Pacientes, ao clicar `Cadastrar paciente`, erro vermelho: `Resposta inválida de check_patient_duplicates_for_interface: RPC não cadastrada na camada CAPO.` Impediu conclusão do primeiro cadastro e foi confirmado no código: `src/lib/supabase/rpc.ts` incluía os novos métodos na API, porém o `switch` de `createSupabaseTransport` não tinha seus nomes, lançando `contractError` antes de acessar o Supabase. Verificou-se também a ausência de transporte para o próprio `create_classified_patient_for_interface` e três funções recentes de consulta/telefone profissional.
 
 **Correção cirúrgica:** commit `fc1226655e13c4c19dd72ac88d89de03d4d79403` em `src/lib/supabase/rpc.ts`, acrescentando exatamente cinco casos ao ramo existente de transporte `confirmedRpc(operation,args)`: `check_patient_duplicates_for_interface`, `create_classified_patient_for_interface`, `get_patient_for_professional_interface`, `update_patient_phone_by_professional_for_interface` e `search_patients_for_professional_interface`. Contratos e métodos originais preservados. Após commit, conferidos fisicamente os cinco pares `operation` + `case` no GitHub. Sem mudança em dados reais ou schema neste reparo. **Build/publicação Cloudflare e teste autenticado da operação ainda não confirmados; não instruir novo clique até a versão atualizada.**
+
+
+## §28.167 — Oferta Inicial: entrada na Busca Ativa ao acionar WhatsApp (04/11/2026)
+
+**Incidente real:** paciente novo cadastrado em produção não apareceu na aba Oferta Inicial; inspeção do banco confirmou cadastro íntegro e ausência de linha em `patient_active_searches` para esse paciente. A tela exibia apenas Oferta Inicial e Perda de Seguimento. A abertura do WhatsApp em `PatientsPage.tsx` apenas navegava para a conversa, sem registrar pendência.
+
+**Correção cirúrgica aplicada:**
+- RPC `open_initial_offer_whatsapp_for_interface(uuid)` criada no Supabase e registrada em migração versionada; exige sessão/termo, conta ativa, perfil administrativo, paciente visível e elegível; bloqueia abertura para paciente com ciclo CAPO existente; serializa pela linha do paciente e evita duplicidade de pendência inicial.
+- O clique em **Abrir WhatsApp** chama a RPC `open_initial_offer_whatsapp_for_interface` pelo serviço e transporte reais de `src/lib/supabase/rpc.ts`, mantendo o WhatsApp aberto no mesmo gesto do usuário e feedback explícito de êxito/erro.
+- A linha criada é `search_type='initial'`, `flow_status='ativo'`, `accepted_service=null`, próxima ação após 72 horas. O resultado registra **WhatsApp aberto; envio não confirmado**: não se presume envio, resposta, aceite, recusa ou vínculo assistencial.
+- Reabertura da mesma oferta não cria linha adicional. Nenhum registro real foi alterado automaticamente, inclusive o paciente do incidente; a usuária deve voltar à Oferta CAPO desse cadastro e acionar **Abrir WhatsApp** depois que a publicação atualizar.
+- **Faltosos preservado integralmente**, como módulo independente; nenhuma alteração em seu código, contratos, relatórios ou dados.
+- A aba **Resgate da Oferta CAPO**, o encaminhamento após segundo contato e os lembretes periódicos continuam sendo escopo distinto **pendente**; não declarar concluídos nesta intervenção.
+
+**Verificação:** RPC existe no banco, permissão autenticada ativa e `anon` negada; cadastro real permanece preservado, e ainda não há linha inicial para o paciente até o clique operacional. Não houve execução transacional com paciente real nem confirmação visual do deploy. Testes automatizados/build/publicação e o clique real devem ser homologados.
+
+**Commits:** `d51440e23995648a05f64f136e44f3c7fde58816` (migração), `e93a0b38b5f03c7bec4075b294880844ef137150` (RPC/transporte), `50ec0be8b2cc88174e57621ef09ac0ccdc29ea2a` (interface).
