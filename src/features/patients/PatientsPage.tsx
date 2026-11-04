@@ -67,6 +67,7 @@ export function PatientsPage({
   const [createdPatientStatus, setCreatedPatientStatus] = useState<string | null>(null)
   const [offerFeedback, setOfferFeedback] = useState<string | null>(null)
   const [offerOpenBusy, setOfferOpenBusy] = useState(false)
+  const [nextRegistrationReady, setNextRegistrationReady] = useState(false)
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<AsyncState<readonly {
     patient_id: string
@@ -136,7 +137,39 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     const result = await getRpcService().openInitialOfferWhatsApp(offerPatientId)
     setOfferOpenBusy(false)
     if (result.status === 'success') {
-      setOfferFeedback('Oferta Inicial incluída na Busca Ativa. A abertura do WhatsApp não confirma envio nem aceite.')
+      if (activeView === 'register' && registrationKind === 'novo' && createdPatientId === offerPatientId) {
+        // O banco confirmou a pendência: liberar um novo cadastro, sem inferir envio ou aceite.
+        setPatientName('')
+        setPatientBirthDate('')
+        setPatientCms('')
+        setPatientSex('')
+        setPatientPhone('')
+        setPatientPhoneSecondary('')
+        setPatientAddress('')
+        setPatientCapoStartDate('')
+        setPatientNotes('')
+        setPatientOrigin('')
+        setPreexistingPatientId(null)
+        setCreatedPatientId(null)
+        setCreatedPatientNumber(null)
+        setCreatedPatientAt(null)
+        setCreatedPatientStatus(null)
+        setDuplicateMatches([])
+        setDuplicateReviewed(false)
+        setDuplicateReviewKey('')
+        setOfferFeedback(null)
+        setFeedback(null)
+        setNextRegistrationReady(true)
+        window.requestAnimationFrame(() => {
+          const field = document.querySelector<HTMLInputElement>(
+            '.patients-register input[placeholder="Nome completo do paciente"]',
+          )
+          field?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          field?.focus()
+        })
+      } else {
+        setOfferFeedback('Oferta Inicial incluída na Busca Ativa. A abertura do WhatsApp não confirma envio nem aceite.')
+      }
     } else {
       setOfferFeedback(result.status === 'error'
         ? `WhatsApp aberto, mas a pendência NÃO foi registrada: ${result.error.message}. Tente novamente.`
@@ -190,6 +223,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       setFeedback('Possível duplicidade: confira os cadastros encontrados antes de continuar.')
       return
     }
+    setNextRegistrationReady(false)
     setFeedback('Cadastrando paciente no banco…')
     setRegistrationBusy(true)
     const next = await getRpcService().createClassifiedPatient({
@@ -395,6 +429,12 @@ ${operatorName} – ADMINISTRATIVO CAPO`
               <p>Cadastro administrativo do paciente. A Oferta CAPO permanece integrada a este mesmo fluxo.</p>
             </div>
           </div>
+          {nextRegistrationReady && (
+            <p role="status" className="patients-generated-note">
+              Oferta Inicial registrada na Busca Ativa. Pronto para cadastrar o próximo paciente.
+              A abertura do WhatsApp não confirma o envio da mensagem nem o aceite.
+            </p>
+          )}
           <fieldset className="patients-registration-kind">
             <legend>Tipo de cadastro *</legend>
             <label>
@@ -419,6 +459,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                 value={patientName}
                 onChange={(event) => {
                   setPatientName(event.target.value)
+                  setNextRegistrationReady(false)
                   setDuplicateMatches([])
                   setDuplicateReviewed(false)
                   setDuplicateReviewKey('')
