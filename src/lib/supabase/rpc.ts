@@ -3103,6 +3103,38 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: parseAgendaScheduleGrid,
       }),
+    createClassifiedPatient: (input: {
+      registrationKind: 'novo' | 'preexistente'
+      fullName: string
+      birthDate: string
+      cms: string | null
+      sex: string | null
+      phone: string | null
+      phoneSecondary: string | null
+      address: string | null
+      historicalCapoStartDate: string | null
+      operationalNotes: string | null
+      origin: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'create_classified_patient_for_interface',
+        args: {
+          p_registration_kind: input.registrationKind,
+          p_full_name: input.fullName,
+          p_birth_date: input.birthDate,
+          p_cms: input.cms,
+          p_sex: input.sex,
+          p_phone: input.phone,
+          p_phone_secondary: input.phoneSecondary,
+          p_address: input.address,
+          p_historical_capo_start_date: input.historicalCapoStartDate,
+          p_operational_notes: input.operationalNotes,
+          p_origin: input.origin,
+        },
+        parse: parseCreatedPatient,
+        selectFirst: true,
+      }),
     createPatient: (input: {
       fullName: string
       birthDate: string
