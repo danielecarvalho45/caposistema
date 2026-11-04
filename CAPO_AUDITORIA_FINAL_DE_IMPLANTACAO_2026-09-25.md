@@ -7869,3 +7869,14 @@ Não houve alteração de schema ou migration no Supabase.
 ### 28.158 PERFIL PROFISSIONAL — BLOQUEIO VISUAL DO CADASTRO (04/11/2026)
 
 No `src/features/patients/PatientsPage.tsx`, commit `a6f62e2997b2810ffc6adea13ac41190de17ff9c`, o comando **Cadastrar** e o formulário de criação passaram a ser mostrados somente ao perfil administrativo já autorizado (`administrador`/`administrativo_operacional`); para os demais perfis a navegação aponta a **Consultar**. Nenhuma função de criação/edição do banco foi liberada a profissionais. O contrato de consulta profissional continua pendente: a RPC `get_patient_for_edit_for_interface` recusa os perfis profissionais, e é necessária RPC de leitura segura mais RPC isolada de atualização de telefone com auditoria antes de declarar o fluxo concluído. Correção de UI pontual, sem migração de dados. Build/regressão de produção ainda **não validados**, devendo ser conferidos na publicação.
+
+
+### 28.159 CONSULTA PROFISSIONAL E ALTERAÇÃO EXCLUSIVA DO TELEFONE (04/11/2026)
+
+**Base:** autorização da Titular: profissional consulta paciente e modifica apenas telefone. Contratos administrativos de cadastro/edição e Oferta CAPO preservados.
+
+**Banco:** Migração supabase/migrations/20261104183000_professional_patient_phone.sql versionada (commit 71d4f849bfdf9b3d149b426f1de3dd44d838e966) e aplicada no Supabase. Função get_patient_for_professional_interface apenas lê dados administrativos com conta ativa, termo legal, papel profissional e isolamento do contexto. Função update_patient_phone_by_professional_for_interface altera exclusivamente patients.phone, exige DDD, conta/termo/papel, valida contexto de escrita e paciente não falecido, registra valor anterior/novo em audit_logs. Funções administrativas legadas mantidas. Privilégios conferidos: authenticated=true, anon=false. Nenhum paciente real modificado pelo executor.
+
+**Interface:** src/lib/supabase/rpc.ts acrescentou dois métodos (commit 85e79b79fc6789aa953a71d84ad7b3420143a931). src/features/patients/PatientsPage.tsx escolhe leitura profissional separada da edição administrativa, permite somente telefone no perfil profissional e confirma a atualização (commits fdccf6eac1ef8a622baf6abcefb24b90fb8fd7b1 e ddfb42327f926cd80ece93f7d59360aebcace026). Cadastro profissional permanece oculto como §28.158.
+
+**Validação e limites:** Estrutura e permissões do banco confirmadas. Teste autenticado com profissional, consulta de paciente, atualização auditada, testes npm e build ainda não executados/aprovados. Conferir também se search_patients_for_interface autoriza pesquisa ao perfil profissional. Avisos de segurança sobre funções preexistentes identificados no assessor Supabase; não alterados fora de escopo. Não declarar o fluxo validado em produção até homologação.
