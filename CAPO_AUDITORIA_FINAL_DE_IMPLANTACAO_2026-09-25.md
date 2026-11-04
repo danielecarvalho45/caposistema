@@ -8050,3 +8050,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Texto acrescentado ao fim do aviso WhatsApp, conforme solicitação da Titular:** aviso “⚠️ Importante: Qualquer dúvida ou necessidade de reagendamento, estamos à disposição por aqui.”, seguido de “Obrigado(a)!” e assinatura “DANIELE CARVALHO / ADMINISTRATIVO DO CAPO”. Mantidos todos os campos dinâmicos do agendamento, saudação por horário e envio manual. Trata-se de assinatura fixa expressamente solicitada; eventual necessidade de assinatura dinâmica por funcionário deverá ser tratada à parte.
 
 **Arquivo:** `src/features/agenda/AgendaPage.tsx`. **Commit:** `edfe63d829fedd7b86472177b7c90b59872240fd`. Teste de build/publicação e homologação ainda pendentes.
+
+
+### Complemento §28.174 — Assinatura dinâmica do usuário que envia o aviso (04/11/2026)
+
+**Regra corrigida pela Titular:** o encerramento mantém “⚠️ Importante”, orientação para dúvidas/reagendamento e “Obrigado(a)!”, mas **não** deve ter nome e função fixos. A assinatura deve corresponder à identidade da conta autenticada que prepara/envia a mensagem.
+
+**Adequação cirúrgica:** `src/features/agenda/AgendaPage.tsx` passa a preencher nome a partir de `accessContext.real_identity.full_name`, com alternativas `accessContext.full_name` e `username`. A função é obtida de `function_title`, `real_identity.function_title` ou nome do contexto principal, com fallback genérico “Equipe CAPO”. Nome e função são inseridos em maiúsculas. Mantidos texto, horários, dados da consulta e botão manual de WhatsApp. Não há envio automático nem registro automático de aviso.
+
+**Commit:** `3cae60d52ef09b5c6fca0b08930615d79e9f2f33`. Publicação e homologação com diferentes contas ainda pendentes.
