@@ -214,6 +214,8 @@ export function GestorTeamPage({
   const [selected, setSelected] = useState<TeamMember | null>(null)
   const [teamTab, setTeamTab] = useState<'cadastro' | 'agenda'>(mode === 'administracao' ? 'cadastro' : initialTab)
   const [profile, setProfile] = useState<TeamMemberProfileInput>(blankProfile)
+  const [careLocation, setCareLocation] = useState('')
+  const [careLocationLoading, setCareLocationLoading] = useState(false)
   const [temporaryPassword, setTemporaryPassword] = useState('')
   const [initiallyActive, setInitiallyActive] = useState(true)
   const [query, setQuery] = useState('')
@@ -321,6 +323,28 @@ export function GestorTeamPage({
     return () => { active = false }
   }, [selected?.professionalId, service])
 
+  useEffect(() => {
+    const professionalId = selected?.professionalId
+    if (!professionalId) {
+      setCareLocation('')
+      return
+    }
+    let active = true
+    setCareLocation('')
+    setCareLocationLoading(true)
+    void getRpcService().getProfessionalCareLocation(professionalId).then((result) => {
+      if (!active) return
+      setCareLocationLoading(false)
+      if (result.status === 'success' && result.data && typeof result.data === 'object' && !Array.isArray(result.data)) {
+        const location = (result.data as Record<string, unknown>).care_location
+        setCareLocation(typeof location === 'string' ? location : '')
+      } else if (result.status === 'error') {
+        setFeedback('Não foi possível consultar o endereço de atendimento no banco.')
+      }
+    })
+    return () => { active = false }
+  }, [selected?.professionalId])
+
   function chooseMember(member: TeamMember) {
     setCapabilities([])
     setCapabilitiesStatus('loading')
@@ -370,6 +394,23 @@ export function GestorTeamPage({
         : await service.create(profile, temporaryPassword, initiallyActive, activeReason)
       if (result.status !== 'success') {
         setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.')
+        return
+      }
+
+      const createdRecord = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+        ? result.data as Record<string, unknown> : null
+      const professionalId = selected?.professionalId ??
+        (typeof createdRecord?.professional_id === 'string' ? createdRecord.professional_id : '')
+      if (professionalId) {
+        const savedLocation = await getRpcService().setProfessionalCareLocation(professionalId, nullable(careLocation))
+        if (savedLocation.status !== 'success') {
+          setFeedback('Cadastro profissional salvo, mas o endereço NÃO foi confirmado. Verifique e salve o local novamente.')
+          await reload()
+          return
+        }
+      } else if (careLocation.trim()) {
+        setFeedback('Cadastro criado; não foi possível identificar o profissional para gravar o endereço. Consulte antes de agendar.')
+        await reload()
         return
       }
 
@@ -548,6 +589,12 @@ export function GestorTeamPage({
         {(!selected || !selected.userAccountId) && <label>Conta de acesso: senha provisória<input type="password" autoComplete="new-password" required={!selected} value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>{selected ? 'Preencha somente quando quiser criar a conta de acesso deste profissional.' : 'Critérios: mínimo de 8 caracteres, com letra maiúscula, letra minúscula e número. No primeiro acesso, o profissional deverá criar outra senha válida. O e-mail informado abaixo será usado na conta.'}</small></label>}
         {!selected && <fieldset><legend>Situação inicial do profissional e do acesso</legend><label className="gestor-check"><input type="checkbox" checked={initiallyActive} onChange={(event) => setInitiallyActive(event.target.checked)} />Ativo após o cadastro</label>{!initiallyActive && <label>Motivo da inativação<input value={activeReason} onChange={(event) => setActiveReason(event.target.value)} required minLength={5} maxLength={500} /></label>}</fieldset>}
         <div className="gestor-field-grid"><label>Função<input value={profile.functionTitle ?? ''} onChange={(event) => setProfile({ ...profile, functionTitle: nullable(event.target.value) })} /></label><label>Usuário<input value={profile.username ?? ''} onChange={(event) => setProfile({ ...profile, username: nullable(event.target.value) })} /></label><label>E-mail de recuperação<input type="email" value={profile.recoveryEmail ?? ''} onChange={(event) => setProfile({ ...profile, recoveryEmail: nullable(event.target.value) })} /></label><label>Telefone<input value={profile.phone ?? ''} onChange={(event) => setProfile({ ...profile, phone: nullable(event.target.value) })} /></label><label>Data de nascimento<input type="date" value={profile.birthDate ?? ''} onChange={(event) => setProfile({ ...profile, birthDate: nullable(event.target.value) })} /></label><label>Registro profissional<input value={profile.professionalRegistration ?? ''} onChange={(event) => setProfile({ ...profile, professionalRegistration: nullable(event.target.value) })} /></label><label>Responsabilidade administrativa<input value={profile.administrativeResponsibility ?? ''} onChange={(event) => setProfile({ ...profile, administrativeResponsibility: nullable(event.target.value) })} /></label><label>Especialidade principal<select value={profile.primarySpecialtyId ?? ''} onChange={(event) => setProfile({ ...profile, primarySpecialtyId: nullable(event.target.value) })}><option value="">Não definida</option>{specialties.filter((specialty) => profile.specialtyIds.includes(specialty.id)).map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label></div>
+        <label>Local de atendimento (endereço que aparecerá no WhatsApp)
+          <textarea rows={2} maxLength={500} value={careLocation}
+            disabled={careLocationLoading} onChange={(event) => setCareLocation(event.target.value)}
+            placeholder="Nome da unidade, rua, número, complemento, bairro, cidade/UF" />
+          {careLocationLoading && <small>Consultando endereço salvo…</small>}
+        </label>
         <label className="gestor-check"><input type="checkbox" checked={profile.isProfessional} onChange={(event) => setProfile({ ...profile, isProfessional: event.target.checked })} />Perfil profissional</label>
         {selected && <fieldset><legend>Situação do profissional e da conta</legend><p>{selected.active ? 'Ativo' : 'Inativo'}</p>{selected.userAccountId ? <><label>Motivo da inativação<input value={activeReason} onChange={(event) => setActiveReason(event.target.value)} placeholder="Informe pelo menos 5 caracteres para inativar" /></label><button type="button" onClick={() => void mutate(() => service.setActive(selected.professionalId, !selected.active, activeReason), selected.active ? 'Profissional e acesso inativados.' : 'Profissional e acesso reativados.')}>{selected.active ? 'Inativar profissional e acesso' : 'Ativar profissional e acesso'}</button></> : <><p>Este profissional já está cadastrado, mas ainda não possui conta de acesso. Informe o e-mail, os papéis e a senha provisória para vinculá-la, sem duplicar o cadastro.</p><label>Motivo da inativação<input value={activeReason} onChange={(event) => setActiveReason(event.target.value)} placeholder="Informe pelo menos 5 caracteres para inativar" /></label><button type="button" onClick={() => void mutate(() => service.setActive(selected.professionalId, !selected.active, activeReason), selected.active ? 'Cadastro inativado.' : 'Cadastro reativado.')}>{selected.active ? 'Inativar cadastro' : 'Reativar cadastro'}</button></>}</fieldset>}
         <fieldset><legend>Papéis</legend>{roles.map((role) => <label className="gestor-check" key={role.id}><input type="checkbox" checked={profile.roleCodes.includes(role.id)} onChange={(event) => toggleCodes('roleCodes', role.id, event.target.checked)} />{role.label}</label>)}</fieldset>
