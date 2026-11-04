@@ -2220,6 +2220,22 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_patient_id: patientId },
         parse: parseConfirmedJson,
       }),
+    getOfferRescueSearches: (status: string | null = 'ativo', limit = 50, offset = 0) =>
+      execute({ transport, operation: 'get_offer_rescue_searches_for_interface', args: {
+        p_flow_status: status, p_limit: limit, p_offset: offset,
+      }, parse: (value) => value }),
+    registerOfferRescueContact: (input: {
+      patientId: string
+      contactMethod: string
+      contactResult: string
+      outcome: 'sem_resposta' | 'aceitou' | 'recusou'
+    }) => execute({
+      transport, operation: 'register_offer_rescue_contact_for_interface',
+      args: {
+        p_patient_id: input.patientId, p_contact_method: input.contactMethod,
+        p_contact_result: input.contactResult, p_outcome: input.outcome,
+      }, parse: parseConfirmedJson,
+    }),
     getInitialActiveSearches: (status: string | null = null, limit = 50, offset = 0) =>
       execute({ transport, operation: 'get_initial_active_searches_for_interface', args: { p_flow_status: status, p_limit: limit, p_offset: offset }, parse: (value) => value }),
     registerInitialActiveSearchAttempt: (input: {
@@ -3729,6 +3745,8 @@ function createSupabaseTransport(
       case 'add_patient_to_waiting_list_for_interface':
       case 'update_waiting_list_status_for_interface':
       case 'open_initial_offer_whatsapp_for_interface':
+      case 'get_offer_rescue_searches_for_interface':
+      case 'register_offer_rescue_contact_for_interface':
       case 'get_initial_active_searches_for_interface':
       case 'register_initial_active_search_attempt_for_interface':
       case 'close_initial_active_search_for_interface':
