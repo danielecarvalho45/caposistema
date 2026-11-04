@@ -1146,7 +1146,7 @@ export function AgendaPage({
         typeof resultRecord?.appointment_id === 'string'
           ? resultRecord.appointment_id
           : ''
-      if (appointmentId) {
+      if (appointmentId && !isProfessional) {
         const professionalName =
           professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
           'Profissional CAPO'
@@ -2033,7 +2033,7 @@ export function AgendaPage({
               </button>
             </div>
             {appointmentFeedback && <p className="agenda-contract-note" role="status">{appointmentFeedback}</p>}
-            {lastScheduledContact && (
+            {!isProfessional && lastScheduledContact && (
               <PatientWhatsAppButton
                 patientId={lastScheduledContact.patientId}
                 label="WhatsApp — confirmar agendamento"
