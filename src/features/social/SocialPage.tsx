@@ -180,7 +180,7 @@ export function SocialPage({
             <AgendaPage accessContext={accessContext} onConfirmed={openConfirmedPatient} embeddedHome />
           </section>
 
-          <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp className="social-birthdays" />
+          <BirthdayPanel title="Aniversariantes de hoje" className="social-birthdays" />
         </>
       )}
 
