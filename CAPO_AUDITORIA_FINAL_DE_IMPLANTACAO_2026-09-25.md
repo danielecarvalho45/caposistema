@@ -7995,3 +7995,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limites e homologação:** a origem exata da mensagem exibida ao usuário não foi capturada em log/screenshot; a divergência de parser é comprovada pelo código e contrato, mas não se declara que necessariamente foi o único gatilho. A função SQL original permanece transacional; a interface não pode garantir que uma queda de conexão após commit signifique rollback. Necessário teste de cadastro real autorizado e confirmação na publicação. Não foram executados testes de transação com paciente real nem build completo nesta execução.
 
 **Commits:** `edb4c3404536e5235e991a0a05b06b5e0289f45d` (contrato/parser), `792a292569c36e4aade6d924b8cd2b560d5fb833` (interface e reconciliação).
+
+
+## §28.171 — Oferta CAPO: simplificação do primeiro contato e desfecho na fila Busca Ativa (04/11/2026)
+
+**Autorização VERDE da Titular:** após cadastrar paciente novo, exibir a mensagem predefinida, telefone e apenas **Abrir WhatsApp**; retirar **Copiar mensagem** e os controles de aceite, novo contato, sem resposta, recusa, data e observação dessa tela. A gestão desses desfechos passa para a fila **Busca Ativa → Oferta Inicial**, com interface compacta. A ação continua manual e auditável.
+
+**Correção cirúrgica aplicada:** `src/features/patients/PatientsPage.tsx` teve removidos o botão de cópia e a seção de desfechos/histórico operacional, mantendo abertura da aba WhatsApp compartilhada, mensagem preparada, telefone, feedback de gravação da pendência inicial, vínculo ao paciente e link para a fila. Foram eliminados estados, funções e chamadas da seção removida para não manter lógica morta. `src/features/gestor/ActiveSearchPage.tsx` ganhou botão discreto `Registrar resposta / observação` por paciente ativo na Oferta Inicial, com seletor compacto de Aceitou/Novo contato/Sem resposta/Recusou, data futura de próxima ação, observação opcional e confirmação explícita para aceite/recusa. Utiliza `registerInitialActiveSearchAttempt` oficial, com gravação real e recarga da fila. A transferência por segundo contato após 72 horas para Resgate permanece no fluxo separado já implantado.
+
+**Integração conferida:** as funções reais `get_initial_active_searches_for_interface` e `register_initial_active_search_attempt_for_interface` existem no Supabase oficial com as assinaturas utilizadas. Não houve migração, alteração de dados reais, cadastro sintético ou intervenção em Faltosos. A escolha de resposta não cria aceite/recusa sem clique de salvamento e confirmação do banco.
+
+**Validação:** leitura dos arquivos atualizados no GitHub confirma que `Copiar mensagem` e os controles de desfecho foram removidos de Pacientes e que o registro aparece na Busca Ativa; build/testes automatizados completos, publicação no Cloudflare e homologação operacional ainda não comprovados. Não declarar 100% concluído até teste autorizado.
+
+**Commits:** `09f78bab65a431909c0270a48c48eac8f11d6a29` e `20b0b87106677229c0b6ae0605879fad6c34e133`.
