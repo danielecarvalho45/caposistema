@@ -2424,6 +2424,40 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_professional_id: professionalId, ...teamProfileArgs(input) },
         parse: parseConfirmedJson,
       }),
+    getProfessionalCareLocation: (professionalId: string) =>
+      execute({
+        transport,
+        operation: 'get_professional_care_location_for_interface',
+        args: { p_professional_id: professionalId },
+        parse: parseConfirmedJson,
+      }),
+    setProfessionalCareLocation: (professionalId: string, location: string | null) =>
+      execute({
+        transport,
+        operation: 'set_professional_care_location_for_interface',
+        args: { p_professional_id: professionalId, p_location: location },
+        parse: parseConfirmedJson,
+      }),
+    getAppointmentCareLocation: (appointmentId: string) =>
+      execute({
+        transport,
+        operation: 'get_appointment_care_location_for_interface',
+        args: { p_appointment_id: appointmentId },
+        parse: parseConfirmedJson,
+      }),
+    getPendingCareLocationChanges: () =>
+      execute({
+        transport,
+        operation: 'get_pending_care_location_changes_for_interface',
+        parse: parseConfirmedJson,
+      }),
+    confirmCareLocationNotice: (noticeId: string) =>
+      execute({
+        transport,
+        operation: 'confirm_appointment_care_location_notice_for_interface',
+        args: { p_notice_id: noticeId },
+        parse: parseConfirmedJson,
+      }),
     setTeamMemberActive: (professionalId: string, active: boolean, reason: string) =>
       execute({
         transport,
