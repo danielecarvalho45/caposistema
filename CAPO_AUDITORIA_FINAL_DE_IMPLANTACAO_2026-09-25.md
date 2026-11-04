@@ -7798,3 +7798,16 @@ Não houve alteração de schema ou migration no Supabase.
 **Validação pendente:** arquivos confirmados em `main`; suíte, build, publicação e teste no navegador autenticado não comprovados nesta sessão. A reconexão após recarregar a página pode depender da política do navegador. Homologar abertura inicial e reutilização com dois contatos autorizados sem enviar mensagem de teste a pacientes reais.
 
 **Estado:** **CORREÇÃO NO MAIN / REGRESSÃO ESCRITA, NÃO EXECUTADA / HOMOLOGAÇÃO REAL PENDENTE.**
+
+
+### 28.154 WHATSAPP — RETIRADA DOS ATALHOS DOS PERFIS PROFISSIONAIS (04/11/2026)
+
+**Decisão expressa da Titular:** ao agendar o próprio retorno, o profissional apenas define data/horário e salva. Avisos de consulta e contatos pelo WhatsApp são responsabilidade do Administrativo Operacional e do Gestor/Titular. O botão de WhatsApp não deve existir nos perfis profissionais, nem em sua Home, busca assistencial ou aniversariantes; manter os atalhos nos contextos administrativos autorizados.
+
+**Correção cirúrgica:** em `AgendaPage.tsx`, a informação `lastScheduledContact` e o botão WhatsApp após criação de agendamento ficam restritos a `!isProfessional`; a geração do retorno continua usando a mesma RPC sem qualquer envio automático. Em `NutritionPage.tsx`, removido o WhatsApp dos aniversariantes. Em `AssistentialPage.tsx`, retirado o WhatsApp da busca de pacientes e o parâmetro `allowPatientWhatsApp` do painel de aniversariantes. Em `SocialPage.tsx`, retirado o mesmo parâmetro do painel de aniversariantes. A consulta e a atuação dos profissionais, inclusive confirmação, falta, retorno, solicitações e alta próxima, permanecem intactas. Home administrativa, Gestor/Titular, avisos prévios da Agenda e Faltosos preservam seus botões conforme acesso autorizado. Não houve alteração de Supabase, WhatsApp compartilhado, texto de mensagens ou pacientes.
+
+**Commits:** `c0399546ef1a865768e61889e498746bb3865818`, `a6599c620e2fa0578cad844371073c285d4637fb`, `0d90c9dc39ee2d92e2fec1f56bcba2f20629877f`, `e06f49d2184830d959832dbfe685ee006119ff8e`, `949ec8e872367285c02ec8ecad6529913b2d4a54`.
+
+**Validação:** arquivos relidos fisicamente em `main`, confirmando remoção dos acionadores profissionais e preservação dos administrativos. Suíte, build, deploy e validação autenticada nos quatro perfis profissionais **ainda não executados/comprovados**. Não enviar mensagens a pacientes reais durante testes técnicos.
+
+**Estado:** **RESTRIÇÃO VISUAL DOS PERFIS PROFISSIONAIS NO MAIN / HOMOLOGAÇÃO PENDENTE.**
