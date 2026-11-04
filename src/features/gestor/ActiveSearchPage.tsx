@@ -258,6 +258,9 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                         ? new Date(item.next_contact_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
                         : 'Ainda não programado'}</small>
                       <small>Nº CAPO {label(item, 'patient_number')} · {label(item, 'next_action')}</small>
+                      {typeof item.next_contact_at === 'string' && new Date(item.next_contact_at).getTime() <= Date.now() && (
+                        <strong role="status">Lembrete administrativo: 72 horas sem resposta — realizar segundo contato.</strong>
+                      )}
                       {canOperate && active && patientId !== '—' && (
                         <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>
                           Continuar oferta / registrar resposta
@@ -267,6 +270,10 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                   )}
                   {(mode === 'oferta' || mode === 'resgate') && canOperate && active && patientId !== '—' && (
                     <div>
+                      {mode === 'resgate' && typeof item.next_contact_at === 'string'
+                        && new Date(item.next_contact_at).getTime() <= Date.now() && (
+                        <strong role="status">Lembrete administrativo: tentativa de resgate após 15 dias.</strong>
+                      )}
                       {mode === 'resgate' && (
                         <small>Próxima tentativa: {typeof item.next_contact_at === 'string'
                           ? new Date(item.next_contact_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
