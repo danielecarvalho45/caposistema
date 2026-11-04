@@ -13,6 +13,7 @@ const rpc = vi.hoisted(() => ({
   updatePatient: vi.fn(),
   createPatient: vi.fn(),
   createClassifiedPatient: vi.fn(),
+  checkPatientDuplicates: vi.fn(),
   getInitialActiveSearches: vi.fn(),
   registerInitialActiveSearchAttempt: vi.fn(),
   getPatientContact: vi.fn(),
@@ -45,6 +46,7 @@ const context = {
 
 beforeEach(() => {
   rpc.getInitialActiveSearches.mockResolvedValue({ status: 'success', data: { items: [] } })
+  rpc.checkPatientDuplicates.mockResolvedValue({ status: 'success', data: [] })
 })
 
 afterEach(() => {
@@ -82,6 +84,44 @@ it('cadastra paciente novo pela operação classificada e só então mostra a Of
     registrationKind: 'novo', historicalCapoStartDate: null,
   }))
   expect(await screen.findByRole('heading', { name: 'Oferta CAPO — primeiro contato' })).toBeVisible()
+})
+
+it('bloqueia cadastro com nome e nascimento idênticos e permite consultar o cadastro encontrado', async () => {
+  rpc.checkPatientDuplicates.mockResolvedValue({ status: 'success', data: [{
+    patient_id: 'already-exists', full_name: 'Nome repetido', birth_date: '1980-01-01',
+    patient_number: '42', match_type: 'exato',
+  }] })
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByLabelText('Paciente novo'))
+  await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Nome repetido')
+  fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '1980-01-01' } })
+  await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
+  expect(await screen.findByText(/Cadastro idêntico/)).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Consultar cadastro existente' })).toBeVisible()
+  expect(rpc.createClassifiedPatient).not.toHaveBeenCalled()
+})
+
+it('exige conferência explícita antes de cadastrar nome semelhante com mesma data', async () => {
+  rpc.checkPatientDuplicates.mockResolvedValue({ status: 'success', data: [{
+    patient_id: 'similar', full_name: 'Maria do Carmo Silva', birth_date: '1980-01-01',
+    patient_number: '52', match_type: 'semelhante',
+  }] })
+  rpc.createClassifiedPatient.mockResolvedValue({ status: 'success', data: {
+    patient_id: 'new', patient_number: '53', status: 'ativo',
+    created_at: '2026-11-04T14:00:00.000Z',
+  } })
+  rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [] })
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByLabelText('Paciente novo'))
+  await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Maria Aparecida Silva')
+  fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '1980-01-01' } })
+  await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
+  expect(rpc.createClassifiedPatient).not.toHaveBeenCalled()
+  await user.click(screen.getByLabelText('Conferi os cadastros: são pessoas diferentes.'))
+  await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
+  expect(rpc.createClassifiedPatient).toHaveBeenCalledTimes(1)
 })
 
 it('abre o cadastro completo e mantém as ações no paciente consultado', async () => {
