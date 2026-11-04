@@ -18,7 +18,6 @@ import './assistential-page.css'
 import '../../styles/quick-access.css'
 import { Link, useLocation } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
-import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
 import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
 import { canAccessAppRoute } from '../../app/route-access'
@@ -291,7 +290,7 @@ export function AssistentialPage({
         />
       </section>
 
-      <BirthdayPanel title="Aniversariantes de hoje" allowPatientWhatsApp />
+      <BirthdayPanel title="Aniversariantes de hoje" />
 
       {(!homeOnly || searchState !== null) && (
       <article id="assistential-patients" className="assistential-card">
