@@ -7966,3 +7966,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificação:** migração aplicada no Supabase oficial; funções presentes, disponíveis para `authenticated` e indisponíveis para `anon`; check constraint admite `offer_rescue`; fila inicia com 0 registros legítimos, preservando pacientes e histórico existentes. Não houve execução do desfecho com pacientes reais nem teste automatizado de build/publicação após os commits. Pendentes a validação visual no Cloudflare e a homologação operacional pelo administrativo.
 
 **Commits:** `8a38a22280306b7469a3b9e4054990e876b29ce8` (migração), `f0f68eff1e03f85049e27a30a7557b9ed7fcba5a` (serviço/transporte), `d682ef107ead37ca6361d95e28db481b57100003` (interface), `dbfcabf172c6b212d06e931c46f5e8887bfc4935` (lembretes visíveis).
+
+
+## §28.169 — WhatsApp: reutilização transversal da aba na Oferta CAPO e Familiar/Cuidador (04/11/2026)
+
+**Relato real:** após cadastrar outro paciente e acionar Oferta CAPO, o sistema continuava abrindo outra aba do WhatsApp, apesar da regra e teste do §28.153. Confronto físico: a Oferta CAPO em `PatientsPage.tsx` fazia `window.open(url,'_blank','noopener,noreferrer')`, contornando a aba nomeada `capo_whatsapp_web` do componente compartilhado. A área Familiar/Cuidador também possuía abertura independente em `_blank`.
+
+**Correção cirúrgica integrada:** novo utilitário compartilhado `src/components/contact/whatsapp-tab.ts` concentra a referência `Window` e nome `capo_whatsapp_web`, reutiliza a aba ainda aberta, direciona URL de telefone/mensagem e focaliza-a. `PatientWhatsAppButton.tsx` (Agenda e demais consumidores), `PatientsPage.tsx` (Oferta Inicial) e `FamilyCaregiverPage.tsx` passaram a usar o mesmo controlador. A Oferta executa abertura síncrona no clique e preserva a RPC de entrada na Busca Ativa apenas quando a aba consegue ser aberta, com feedback de bloqueio ao operador. Não houve alteração de banco, paciente, registro de aceite/recusa, mensagem, prazo ou fila; Faltosos continua inalterado.
+
+**Limitação explicada:** a aba aberta manualmente fora do CAPO não pode ser capturada automaticamente; a aba nomeada criada pelo CAPO é a reutilizável. Navegadores podem bloquear pop-ups e permitir/restringir mudança de foco.
+
+**Verificações e status:** arquivos atualizados em `main`, commit de cada módulo confirmado pelo GitHub. Teste operacional real com dois contatos legítimos, build e publicação no Cloudflare ainda **não comprovados**; não declarar homologação 100%.
+
+**Commits:** `a96bf82380cc9881c261390579656c1bc91eae3a`, `19fb13b828a3f1cb7f46570823384943b3cf58eb`, `5bfc15262f8e48bebde38db0b5aa23b7b3ed7d9e`, `0223d8e427f13c5079171bfb5f0725142adf2561`.
