@@ -117,8 +117,13 @@ function appointmentNoticeMessage(contact: {
     ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(start)
     : 'Consultar agendamento'
 
+  const hour = Number(new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23',
+  }).format(new Date()))
+  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+
   return [
-    `Olá, ${contact.patientName}!`,
+    `${greeting}, ${contact.patientName}!`,
     '',
     'Seu atendimento no CAPO — Centro de Apoio ao Paciente Oncológico foi agendado.',
     '',
