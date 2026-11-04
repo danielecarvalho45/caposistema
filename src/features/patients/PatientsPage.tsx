@@ -523,6 +523,9 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                 {offerBusy ? 'Registrando…' : offerOutcome === 'aceitou' ? 'Salvar aceite e abrir ciclo CAPO' : 'Registrar contato da Oferta'}
               </button>
               {offerFeedback && <p role="status">{offerFeedback}</p>}
+              {offerPatientId && canEditPatient && canAccessAppRoute(accessContext, '/busca-ativa') && (
+                <Link to="/busca-ativa?tipo=oferta">Ver pendências da Oferta Inicial na Busca Ativa</Link>
+              )}
               {offerCycleConfirmation?.patientId === offerPatientId && canAccessAppRoute(accessContext, '/agenda') && (
                 <Link to="/agenda" state={{
                   patientId: offerPatientId,
