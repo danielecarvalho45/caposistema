@@ -2951,6 +2951,20 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_patient_id: patientId },
         parse: (value) => value,
       }),
+    getPatientForProfessional: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'get_patient_for_professional_interface',
+        args: { p_patient_id: patientId },
+        parse: (value) => value,
+      }),
+    updatePatientPhoneByProfessional: (patientId: string, phone: string) =>
+      execute({
+        transport,
+        operation: 'update_patient_phone_by_professional_for_interface',
+        args: { p_patient_id: patientId, p_phone: phone },
+        parse: (value) => value,
+      }),
     updatePatient: (input: {
       patientId: string
       fullName: string
