@@ -7,6 +7,8 @@ type Props = Readonly<{
   message?: string | null
 }>
 
+let whatsappTabReference: Window | null = null
+
 function digits(value: string) {
   return value.replace(/\D/g, '')
 }
@@ -50,12 +52,16 @@ export function PatientWhatsAppButton({
     const whatsappUrl = `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalizedPhone)}${preparedMessage ? `&text=${encodeURIComponent(preparedMessage)}` : ''}`
     // Reutiliza a aba identificada pelo CAPO nas próximas mensagens, sem abrir uma por paciente.
     // A aba WhatsApp aberta manualmente pelo usuário não é controlada pelo sistema.
-    const whatsappTab = globalThis.open('', 'capo_whatsapp_web')
+    const whatsappTab =
+      whatsappTabReference && !whatsappTabReference.closed
+        ? whatsappTabReference
+        : globalThis.open('', 'capo_whatsapp_web')
     if (!whatsappTab) {
       setFeedback('O navegador bloqueou a aba do WhatsApp. Autorize pop-ups para o CAPO e tente novamente.')
       setBusy(false)
       return
     }
+    whatsappTabReference = whatsappTab
     try {
       whatsappTab.opener = null
       whatsappTab.location.replace(whatsappUrl)
