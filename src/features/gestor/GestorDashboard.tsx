@@ -55,7 +55,7 @@ const quickAccess = [
   ['/faltosos', '◷', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
   ['/solicitacoes', '▤', 'Solicitações', 'Analisar e encaminhar', 'purple'],
   ['/transporte', '▰', 'Transporte', 'Providências e acompanhamento', 'yellow'],
-  ['/gestor/familiares', '♟', 'Familiares', 'Cadastro e vínculos', 'mint'],
+  ['/gestor/familiares', '👥', 'Familiares', 'Cadastro e vínculos', 'mint'],
   ['/encerramentos', '✓', 'Encerramentos', 'Por especialidade', 'slate'],
   ['/relatorios', '▥', 'Relatórios', 'Consultas e indicadores', 'violet'],
 ] as const
