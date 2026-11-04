@@ -3008,6 +3008,8 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_full_name: fullName, p_birth_date: birthDate },
         parse: (value) => value,
       }),
+    isPatientInitialOfferAvailable: (patientId: string) =>
+      execute({ transport, operation: 'patient_initial_offer_available_for_interface', args: { p_patient_id: patientId }, parse: (value) => value === true }),
     getPatientForEdit: (patientId: string) =>
       execute({
         transport,
@@ -3781,6 +3783,7 @@ function createSupabaseTransport(
       case 'open_initial_offer_whatsapp_for_interface':
       case 'get_offer_rescue_searches_for_interface':
       case 'register_offer_rescue_contact_for_interface':
+      case 'patient_initial_offer_available_for_interface':
       case 'get_initial_active_searches_for_interface':
       case 'register_initial_active_search_attempt_for_interface':
       case 'close_initial_active_search_for_interface':
