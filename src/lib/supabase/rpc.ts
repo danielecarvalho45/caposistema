@@ -2213,6 +2213,13 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_waiting_list_id: waitingListId, p_action: action, p_notes: notes },
         parse: parseConfirmedJson,
       }),
+    openInitialOfferWhatsApp: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'open_initial_offer_whatsapp_for_interface',
+        args: { p_patient_id: patientId },
+        parse: parseConfirmedJson,
+      }),
     getInitialActiveSearches: (status: string | null = null, limit = 50, offset = 0) =>
       execute({ transport, operation: 'get_initial_active_searches_for_interface', args: { p_flow_status: status, p_limit: limit, p_offset: offset }, parse: (value) => value }),
     registerInitialActiveSearchAttempt: (input: {
@@ -3721,6 +3728,7 @@ function createSupabaseTransport(
       case 'get_waiting_list_for_interface':
       case 'add_patient_to_waiting_list_for_interface':
       case 'update_waiting_list_status_for_interface':
+      case 'open_initial_offer_whatsapp_for_interface':
       case 'get_initial_active_searches_for_interface':
       case 'register_initial_active_search_attempt_for_interface':
       case 'close_initial_active_search_for_interface':
