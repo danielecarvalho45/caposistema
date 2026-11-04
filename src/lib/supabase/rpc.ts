@@ -3807,6 +3807,11 @@ function createSupabaseTransport(
       case 'get_patient_contact_for_interface':
       case 'get_appointment_previsit_contacts_for_interface':
       case 'register_appointment_previsit_contact_for_interface':
+      case 'get_professional_care_location_for_interface':
+      case 'set_professional_care_location_for_interface':
+      case 'get_appointment_care_location_for_interface':
+      case 'get_pending_care_location_changes_for_interface':
+      case 'confirm_appointment_care_location_notice_for_interface':
         return confirmedRpc(operation, args)
       case 'accept_legal_term':
         return client.rpc(operation, {
