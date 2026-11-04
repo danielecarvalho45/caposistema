@@ -103,6 +103,36 @@ function formatCAPOMessageDateTime(value: string) {
   }).format(date)
 }
 
+function appointmentNoticeMessage(contact: {
+  patientName: string
+  specialtyName: string
+  slotStart: string
+}) {
+  const start = new Date(contact.slotStart)
+  const valid = !Number.isNaN(start.getTime())
+  const date = valid
+    ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short' }).format(start)
+    : contact.slotStart
+  const time = valid
+    ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }).format(start)
+    : 'Consultar agendamento'
+
+  return [
+    `Olá, ${contact.patientName}!`,
+    '',
+    'Seu atendimento no CAPO — Centro de Apoio ao Paciente Oncológico foi agendado.',
+    '',
+    `📅 Data: ${date}`,
+    `🕒 Horário: ${time}`,
+    `👩‍⚕️ Especialidade: ${contact.specialtyName}`,
+    '📍 Local: Centro de Apoio ao Paciente Oncológico (CAPO)',
+    '',
+    'Pedimos que compareça no horário agendado.',
+    '',
+    'CAPO — Secretaria Municipal de Saúde de Pouso Alegre/MG.',
+  ].join('\n')
+}
+
 function formatDateTime(value: string) {
   const date = new Date(value)
   return Number.isNaN(date.getTime())
@@ -779,6 +809,7 @@ export function AgendaPage({
     patientId: string
     patientName: string
     professionalName: string
+    specialtyName: string
     slotStart: string
   }> | null>(null)
   const [prefillWaitingListId, setPrefillWaitingListId] = useState('')
@@ -1154,6 +1185,7 @@ export function AgendaPage({
           patientId: appointmentPatientId,
           patientName: appointmentPatientQuery,
           professionalName,
+          specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? 'Especialidade não informada',
           slotStart: validSlotStart,
         })
       }
@@ -2036,8 +2068,8 @@ export function AgendaPage({
             {!isProfessional && lastScheduledContact && (
               <PatientWhatsAppButton
                 patientId={lastScheduledContact.patientId}
-                label="WhatsApp — confirmar agendamento"
-                message={`Olá, ${lastScheduledContact.patientName}. Seu atendimento no CAPO está agendado para ${formatCAPOMessageDateTime(lastScheduledContact.slotStart)} com ${lastScheduledContact.professionalName}.`}
+                label="💬 Avisar paciente pelo WhatsApp"
+                message={appointmentNoticeMessage(lastScheduledContact)}
               />
             )}
             <p className="agenda-contract-note">
