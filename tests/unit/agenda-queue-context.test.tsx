@@ -700,7 +700,7 @@ it('abre o formulário de retorno para consulta confirmada na semana profissiona
     'professional-return', expect.any(String),
   ))
   const returnGrid = screen.getByLabelText('Agenda do profissional para retorno')
-  expect(await within(returnGrid).findByText('Horário ocupado')).toBeVisible()
+  expect(await within(returnGrid).findByText('Agendado')).toBeVisible()
   expect(within(returnGrid).getByText('Livre')).toBeVisible()
   const selectFree = within(returnGrid).getByRole('button', { name: 'Selecionar' })
   await user.click(selectFree)
