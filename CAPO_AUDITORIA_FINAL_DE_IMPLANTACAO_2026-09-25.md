@@ -8119,3 +8119,20 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Validação pendente:** revisão do código e confirmação do commit no GitHub. Build automatizado, publicação Cloudflare e teste com usuário autorizado ainda não comprovados nesta execução.
 
 **Commit:** `153483f06e2b81392b3011276f0df552d8112bb4`.
+
+
+## §28.177 — Correção de persistência do endereço de atendimento profissional (04/11/2026)
+
+**Incidente real observado pela Titular:** o endereço de atendimento do médico era digitado no cadastro da equipe, porém, ao reabrir a ficha, o endereço não constava.
+
+**Diagnóstico confirmado:** consulta somente leitura ao Supabase oficial constatou 0 dos 11 profissionais com `care_location` preenchido no momento da inspeção, sem expor seus dados. As cinco funções SQL de local de atendimento já existiam no banco, e o serviço RPC do frontend já tinha métodos para utilizá-las, mas o transportador `createSupabaseTransport` não as incluía em seu roteamento permitido. A chamada de gravação era rejeitada como RPC não cadastrada na camada CAPO. Na interface `GestorTeamPage`, a recarga posterior também limpava a mensagem de falha, dando a impressão de cadastro bem-sucedido.
+
+**Autorização:** VERDE expresso da Titular em 04/11/2026.
+
+**Correção cirúrgica no GitHub / `main`:**
+- `src/lib/supabase/rpc.ts`: habilitado o transporte das cinco funções vigentes `get_professional_care_location_for_interface`, `set_professional_care_location_for_interface`, `get_appointment_care_location_for_interface`, `get_pending_care_location_changes_for_interface` e `confirm_appointment_care_location_notice_for_interface`, sem alterar o SQL, permissões, dados reais ou contratos.
+- `src/features/gestor/GestorTeamPage.tsx`: bloqueado o salvamento enquanto a consulta do endereço existente está em curso; após salvar, leitura de confirmação no banco confronta o valor gravado; falha de gravação ou de confirmação mantém aviso visível **após** a recarga da lista, não informa sucesso falso e orienta a conferência antes de agendar.
+
+**Commits confirmados:** `8b3584f5527f54e3c36fe34da30252789a0d72bf` (transporte RPC) e `604adfd1f0796ab5a0b7d83db358f3aa15000d23` (interface e verificação). Blobs recuperados de `main` coincidem com as revisões publicadas no GitHub.
+
+**Escopo e limites:** nenhuma alteração direta de registros profissionais ou pacientes no banco; não é possível recuperar automaticamente o endereço anteriormente digitado, porque não foi persistido. Titular deverá reabrir a ficha, informar o endereço novamente e salvar após a publicação. A compilação integral não foi executada por indisponibilidade do registro de pacotes no ambiente; a implantação Cloudflare e a homologação real de leitura/gravação pela conta autorizada seguem **pendentes**. Não declarar verificação funcional 100%.
