@@ -7948,3 +7948,21 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificação:** RPC existe no banco, permissão autenticada ativa e `anon` negada; cadastro real permanece preservado, e ainda não há linha inicial para o paciente até o clique operacional. Não houve execução transacional com paciente real nem confirmação visual do deploy. Testes automatizados/build/publicação e o clique real devem ser homologados.
 
 **Commits:** `d51440e23995648a05f64f136e44f3c7fde58816` (migração), `e93a0b38b5f03c7bec4075b294880844ef137150` (RPC/transporte), `50ec0be8b2cc88174e57621ef09ac0ccdc29ea2a` (interface).
+
+
+## §28.168 — Busca Ativa: terceira fila Resgate da Oferta CAPO e integração simultânea de interface/banco (04/11/2026)
+
+**Regra de manutenção fixada pela Titular:** a correção deve ser verificada transversalmente (persistência, contrato RPC, transporte, ação operacional e interface) na mesma entrega, com alterações cirúrgicas e sem cascata de regressões. O módulo Faltosos existente e já testado pela Titular permanece independente e não foi tocado.
+
+**Defeito anterior:** Busca Ativa oferecia apenas abas Oferta Inicial e Perda de Seguimento. Segundo contato e resgate não possuíam fila própria.
+
+**Implementações:**
+- Migração `20261104233000_offer_rescue_queue.sql`: novo tipo `offer_rescue` em `patient_active_searches`, índice dedicado; novas RPCs `get_offer_rescue_searches_for_interface` e `register_offer_rescue_contact_for_interface`; verificação de sessão/termo/perfil/visibilidade de paciente e isolamento de teste; `anon` sem EXECUTE.
+- Primeiro contato permanece em `initial`; segundo contato **registrado por administrativo**, somente após 72 horas, encerra o último evento inicial por transferência e inaugura `offer_rescue`. A fila inicial deixa de apresentar o paciente ativo; o resgate passa a exibi-lo. Cada tentativa subsequente sem resposta agenda nova tentativa 15 dias depois; a RPC impede registro antes do prazo.
+- Resultado **aceitou** ou **recusou** exige seleção expressa do administrativo e confirmação visual; nenhuma conclusão decorre automaticamente da passagem de tempo. Aceite cria ciclo CAPO conforme regra de ingresso; recusa fecha o resgate. Não há paciente, tentativa ou vínculo sintético inserido.
+- `src/lib/supabase/rpc.ts` expõe ambas operações também no transporte real; `src/features/gestor/ActiveSearchPage.tsx` exibe as três abas Oferta Inicial, Resgate da Oferta CAPO e Perda de Seguimento, com nomes clicáveis, registro contextual, datas e lembretes visíveis nas filas aos 72h/15 dias. Faltosos não foi alterado.
+- Os lembretes desta intervenção são **visíveis na própria Busca Ativa quando a fila é carregada**; não representam criação de notificação global persistente no sino, que exigiria contrato específico e homologação separada.
+
+**Verificação:** migração aplicada no Supabase oficial; funções presentes, disponíveis para `authenticated` e indisponíveis para `anon`; check constraint admite `offer_rescue`; fila inicia com 0 registros legítimos, preservando pacientes e histórico existentes. Não houve execução do desfecho com pacientes reais nem teste automatizado de build/publicação após os commits. Pendentes a validação visual no Cloudflare e a homologação operacional pelo administrativo.
+
+**Commits:** `8a38a22280306b7469a3b9e4054990e876b29ce8` (migração), `f0f68eff1e03f85049e27a30a7557b9ed7fcba5a` (serviço/transporte), `d682ef107ead37ca6361d95e28db481b57100003` (interface), `dbfcabf172c6b212d06e931c46f5e8887bfc4935` (lembretes visíveis).
