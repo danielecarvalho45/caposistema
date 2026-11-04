@@ -8173,3 +8173,21 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Descoberta adicional:** os padrões ativos de cada profissional abrangem diferentes dias, e há blocos vinculados a dias que não estão ativos no padrão da Juliana e do Ilton; isso não comprova por si duplicidade de grade. Não foram excluídos nem ativados porque seria necessária prova de impacto por dia e regra de formulação vigente. A RPC da grade escolhe um padrão efetivo por profissional/data, e a combinação com exceções e registros de outros padrões ainda requer reprodução em interface para explicar a alegação de bloqueio duplicado.
 
 **Limites:** corrigida a **classificação comprovadamente errada** de Juliana e Jaqueline no Supabase; Ilton não exigiu alteração de tipo. Não declarar corrigidos o bloqueio duplicado, a descrição em todas as grades, o desbloqueio direto da grade ou a permissão transversal de Gestor/Titular. Publicação de frontend, teste visual e demais sintomas continuam pendentes.
+
+
+## §28.180 — Oferta Inicial não deve permanecer ativa no cadastro após aceite (04/11/2026)
+
+**Incidente homologado pela Titular / VERDE:** após paciente aceitar a Oferta CAPO e iniciar o ciclo, a seção `Oferta CAPO — primeiro contato` continuava visível ao consultar o cadastro do paciente.
+
+**Causa confirmada:** `src/features/patients/PatientsPage.tsx` condicionava a exibição ao fato de um paciente existir em modo consulta e ao perfil administrativo, sem verificar seu ciclo CAPO ou o encerramento da Oferta Inicial. O fluxo de aceite em `ActiveSearchPage.tsx` já registra `accepted_service=true`, encerra o contato inicial e direciona ao agendamento; a RPC de aceite também cria ciclo CAPO se inexistente. Não houve necessidade de reabrir ou reescrever a regra de aceite.
+
+**Correção funcional e de segurança, sem tocar em dados reais:**
+- Nova função SQL `public.patient_initial_offer_available_for_interface(uuid)`, com verificação de contexto do paciente, sessão, termo legal e papéis administrativos (Gestor/Titular e Administrativo Operacional). Retorna `false` se existe ciclo CAPO ou qualquer encerramento de Oferta Inicial do paciente, e `true` apenas quando não há essas condições. A execução pública/anônima é revogada, ficando concedida a usuários autenticados ainda sujeitos às validações internas. Migração Supabase `capo_patient_initial_offer_state_20261104` aplicada e espelhada em `supabase/migrations/20261104233000_capo_patient_initial_offer_state.sql`.
+- `src/lib/supabase/rpc.ts`: registra método `isPatientInitialOfferAvailable` e operação no transporte RPC vigente.
+- `src/features/patients/PatientsPage.tsx`: ao abrir ficha na consulta administrativa, consulta o estado individual e só exibe `Oferta CAPO — primeiro contato` quando o banco confirma elegibilidade. Enquanto consulta e em falha técnica, oculta a ação por segurança; erro informa que falta conferir o banco. Oferta para cadastro novo recém-gravado permanece intacta.
+
+**Preservação:** histórico de contatos/aceites, ciclos, agendamento já iniciado, pacientes e demais ações de cadastro não foram apagados/alterados. Nenhum WhatsApp foi enviado. Não substitui a Busca Ativa nem altera a regra de aceitar o serviço.
+
+**Evidência:** migração retornou sucesso, contagem de função instalada = 1, código do `main` conferido quanto à chamada e ao guarda de exibição. Commits `83d30b43ff72d3da1e91e487fbcb67ee8c2c801e` (migração versionada), `ebb7cee82673f7cdf0daa1d79ad12299985c9869` (transporte) e `d54ebb1077ee73ab64228cac271713e02ed98e7a` (interface).
+
+**Pendências honestas:** não houve teste final autenticado com a ficha real pela interface, nem confirmação do deploy Cloudflare ou suíte completa de build/testes. Não declarar homologação 100%.
