@@ -107,6 +107,8 @@ function appointmentNoticeMessage(contact: {
   patientName: string
   specialtyName: string
   slotStart: string
+  senderName: string
+  senderTitle: string
 }) {
   const start = new Date(contact.slotStart)
   const valid = !Number.isNaN(start.getTime())
@@ -141,8 +143,8 @@ function appointmentNoticeMessage(contact: {
     '',
     'Obrigado(a)!',
     '',
-    'DANIELE CARVALHO',
-    'ADMINISTRATIVO DO CAPO',
+    contact.senderName.toLocaleUpperCase('pt-BR'),
+    contact.senderTitle.toLocaleUpperCase('pt-BR'),
   ].join('\n')
 }
 
@@ -2082,7 +2084,16 @@ export function AgendaPage({
               <PatientWhatsAppButton
                 patientId={lastScheduledContact.patientId}
                 label="💬 Avisar paciente pelo WhatsApp"
-                message={appointmentNoticeMessage(lastScheduledContact)}
+                message={appointmentNoticeMessage({
+                  ...lastScheduledContact,
+                  senderName: accessContext.real_identity.full_name?.trim()
+                    || accessContext.full_name?.trim()
+                    || accessContext.username,
+                  senderTitle: accessContext.function_title?.trim()
+                    || accessContext.real_identity.function_title?.trim()
+                    || accessContext.primary_context.name?.trim()
+                    || 'Equipe CAPO',
+                })}
               />
             )}
             <p className="agenda-contract-note">
