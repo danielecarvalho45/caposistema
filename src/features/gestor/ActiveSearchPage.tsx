@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 
@@ -40,6 +40,7 @@ function offerDate(value: unknown) {
 
 export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: AccessContext }>) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [mode, setMode] = useState<'seguimento' | 'oferta' | 'resgate'>(
     () => new URLSearchParams(location.search).get('tipo') === 'oferta' ? 'oferta' : 'seguimento',
   )
@@ -132,6 +133,9 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
     })
     setBusy(false)
     if (response.status === 'success') {
+      const acceptedPatientId = initialPatientId
+      const acceptedPatient = rows(state.status === 'success' ? state.data : null)
+        .find((item) => item.patient_id === acceptedPatientId)
       setFeedback(accepted
         ? 'Aceite registrado pelo administrativo. Verifique o vínculo CAPO confirmado no banco.'
         : declined ? 'Recusa expressa registrada e Oferta Inicial encerrada.'
@@ -140,7 +144,17 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
       setInitialOutcome('')
       setInitialNotes('')
       setInitialNextAt('')
-      void load()
+      if (accepted) {
+        navigate('/agenda', {
+          state: {
+            patientId: acceptedPatientId,
+            patientName: acceptedPatient ? label(acceptedPatient, 'patient_name', 'full_name') : '',
+            origin: 'patient_record',
+          },
+        })
+      } else {
+        void load()
+      }
     } else {
       setFeedback(response.status === 'error' ? response.error.message : 'O banco não confirmou a resposta.')
     }
