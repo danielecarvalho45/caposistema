@@ -11,6 +11,7 @@ import {
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { ProfileDashboard } from './ProfileDashboard'
+import { CareLocationNotices } from './CareLocationNotices'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { TeamDayAgendaPanel } from './TeamDayAgendaPanel'
 import './home-page.css'
@@ -116,6 +117,7 @@ export function HomePage({
   return (
     <div className="home-page home-mobile-standard">
       <ProfileDashboard accessContext={accessContext} />
+      {isAdministrativeOperational && <CareLocationNotices />}
 
       {isAdministrativeOperational && (
         <section className="operational-dashboard-grid" aria-label="Rotina operacional do dia">
