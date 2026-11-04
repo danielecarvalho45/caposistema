@@ -71,6 +71,7 @@ export function PatientsPage({
   const [offerCycleConfirmation, setOfferCycleConfirmation] = useState<{ patientId: string; cycleId: string } | null>(null)
   const [offerHistory, setOfferHistory] = useState<readonly Record<string, unknown>[]>([])
   const [offerBusy, setOfferBusy] = useState(false)
+  const [offerOpenBusy, setOfferOpenBusy] = useState(false)
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<AsyncState<readonly {
     patient_id: string
@@ -127,13 +128,26 @@ Fico à disposição para esclarecer suas dúvidas.
 
 ${operatorName} – ADMINISTRATIVO CAPO`
 
-  function openWhatsApp() {
-    if (whatsappNumber.length < 10) return
+  async function openWhatsApp() {
+    if (whatsappNumber.length < 10 || !offerPatientId || offerOpenBusy) return
+    // Abrir durante o clique para evitar bloqueio de pop-up por await.
     window.open(
       `https://web.whatsapp.com/send?phone=${encodeURIComponent(whatsappNumber)}&text=${encodeURIComponent(offerMessage)}`,
       '_blank',
       'noopener,noreferrer',
     )
+    setOfferOpenBusy(true)
+    setOfferFeedback('Registrando abertura do WhatsApp na Oferta Inicial…')
+    const result = await getRpcService().openInitialOfferWhatsApp(offerPatientId)
+    setOfferOpenBusy(false)
+    if (result.status === 'success') {
+      setOfferFeedback('Oferta Inicial incluída na Busca Ativa. A abertura do WhatsApp não confirma envio nem aceite.')
+      void loadOfferHistory(offerPatientId)
+    } else {
+      setOfferFeedback(result.status === 'error'
+        ? `WhatsApp aberto, mas a pendência NÃO foi registrada: ${result.error.message}. Tente novamente.`
+        : 'WhatsApp aberto, mas não foi possível confirmar a pendência. Tente novamente.')
+    }
   }
 
   async function createPatient() {
@@ -634,7 +648,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                 <button type="button" onClick={() => void navigator.clipboard?.writeText(offerMessage)}>
                   Copiar mensagem
                 </button>
-                <button type="button" disabled={whatsappNumber.length < 10} onClick={openWhatsApp}>
+                <button type="button" disabled={whatsappNumber.length < 10 || !offerPatientId || offerOpenBusy} onClick={() => void openWhatsApp()}>
                   Abrir WhatsApp
                 </button>
               </div>
