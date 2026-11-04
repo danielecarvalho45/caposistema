@@ -156,6 +156,21 @@ describe('ProfileDashboard', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('mostra Consulta de Pacientes para Nutrição, Social, Psicologia e futuras especialidades', () => {
+    for (const specialty of ['nutricao', 'assistencia_social', 'profissional', 'nova_especialidade']) {
+      const professional = {
+        ...context,
+        is_active: true,
+        professional_id: 'professional-id',
+        roles: [{ code: 'profissional', name: 'Profissional' }],
+        primary_context: { ...context.primary_context, code: specialty },
+      }
+      render(<MemoryRouter><ProfileDashboard accessContext={professional} /></MemoryRouter>)
+      expect(screen.getByRole('link', { name: /Consultar Pacientes/ })).toHaveAttribute('href', '/pacientes')
+      cleanup()
+    }
+  })
+
   it('não expõe agenda profissional no painel administrativo operacional', () => {
     render(
       <MemoryRouter>
