@@ -201,7 +201,19 @@ export function ProfileDashboard({
 }: Readonly<{ accessContext: AccessContext }>) {
   const primaryCode = accessContext.primary_context.code ?? ''
   const dashboardKey = primaryCode || 'profissional'
-  const availableLinks = (links[dashboardKey] ?? links.profissional ?? []).filter(
+  const configuredLinks = links[dashboardKey] ?? links.profissional ?? []
+  const isProfessional = accessContext.roles.some((role) => role.code === 'profissional')
+  const patientConsultation: DashboardLink = {
+    path: '/pacientes',
+    label: 'Consultar Pacientes',
+    description: 'Consulta cadastral e atualização de telefone.',
+    icon: '👥',
+    tone: 'quick-blue',
+  }
+  const profileLinks = isProfessional && !configuredLinks.some((item) => item.path === '/pacientes')
+    ? [patientConsultation, ...configuredLinks]
+    : configuredLinks
+  const availableLinks = profileLinks.filter(
     (item) => canAccessAppRoute(accessContext, item.path),
   )
 
