@@ -6,6 +6,8 @@ import type { AccessContext } from '../../types/access'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import './patients-page.css'
 
+type PatientDuplicateMatch = Readonly<{ patient_id: string; patient_number: string | null; full_name: string; birth_date: string; match_type: 'exato' | 'semelhante' }>
+
 const emptyState: AsyncState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]> = {
   status: 'empty',
 }
@@ -53,6 +55,10 @@ export function PatientsPage({
   const [createdPatientAt, setCreatedPatientAt] = useState<string | null>(null)
   const [preexistingPatientId, setPreexistingPatientId] = useState<string | null>(null)
   const [patientNotes, setPatientNotes] = useState('')
+  const [duplicateMatches, setDuplicateMatches] = useState<readonly PatientDuplicateMatch[]>([])
+  const [duplicateReviewKey, setDuplicateReviewKey] = useState('')
+  const [duplicateReviewed, setDuplicateReviewed] = useState(false)
+  const [duplicateBusy, setDuplicateBusy] = useState(false)
   const [patientOrigin, setPatientOrigin] = useState('')
   const [createdPatientId, setCreatedPatientId] = useState<string | null>(null)
   const [createdPatientNumber, setCreatedPatientNumber] = useState<string | null>(null)
@@ -149,6 +155,32 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       setFeedback('Informe nome completo e data de nascimento.')
       return
     }
+    const duplicateKey = `${patientName.trim().toLowerCase().replace(/\s+/g, ' ')}|${patientBirthDate}`
+    setDuplicateBusy(true)
+    const duplicateResult = await getRpcService().checkPatientDuplicates(patientName.trim(), patientBirthDate)
+    setDuplicateBusy(false)
+    if (duplicateResult.status !== 'success') {
+      setFeedback(duplicateResult.status === 'error'
+        ? duplicateResult.error.message
+        : 'Não foi possível conferir duplicidade. Tente novamente antes de cadastrar.')
+      return
+    }
+    const matches: PatientDuplicateMatch[] = (Array.isArray(duplicateResult.data)
+      ? duplicateResult.data : []).filter((item): item is PatientDuplicateMatch =>
+        Boolean(item) && typeof item === 'object' && typeof item.patient_id === 'string' &&
+        (item.match_type === 'exato' || item.match_type === 'semelhante'))
+    setDuplicateMatches(matches)
+    setDuplicateReviewKey(duplicateKey)
+    if (matches.some((item) => item.match_type === 'exato')) {
+      setDuplicateReviewed(false)
+      setFeedback('Cadastro já existente com o mesmo nome e data de nascimento. Consulte o paciente localizado.')
+      return
+    }
+    if (matches.length > 0 && !(duplicateReviewKey === duplicateKey && duplicateReviewed)) {
+      setDuplicateReviewed(false)
+      setFeedback('Possível duplicidade: confira os cadastros encontrados antes de continuar.')
+      return
+    }
     setFeedback('Cadastrando paciente no banco…')
     const next = await getRpcService().createClassifiedPatient({
       registrationKind,
@@ -184,7 +216,9 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         await openPatientEditor(next.data.patient_id)
       }
     } else if (next.status === 'error') {
-      setFeedback(next.error.message)
+      setFeedback(next.error.message.includes('patients_name_birth_unique_norm') || next.error.message.includes('duplicate key')
+        ? 'Cadastro bloqueado: já existe paciente com o mesmo nome e data de nascimento. Consulte antes de continuar.'
+        : next.error.message)
     } else {
       setFeedback('O cadastro não retornou dados do paciente.')
     }
@@ -449,12 +483,22 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                 type="text"
                 placeholder="Nome completo do paciente"
                 value={patientName}
-                onChange={(event) => setPatientName(event.target.value)}
+                onChange={(event) => {
+                  setPatientName(event.target.value)
+                  setDuplicateMatches([])
+                  setDuplicateReviewed(false)
+                  setDuplicateReviewKey('')
+                }}
               />
             </label>
             <label>
               Data de nascimento *
-              <input type="date" value={patientBirthDate} onChange={(event) => setPatientBirthDate(event.target.value)} />
+              <input type="date" value={patientBirthDate} onChange={(event) => {
+                setPatientBirthDate(event.target.value)
+                setDuplicateMatches([])
+                setDuplicateReviewed(false)
+                setDuplicateReviewKey('')
+              }} />
             </label>
             <label>
               Idade
@@ -536,8 +580,30 @@ ${operatorName} – ADMINISTRATIVO CAPO`
               Situação retornada pelo banco: <strong>{createdPatientStatus}</strong>
             </p>
           )}
+          {duplicateMatches.length > 0 && (
+            <section className="patients-duplicate-warning" role="alert" aria-label="Verificação de possíveis duplicidades">
+              <strong>Possível duplicidade — confira antes de cadastrar</strong>
+              <ul>{duplicateMatches.map((match) => (
+                <li key={match.patient_id}>
+                  {match.match_type === 'exato' ? 'Cadastro idêntico' : 'Nome semelhante'}:
+                  {' '}{match.full_name} · Nascimento {match.birth_date} · Nº CAPO {match.patient_number ?? '—'}
+                  {' '}<button type="button" onClick={() => {
+                    setActiveView('search')
+                    void openPatientEditor(match.patient_id)
+                  }}>Consultar cadastro existente</button>
+                </li>
+              ))}</ul>
+              {!duplicateMatches.some((match) => match.match_type === 'exato') && (
+                <label>
+                  <input type="checkbox" checked={duplicateReviewed}
+                    onChange={(event) => setDuplicateReviewed(event.target.checked)} />
+                  Conferi os cadastros: são pessoas diferentes.
+                </label>
+              )}
+            </section>
+          )}
           <div className="patients-form-actions">
-            <button type="button" disabled={!patientName.trim() || !patientBirthDate || (registrationKind === 'preexistente' && (!patientCapoStartDate || patientCapoStartDate >= todayInCapo))} onClick={() => void createPatient()}>Cadastrar paciente</button>
+            <button type="button" disabled={duplicateBusy || !patientName.trim() || !patientBirthDate || (registrationKind === 'preexistente' && (!patientCapoStartDate || patientCapoStartDate >= todayInCapo))} onClick={() => void createPatient()}>{duplicateBusy ? 'Verificando duplicidade…' : 'Cadastrar paciente'}</button>
           </div>
           </>}
         </section>
