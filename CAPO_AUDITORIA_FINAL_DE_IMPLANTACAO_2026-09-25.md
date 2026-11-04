@@ -8043,3 +8043,10 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Validação:** código atualizado no GitHub. Build automatizado completo, confirmação de deploy e teste com agendamento real não comprovados nesta execução.
 
 **Commits:** `da96904b1a28b5a896ef4e113539eb974c182e1e` e `8e6ad32f15df096ccf117a09722d88d4b21360c5`.
+
+
+### Complemento §28.174 — Encerramento nominal da mensagem de agendamento (04/11/2026)
+
+**Texto acrescentado ao fim do aviso WhatsApp, conforme solicitação da Titular:** aviso “⚠️ Importante: Qualquer dúvida ou necessidade de reagendamento, estamos à disposição por aqui.”, seguido de “Obrigado(a)!” e assinatura “DANIELE CARVALHO / ADMINISTRATIVO DO CAPO”. Mantidos todos os campos dinâmicos do agendamento, saudação por horário e envio manual. Trata-se de assinatura fixa expressamente solicitada; eventual necessidade de assinatura dinâmica por funcionário deverá ser tratada à parte.
+
+**Arquivo:** `src/features/agenda/AgendaPage.tsx`. **Commit:** `edfe63d829fedd7b86472177b7c90b59872240fd`. Teste de build/publicação e homologação ainda pendentes.
