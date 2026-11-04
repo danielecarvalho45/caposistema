@@ -110,19 +110,22 @@ export function PatientsPage({
     : `55${whatsappDigits}`
   const greeting = new Date().getHours() < 12 ? 'Bom dia' : 'Boa tarde'
   const operatorName = accessContext.full_name ?? accessContext.username
-  const offerMessage = `${greeting}, ${offerPatientName.trim() || '[nome do paciente]'}! Tudo bem?
+  const offerMessage = `${greeting}, ${offerPatientName.trim() || '[nome do paciente]'}! 💚
 
-Estou entrando em contato para apresentar o CAPO – Centro de Acolhimento ao Paciente Oncológico, serviço multiprofissional da Secretaria Municipal de Saúde de Pouso Alegre – MG.
+Gostaria de apresentar o *CAPO – Centro de Acolhimento ao Paciente Oncológico*, um serviço da Secretaria Municipal de Saúde de Pouso Alegre – MG.
 
-O CAPO oferece acolhimento, orientações e acompanhamento ao paciente e à sua família, de forma complementar e paralela às consultas, aos exames e ao acompanhamento oncológico específico.
+💚 *Nosso atendimento é totalmente gratuito pelo SUS!*
 
-É importante esclarecer que este contato e o encaminhamento ao CAPO não significam que exista um diagnóstico de câncer confirmado.
+Oferecemos acolhimento, orientações e acompanhamento multiprofissional para você e sua família, com cuidado, respeito e atenção em cada etapa.
 
-Você tem interesse em conhecer e receber esse acompanhamento? Se desejar, podemos agendar um primeiro acolhimento com a assistente social, que explicará como funciona o serviço e fornecerá as orientações iniciais.
+⚠️ *Importante:* O encaminhamento ao CAPO não significa, necessariamente, que exista um diagnóstico de câncer confirmado.
 
-Fico à disposição para esclarecer suas dúvidas.
+*Gostaria de receber nosso acompanhamento?* Podemos agendar uma consulta com um de nossos profissionais para iniciar esse cuidado.
 
-${operatorName} – ADMINISTRATIVO CAPO`
+💚 *Você não precisa enfrentar esse momento sozinho(a). Estamos aqui para cuidar de você!*
+
+${operatorName}
+ADMINISTRATIVO DO CAPO`
 
   async function openWhatsApp() {
     if (whatsappNumber.length < 10 || !offerPatientId || offerOpenBusy) return
