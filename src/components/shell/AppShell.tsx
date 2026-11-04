@@ -62,7 +62,7 @@ export function AppShell({
     ...(hasRole('administrador') && accessContext.primary_context.code !== 'administrador'
       ? [
           { path: '/gestor/administracao' as AppRoute, label: 'Administração do Sistema', icon: '⚙' },
-          { path: '/gestor/equipe' as AppRoute, label: 'Equipe e Agendas', icon: '♟' },
+          { path: '/gestor/equipe' as AppRoute, label: 'Equipe e Agendas', icon: '👥' },
           { path: '/gestor/fluxos' as AppRoute, label: 'Fluxos e Acompanhamentos', icon: '◉' },
           { path: '/gestor/timeline' as AppRoute, label: 'Linha do Tempo Operacional', icon: '◷' },
           { path: '/gestor/auditoria' as AppRoute, label: 'Auditoria e Relatórios', icon: '▥' },
