@@ -9,6 +9,7 @@ import {
   type FamilyMember,
 } from './family-caregiver-integration'
 import './family-caregiver-page.css'
+import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 
 function digits(value: string) {
   return value.replace(/\D/g, '')
@@ -21,10 +22,8 @@ function openFamilyWhatsApp(phone: string, fullName: string) {
   const message = encodeURIComponent(
     `Olá, ${fullName}. Aqui é a equipe do CAPO — Centro de Acolhimento ao Paciente Oncológico.`,
   )
-  globalThis.open(
+  openCapoWhatsAppTab(
     `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalized)}&text=${message}`,
-    '_blank',
-    'noopener,noreferrer',
   )
 }
 
