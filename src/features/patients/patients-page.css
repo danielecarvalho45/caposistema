@@ -363,3 +363,35 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Aviso de duplicidade sem alterar o layout geral de Pacientes. */
+.patients-duplicate-warning {
+  margin: 0.9rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid #e8bb69;
+  border-radius: var(--radius-medium);
+  background: #fff8e8;
+  color: #6f4b10;
+}
+
+.patients-duplicate-warning ul {
+  margin: 0.6rem 0;
+  padding-left: 1.4rem;
+}
+
+.patients-duplicate-warning li {
+  margin-bottom: 0.5rem;
+}
+
+.patients-duplicate-warning button {
+  margin-left: 0.4rem;
+  text-decoration: underline;
+  color: #164b84;
+}
+
+.patients-duplicate-warning label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
