@@ -425,6 +425,7 @@ export function OwnAgendaManager({
 
   async function removeRecurringInterval(blockId: string) {
     if (!blockId || recurringBusy) return
+    if (!window.confirm('Remover este intervalo semanal recorrente? A alteração afetará as próximas ocorrências desse dia.')) return
     setRecurringBusy(true)
     setRecurringFeedback(null)
     const result = await rpc.setAgendaRecurringIntervalStatus(blockId, false)
@@ -931,7 +932,8 @@ export function OwnAgendaManager({
                     <div className="agenda-recurring-row" key={blockId}>
                       <span>{weekdayLabels[weekday] ?? 'Dia'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}</span>
                       <small>{recurringAgendaTypeLabel(item.block_type)}</small>
-                      <button type="button" disabled={recurringBusy} onClick={() => void removeRecurringInterval(blockId)}>
+                      {stringValue(item.description) && <small title="Motivo registrado">Motivo: {stringValue(item.description)}</small>}
+                      <button type="button" disabled={recurringBusy} onClick={() => void removeRecurringInterval(blockId)} aria-label={`Remover intervalo ${recurringAgendaTypeLabel(item.block_type)} de ${weekdayLabels[weekday] ?? 'dia'} às ${timeHHMM(item.start_time)}`}>
                         Remover
                       </button>
                     </div>
