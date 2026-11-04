@@ -2944,6 +2944,13 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_specialty_id: specialtyId },
         parse: parseReferralTargets,
       }),
+    checkPatientDuplicates: (fullName: string, birthDate: string) =>
+      execute({
+        transport,
+        operation: 'check_patient_duplicates_for_interface',
+        args: { p_full_name: fullName, p_birth_date: birthDate },
+        parse: (value) => value,
+      }),
     getPatientForEdit: (patientId: string) =>
       execute({
         transport,
