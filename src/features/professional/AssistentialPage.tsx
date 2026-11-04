@@ -340,7 +340,6 @@ export function AssistentialPage({
                     editable={canEditDischargeProximity}
                   />
                   <div className="assistential-patient-actions">
-                    <PatientWhatsAppButton patientId={patient.patient_id} />
                     {canAccessAppRoute(accessContext, '/solicitacoes') && (
                       <Link
                         to="/solicitacoes"
