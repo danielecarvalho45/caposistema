@@ -8032,3 +8032,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Validação pendente:** contratos inspecionados diretamente no código GitHub; teste funcional com paciente autorizado, build e publicação Cloudflare ainda não comprovados nesta alteração. Não declarar homologação completa.
 
 **Commit:** `a9495e17b974769b786e8ac06afd7e6e49e4cf71`.
+
+
+## §28.174 — Aviso WhatsApp do agendamento e saudação contextual (04/11/2026)
+
+**Modelo aprovado pela Titular:** após agendamento confirmado, disponibilizar no botão já existente do WhatsApp o aviso com saudação ao paciente, identificação do CAPO, data, horário, especialidade e local institucional, encerrando com a identificação da Secretaria Municipal de Saúde de Pouso Alegre/MG. A saudação é **Bom dia**, **Boa tarde** ou **Boa noite** segundo a hora local de São Paulo no momento da preparação da mensagem.
+
+**Adequação cirúrgica:** `src/features/agenda/AgendaPage.tsx` passou a compor a mensagem em função única `appointmentNoticeMessage`, obtendo os dados reais do agendamento confirmado e a especialidade selecionada; mantém `PatientWhatsAppButton`, o fluxo de envio manual, o agendamento e os lembretes pré-consulta inalterados. O campo local informa CAPO sem inventar endereço físico. O texto é preenchido e a abertura do WhatsApp não comprova envio nem marca automaticamente o paciente como avisado.
+
+**Validação:** código atualizado no GitHub. Build automatizado completo, confirmação de deploy e teste com agendamento real não comprovados nesta execução.
+
+**Commits:** `da96904b1a28b5a896ef4e113539eb974c182e1e` e `8e6ad32f15df096ccf117a09722d88d4b21360c5`.
