@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 
@@ -13,6 +14,10 @@ function label(item: Record<string, unknown>, ...keys: string[]) {
 }
 
 export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: AccessContext }>) {
+  const location = useLocation()
+  const [mode, setMode] = useState<'seguimento' | 'oferta'>(
+    () => new URLSearchParams(location.search).get('tipo') === 'oferta' ? 'oferta' : 'seguimento',
+  )
   const [filter, setFilter] = useState('ativo')
   const [state, setState] = useState<AsyncState<unknown>>(loadingState)
   const [query, setQuery] = useState('')
@@ -32,19 +37,24 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
   )
 
   const load = useCallback(async () => {
-    const result = await getRpcService().getActiveSearches(filter || null, 50, 0)
+    const result = mode === 'oferta'
+      ? await getRpcService().getInitialActiveSearches(filter || null, 100, 0)
+      : await getRpcService().getActiveSearches(filter || null, 50, 0)
     setState(result)
     return result
-  }, [filter])
+  }, [filter, mode])
 
   useEffect(() => {
     let active = true
     setState(loadingState())
-    void getRpcService().getActiveSearches(filter || null, 50, 0).then((result) => {
+    const pending = mode === 'oferta'
+      ? getRpcService().getInitialActiveSearches(filter || null, 100, 0)
+      : getRpcService().getActiveSearches(filter || null, 50, 0)
+    void pending.then((result) => {
       if (active) setState(result)
     })
     return () => { active = false }
-  }, [filter])
+  }, [filter, mode])
 
   async function searchPatients() {
     const clean = query.trim()
@@ -120,10 +130,18 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
       <header>
         <span>Atendimento e Acompanhamento</span>
         <h2 id="active-search-title">Busca Ativa</h2>
-        <p>Reengajamento de pacientes que já pertenciam ao CAPO e perderam seguimento.</p>
+        <p>{mode === 'oferta'
+          ? 'Retomada da Oferta Inicial para pacientes cadastrados que ainda aguardam resposta ou novo contato.'
+          : 'Reengajamento de pacientes que já pertenciam ao CAPO e perderam seguimento.'}</p>
       </header>
+      <nav className="gestor-active-search-modes" aria-label="Tipo de Busca Ativa">
+        <button type="button" aria-pressed={mode === 'oferta'}
+          onClick={() => { setMode('oferta'); setFeedback(null) }}>Oferta Inicial</button>
+        <button type="button" aria-pressed={mode === 'seguimento'}
+          onClick={() => { setMode('seguimento'); setFeedback(null) }}>Perda de Seguimento</button>
+      </nav>
 
-      {canOperate && (
+      {mode === 'seguimento' && canOperate && (
         <article className="gestor-panel">
           <h3>Registrar tentativa / iniciar acompanhamento</h3>
           <label>Paciente
@@ -169,6 +187,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
       )}
 
       <article className="gestor-panel">
+        <h3>{mode === 'oferta' ? 'Pendências da Oferta Inicial' : 'Acompanhamento da Perda de Seguimento'}</h3>
         <label>Situação
           <select value={filter} onChange={(event) => { setState(loadingState()); setFilter(event.target.value) }}>
             <option value="ativo">Ativo</option>
@@ -189,7 +208,20 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                 <li key={label(item, 'latest_attempt_id', 'patient_id') + index}>
                   <strong>{label(item, 'patient_name', 'full_name')}</strong>
                   <small>{label(item, 'flow_status', 'status')} · {label(item, 'contact_result', 'next_action', 'contact_date')}</small>
-                  {canOperate && active && (
+                  {mode === 'oferta' && (
+                    <div>
+                      <small>Próximo contato: {typeof item.next_contact_at === 'string' && item.next_contact_at
+                        ? new Date(item.next_contact_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+                        : 'Ainda não programado'}</small>
+                      <small>Nº CAPO {label(item, 'patient_number')} · {label(item, 'next_action')}</small>
+                      {canOperate && active && patientId !== '—' && (
+                        <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>
+                          Continuar oferta / registrar resposta
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                  {mode === 'seguimento' && canOperate && active && (
                     <div>
                       <label>Motivo do encerramento
                         <input value={closureReason} onChange={(event) => setClosureReason(event.target.value)} />
