@@ -1271,3 +1271,16 @@ Isso inclui, sem redução funcional:
 - mesmas automações, atalhos contextuais e encaminhamento da próxima ação.
 
 O Gestor pode possuir outros módulos adicionais por suas permissões de governança, Administração do Sistema e/ou TI, mas **esses módulos adicionais não podem substituir, reduzir nem alterar o fluxo administrativo acumulado**.
+
+
+## 18.16 Endereço de atendimento por profissional e comunicação de mudanças (adequação aprovada em 04/11/2026)
+
+**Fonte de verdade:** cada profissional ativo pode ter um local de atendimento cadastrado na gestão de equipe, com identificação do estabelecimento e endereço completo. O Gestor/Titular e os administradores devidamente autorizados podem cadastrar e atualizar esse local. A atualização deve ser registrada com usuário, data/hora e endereço anterior e novo. Não confundir endereço do profissional com endereço residencial ou com dados do paciente.
+
+**Agendamento:** no ato de confirmar um agendamento, o CAPO associa à consulta uma cópia do endereço de atendimento do profissional escolhido. O aviso WhatsApp de agendamento utiliza o endereço **da consulta**, preservando o que foi efetivamente informado. Para novos agendamentos, a cópia deve vir do endereço atual cadastrado para aquele profissional. Não inventar nem preencher endereço genérico quando ausente; exigir correção cadastral ou identificação explícita de local antes de comunicar.
+
+**Mudança posterior:** ao atualizar o endereço de um profissional, os agendamentos futuros ainda vinculados ao local anterior **não mudam silenciosamente**. O sistema identifica os agendamentos futuros afetados e gera pendências de alteração de local, visíveis com destaque na Home do Auxiliar Administrativo e acessíveis ao Gestor/Titular. Cada pendência permite consultar paciente, data/hora, profissional, endereço anterior e novo, abrir comunicação WhatsApp personalizada e registrar a providência administrativa. A comunicação exige confirmação humana; abrir WhatsApp não comprova envio. Não confundir com confirmação de presença do profissional. A pendência não deve desaparecer antes do registro de comunicação, salvo cancelamento ou encerramento documentado.
+
+**Atualização controlada:** após confirmar a alteração do local para a consulta e registrar o aviso ao paciente, o endereço associado ao agendamento passa a refletir o novo local. A auditoria preserva o endereço anterior, o novo, o responsável e os horários de alteração/comunicação. Agendamentos novos já recebem o novo endereço e não entram indevidamente na pendência dos antigos. A lista não gera duplicidades para a mesma consulta e mudança de local.
+
+**Escopo e preservação:** reutilizar cadastro de equipe, agenda, componente existente de WhatsApp e painel de notificações; nenhuma alteração em condutas clínicas, Faltosos, Busca Ativa, fila de espera, aceite da Oferta CAPO ou agendamentos passados. Ambiente manuteste deve respeitar a separação de dados vigente. Implementação deve abranger contrato Supabase, interface e testes de regressão antes de declarar homologação.
