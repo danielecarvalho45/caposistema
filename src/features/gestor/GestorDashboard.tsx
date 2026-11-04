@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState, type AgendaScheduleSlot, type BirthdayOverview } from '../../lib/supabase/rpc'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { CareLocationNotices } from '../home/CareLocationNotices'
 
 
 type AgendaChangeRow = Readonly<Record<string, unknown>>
@@ -108,6 +109,7 @@ export function GestorDashboard() {
   return (
     <section className="gestor-dashboard" aria-labelledby="gestor-dashboard-title">
       <h2 id="gestor-dashboard-title">Painel Geral do CAPO</h2>
+      <CareLocationNotices />
       <section aria-labelledby="gestor-quick-title">
         <h3 id="gestor-quick-title">Acessos rápidos</h3>
         <div className="gestor-quick-grid">
