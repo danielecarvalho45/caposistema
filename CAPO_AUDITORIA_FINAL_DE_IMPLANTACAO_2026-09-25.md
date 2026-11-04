@@ -7783,3 +7783,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Limites da evidência:** mudanças e contrato foram inspecionados no código; build, suíte unitária, deploy e homologação autenticada ainda precisam ser executados/comprovados. A gravação de retorno real não foi disparada durante esta manutenção. O banco e as programações semanais existentes não foram alterados.
 
 **Estado:** **INTEGRAÇÃO DA GRADE RECORRENTE NO MAIN / TESTE ADICIONADO, EXECUÇÃO E HOMOLOGAÇÃO REAIS PENDENTES.**
+
+
+### 28.153 WHATSAPP — REUTILIZAR UMA ÚNICA ABA DE CONTATO NO CAPO (04/11/2026)
+
+**Solicitação da Titular:** ao acionar WhatsApp em agendamentos, avisos prévios, lembretes e demais contatos autorizados, não abrir uma nova aba para cada paciente. A Titular escolheu explicitamente a opção de o CAPO criar/controlar sua própria aba e reutilizá-la nos próximos contatos, sabendo que uma aba aberta manualmente antes do CAPO não pode ser capturada automaticamente.
+
+**Causa e correção cirúrgica:** `src/components/contact/PatientWhatsAppButton.tsx` usava `globalThis.open(url, '_blank', 'noopener,noreferrer')` em todo acionamento. Substituído por uma aba nomeada `capo_whatsapp_web`, com referência compartilhada no módulo durante a sessão. Quando a janela referenciada ainda está aberta, os novos links WhatsApp alteram sua localização e trazem a mesma aba para foco, sem criar uma aba por paciente. Quando fechada, pode ser aberta novamente. O componente tenta retirar `opener` antes da navegação e informa se o navegador bloquear a aba ou impedir o direcionamento. Os textos preparados, DDD/telefone consultado pela RPC autorizada e o envio manual da mensagem não foram alterados. Commits `9bcb836f249d1bc7995afd2571cc0fdeae34a78c`, `3a856e251ff127f59ac58eaca03d03904bd34060`.
+
+**Escopo:** mudança única no componente compartilhado já utilizado nas telas de Agenda, Aniversários, Home, Gestor e Faltosos; não houve mudanças em Supabase, pacientes, notificações, registros de aviso ou permissões. O navegador pode não reutilizar a aba aberta manualmente pelo usuário e pode bloquear pop-ups; o CAPO não envia WhatsApp automaticamente.
+
+**Teste acrescentado:** `tests/unit/patient-whatsapp-button.test.tsx` verifica dois pacientes sintéticos somente no ambiente de teste, dois links e mensagens distintas, uma única chamada `open` e duas navegações da mesma aba. Commit `29e05f0f940eede051fac6c6dc2f983d4f6def83`. Nenhum paciente fictício ou contato foi persistido.
+
+**Validação pendente:** arquivos confirmados em `main`; suíte, build, publicação e teste no navegador autenticado não comprovados nesta sessão. A reconexão após recarregar a página pode depender da política do navegador. Homologar abertura inicial e reutilização com dois contatos autorizados sem enviar mensagem de teste a pacientes reais.
+
+**Estado:** **CORREÇÃO NO MAIN / REGRESSÃO ESCRITA, NÃO EXECUTADA / HOMOLOGAÇÃO REAL PENDENTE.**
