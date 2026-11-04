@@ -496,9 +496,9 @@ export type CreatedPatient = Readonly<{
   patient_id: string
   patient_number: string
   full_name: string
-  cms: string
+  cms: string | null
   birth_date: string
-  origin: string
+  origin: string | null
   status: string
   created_at: string
 }>
@@ -1700,9 +1700,9 @@ function parseCreatedPatient(value: unknown): CreatedPatient {
     patient_id: requiredString(item, 'patient_id', operation),
     patient_number: requiredString(item, 'patient_number', operation),
     full_name: requiredString(item, 'full_name', operation),
-    cms: requiredString(item, 'cms', operation),
+    cms: nullableString(item, 'cms', operation),
     birth_date: requiredString(item, 'birth_date', operation),
-    origin: requiredString(item, 'origin', operation),
+    origin: nullableString(item, 'origin', operation),
     status: requiredString(item, 'status', operation),
     created_at: requiredString(item, 'created_at', operation),
   }
@@ -3183,8 +3183,8 @@ export function createRpcService(transport: RpcTransport) {
           p_operational_notes: input.operationalNotes,
           p_origin: input.origin,
         },
+        // A RPC TABLE retorna array; o parser também aceita um objeto único.
         parse: parseCreatedPatient,
-        selectFirst: true,
       }),
     createPatient: (input: {
       fullName: string
