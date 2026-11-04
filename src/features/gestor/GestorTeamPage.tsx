@@ -373,6 +373,10 @@ export function GestorTeamPage({
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting) return
+    if (careLocationLoading) {
+      setFeedback('Aguarde a consulta do endereço salvo antes de alterar o cadastro.')
+      return
+    }
     if (!profile.fullName.trim()) { setFeedback('Informe o nome completo.'); return }
     if (!profile.functionTitle?.trim()) { setFeedback('Informe a função exercida.'); return }
     if (!profile.username?.trim()) { setFeedback('Informe o nome de usuário.'); return }
@@ -404,13 +408,22 @@ export function GestorTeamPage({
       if (professionalId) {
         const savedLocation = await getRpcService().setProfessionalCareLocation(professionalId, nullable(careLocation))
         if (savedLocation.status !== 'success') {
-          setFeedback('Cadastro profissional salvo, mas o endereço NÃO foi confirmado. Verifique e salve o local novamente.')
           await reload()
+          setFeedback('Cadastro profissional salvo, mas o endereço NÃO foi gravado. Os dados foram mantidos para nova tentativa.')
+          return
+        }
+        const verifiedLocation = await getRpcService().getProfessionalCareLocation(professionalId)
+        const stored = verifiedLocation.status === 'success' && verifiedLocation.data &&
+          typeof verifiedLocation.data === 'object' && !Array.isArray(verifiedLocation.data)
+          ? (verifiedLocation.data as Record<string, unknown>).care_location : undefined
+        if (stored !== nullable(careLocation)) {
+          await reload()
+          setFeedback('Cadastro salvo, mas não foi possível confirmar o endereço no banco. Confira antes de agendar.')
           return
         }
       } else if (careLocation.trim()) {
-        setFeedback('Cadastro criado; não foi possível identificar o profissional para gravar o endereço. Consulte antes de agendar.')
         await reload()
+        setFeedback('Cadastro criado; não foi possível identificar o profissional para gravar o endereço. Consulte antes de agendar.')
         return
       }
 
@@ -600,7 +613,7 @@ export function GestorTeamPage({
         <fieldset><legend>Papéis</legend>{roles.map((role) => <label className="gestor-check" key={role.id}><input type="checkbox" checked={profile.roleCodes.includes(role.id)} onChange={(event) => toggleCodes('roleCodes', role.id, event.target.checked)} />{role.label}</label>)}</fieldset>
         <fieldset><legend>Especialidades</legend>{specialties.map((specialty) => <label className="gestor-check" key={specialty.id}><input type="checkbox" checked={profile.specialtyIds.includes(specialty.id)} onChange={(event) => toggleCodes('specialtyIds', specialty.id, event.target.checked)} />{specialty.label}</label>)}</fieldset>
         {service.createSpecialty && <div className="gestor-search-row"><label>Nova especialidade<input value={newSpecialty} onChange={(event) => setNewSpecialty(event.target.value)} placeholder="Digite uma especialidade ainda não cadastrada" /></label><button type="button" onClick={() => void addSpecialty()} disabled={!newSpecialty.trim()}>Cadastrar especialidade</button></div>}
-        <button className="gestor-primary-action" type="submit" disabled={submitting}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
+        <button className="gestor-primary-action" type="submit" disabled={submitting || careLocationLoading}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
         {selected && !selected.userAccountId && <button type="button" disabled={submitting} onClick={() => void createAccessForSelected()}>{submitting ? 'Processando…' : 'Criar acesso'}</button>}
       </form>
       ) : teamTab === 'agenda' ? (
