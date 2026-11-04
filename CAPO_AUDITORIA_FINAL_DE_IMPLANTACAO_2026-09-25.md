@@ -8149,3 +8149,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Commit GitHub `main`:** `f0703b6e447b9ced5e889b4c00f5542bbcb9d7ed`.
 
 **Verificação e pendência:** conferir código recuperado do GitHub e presença das expressões autorizadas; build, implantação Cloudflare e teste de envio em interface real não declarados como realizados. Abrir WhatsApp não comprova envio efetivo ao paciente.
+
+
+## §28.179 — Agenda: diagnóstico de intervalos, rótulos e controle de bloqueios (04/11/2026)
+
+**VERDE da Titular:** examinar e corrigir de modo cirúrgico duplicação visual de café, café apresentado como almoço, ausência de motivo e ação de desbloqueio e acesso administrativo integral do Gestor/Titular.
+
+**Leitura do banco oficial, sem alterar dados:** `agenda_blocks` mantém tipos separados `intervalo` e `alimentacao`. Consulta agrupada por configuração, dia/data, início, fim e tipo não encontrou **nenhuma linha ativa exatamente duplicada** (0 grupos/0 linhas extras). Existem registros ativos no conjunto geral para 10:10–10:30 em ambos os tipos, distribuídos por configurações distintas; isso **não** autoriza concluir qual profissional foi cadastrado incorretamente ou reclassificar automaticamente. A RPC `get_agenda_schedule_grid_for_interface` retorna `block_type`, mas não retorna identificador do bloqueio nem `description`; portanto a grade compacta não consegue mostrar o motivo livre ou desbloquear precisamente a ocorrência apenas com o retorno atual. A geração da grade utiliza `union all` de janelas e bloqueios e precisa de teste por profissional/data para localizar eventual duplicidade de apresentação. A função vigente `set_agenda_recurring_interval_status_for_interface` permite desligar intervalos semanais e exige o papel `administrador`.
+
+**Ajuste realizado, preservando contratos:** `src/features/agenda/OwnAgendaManager.tsx` agora exibe a descrição/motivo quando cadastrada na lista de intervalos semanais do Gestor e pede confirmação explícita antes de desativar um intervalo recorrente, esclarecendo que afeta ocorrências futuras do dia. Não altera SQL, agenda real, classificação do banco, políticas ou dados de pacientes. Commit `a65a0943620429018068de9bda2069c5baa9c7bd`.
+
+**Estado aberto / bloqueio de conclusão:** a tela de grade geral ainda precisa de contrato seguro para obter `block_id` e descrição por ocorrência (inclusive bloqueios pontuais) e permitir ação conforme autorização; é necessária identificação do profissional e dia afetados para reproduzir e corrigir definitivamente a dupla exibição e a rotulagem divergente. Não alterar os registros 10:10–10:30 no banco sem vínculo confirmado. Revisão de permissão transversal e homologação em interface real, build/testes e publicação Cloudflare permanecem pendentes. **Manutenção PARCIAL, não declarar resolvidos os quatro sintomas.**
