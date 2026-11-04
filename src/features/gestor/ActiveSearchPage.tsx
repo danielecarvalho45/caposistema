@@ -15,7 +15,7 @@ function label(item: Record<string, unknown>, ...keys: string[]) {
 
 export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: AccessContext }>) {
   const location = useLocation()
-  const [mode, setMode] = useState<'seguimento' | 'oferta'>(
+  const [mode, setMode] = useState<'seguimento' | 'oferta' | 'resgate'>(
     () => new URLSearchParams(location.search).get('tipo') === 'oferta' ? 'oferta' : 'seguimento',
   )
   const [filter, setFilter] = useState('ativo')
@@ -31,6 +31,10 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
   const [closureReason, setClosureReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [rescuePatientId, setRescuePatientId] = useState('')
+  const [rescueResult, setRescueResult] = useState('')
+  const [rescueMethod, setRescueMethod] = useState('whatsapp')
+  const [rescueOutcome, setRescueOutcome] = useState<'sem_resposta' | 'aceitou' | 'recusou'>('sem_resposta')
 
   const canOperate = accessContext.roles.some((role) =>
     ['administrador', 'administrativo_operacional'].includes(role.code),
@@ -39,7 +43,9 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
   const load = useCallback(async () => {
     const result = mode === 'oferta'
       ? await getRpcService().getInitialActiveSearches(filter || null, 100, 0)
-      : await getRpcService().getActiveSearches(filter || null, 50, 0)
+      : mode === 'resgate'
+        ? await getRpcService().getOfferRescueSearches(filter || null, 100, 0)
+        : await getRpcService().getActiveSearches(filter || null, 50, 0)
     setState(result)
     return result
   }, [filter, mode])
@@ -49,12 +55,44 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
     setState(loadingState())
     const pending = mode === 'oferta'
       ? getRpcService().getInitialActiveSearches(filter || null, 100, 0)
-      : getRpcService().getActiveSearches(filter || null, 50, 0)
+      : mode === 'resgate'
+        ? getRpcService().getOfferRescueSearches(filter || null, 100, 0)
+        : getRpcService().getActiveSearches(filter || null, 50, 0)
     void pending.then((result) => {
       if (active) setState(result)
     })
     return () => { active = false }
   }, [filter, mode])
+
+  async function registerRescueContact() {
+    if (busy || !rescuePatientId || rescueResult.trim().length < 2) {
+      setFeedback('Informe o resultado real do contato antes de registrar.')
+      return
+    }
+    if (rescueOutcome !== 'sem_resposta' &&
+      !window.confirm(`Confirma que o paciente ${rescueOutcome === 'aceitou' ? 'aceitou' : 'recusou'} a Oferta CAPO?`)) return
+    setBusy(true)
+    setFeedback('Registrando contato de resgate no banco…')
+    const response = await getRpcService().registerOfferRescueContact({
+      patientId: rescuePatientId,
+      contactMethod: rescueMethod,
+      contactResult: rescueResult.trim(),
+      outcome: rescueOutcome,
+    })
+    setBusy(false)
+    if (response.status === 'success') {
+      setFeedback(rescueOutcome === 'sem_resposta'
+        ? 'Segundo contato/tentativa registrado. Próxima tentativa em 15 dias.'
+        : 'Resposta do paciente registrada e confirmada pelo banco.')
+      setRescuePatientId('')
+      setRescueResult('')
+      setRescueOutcome('sem_resposta')
+      if (mode === 'oferta') setMode('resgate')
+      else void load()
+    } else {
+      setFeedback(response.status === 'error' ? response.error.message : 'O banco não confirmou o contato.')
+    }
+  }
 
   async function searchPatients() {
     const clean = query.trim()
@@ -131,14 +169,18 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
         <span>Atendimento e Acompanhamento</span>
         <h2 id="active-search-title">Busca Ativa</h2>
         <p>{mode === 'oferta'
-          ? 'Retomada da Oferta Inicial para pacientes cadastrados que ainda aguardam resposta ou novo contato.'
-          : 'Reengajamento de pacientes que já pertenciam ao CAPO e perderam seguimento.'}</p>
+          ? 'Oferta CAPO aguardando resposta ou segundo contato após 72 horas.'
+          : mode === 'resgate'
+            ? 'Segundo contato registrado; novas tentativas a cada 15 dias até resposta expressa.'
+            : 'Reengajamento de pacientes que já pertenciam ao CAPO e perderam seguimento.'}</p>
       </header>
       <nav className="gestor-active-search-modes" aria-label="Tipo de Busca Ativa">
         <button type="button" aria-pressed={mode === 'oferta'}
           onClick={() => { setMode('oferta'); setFeedback(null) }}>Oferta Inicial</button>
+        <button type="button" aria-pressed={mode === 'resgate'}
+          onClick={() => { setMode('resgate'); setFeedback(null); setRescuePatientId('') }}>Resgate da Oferta CAPO</button>
         <button type="button" aria-pressed={mode === 'seguimento'}
-          onClick={() => { setMode('seguimento'); setFeedback(null) }}>Perda de Seguimento</button>
+          onClick={() => { setMode('seguimento'); setFeedback(null); setRescuePatientId('') }}>Perda de Seguimento</button>
       </nav>
 
       {mode === 'seguimento' && canOperate && (
@@ -187,7 +229,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
       )}
 
       <article className="gestor-panel">
-        <h3>{mode === 'oferta' ? 'Pendências da Oferta Inicial' : 'Acompanhamento da Perda de Seguimento'}</h3>
+        <h3>{mode === 'oferta' ? 'Pendências da Oferta Inicial' : mode === 'resgate' ? 'Resgate da Oferta CAPO' : 'Acompanhamento da Perda de Seguimento'}</h3>
         <label>Situação
           <select value={filter} onChange={(event) => { setState(loadingState()); setFilter(event.target.value) }}>
             <option value="ativo">Ativo</option>
@@ -206,7 +248,9 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
               const active = label(item, 'flow_status', 'status') === 'ativo'
               return (
                 <li key={label(item, 'latest_attempt_id', 'patient_id') + index}>
-                  <strong>{label(item, 'patient_name', 'full_name')}</strong>
+                  <strong>{(mode === 'oferta' || mode === 'resgate') && patientId !== '—'
+                    ? <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>{label(item, 'patient_name', 'full_name')}</Link>
+                    : label(item, 'patient_name', 'full_name')}</strong>
                   <small>{label(item, 'flow_status', 'status')} · {label(item, 'contact_result', 'next_action', 'contact_date')}</small>
                   {mode === 'oferta' && (
                     <div>
@@ -218,6 +262,46 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                         <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>
                           Continuar oferta / registrar resposta
                         </Link>
+                      )}
+                    </div>
+                  )}
+                  {(mode === 'oferta' || mode === 'resgate') && canOperate && active && patientId !== '—' && (
+                    <div>
+                      {mode === 'resgate' && (
+                        <small>Próxima tentativa: {typeof item.next_contact_at === 'string'
+                          ? new Date(item.next_contact_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+                          : 'Não programada'}</small>
+                      )}
+                      <button type="button" disabled={busy || (
+                        typeof item.next_contact_at === 'string' && new Date(item.next_contact_at).getTime() > Date.now()
+                      )} onClick={() => { setRescuePatientId(patientId); setRescueResult(''); setRescueOutcome('sem_resposta') }}>
+                        {mode === 'oferta' ? 'Registrar segundo contato (após 72h)' : 'Registrar nova tentativa (15 dias)'}
+                      </button>
+                      {rescuePatientId === patientId && (
+                        <div className="gestor-panel">
+                          <label>Meio de contato
+                            <select value={rescueMethod} onChange={(event) => setRescueMethod(event.target.value)}>
+                              <option value="whatsapp">WhatsApp</option>
+                              <option value="phone">Telefone</option>
+                              <option value="in_person">Presencial</option>
+                              <option value="other">Outro</option>
+                            </select>
+                          </label>
+                          <label>Resultado real do contato
+                            <textarea value={rescueResult} onChange={(event) => setRescueResult(event.target.value)} />
+                          </label>
+                          <label>Resposta informada pelo paciente
+                            <select value={rescueOutcome} onChange={(event) => setRescueOutcome(event.target.value as 'sem_resposta' | 'aceitou' | 'recusou')}>
+                              <option value="sem_resposta">Sem resposta — continuar resgate</option>
+                              <option value="aceitou">Aceitou expressamente</option>
+                              <option value="recusou">Recusou expressamente</option>
+                            </select>
+                          </label>
+                          <button type="button" disabled={busy || rescueResult.trim().length < 2} onClick={() => void registerRescueContact()}>
+                            {busy ? 'Registrando…' : 'Salvar contato real'}
+                          </button>
+                          <button type="button" disabled={busy} onClick={() => setRescuePatientId('')}>Cancelar</button>
+                        </div>
                       )}
                     </div>
                   )}
