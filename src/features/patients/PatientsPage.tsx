@@ -288,7 +288,9 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     }
 
     setFeedback(null)
-    const next = await getRpcService().searchReferralPatients(cleanQuery, 20, 0)
+    const next = canUpdatePhoneAsProfessional
+      ? await getRpcService().searchProfessionalPatients(cleanQuery, 20, 0)
+      : await getRpcService().searchReferralPatients(cleanQuery, 20, 0)
     setResult(next.status === 'success' ? next : { status: 'empty' })
 
     if (next.status === 'success' && next.data.length === 1) {
