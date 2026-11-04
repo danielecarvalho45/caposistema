@@ -86,6 +86,9 @@ export function PatientsPage({
   const canEditPatient = accessContext.roles.some((role) =>
     role.code === 'administrador' || role.code === 'administrativo_operacional',
   )
+  const canUpdatePhoneAsProfessional = !canEditPatient && accessContext.roles.some((role) =>
+    role.code === 'profissional',
+  )
 
   useEffect(() => {
     if (!canEditPatient) setActiveView('search')
@@ -302,7 +305,9 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     setOfferHistory([])
     setEditBusy(true)
     setFeedback(null)
-    const next = await getRpcService().getPatientForEdit(patientId)
+    const next = canEditPatient
+      ? await getRpcService().getPatientForEdit(patientId)
+      : await getRpcService().getPatientForProfessional(patientId)
     if (next.status === 'success') {
       const row = Array.isArray(next.data) ? next.data[0] : next.data
       if (row && typeof row === 'object' && !Array.isArray(row)) {
@@ -364,6 +369,21 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       if (query.trim().length >= 2 || /^\d$/.test(query.trim())) await searchPatients()
     } else if (next.status === 'error') {
       setFeedback(next.error.message)
+    }
+    setEditBusy(false)
+  }
+
+  async function saveProfessionalPhone() {
+    if (!editingPatientId || editBusy || !canUpdatePhoneAsProfessional) return
+    setEditBusy(true)
+    const result = await getRpcService().updatePatientPhoneByProfessional(
+      editingPatientId, editForm.phone ?? '',
+    )
+    if (result.status === 'success') {
+      setFeedback('Telefone atualizado com registro de auditoria.')
+      await openPatientEditor(editingPatientId)
+    } else {
+      setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a atualização de telefone.')
     }
     setEditBusy(false)
   }
@@ -729,7 +749,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             <label>Telefone / WhatsApp
               <input
                 value={editForm.phone ?? ''}
-                readOnly={!canEditPatient}
+                readOnly={!canEditPatient && !canUpdatePhoneAsProfessional}
                 onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })}
               />
             </label>
@@ -786,6 +806,14 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             <div className="patients-form-actions patients-selected-save">
               <button type="button" disabled={editBusy} onClick={() => void savePatientEditor()}>
                 {editBusy ? 'Salvando…' : 'Salvar alterações'}
+              </button>
+            </div>
+          )}
+
+          {canUpdatePhoneAsProfessional && (
+            <div className="patients-form-actions patients-selected-save">
+              <button type="button" disabled={editBusy} onClick={() => void saveProfessionalPhone()}>
+                {editBusy ? 'Salvando…' : 'Atualizar telefone'}
               </button>
             </div>
           )}
