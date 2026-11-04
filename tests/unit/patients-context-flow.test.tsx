@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -12,6 +12,7 @@ const rpc = vi.hoisted(() => ({
   getPatientForEdit: vi.fn(),
   updatePatient: vi.fn(),
   createPatient: vi.fn(),
+  createClassifiedPatient: vi.fn(),
   getInitialActiveSearches: vi.fn(),
   registerInitialActiveSearchAttempt: vi.fn(),
   getPatientContact: vi.fn(),
@@ -49,6 +50,38 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+})
+
+it('exige escolher novo ou preexistente e valida a data histórica antes do cadastro', async () => {
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+
+  expect(screen.queryByPlaceholderText('Nome completo do paciente')).not.toBeInTheDocument()
+  await user.click(screen.getByLabelText('Paciente preexistente — já utiliza o CAPO'))
+  await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Paciente de teste unitário')
+  const birth = screen.getByLabelText('Data de nascimento *')
+  fireEvent.change(birth, { target: { value: '1980-01-01' } })
+  expect(screen.getByRole('button', { name: 'Cadastrar paciente' })).toBeDisabled()
+  expect(rpc.createClassifiedPatient).not.toHaveBeenCalled()
+})
+
+it('cadastra paciente novo pela operação classificada e só então mostra a Oferta CAPO', async () => {
+  rpc.createClassifiedPatient.mockResolvedValue({ status: 'success', data: {
+    patient_id: 'unit-patient', patient_number: '102', status: 'ativo',
+    created_at: '2026-11-04T14:00:00.000Z',
+  } })
+  rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [] })
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByLabelText('Paciente novo'))
+  expect(screen.queryByRole('heading', { name: 'Oferta CAPO — primeiro contato' })).not.toBeInTheDocument()
+  await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Paciente de teste unitário')
+  fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '1980-01-01' } })
+  await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
+  expect(rpc.createClassifiedPatient).toHaveBeenCalledWith(expect.objectContaining({
+    registrationKind: 'novo', historicalCapoStartDate: null,
+  }))
+  expect(await screen.findByRole('heading', { name: 'Oferta CAPO — primeiro contato' })).toBeVisible()
 })
 
 it('abre o cadastro completo e mantém as ações no paciente consultado', async () => {
