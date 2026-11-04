@@ -123,7 +123,9 @@ export function canAccessAppRoute(
     case '/busca-ativa':
       return hasRole(accessContext, ['administrador', 'administrativo_operacional'])
     case '/pacientes':
-      return hasRole(accessContext, ['administrador', 'coordenador', 'administrativo_operacional'])
+      return hasRole(accessContext, ['administrador', 'coordenador', 'administrativo_operacional']) ||
+        (accessContext.is_active && Boolean(accessContext.professional_id) &&
+          hasProfessionalAssistentialRole(accessContext))
     case '/agenda':
       return (
         hasRole(accessContext, [
