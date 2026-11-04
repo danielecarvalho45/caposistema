@@ -8106,3 +8106,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificação somente leitura pós-migração:** tabela existente = verdadeiro; gatilho existente = verdadeiro; RLS habilitada = verdadeiro; registros de histórico = 0 e pendências = 0 no instante da consulta. Nenhum cadastro ou agendamento sintético foi criado. Não houve envio de WhatsApp nem modificação manual de pacientes.
 
 **Situação atual:** base e funções SQL instaladas; código de interface já integrado nos commits registrados anteriormente. Permanecem pendentes build/testes automatizados completos, verificação de publicação e homologação do fluxo real com usuário autorizado. Não declarar 100% homologado.
+
+
+## §28.176 — Retorno automático ao próximo cadastro após abertura da Oferta Inicial (04/11/2026)
+
+**Problema homologado pela Titular:** após cadastrar paciente novo e abrir WhatsApp pela Oferta CAPO, o formulário permanecia com o cadastro anterior e o administrativo precisava sair e voltar para iniciar outro registro.
+
+**Autorização VERDE e correção cirúrgica:** `src/features/patients/PatientsPage.tsx` mantém a abertura contextual do WhatsApp e a RPC `openInitialOfferWhatsApp`. Somente quando o banco confirma a inclusão da Oferta Inicial na Busca Ativa e o fluxo corresponde a **cadastro novo** recém-concluído, limpa campos pessoais e administrativos, duplicidades, estados de registro anterior e apresenta o formulário aberto para novo cadastro. Mantém o tipo “Paciente novo” selecionado, desloca o foco para Nome completo e informa “Oferta Inicial registrada na Busca Ativa. Pronto para cadastrar o próximo paciente.” A informação esclarece que abrir WhatsApp **não prova envio nem aceite**.
+
+**Falha de gravação:** se a RPC não confirmar o registro da Oferta Inicial, mantém todos os campos e o paciente atual para conferência/tentativa posterior; não limpa nem cria outro cadastro. O acesso à oferta pelo modo consulta não sofre reset de formulário. Nenhuma alteração SQL, de paciente real, de perfil ou de outros fluxos.
+
+**Validação pendente:** revisão do código e confirmação do commit no GitHub. Build automatizado, publicação Cloudflare e teste com usuário autorizado ainda não comprovados nesta execução.
+
+**Commit:** `153483f06e2b81392b3011276f0df552d8112bb4`.
