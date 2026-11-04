@@ -60,6 +60,7 @@ export function PatientsPage({
   const [duplicateReviewKey, setDuplicateReviewKey] = useState('')
   const [duplicateReviewed, setDuplicateReviewed] = useState(false)
   const [duplicateBusy, setDuplicateBusy] = useState(false)
+  const [registrationBusy, setRegistrationBusy] = useState(false)
   const [patientOrigin, setPatientOrigin] = useState('')
   const [createdPatientId, setCreatedPatientId] = useState<string | null>(null)
   const [createdPatientNumber, setCreatedPatientNumber] = useState<string | null>(null)
@@ -152,6 +153,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
   }
 
   async function createPatient() {
+    if (registrationBusy || duplicateBusy) return
     if (!registrationKind) {
       setFeedback('Selecione Paciente novo ou Paciente preexistente antes de cadastrar.')
       return
@@ -197,6 +199,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       return
     }
     setFeedback('Cadastrando paciente no banco…')
+    setRegistrationBusy(true)
     const next = await getRpcService().createClassifiedPatient({
       registrationKind,
       fullName: patientName.trim(),
@@ -210,6 +213,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       operationalNotes: patientNotes.trim() || null,
       origin: patientOrigin.trim() || null,
     })
+    setRegistrationBusy(false)
     if (next.status === 'success') {
       setOfferCycleConfirmation(null)
       setCreatedPatientId(registrationKind === 'novo' ? next.data.patient_id : null)
@@ -230,12 +234,27 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         setActiveView('search')
         await openPatientEditor(next.data.patient_id)
       }
-    } else if (next.status === 'error') {
-      setFeedback(next.error.message.includes('patients_name_birth_unique_norm') || next.error.message.includes('duplicate key')
-        ? 'Cadastro bloqueado: já existe paciente com o mesmo nome e data de nascimento. Consulte antes de continuar.'
-        : next.error.message)
     } else {
-      setFeedback('O cadastro não retornou dados do paciente.')
+      // Um erro de resposta pode acontecer após a transação ter sido confirmada.
+      // Verificar o banco antes de permitir nova tentativa evita cadastro repetido.
+      setFeedback('Não foi possível confirmar a resposta. Conferindo se o banco já salvou…')
+      const checked = await getRpcService().checkPatientDuplicates(patientName.trim(), patientBirthDate)
+      const exact = checked.status === 'success' && Array.isArray(checked.data)
+        ? checked.data.find((entry) => entry.match_type === 'exato')
+        : null
+      if (exact) {
+        setDuplicateMatches(checked.status === 'success' ? checked.data : [])
+        setDuplicateReviewed(false)
+        setActiveView('search')
+        await openPatientEditor(exact.patient_id)
+        setFeedback(`Cadastro localizado no banco (Nº CAPO ${exact.patient_number ?? 'a consultar'}). Confira os dados na consulta; não cadastre novamente.`)
+      } else {
+        setFeedback(checked.status !== 'success'
+          ? 'Não foi possível conferir se o banco gravou. Consulte o paciente pelo nome e nascimento antes de tentar novamente.'
+          : next.status === 'error'
+            ? `Cadastro não confirmado: ${next.error.message}. Não foi localizado registro correspondente na conferência.`
+            : 'O banco não retornou dados do cadastro. Não foi localizado registro correspondente; confira antes de tentar novamente.')
+      }
     }
   }
 
@@ -618,7 +637,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             </section>
           )}
           <div className="patients-form-actions">
-            <button type="button" disabled={duplicateBusy || !patientName.trim() || !patientBirthDate || (registrationKind === 'preexistente' && (!patientCapoStartDate || patientCapoStartDate >= todayInCapo))} onClick={() => void createPatient()}>{duplicateBusy ? 'Verificando duplicidade…' : 'Cadastrar paciente'}</button>
+            <button type="button" disabled={duplicateBusy || registrationBusy || !patientName.trim() || !patientBirthDate || (registrationKind === 'preexistente' && (!patientCapoStartDate || patientCapoStartDate >= todayInCapo))} onClick={() => void createPatient()}>{registrationBusy ? 'Salvando cadastro…' : duplicateBusy ? 'Verificando duplicidade…' : 'Cadastrar paciente'}</button>
           </div>
           </>}
         </section>
