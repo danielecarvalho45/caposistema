@@ -75,6 +75,21 @@ describe('route access', () => {
     expect(canAccessAppRoute(context, '/odontologia')).toBe(true)
   })
 
+  it('permite consultar pacientes em qualquer especialidade profissional ativa, sem permitir cadastro', () => {
+    for (const specialty of ['Nutrição', 'Assistência Social', 'Psicologia', 'Fisioterapia', 'Nova Especialidade']) {
+      const professional = {
+        ...context,
+        professional_id: 'professional-id',
+        roles: [{ code: 'profissional', name: 'Profissional' }],
+        primary_specialty_name: specialty,
+        primary_context: { ...context.primary_context, code: 'profissional' },
+      }
+      expect(canAccessAppRoute(professional, '/pacientes')).toBe(true)
+      expect(canAccessAppRoute({ ...professional, professional_id: null }, '/pacientes')).toBe(false)
+      expect(canAccessAppRoute({ ...professional, is_active: false }, '/pacientes')).toBe(false)
+    }
+  })
+
   it('exige vínculo profissional para atuação e relatórios', () => {
     const professional = {
       ...context,
