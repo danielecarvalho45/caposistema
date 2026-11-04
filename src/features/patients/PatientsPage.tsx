@@ -87,6 +87,10 @@ export function PatientsPage({
     role.code === 'administrador' || role.code === 'administrativo_operacional',
   )
 
+  useEffect(() => {
+    if (!canEditPatient) setActiveView('search')
+  }, [canEditPatient])
+
   const canRegisterDeath = accessContext.roles.some((role) =>
     role.code === 'administrador' || role.code === 'administrativo_operacional',
   )
@@ -373,14 +377,14 @@ ${operatorName} – ADMINISTRATIVO CAPO`
           Cadastro, Oferta CAPO integrada e consulta administrativa autorizada.
         </p>
         <div className="patients-actions" aria-label="Ações de pacientes">
-          <button
+          {canEditPatient && <button
             type="button"
             className={activeView === 'register' ? 'is-active' : undefined}
             aria-pressed={activeView === 'register'}
             onClick={() => setActiveView('register')}
           >
             Cadastrar
-          </button>
+          </button>}
           <button
             type="button"
             className={activeView === 'search' ? 'is-active' : undefined}
@@ -392,7 +396,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
         </div>
       </header>
 
-      {activeView === 'register' && (
+      {canEditPatient && activeView === 'register' && (
         <section className="home-profile patients-register" aria-labelledby="patients-register-title">
           <div className="patients-section-heading">
             <div>
