@@ -48,7 +48,10 @@ export function PatientsPage({
   const [patientPhone, setPatientPhone] = useState('')
   const [patientPhoneSecondary, setPatientPhoneSecondary] = useState('')
   const [patientAddress, setPatientAddress] = useState('')
+  const [registrationKind, setRegistrationKind] = useState<'' | 'novo' | 'preexistente'>('')
   const [patientCapoStartDate, setPatientCapoStartDate] = useState('')
+  const [createdPatientAt, setCreatedPatientAt] = useState<string | null>(null)
+  const [preexistingPatientId, setPreexistingPatientId] = useState<string | null>(null)
   const [patientNotes, setPatientNotes] = useState('')
   const [patientOrigin, setPatientOrigin] = useState('')
   const [createdPatientId, setCreatedPatientId] = useState<string | null>(null)
@@ -76,6 +79,9 @@ export function PatientsPage({
 
   const patientAge = calculateAge(patientBirthDate)
   const selectedPatientAge = calculateAge(editForm.birth_date ?? '')
+  const todayInCapo = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date())
 
   const canEditPatient = accessContext.roles.some((role) =>
     role.code === 'administrador' || role.code === 'administrativo_operacional',
@@ -118,12 +124,27 @@ ${operatorName} – ADMINISTRATIVO CAPO`
   }
 
   async function createPatient() {
+    if (!registrationKind) {
+      setFeedback('Selecione Paciente novo ou Paciente preexistente antes de cadastrar.')
+      return
+    }
+    const capoToday = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date())
+    if (registrationKind === 'preexistente' && (
+      !patientCapoStartDate || patientCapoStartDate >= capoToday ||
+      Boolean(patientBirthDate && patientCapoStartDate < patientBirthDate)
+    )) {
+      setFeedback('A data de início do paciente preexistente deve ser anterior a hoje e posterior ao nascimento.')
+      return
+    }
     if (!patientName.trim() || !patientBirthDate) {
       setFeedback('Informe nome completo e data de nascimento.')
       return
     }
     setFeedback('Cadastrando paciente no banco…')
-    const next = await getRpcService().createPatient({
+    const next = await getRpcService().createClassifiedPatient({
+      registrationKind,
       fullName: patientName.trim(),
       birthDate: patientBirthDate,
       cms: patientCms.trim() || null,
@@ -131,23 +152,30 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       phone: patientPhone.trim() || null,
       phoneSecondary: patientPhoneSecondary.trim() || null,
       address: patientAddress.trim() || null,
-      capoStartDate: patientCapoStartDate || null,
+      historicalCapoStartDate: registrationKind === 'preexistente' ? patientCapoStartDate : null,
       operationalNotes: patientNotes.trim() || null,
       origin: patientOrigin.trim() || null,
     })
     if (next.status === 'success') {
       setOfferCycleConfirmation(null)
-      setCreatedPatientId(next.data.patient_id)
+      setCreatedPatientId(registrationKind === 'novo' ? next.data.patient_id : null)
+      setPreexistingPatientId(registrationKind === 'preexistente' ? next.data.patient_id : null)
+      setCreatedPatientAt(next.data.created_at)
       setCreatedPatientNumber(next.data.patient_number)
       setCreatedPatientStatus(next.data.status)
-      setFeedback(`Paciente cadastrado. Nº CAPO ${next.data.patient_number}.`)
+      setFeedback(registrationKind === 'preexistente'
+        ? `Paciente preexistente cadastrado e vínculo CAPO registrado. Nº CAPO ${next.data.patient_number}.`
+        : `Paciente novo cadastrado. Nº CAPO ${next.data.patient_number}. Continue com a Oferta CAPO.`)
       const refreshed = await getRpcService().searchReferralPatients(
         next.data.patient_number,
         20,
         0,
       )
       if (refreshed.status === 'success') setResult(refreshed)
-      await openPatientEditor(next.data.patient_id)
+      if (registrationKind === 'preexistente') {
+        setActiveView('search')
+        await openPatientEditor(next.data.patient_id)
+      }
     } else if (next.status === 'error') {
       setFeedback(next.error.message)
     } else {
@@ -373,6 +401,21 @@ ${operatorName} – ADMINISTRATIVO CAPO`
               <p>Cadastro administrativo do paciente. A Oferta CAPO permanece integrada a este mesmo fluxo.</p>
             </div>
           </div>
+          <fieldset className="patients-registration-kind">
+            <legend>Tipo de cadastro *</legend>
+            <label>
+              <input type="radio" name="registration-kind" checked={registrationKind === 'novo'}
+                onChange={() => { setRegistrationKind('novo'); setPatientCapoStartDate(''); setCreatedPatientId(null); setCreatedPatientNumber(null); setCreatedPatientAt(null) }} />
+              Paciente novo
+            </label>
+            <label>
+              <input type="radio" name="registration-kind" checked={registrationKind === 'preexistente'}
+                onChange={() => { setRegistrationKind('preexistente'); setCreatedPatientId(null); setCreatedPatientNumber(null); setCreatedPatientAt(null) }} />
+              Paciente preexistente — já utiliza o CAPO
+            </label>
+          </fieldset>
+          {!registrationKind && <p role="status">Selecione o tipo de cadastro para continuar.</p>}
+          {registrationKind && <>
           <div className="patients-form-grid">
             <label className="patients-span-2">
               Nome completo *
@@ -440,10 +483,20 @@ ${operatorName} – ADMINISTRATIVO CAPO`
               Endereço
               <input type="text" placeholder="Endereço administrativo" value={patientAddress} onChange={(event) => setPatientAddress(event.target.value)} />
             </label>
-            <label>
-              Data de entrada no CAPO
-              <input type="date" value={patientCapoStartDate} onChange={(event) => setPatientCapoStartDate(event.target.value)} />
-            </label>
+            {registrationKind === 'preexistente' ? (
+              <label>
+                Data em que começou a utilizar o CAPO *
+                <input type="date" required max={todayInCapo} value={patientCapoStartDate}
+                  onChange={(event) => setPatientCapoStartDate(event.target.value)} />
+              </label>
+            ) : (
+              <label>
+                Data e horário do novo cadastro
+                <input readOnly value={createdPatientAt
+                  ? new Date(createdPatientAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+                  : 'Gerados automaticamente ao salvar'} />
+              </label>
+            )}
             <label className="patients-span-all">
               Observações administrativas
               <textarea rows={3} placeholder="Somente observações administrativas pertinentes ao fluxo." value={patientNotes} onChange={(event) => setPatientNotes(event.target.value)} />
@@ -458,12 +511,13 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             </p>
           )}
           <div className="patients-form-actions">
-            <button type="button" disabled={!patientName.trim() || !patientBirthDate} onClick={() => void createPatient()}>Cadastrar paciente</button>
+            <button type="button" disabled={!patientName.trim() || !patientBirthDate || (registrationKind === 'preexistente' && (!patientCapoStartDate || patientCapoStartDate >= todayInCapo))} onClick={() => void createPatient()}>Cadastrar paciente</button>
           </div>
+          </>}
         </section>
       )}
 
-      {(activeView === 'register' || (activeView === 'search' && Boolean(editingPatientId) && canEditPatient)) && (
+      {((activeView === 'register' && registrationKind === 'novo' && Boolean(createdPatientId)) || (activeView === 'search' && Boolean(editingPatientId) && editingPatientId !== preexistingPatientId && canEditPatient)) && (
         <section className="home-profile patients-offer" aria-labelledby="patients-offer-title">
           <div className="patients-section-heading">
             <div>
