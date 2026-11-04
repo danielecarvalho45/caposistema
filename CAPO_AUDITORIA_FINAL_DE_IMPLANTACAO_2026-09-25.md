@@ -7768,3 +7768,18 @@ Não houve alteração de schema ou migration no Supabase.
 **Verificação read-only do Supabase:** estão presentes `public.get_available_appointment_slots(p_professional_id,p_date)` e `public.create_appointment_for_interface(...)`. Na inspeção anterior, consulta inicial de 03/11 às 16h30 constava Confirmado, e não havia novo retorno daquele paciente gravado; isso não foi tratado como evidência de falha da RPC de criação, pois o clique ainda não havia alcançado o formulário. Não foi criado agendamento real durante manutenção.
 
 **Estado:** **CORREÇÃO CIRÚRGICA DE INTERFACE E TESTE DE REGRESSÃO NO MAIN / EXECUÇÃO DE SUÍTE, BUILD, DEPLOY E HOMOLOGAÇÃO AUTENTICADA DE AGENDAMENTO DE RETORNO PENDENTES.**
+
+
+### 28.152 RETORNO PROFISSIONAL — GRADE RECORRENTE COMPLETA NA SELEÇÃO (04/11/2026)
+
+**Relato e autorização da Titular:** apesar da correção do comando Agendar retorno (§28.151), o formulário exibia apenas horários livres em lista, sem abrir a agenda recorrente do médico e dos demais profissionais conforme Manual Estrutural. Solicitada implementação cirúrgica com horários livres/ocupados/bloqueados, manutenção dos padrões semanais e sem efeitos cascata.
+
+**Contrato normativo preservado:** Especificação Estrutural da Interface de 12/09, regra Primeiro atendimento x retorno: primeiro atendimento pertence ao Administrativo; profissional pode marcar/remarcar seu próprio retorno ou solicitar apoio. Documento Mestre §28.59: múltiplos padrões recorrentes por profissional e dia da semana são permanentes enquanto vigentes, com exceções e bloqueios; §28.151 mantém seleção pré-preenchida do paciente e profissional. Não criar uma agenda paralela nem gerar novos registros apenas por consultar a agenda.
+
+**Correção no frontend:** `src/features/agenda/AgendaPage.tsx` passou a consultar `getAgendaScheduleGrid(anchorDate, anchorDate, selectedProfessionalId)` ao abrir o formulário profissional de retorno e a cada alteração da data, usando estado isolado identificado pela chave profissional:data e cancelamento lógico de respostas assíncronas antigas. Exibe tabela da agenda real com horário, situação (Livre, Agendado, Bloqueado, Indisponível), paciente visível ou tipo de bloqueio e ação Selecionar apenas para vaga que seja simultaneamente `livre` na grade e conste na RPC oficial `getAvailableAppointmentSlots`. Ocupados/bloqueados não são selecionáveis; o horário escolhido continua passando pela validação existente `validSlotStart` antes de habilitar Confirmar agendamento. O fluxo administrativo existente de seleção de horários não foi modificado. `agenda-page.css` adiciona apenas estilo do painel e horário selecionado. Commits `60b3ac07b761412e30c617af92b1dea168a66310`, `2cc7f2bf31df2891f7b417bff3407d2bd92fd013`.
+
+**Teste de regressão acrescentado:** `tests/unit/agenda-queue-context.test.tsx` passa a montar grade semanal profissional com consulta confirmada, horário ocupado e horário livre; verifica formulário com paciente/especialidade preenchidos, presença da grade, seleção apenas da vaga livre, estado `aria-pressed` e habilitação de Confirmar agendamento. Commits `fb43ba87b67477e8497c82015b2a50733531f366` e `2fe98929372f23e16cceeb169ea3f09cf52b46ee`. Fixtures exclusivamente de teste unitário; nenhum paciente ou consulta de teste persistidos no Supabase.
+
+**Limites da evidência:** mudanças e contrato foram inspecionados no código; build, suíte unitária, deploy e homologação autenticada ainda precisam ser executados/comprovados. A gravação de retorno real não foi disparada durante esta manutenção. O banco e as programações semanais existentes não foram alterados.
+
+**Estado:** **INTEGRAÇÃO DA GRADE RECORRENTE NO MAIN / TESTE ADICIONADO, EXECUÇÃO E HOMOLOGAÇÃO REAIS PENDENTES.**
