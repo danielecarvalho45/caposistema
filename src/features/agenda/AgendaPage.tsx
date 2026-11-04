@@ -107,6 +107,7 @@ function appointmentNoticeMessage(contact: {
   patientName: string
   specialtyName: string
   slotStart: string
+  careLocation: string
   senderName: string
   senderTitle: string
 }) {
@@ -132,7 +133,7 @@ function appointmentNoticeMessage(contact: {
     `📅 Data: ${date}`,
     `🕒 Horário: ${time}`,
     `👩‍⚕️ Especialidade: ${contact.specialtyName}`,
-    '📍 Local: Centro de Apoio ao Paciente Oncológico (CAPO)',
+    `📍 Local: ${contact.careLocation}`,
     '',
     'Pedimos que compareça no horário agendado.',
     '',
@@ -825,6 +826,7 @@ export function AgendaPage({
     patientName: string
     professionalName: string
     specialtyName: string
+    careLocation: string
     slotStart: string
   }> | null>(null)
   const [prefillWaitingListId, setPrefillWaitingListId] = useState('')
@@ -1184,6 +1186,7 @@ export function AgendaPage({
       operationalOrigin: appointmentOrigin.trim() || null,
     })
     if (result.status === 'success') {
+      let locationWarning = false
       const resultRecord =
         result.data && typeof result.data === 'object' && !Array.isArray(result.data)
           ? result.data as Record<string, unknown>
@@ -1196,13 +1199,21 @@ export function AgendaPage({
         const professionalName =
           professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
           'Profissional CAPO'
-        setLastScheduledContact({
+        const locationResult = await getRpcService().getAppointmentCareLocation(appointmentId)
+        const locationData = locationResult.status === 'success' && locationResult.data &&
+          typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
+          ? locationResult.data as Record<string, unknown> : null
+        const careLocation = typeof locationData?.care_location === 'string'
+          ? locationData.care_location.trim() : ''
+        setLastScheduledContact(careLocation ? {
           patientId: appointmentPatientId,
           patientName: appointmentPatientQuery,
           professionalName,
           specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? 'Especialidade não informada',
+          careLocation,
           slotStart: validSlotStart,
-        })
+        } : null)
+        if (!careLocation) locationWarning = true
       }
       if (prefillWaitingListId && appointmentId) {
         const completed = await getRpcService().completeWaitingListScheduling(
@@ -1235,7 +1246,9 @@ export function AgendaPage({
         }
         setPrefillRenewalId('')
       }
-      setAppointmentFeedback('Agendamento criado. Agenda recarregada do banco.')
+      setAppointmentFeedback(locationWarning
+        ? 'Agendamento criado, mas o local de atendimento não foi confirmado. Cadastre o endereço do profissional antes de enviar o WhatsApp.'
+        : 'Agendamento criado. Agenda recarregada do banco.')
       setAppointmentPatientId('')
       setAppointmentPatientQuery('')
       setAppointmentPatients([])
