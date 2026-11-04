@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { getRpcService } from '../../lib/supabase/rpc'
+import { openCapoWhatsAppTab } from './whatsapp-tab'
 
 type Props = Readonly<{
   patientId: string
   label?: string
   message?: string | null
 }>
-
-let whatsappTabReference: Window | null = null
 
 function digits(value: string) {
   return value.replace(/\D/g, '')
@@ -50,24 +49,8 @@ export function PatientWhatsAppButton({
     const normalizedPhone = phone.startsWith('55') ? phone : `55${phone}`
     const preparedMessage = message?.trim() ?? ''
     const whatsappUrl = `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalizedPhone)}${preparedMessage ? `&text=${encodeURIComponent(preparedMessage)}` : ''}`
-    // Reutiliza a aba identificada pelo CAPO nas próximas mensagens, sem abrir uma por paciente.
-    // A aba WhatsApp aberta manualmente pelo usuário não é controlada pelo sistema.
-    const whatsappTab =
-      whatsappTabReference && !whatsappTabReference.closed
-        ? whatsappTabReference
-        : globalThis.open('', 'capo_whatsapp_web')
-    if (!whatsappTab) {
-      setFeedback('O navegador bloqueou a aba do WhatsApp. Autorize pop-ups para o CAPO e tente novamente.')
-      setBusy(false)
-      return
-    }
-    whatsappTabReference = whatsappTab
-    try {
-      whatsappTab.opener = null
-      whatsappTab.location.replace(whatsappUrl)
-      whatsappTab.focus()
-    } catch {
-      setFeedback('Não foi possível direcionar a aba do WhatsApp. Tente novamente.')
+    if (!openCapoWhatsAppTab(whatsappUrl)) {
+      setFeedback('Não foi possível abrir ou reutilizar a aba do WhatsApp. Autorize pop-ups para o CAPO e tente novamente.')
       setBusy(false)
       return
     }
