@@ -8008,3 +8008,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Validação:** leitura dos arquivos atualizados no GitHub confirma que `Copiar mensagem` e os controles de desfecho foram removidos de Pacientes e que o registro aparece na Busca Ativa; build/testes automatizados completos, publicação no Cloudflare e homologação operacional ainda não comprovados. Não declarar 100% concluído até teste autorizado.
 
 **Commits:** `09f78bab65a431909c0270a48c48eac8f11d6a29` e `20b0b87106677229c0b6ae0605879fad6c34e133`.
+
+
+## §28.172 — Fila Oferta Inicial compacta e histórico de contatos (04/11/2026)
+
+**Autorização VERDE da Titular:** simplificar somente a listagem da aba **Busca Ativa → Oferta Inicial** para mostrar nome do paciente, tempo decorrido desde o primeiro registro da oferta e botão pequeno **Oferta CAPO**. A consulta detalhada e a operação administrativa só aparecem após abrir esse botão. Retirar o filtro manual **Situação** exclusivamente dessa aba; a seleção de ofertas ativas passa a ser fixa na consulta do serviço. Preservar os filtros e funções das abas Resgate e Perda de Seguimento. Faltosos não faz parte desta alteração.
+
+**Alteração de interface aplicada:** em `src/features/gestor/ActiveSearchPage.tsx`, a listagem inicial ganhou linha compacta e painel expansível por paciente, com link para a mensagem existente, dados da próxima providência, registro manual de desfecho/observação e segundo contato somente quando permitido pelo prazo de 72 horas. A expansão mostra o histórico retornado pela função existente, ordenado cronologicamente, com **data e horário** de cada tentativa e seus resultados e observações, mantendo todos os registros disponíveis. O tempo decorrido é calculado a partir do primeiro contato do histórico (com alternativa para a data retornada diretamente). Não altera a regra de decisão expressa: aceite e recusa continuam dependendo de registro humano e confirmação no sistema.
+
+**Preservação e limites:** somente interface React modificada; sem migração de banco, sem alterações em pacientes, dados de produção, Resgate, Perda de Seguimento, Faltosos ou WhatsApp. A função existente de busca deve fornecer `history` para mostrar todos os registros; se não fornecer, a interface informa apenas a data inicial disponível, sem inventar ocorrências. Testes automatizados, build Cloudflare e homologação em produção não executados nesta etapa; é necessário verificar a publicação e a expansão com paciente real autorizado.
+
+**Commit:** `0dd1cc372e1702c09c18075f10d61296861ccdfe`.
