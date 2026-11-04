@@ -7899,3 +7899,8 @@ Ao conferir o contrato existente foi identificado que `search_patients_for_inter
 ### 28.162 PADRONIZAÇÃO VISUAL DE ÍCONE DE ATALHO (04/11/2026)
 
 A pedido da Titular, removido o símbolo de peão de xadrez (♟) dos atalhos de pessoas e substituído pelo ícone institucional de dois usuários (👥), conforme imagem aprovada de Pacientes. Mudanças exclusivamente visuais nos pontos existentes: `src/features/gestor/GestorShell.tsx` (Equipe e Agendas, commit `adb7da4fb6f3a5e6a8acfef8ee5cafc6131e50a5`), `src/components/shell/AppShell.tsx` (Equipe e Agendas, commit `9fbae99417cf5311148156120bbe2ca388fbee51`) e `src/features/gestor/GestorDashboard.tsx` (Familiares, commit `a6d8c0313440355195ea8385ef07d8709b52128c`). Nenhuma rota, permissão, banco ou rotina alterada. Publicação visual e build ainda sujeitos a conferência no Cloudflare.
+
+
+### 28.163 ÍCONE DE PACIENTES NOS ACESSOS RÁPIDOS PROFISSIONAIS (04/11/2026)
+
+A conferência visual da Titular mostrou que o atalho **Pacientes** da seção **Acessos rápidos** na tela inicial profissional ainda exibia o peão branco `♙`, distinto do padrão aprovado `👥`. Correção exclusivamente visual em `src/features/professional/AssistentialPage.tsx`, commit `d949ae70336224204444da57f1b4a33fe27ccb0f`, substituindo somente o ícone do card Pacientes pelo padrão de dois usuários. Caminho/rota original `/atuacao`, rótulo e comportamento foram intencionalmente preservados nesta manutenção de aparência; sem alteração de permissões, banco ou lógica funcional. Demais símbolos de peão `♟` já tratados no §28.162. Conferência de publicação visual pendente.
