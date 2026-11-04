@@ -34,7 +34,7 @@ const serviceItems: readonly NavItem[] = [
 
 const managementItems: readonly NavItem[] = [
   { path: '/gestor/operacional', icon: '●', label: 'Pendências e Notificações' },
-  { path: '/gestor/equipe', icon: '♟', label: 'Equipe e Agendas' },
+  { path: '/gestor/equipe', icon: '👥', label: 'Equipe e Agendas' },
   { path: '/gestor/timeline', icon: '◷', label: 'Histórico Operacional do Paciente' },
   { path: '/gestor/auditoria', icon: '▥', label: 'Auditoria e Relatórios' },
   { path: '/relatorios', icon: '▥', label: 'Relatórios' },
