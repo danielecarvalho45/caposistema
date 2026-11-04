@@ -31,6 +31,10 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
   const [closureReason, setClosureReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [initialPatientId, setInitialPatientId] = useState('')
+  const [initialOutcome, setInitialOutcome] = useState<'' | 'aceitou' | 'novo_contato' | 'sem_resposta' | 'recusou'>('')
+  const [initialNotes, setInitialNotes] = useState('')
+  const [initialNextAt, setInitialNextAt] = useState('')
   const [rescuePatientId, setRescuePatientId] = useState('')
   const [rescueResult, setRescueResult] = useState('')
   const [rescueMethod, setRescueMethod] = useState('whatsapp')
@@ -63,6 +67,58 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
     })
     return () => { active = false }
   }, [filter, mode])
+
+  async function registerInitialOutcome() {
+    if (busy || !initialPatientId || !initialOutcome) return
+    if (initialOutcome === 'novo_contato' && !initialNextAt) {
+      setFeedback('Informe a data e o horário do próximo contato.')
+      return
+    }
+    if ((initialOutcome === 'aceitou' || initialOutcome === 'recusou') &&
+      !window.confirm(`Confirma que o paciente ${initialOutcome === 'aceitou' ? 'aceitou' : 'recusou'} expressamente a Oferta CAPO?`)) return
+    const accepted = initialOutcome === 'aceitou'
+    const declined = initialOutcome === 'recusou'
+    const closed = accepted || declined
+    const resultText = {
+      aceitou: 'Aceitou a Oferta CAPO',
+      novo_contato: 'Novo contato necessário',
+      sem_resposta: 'Sem resposta / contato não conseguido',
+      recusou: 'Recusou a Oferta CAPO',
+    }[initialOutcome]
+    const nextContactAt = closed ? null : initialNextAt
+      ? new Date(initialNextAt).toISOString()
+      : new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+
+    setBusy(true)
+    setFeedback('Registrando a resposta no banco…')
+    const response = await getRpcService().registerInitialActiveSearchAttempt({
+      patientId: initialPatientId,
+      contactMethod: 'whatsapp',
+      contactResult: resultText,
+      acceptedService: accepted ? true : declined ? false : null,
+      nextAction: closed ? null : 'Acompanhar resposta e realizar novo contato administrativo.',
+      notes: initialNotes.trim() || null,
+      nextContactAt,
+      closeFlow: closed,
+      closureReason: accepted
+        ? 'Oferta CAPO aceita expressamente pelo paciente.'
+        : declined ? 'Oferta CAPO recusada expressamente pelo paciente.' : null,
+    })
+    setBusy(false)
+    if (response.status === 'success') {
+      setFeedback(accepted
+        ? 'Aceite registrado pelo administrativo. Verifique o vínculo CAPO confirmado no banco.'
+        : declined ? 'Recusa expressa registrada e Oferta Inicial encerrada.'
+          : 'Contato/observação registrado. A Oferta Inicial continua em acompanhamento.')
+      setInitialPatientId('')
+      setInitialOutcome('')
+      setInitialNotes('')
+      setInitialNextAt('')
+      void load()
+    } else {
+      setFeedback(response.status === 'error' ? response.error.message : 'O banco não confirmou a resposta.')
+    }
+  }
 
   async function registerRescueContact() {
     if (busy || !rescuePatientId || rescueResult.trim().length < 2) {
@@ -262,9 +318,45 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                         <strong role="status">Lembrete administrativo: 72 horas sem resposta — realizar segundo contato.</strong>
                       )}
                       {canOperate && active && patientId !== '—' && (
-                        <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>
-                          Continuar oferta / registrar resposta
-                        </Link>
+                        <div>
+                          <button type="button" disabled={busy}
+                            onClick={() => {
+                              setInitialPatientId(initialPatientId === patientId ? '' : patientId)
+                              setInitialOutcome('')
+                              setInitialNotes('')
+                              setInitialNextAt('')
+                            }}>
+                            {initialPatientId === patientId ? 'Fechar resposta' : 'Registrar resposta / observação'}
+                          </button>
+                          {initialPatientId === patientId && (
+                            <div className="gestor-panel">
+                              <label>Desfecho do contato
+                                <select value={initialOutcome}
+                                  onChange={(event) => setInitialOutcome(event.target.value as typeof initialOutcome)}>
+                                  <option value="">Selecionar resposta</option>
+                                  <option value="aceitou">Aceitou expressamente</option>
+                                  <option value="novo_contato">Novo contato necessário</option>
+                                  <option value="sem_resposta">Sem resposta / contato não conseguido</option>
+                                  <option value="recusou">Recusou expressamente</option>
+                                </select>
+                              </label>
+                              {(initialOutcome === 'novo_contato' || initialOutcome === 'sem_resposta') && (
+                                <label>Próximo contato
+                                  <input type="datetime-local" value={initialNextAt}
+                                    onChange={(event) => setInitialNextAt(event.target.value)} />
+                                </label>
+                              )}
+                              <label>Observação administrativa (opcional)
+                                <textarea rows={2} value={initialNotes}
+                                  onChange={(event) => setInitialNotes(event.target.value)} />
+                              </label>
+                              <button type="button" disabled={busy || !initialOutcome}
+                                onClick={() => void registerInitialOutcome()}>
+                                {busy ? 'Salvando…' : 'Salvar resposta'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
