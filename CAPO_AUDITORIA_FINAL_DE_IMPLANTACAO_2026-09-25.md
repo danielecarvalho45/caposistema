@@ -7979,3 +7979,19 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificações e status:** arquivos atualizados em `main`, commit de cada módulo confirmado pelo GitHub. Teste operacional real com dois contatos legítimos, build e publicação no Cloudflare ainda **não comprovados**; não declarar homologação 100%.
 
 **Commits:** `a96bf82380cc9881c261390579656c1bc91eae3a`, `19fb13b828a3f1cb7f46570823384943b3cf58eb`, `5bfc15262f8e48bebde38db0b5aa23b7b3ed7d9e`, `0223d8e427f13c5079171bfb5f0725142adf2561`.
+
+
+## §28.170 — Cadastro real: resposta inválida após gravação e falsa indicação de falha (04/11/2026)
+
+**Relato:** o administrativo recebeu uma mensagem de erro ao cadastrar paciente; ao tentar novamente, a validação de duplicidade identificou o registro já existente. Não foi executada exclusão/edição corretiva de dados reais. O banco possui os cadastros recentes e a função `create_classified_patient_for_interface` retorna TABLE com campos `cms`/`origin` potencialmente nulos.
+
+**Causa/risco identificados na camada cliente:** `createClassifiedPatient` aplicava `selectFirst:true` na camada genérica e `parseCreatedPatient` tratava `cms` e `origin` como campos obrigatórios de texto, apesar do contrato SQL permitir nulos. Uma resposta legítima, persistida no banco, poderia ser rejeitada como inválida pela interface após o commit. Falha de rede depois do commit também pode deixar a resposta inconclusiva; não se pode garantir atomicidade entre banco e navegador.
+
+**Correção cirúrgica:**
+- `src/lib/supabase/rpc.ts`: a RPC classificada passou a entregar ao parser o retorno completo (array TABLE ou objeto único); o parser aceita `cms` e `origin` nulos e mantém os campos realmente obrigatórios.
+- `src/features/patients/PatientsPage.tsx`: bloqueia múltiplos cliques enquanto a gravação está pendente; quando a confirmação falha ou vem vazia, consulta novamente duplicidade por nome normalizado/data de nascimento antes de permitir nova tentativa. Se registro exato existir, abre a consulta ao cadastro e alerta explicitamente para NÃO cadastrar novamente; se não for possível conferir, orienta a consultar antes de repetir, sem afirmar falsamente que o banco não gravou.
+- Preservados número CAPO gerado pelo banco, validação prévia de duplicidade, separação de contexto `is_test`, classificação novo/preexistente, ofertas e vínculos. Nenhum paciente artificial inserido.
+
+**Limites e homologação:** a origem exata da mensagem exibida ao usuário não foi capturada em log/screenshot; a divergência de parser é comprovada pelo código e contrato, mas não se declara que necessariamente foi o único gatilho. A função SQL original permanece transacional; a interface não pode garantir que uma queda de conexão após commit signifique rollback. Necessário teste de cadastro real autorizado e confirmação na publicação. Não foram executados testes de transação com paciente real nem build completo nesta execução.
+
+**Commits:** `edb4c3404536e5235e991a0a05b06b5e0289f45d` (contrato/parser), `792a292569c36e4aade6d924b8cd2b560d5fb833` (interface e reconciliação).
