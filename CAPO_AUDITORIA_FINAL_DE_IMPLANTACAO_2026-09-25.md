@@ -7828,3 +7828,24 @@ Não houve alteração de schema ou migration no Supabase.
 **Limites e próximo teste:** suíte, build, deploy e homologação autenticada ainda não executados/comprovados. Testar com registro administrativo autorizado de Oferta Inicial `sem_resposta` ou `novo_contato`; ele deve aparecer na visão Oferta Inicial ordenado pela próxima data, permitir abrir o mesmo paciente e registrar aceite posterior; após aceite, sair do filtro Ativo, ter exatamente um ciclo inicial; Faltosos e Perda de Seguimento permanecem inalterados. Sem criar pacientes reais/fictícios durante testes técnicos.
 
 **Estado:** **REORGANIZAÇÃO DE VISÕES NO MAIN / TESTE DE REGRESSÃO ESCRITO, EXECUÇÃO E HOMOLOGAÇÃO PENDENTES.**
+
+
+### 28.156 ADEQUAÇÃO NORMATIVA — CADASTRO NOVO/PREEXISTENTE, OFERTA CAPO E QUATRO FILAS (04/11/2026)
+
+**Decisão expressa da Titular, após comando VERDE:** preservar tudo que já foi construído, testado e funciona, sem efeito cascata. Primeiro atualizar a Especificação Estrutural; em seguida registrar no Documento Mestre; somente implementar diferenças verificadas com correções cirúrgicas e teste de regressão. Esta decisão posterior complementa e, quanto às filas de oferta e cadastro, atualiza as regras anteriores de §28.155.
+
+**Documento normativo atualizado:** `CAPO_ESPECIFICACAO_ESTRUTURAL_DA_INTERFACE_2026-09-12(1).md`, arquivo existente da Biblioteca CAPO (mesma identidade; nova versão de 04/11/2026), recebeu a seção **ADEQUAÇÃO ESTRUTURAL APROVADA — CADASTRO, OFERTA CAPO E FILAS DE ACOMPANHAMENTO**. O documento anterior foi preservado integralmente, com adição apenas da decisão recente; nenhuma documentação paralela foi criada.
+
+**Contrato funcional aprovado:**
+1. Seleção obrigatória, sem valor padrão, **Paciente novo** versus **Paciente preexistente** antes de permitir cadastro. Preexistente requer data histórica real de início no CAPO, anterior ao dia corrente em `America/Sao_Paulo`; após cadastro válido, registrar vínculo com origem *já utilizava o serviço*, sem gerar convite/aceite fictício. Novo recebe data/hora de cadastro gerada pelo sistema, mas vínculo assistencial só após aceite efetivo.
+2. Novo cadastro abre a Oferta CAPO com mensagem de WhatsApp já homologada. O acionamento do WhatsApp coloca caso na **Oferta Inicial** como pendência, mas não comprova envio/entrega. **Aceite e recusa nunca automáticos**: somente resposta expressa registrada pelo administrativo. Aceite cria ciclo; recusa encerra oferta sem vínculo.
+3. Sem resposta por 72 horas, apenas lembrete interno ao AO/Gestor. **Segundo contato efetivamente registrado** remove da Oferta Inicial e encaminha a **Resgate da Oferta**. Na etapa de resgate, lembretes a cada 15 dias e histórico de tentativas, sem encerramento automático por prazo.
+4. Quatro filas distintas na organização do trabalho: **Oferta Inicial**, **Resgate da Oferta**, **Perda de Seguimento** e **Faltosos**. Preservar o módulo/contrato de Faltosos separado dos dados de Busca Ativa, apesar da organização conjunta na interface; não confundir ausência com perda de seguimento.
+5. Nome do paciente clicável, com ação contextual. Na Oferta Inicial, abrir diretamente a mensagem de Oferta CAPO daquele paciente, sem obrigar navegar pelo cadastro completo. Destinos das outras filas permanecem sujeitos aos contratos existentes e às decisões posteriores da Titular, sem funcionalidades inventadas.
+6. Profissionais assistenciais consultam pacientes, sem cadastro nem edição geral; exceção: **alterar somente telefone**, auditado e autorizado no backend sem liberar a RPC administrativa ampla.
+
+**Diagnóstico técnico anterior à alteração:** `PatientsPage.tsx` ainda não apresenta a escolha inicial obrigatória; `ActiveSearchPage.tsx` tem duas visões (`oferta`, `seguimento`); as RPCs `create_patient_for_interface`, `register_initial_active_search_attempt_for_interface` e `get_initial_active_searches_for_interface` existem no Supabase. `get_patient_for_edit_for_interface` já lê dados do paciente e `update_patient_for_interface` é edição administrativa ampla, inadequada para liberar a profissionais. Confrontar as funções e permissões atuais antes de escrever SQL ou conectar novas ações.
+
+**Limites desta etapa:** foi realizada **somente a adequação normativa na Biblioteca** e este registro de continuidade. **Nenhuma mudança de frontend, banco, filas, prazos, políticas, vínculos ou dados reais foi executada** nesta etapa. Não afirmar que as quatro filas ou a edição profissional de telefone estão prontas. Próxima fase: implementar por contratos isolados (cadastro/classificação e vínculo; filas e lembretes; navegação contextual; telefone profissional), com validação de backend e frontend, regressão, build, deploy e teste operacional; atualizar o Mestre após cada mudança efetiva.
+
+**Estado:** **DECISÃO FUNCIONAL CONSOLIDADA / ADEQUAÇÃO ESTRUTURAL REGISTRADA / IMPLEMENTAÇÃO E TESTES PENDENTES.**
