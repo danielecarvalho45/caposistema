@@ -65,14 +65,7 @@ export function PatientsPage({
   const [createdPatientId, setCreatedPatientId] = useState<string | null>(null)
   const [createdPatientNumber, setCreatedPatientNumber] = useState<string | null>(null)
   const [createdPatientStatus, setCreatedPatientStatus] = useState<string | null>(null)
-  const [offerOutcome, setOfferOutcome] = useState<'aceitou' | 'novo_contato' | 'sem_resposta' | 'recusou' | ''>('')
-  const [offerNextContactDate, setOfferNextContactDate] = useState('')
-  const [offerNextContactTime, setOfferNextContactTime] = useState('')
-  const [offerNotes, setOfferNotes] = useState('')
   const [offerFeedback, setOfferFeedback] = useState<string | null>(null)
-  const [offerCycleConfirmation, setOfferCycleConfirmation] = useState<{ patientId: string; cycleId: string } | null>(null)
-  const [offerHistory, setOfferHistory] = useState<readonly Record<string, unknown>[]>([])
-  const [offerBusy, setOfferBusy] = useState(false)
   const [offerOpenBusy, setOfferOpenBusy] = useState(false)
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<AsyncState<readonly {
@@ -144,7 +137,6 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     setOfferOpenBusy(false)
     if (result.status === 'success') {
       setOfferFeedback('Oferta Inicial incluída na Busca Ativa. A abertura do WhatsApp não confirma envio nem aceite.')
-      void loadOfferHistory(offerPatientId)
     } else {
       setOfferFeedback(result.status === 'error'
         ? `WhatsApp aberto, mas a pendência NÃO foi registrada: ${result.error.message}. Tente novamente.`
@@ -215,8 +207,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     })
     setRegistrationBusy(false)
     if (next.status === 'success') {
-      setOfferCycleConfirmation(null)
-      setCreatedPatientId(registrationKind === 'novo' ? next.data.patient_id : null)
+        setCreatedPatientId(registrationKind === 'novo' ? next.data.patient_id : null)
       setPreexistingPatientId(registrationKind === 'preexistente' ? next.data.patient_id : null)
       setCreatedPatientAt(next.data.created_at)
       setCreatedPatientNumber(next.data.patient_number)
@@ -258,97 +249,10 @@ ${operatorName} – ADMINISTRATIVO CAPO`
     }
   }
 
-  async function loadOfferHistory(patientId: string) {
-    const result = await getRpcService().getInitialActiveSearches(null, 100, 0)
-    if (result.status !== 'success' || !result.data || typeof result.data !== 'object') {
-      setOfferHistory([])
-      return
-    }
-    const payload = result.data as Record<string, unknown>
-    const items = Array.isArray(payload.items) ? payload.items : []
-    const patient = items.find((item) =>
-      Boolean(item) && typeof item === 'object' && !Array.isArray(item) &&
-      (item as Record<string, unknown>).patient_id === patientId,
-    ) as Record<string, unknown> | undefined
-    setOfferHistory(Array.isArray(patient?.history)
-      ? patient.history.filter((item): item is Record<string, unknown> =>
-          Boolean(item) && typeof item === 'object' && !Array.isArray(item))
-      : [])
-  }
-
-  async function registerOfferOutcome() {
-    if (!offerPatientId || !offerOutcome || offerBusy) return
-    if (offerOutcome === 'novo_contato' && !offerNextContactDate) {
-      setOfferFeedback('Informe a data do próximo contato.')
-      return
-    }
-    const nextContactAt = offerNextContactDate
-      ? `${offerNextContactDate}T${offerNextContactTime || '09:00'}:00-03:00`
-      : null
-    const acceptedService = offerOutcome === 'aceitou'
-      ? true
-      : offerOutcome === 'recusou'
-        ? false
-        : null
-    const closeFlow = offerOutcome === 'aceitou' || offerOutcome === 'recusou'
-    const resultText: Record<Exclude<typeof offerOutcome, ''>, string> = {
-      aceitou: 'Aceitou a Oferta CAPO',
-      novo_contato: 'Novo contato necessário',
-      sem_resposta: 'Sem resposta / contato não conseguido',
-      recusou: 'Recusou a Oferta CAPO',
-    }
-    const closureReason = offerOutcome === 'aceitou'
-      ? 'Oferta CAPO aceita pelo paciente.'
-      : offerOutcome === 'recusou'
-        ? 'Oferta CAPO recusada pelo paciente.'
-        : null
-
-    setOfferBusy(true)
-    setOfferCycleConfirmation(null)
-    setOfferFeedback('Registrando desfecho no banco…')
-    const result = await getRpcService().registerInitialActiveSearchAttempt({
-      patientId: offerPatientId,
-      contactMethod: 'whatsapp',
-      contactResult: resultText[offerOutcome],
-      acceptedService,
-      nextAction: offerOutcome === 'novo_contato' || offerOutcome === 'sem_resposta'
-        ? 'Realizar novo contato conforme acompanhamento administrativo.'
-        : null,
-      notes: offerNotes.trim() || null,
-      nextContactAt,
-      closeFlow,
-      closureReason,
-    })
-    if (result.status === 'success') {
-      const payload = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
-        ? result.data as Record<string, unknown>
-        : null
-      const cycleId = typeof payload?.care_cycle_id === 'string' ? payload.care_cycle_id : ''
-      if (acceptedService && cycleId) {
-        setOfferCycleConfirmation({ patientId: offerPatientId, cycleId })
-        setOfferFeedback('Oferta CAPO aceita e ciclo de acompanhamento confirmado pelo banco. Agora é possível agendar.')
-      } else if (acceptedService) {
-        setOfferFeedback('O aceite retornou, mas o banco não confirmou um ciclo CAPO aberto. Não prossiga com o agendamento; verifique a integração.')
-      } else {
-        setOfferFeedback('Desfecho da Oferta CAPO registrado no banco.')
-      }
-      setOfferNotes('')
-      setOfferNextContactDate('')
-      setOfferNextContactTime('')
-      setOfferOutcome('')
-      await loadOfferHistory(offerPatientId)
-    } else {
-      setOfferFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o registro da Oferta CAPO.')
-    }
-    setOfferBusy(false)
-  }
-
   async function searchPatients() {
     const cleanQuery = query.trim()
     setEditingPatientId(null)
-    setOfferHistory([])
     setOfferFeedback(null)
-    setOfferCycleConfirmation(null)
     if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
       setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       setResult(emptyState)
@@ -369,10 +273,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
   }
 
   async function openPatientEditor(patientId: string) {
-    setOfferOutcome('')
     setOfferFeedback(null)
-    setOfferCycleConfirmation(null)
-    setOfferHistory([])
     setEditBusy(true)
     setFeedback(null)
     const next = canEditPatient
@@ -383,7 +284,6 @@ ${operatorName} – ADMINISTRATIVO CAPO`
       if (row && typeof row === 'object' && !Array.isArray(row)) {
         const source = row as Record<string, unknown>
         setEditingPatientId(patientId)
-        void loadOfferHistory(patientId)
         setEditForm({
           patient_number: String(source.patient_number ?? ''),
           full_name: String(source.full_name ?? ''),
@@ -649,7 +549,7 @@ ${operatorName} – ADMINISTRATIVO CAPO`
             <div>
               <p className="eyebrow">Cadastro + Oferta CAPO</p>
               <h2 id="patients-offer-title">Oferta CAPO — primeiro contato</h2>
-              <p>{activeView === 'search' ? `Oferta CAPO do paciente selecionado: ${offerPatientName}. Registre o desfecho real do contato antes de agendar.` : 'Esta etapa permanece integrada ao cadastro do paciente.'}</p>
+              <p>{activeView === 'search' ? `Oferta CAPO para ${offerPatientName}. Abra a mensagem no WhatsApp.` : 'Abra o WhatsApp para iniciar a Oferta CAPO; acompanhe a resposta na Busca Ativa.'}</p>
             </div>
           </div>
           <div className="patients-offer-grid">
@@ -665,65 +565,19 @@ ${operatorName} – ADMINISTRATIVO CAPO`
                 readOnly
               />
               <div className="patients-form-actions patients-offer-actions">
-                <button type="button" onClick={() => void navigator.clipboard?.writeText(offerMessage)}>
-                  Copiar mensagem
-                </button>
                 <button type="button" disabled={whatsappNumber.length < 10 || !offerPatientId || offerOpenBusy} onClick={() => void openWhatsApp()}>
                   Abrir WhatsApp
                 </button>
               </div>
             </div>
             <div className="patients-offer-status">
-              <strong>Telefone informado</strong>
+              <strong>Telefone do paciente</strong>
               <span>{offerPhone.trim() || 'Telefone não informado no cadastro.'}</span>
-              <small>Selecionar uma resposta não registra o aceite. Clique em salvar e aguarde a confirmação do banco antes de agendar.</small>
-
-              <fieldset disabled={!offerPatientId || offerBusy}>
-                <legend>Desfecho do contato</legend>
-                <label><input type="radio" name="offer-outcome" checked={offerOutcome === 'aceitou'} onChange={() => setOfferOutcome('aceitou')} /> Aceitou</label>
-                <label><input type="radio" name="offer-outcome" checked={offerOutcome === 'novo_contato'} onChange={() => setOfferOutcome('novo_contato')} /> Novo contato necessário</label>
-                <label><input type="radio" name="offer-outcome" checked={offerOutcome === 'sem_resposta'} onChange={() => setOfferOutcome('sem_resposta')} /> Sem resposta / contato não conseguido</label>
-                <label><input type="radio" name="offer-outcome" checked={offerOutcome === 'recusou'} onChange={() => setOfferOutcome('recusou')} /> Recusa / desfecho definitivo</label>
-              </fieldset>
-
-              {(offerOutcome === 'novo_contato' || offerOutcome === 'sem_resposta') && (
-                <>
-                  <label>Data do próximo contato
-                    <input type="date" value={offerNextContactDate} onChange={(event) => setOfferNextContactDate(event.target.value)} />
-                  </label>
-                  <label>Horário do próximo contato
-                    <input type="time" value={offerNextContactTime} onChange={(event) => setOfferNextContactTime(event.target.value)} />
-                  </label>
-                </>
-              )}
-              <label>Observação administrativa do contato
-                <textarea rows={3} value={offerNotes} onChange={(event) => setOfferNotes(event.target.value)} />
-              </label>
-              <button type="button" disabled={!offerPatientId || !offerOutcome || offerBusy} onClick={() => void registerOfferOutcome()}>
-                {offerBusy ? 'Registrando…' : offerOutcome === 'aceitou' ? 'Salvar aceite e abrir ciclo CAPO' : 'Registrar contato da Oferta'}
-              </button>
+              <small>O administrativo registra as respostas e observações na fila Busca Ativa — Oferta Inicial. Nenhum aceite ou recusa é automático.</small>
               {offerFeedback && <p role="status">{offerFeedback}</p>}
               {offerPatientId && canEditPatient && canAccessAppRoute(accessContext, '/busca-ativa') && (
-                <Link to="/busca-ativa?tipo=oferta">Ver pendências da Oferta Inicial na Busca Ativa</Link>
+                <Link to="/busca-ativa?tipo=oferta">Acompanhar Oferta Inicial na Busca Ativa</Link>
               )}
-              {offerCycleConfirmation?.patientId === offerPatientId && canAccessAppRoute(accessContext, '/agenda') && (
-                <Link to="/agenda" state={{
-                  patientId: offerPatientId,
-                  patientName: offerPatientName,
-                  origin: 'patient_record',
-                }}>Agendar consulta — ciclo CAPO confirmado</Link>
-              )}
-              <div aria-label="Histórico da Oferta CAPO">
-                <strong>Histórico</strong>
-                {offerHistory.length === 0 ? <small>Nenhum contato registrado nesta consulta.</small> : (
-                  <ul>{offerHistory.map((item, index) => (
-                    <li key={String(item.id ?? index)}>
-                      {String(item.contact_result ?? 'Contato registrado')}
-                      {item.contact_date ? ` · ${new Date(String(item.contact_date)).toLocaleString('pt-BR')}` : ''}
-                    </li>
-                  ))}</ul>
-                )}
-              </div>
             </div>
           </div>
         </section>
