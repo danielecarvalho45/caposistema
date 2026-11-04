@@ -1,3 +1,25 @@
+.patients-registration-kind {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  padding: 0.8rem 1rem;
+  margin: 0 0 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+.patients-registration-kind legend {
+  padding: 0 0.35rem;
+  font-weight: 700;
+}
+
+.patients-registration-kind label {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  cursor: pointer;
+}
+
 .patients-actions {
   display: flex;
   gap: 0.5rem;
