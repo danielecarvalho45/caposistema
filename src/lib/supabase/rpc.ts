@@ -3739,6 +3739,11 @@ function createSupabaseTransport(
       case 'create_specialty_for_interface':
       case 'get_patient_for_edit_for_interface':
       case 'update_patient_for_interface':
+      case 'create_classified_patient_for_interface':
+      case 'check_patient_duplicates_for_interface':
+      case 'get_patient_for_professional_interface':
+      case 'update_patient_phone_by_professional_for_interface':
+      case 'search_patients_for_professional_interface':
       case 'get_patient_contact_for_interface':
       case 'get_appointment_previsit_contacts_for_interface':
       case 'register_appointment_previsit_contact_for_interface':
