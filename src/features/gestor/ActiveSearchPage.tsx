@@ -13,6 +13,31 @@ function label(item: Record<string, unknown>, ...keys: string[]) {
   return typeof value === 'string' ? value : '—'
 }
 
+function offerHistory(item: Record<string, unknown>) {
+  return rows(item.history).slice().sort((a, b) => {
+    const first = typeof a.contact_date === 'string' ? Date.parse(a.contact_date) : 0
+    const second = typeof b.contact_date === 'string' ? Date.parse(b.contact_date) : 0
+    return first - second
+  })
+}
+
+function offerElapsed(item: Record<string, unknown>) {
+  const first = offerHistory(item)[0]?.contact_date ?? item.contact_date
+  if (typeof first !== 'string') return 'Tempo não informado'
+  const timestamp = Date.parse(first)
+  if (!Number.isFinite(timestamp)) return 'Tempo não informado'
+  const minutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000))
+  if (minutes < 60) return `Há ${minutes} min`
+  if (minutes < 1440) return `Há ${Math.floor(minutes / 60)} h`
+  return `Há ${Math.floor(minutes / 1440)} dia(s)`
+}
+
+function offerDate(value: unknown) {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value))
+    ? new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    : 'Data não informada'
+}
+
 export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: AccessContext }>) {
   const location = useLocation()
   const [mode, setMode] = useState<'seguimento' | 'oferta' | 'resgate'>(
@@ -32,6 +57,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [initialPatientId, setInitialPatientId] = useState('')
+  const [expandedOfferPatientId, setExpandedOfferPatientId] = useState('')
   const [initialOutcome, setInitialOutcome] = useState<'' | 'aceitou' | 'novo_contato' | 'sem_resposta' | 'recusou'>('')
   const [initialNotes, setInitialNotes] = useState('')
   const [initialNextAt, setInitialNextAt] = useState('')
@@ -46,7 +72,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
 
   const load = useCallback(async () => {
     const result = mode === 'oferta'
-      ? await getRpcService().getInitialActiveSearches(filter || null, 100, 0)
+      ? await getRpcService().getInitialActiveSearches('ativo', 100, 0)
       : mode === 'resgate'
         ? await getRpcService().getOfferRescueSearches(filter || null, 100, 0)
         : await getRpcService().getActiveSearches(filter || null, 50, 0)
@@ -58,7 +84,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
     let active = true
     setState(loadingState())
     const pending = mode === 'oferta'
-      ? getRpcService().getInitialActiveSearches(filter || null, 100, 0)
+      ? getRpcService().getInitialActiveSearches('ativo', 100, 0)
       : mode === 'resgate'
         ? getRpcService().getOfferRescueSearches(filter || null, 100, 0)
         : getRpcService().getActiveSearches(filter || null, 50, 0)
@@ -286,13 +312,15 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
 
       <article className="gestor-panel">
         <h3>{mode === 'oferta' ? 'Pendências da Oferta Inicial' : mode === 'resgate' ? 'Resgate da Oferta CAPO' : 'Acompanhamento da Perda de Seguimento'}</h3>
-        <label>Situação
-          <select value={filter} onChange={(event) => { setState(loadingState()); setFilter(event.target.value) }}>
-            <option value="ativo">Ativo</option>
-            <option value="encerrado">Encerrado</option>
-            <option value="">Todos</option>
-          </select>
-        </label>
+        {mode !== 'oferta' && (
+          <label>Situação
+            <select value={filter} onChange={(event) => { setState(loadingState()); setFilter(event.target.value) }}>
+              <option value="ativo">Ativo</option>
+              <option value="encerrado">Encerrado</option>
+              <option value="">Todos</option>
+            </select>
+          </label>
+        )}
         {feedback && <p role="status">{feedback}</p>}
         {state.status === 'loading' && <p>Carregando busca ativa…</p>}
         {state.status === 'error' && <p role="alert">{state.error.message}</p>}
@@ -303,13 +331,52 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
               const patientId = label(item, 'patient_id')
               const active = label(item, 'flow_status', 'status') === 'ativo'
               return (
-                <li key={label(item, 'latest_attempt_id', 'patient_id') + index}>
-                  <strong>{(mode === 'oferta' || mode === 'resgate') && patientId !== '—'
-                    ? <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>{label(item, 'patient_name', 'full_name')}</Link>
-                    : label(item, 'patient_name', 'full_name')}</strong>
-                  <small>{label(item, 'flow_status', 'status')} · {label(item, 'contact_result', 'next_action', 'contact_date')}</small>
-                  {mode === 'oferta' && (
-                    <div>
+                <li key={label(item, 'latest_attempt_id', 'patient_id') + index}
+                  className={mode === 'oferta' ? 'capo-initial-offer-item' : undefined}>
+                  {mode === 'oferta' ? (
+                    <div className="capo-initial-offer-summary" style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                      <span className="capo-initial-offer-name" style={{ fontWeight: 600, flex: "1 1 12rem" }}>{label(item, 'patient_name', 'full_name')}</span>
+                      <small>{offerElapsed(item)}</small>
+                      <button type="button" className="capo-initial-offer-button" style={{ fontSize: "0.8rem", padding: "0.3rem 0.6rem" }}
+                        aria-expanded={expandedOfferPatientId === patientId}
+                        onClick={() => {
+                          setExpandedOfferPatientId(expandedOfferPatientId === patientId ? '' : patientId)
+                          setInitialPatientId('')
+                          setRescuePatientId('')
+                        }}>
+                        Oferta CAPO
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <strong>{mode === 'resgate' && patientId !== '—'
+                        ? <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>{label(item, 'patient_name', 'full_name')}</Link>
+                        : label(item, 'patient_name', 'full_name')}</strong>
+                      <small>{label(item, 'flow_status', 'status')} · {label(item, 'contact_result', 'next_action', 'contact_date')}</small>
+                    </>
+                  )}
+                  {mode === 'oferta' && expandedOfferPatientId === patientId && (
+                    <div className="capo-initial-offer-detail" style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid #dbe5ee" }}>
+                      {patientId !== '—' && (
+                        <Link to={`/pacientes?patientId=${encodeURIComponent(patientId)}`}>Abrir Oferta CAPO e mensagem do WhatsApp</Link>
+                      )}
+                      <h4>Registro das ofertas e contatos</h4>
+                      {offerHistory(item).length > 0 ? (
+                        <ol className="capo-initial-offer-history" style={{ margin: "0.5rem 0 1rem", paddingLeft: "1.25rem" }}>
+                          {offerHistory(item).map((attempt, attemptIndex) => (
+                            <li key={String(attempt.id ?? attemptIndex)}>
+                              <time>{offerDate(attempt.contact_date)}</time>
+                              <span>{label(attempt, 'contact_result', 'next_action')}</span>
+                              {typeof attempt.notes === 'string' && attempt.notes.trim() && (
+                                <small>Observação: {attempt.notes}</small>
+                              )}
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p>Registro inicial: {offerDate(item.contact_date)}. Sem outros contatos no histórico retornado.</p>
+                      )}
+                      <div>
                       <small>Próximo contato: {typeof item.next_contact_at === 'string' && item.next_contact_at
                         ? new Date(item.next_contact_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
                         : 'Ainda não programado'}</small>
@@ -358,9 +425,10 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                           )}
                         </div>
                       )}
+                      </div>
                     </div>
                   )}
-                  {(mode === 'oferta' || mode === 'resgate') && canOperate && active && patientId !== '—' && (
+                  {(mode === 'resgate' || (mode === 'oferta' && expandedOfferPatientId === patientId)) && canOperate && active && patientId !== '—' && (
                     <div>
                       {mode === 'resgate' && typeof item.next_contact_at === 'string'
                         && new Date(item.next_contact_at).getTime() <= Date.now() && (
