@@ -67,6 +67,7 @@ export function PatientsPage({
   const [createdPatientStatus, setCreatedPatientStatus] = useState<string | null>(null)
   const [offerFeedback, setOfferFeedback] = useState<string | null>(null)
   const [offerOpenBusy, setOfferOpenBusy] = useState(false)
+  const [existingOfferAvailable, setExistingOfferAvailable] = useState(false)
   const [nextRegistrationReady, setNextRegistrationReady] = useState(false)
   const [query, setQuery] = useState('')
   const [result, setResult] = useState<AsyncState<readonly {
@@ -289,6 +290,7 @@ ADMINISTRATIVO DO CAPO`
   async function searchPatients() {
     const cleanQuery = query.trim()
     setEditingPatientId(null)
+    setExistingOfferAvailable(false)
     setOfferFeedback(null)
     if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
       setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
@@ -310,6 +312,7 @@ ADMINISTRATIVO DO CAPO`
   }
 
   async function openPatientEditor(patientId: string) {
+    setExistingOfferAvailable(false)
     setOfferFeedback(null)
     setEditBusy(true)
     setFeedback(null)
@@ -335,6 +338,15 @@ ADMINISTRATIVO DO CAPO`
           origin: String(source.origin ?? ''),
           status: String(source.status ?? 'ativo'),
         })
+        if (canEditPatient) {
+          const offerState = await getRpcService().isPatientInitialOfferAvailable(patientId)
+          if (offerState.status === 'success') {
+            setExistingOfferAvailable(offerState.data === true)
+          } else {
+            setExistingOfferAvailable(false)
+            setOfferFeedback('Não foi possível consultar o estado da Oferta Inicial. A ação ficará indisponível até a conferência no banco.')
+          }
+        }
       } else {
         setFeedback('O banco não retornou os dados editáveis do paciente.')
       }
@@ -587,7 +599,7 @@ ADMINISTRATIVO DO CAPO`
         </section>
       )}
 
-      {((activeView === 'register' && registrationKind === 'novo' && Boolean(createdPatientId)) || (activeView === 'search' && Boolean(editingPatientId) && editingPatientId !== preexistingPatientId && canEditPatient)) && (
+      {((activeView === 'register' && registrationKind === 'novo' && Boolean(createdPatientId)) || (activeView === 'search' && Boolean(editingPatientId) && editingPatientId !== preexistingPatientId && canEditPatient && existingOfferAvailable)) && (
         <section className="home-profile patients-offer" aria-labelledby="patients-offer-title">
           <div className="patients-section-heading">
             <div>
