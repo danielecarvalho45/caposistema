@@ -763,6 +763,10 @@ export function AgendaPage({
   const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
   const [selectedSlotStart, setSelectedSlotStart] = useState('')
   const [slotResult, setSlotResult] = useState<{ key: string; rows: readonly AvailableAppointmentSlot[]; status: 'success' | 'empty' | 'error' } | null>(null)
+  const [returnScheduleGrid, setReturnScheduleGrid] = useState<{
+    key: string
+    state: AsyncState<readonly AgendaScheduleSlot[]>
+  } | null>(null)
   const [appointmentPatientQuery, setAppointmentPatientQuery] = useState('')
   const [appointmentPatientId, setAppointmentPatientId] = useState('')
   const [appointmentPatients, setAppointmentPatients] = useState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]>([])
@@ -1579,6 +1583,19 @@ export function AgendaPage({
   }, [anchorDate, selectedProfessionalId, showScheduleForm])
 
   useEffect(() => {
+    if (!isProfessional || !showScheduleForm || !selectedProfessionalId || !anchorDate) return
+    let active = true
+    const key = `${selectedProfessionalId}:${anchorDate}`
+    setReturnScheduleGrid({ key, state: loadingState() })
+    void getRpcService()
+      .getAgendaScheduleGrid(anchorDate, anchorDate, selectedProfessionalId)
+      .then((result) => {
+        if (active) setReturnScheduleGrid({ key, state: result })
+      })
+    return () => { active = false }
+  }, [isProfessional, showScheduleForm, selectedProfessionalId, anchorDate])
+
+  useEffect(() => {
     if (!showRescheduleForm || !rescheduleProfessionalId || !rescheduleTargetDate) return
     let active = true
     void getRpcService()
@@ -1917,25 +1934,71 @@ export function AgendaPage({
                 Data *
                 <input type="date" value={anchorDate} onChange={(event) => setAnchorDate(event.target.value)} />
               </label>
-              <label className="agenda-form-wide">
-                Horários disponíveis *
-                <div className="agenda-slot-picker" aria-live="polite">
-                  {availableSlots.length === 0 ? (
-                    <span className="agenda-empty-slot">Selecione profissional e data.</span>
-                  ) : (
-                    availableSlots.map((slot) => (
-                      <button
-                        type="button"
-                        className={validSlotStart === slot.slot_start ? 'is-selected' : undefined}
-                        key={slot.slot_start}
-                        onClick={() => setSelectedSlotStart(slot.slot_start)}
-                      >
-                        {slot.slot_time}
-                      </button>
-                    ))
-                  )}
+              {isProfessional ? (
+                <div className="agenda-form-wide agenda-return-grid" aria-label="Agenda do profissional para retorno">
+                  <strong>Agenda do profissional — {formatPeriod(anchorDate, anchorDate, 'day')}</strong>
+                  <p>Selecione um horário livre. Os horários agendados ou bloqueados não podem receber retorno.</p>
+                  {(!returnScheduleGrid || returnScheduleGrid.key !== `${selectedProfessionalId}:${anchorDate}` ||
+                    returnScheduleGrid.state.status === 'loading') && <p role="status">Consultando agenda…</p>}
+                  {returnScheduleGrid?.key === `${selectedProfessionalId}:${anchorDate}` &&
+                    returnScheduleGrid.state.status === 'error' && (
+                      <p role="alert">Não foi possível consultar a agenda: {returnScheduleGrid.state.error.message}</p>
+                    )}
+                  {returnScheduleGrid?.key === `${selectedProfessionalId}:${anchorDate}` &&
+                    returnScheduleGrid.state.status === 'empty' && <p>Nenhum horário configurado para esta data.</p>}
+                  {returnScheduleGrid?.key === `${selectedProfessionalId}:${anchorDate}` &&
+                    returnScheduleGrid.state.status === 'success' && (
+                      <div className="assistential-table-wrap">
+                        <table className="assistential-table agenda-return-slots">
+                          <thead><tr><th>Horário</th><th>Situação</th><th>Paciente / bloqueio</th><th>Retorno</th></tr></thead>
+                          <tbody>
+                            {returnScheduleGrid.state.data.map((slot) => {
+                              const freeSlot = availableSlots.find((available) => available.slot_start === slot.slot_start)
+                              const canSelect = slot.slot_status === 'livre' && Boolean(freeSlot)
+                              return (
+                                <tr key={`${slot.professional_id}:${slot.slot_start}`}>
+                                  <td>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</td>
+                                  <td>{slot.slot_status === 'livre' ? (canSelect ? 'Livre' : 'Indisponível') :
+                                    slot.slot_status === 'bloqueado' ? 'Bloqueado' : 'Agendado'}</td>
+                                  <td>{slot.slot_status === 'bloqueado' ? agendaBlockLabel(slot.block_type) :
+                                    slot.slot_status === 'agendado' ? (slot.patient_name ?? 'Horário ocupado') : '—'}</td>
+                                  <td>{canSelect ? (
+                                    <button
+                                      type="button"
+                                      className={validSlotStart === freeSlot!.slot_start ? 'agenda-slot-schedule-button is-selected' : 'agenda-slot-schedule-button'}
+                                      aria-pressed={validSlotStart === freeSlot!.slot_start}
+                                      onClick={() => setSelectedSlotStart(freeSlot!.slot_start)}
+                                    >{validSlotStart === freeSlot!.slot_start ? 'Selecionado' : 'Selecionar'}</button>
+                                  ) : '—'}</td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  {slotResult?.key === `${selectedProfessionalId}:${anchorDate}` && slotResult.status === 'error' &&
+                    <p role="alert">Falha ao consultar vagas disponíveis. Tente outra data ou atualize a agenda.</p>}
                 </div>
-              </label>
+              ) : (
+                <label className="agenda-form-wide">
+                  Horários disponíveis *
+                  <div className="agenda-slot-picker" aria-live="polite">
+                    {availableSlots.length === 0 ? (
+                      <span className="agenda-empty-slot">Selecione profissional e data.</span>
+                    ) : (
+                      availableSlots.map((slot) => (
+                        <button
+                          type="button"
+                          className={validSlotStart === slot.slot_start ? 'is-selected' : undefined}
+                          key={slot.slot_start}
+                          onClick={() => setSelectedSlotStart(slot.slot_start)}
+                        >{slot.slot_time}</button>
+                      ))
+                    )}
+                  </div>
+                </label>
+              )}
               {!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role)) && appointmentPatientId && selectedSpecialtyId && selectedProfessionalId && slotResult?.key === slotKey && slotResult.status !== 'error' && availableSlots.length === 0 && <button type="button" disabled={queueInclusionBusy} onClick={() => void addSelectedPatientToQueue()}>Incluir na fila</button>}
               {isProfessional ? (
                 <label>
