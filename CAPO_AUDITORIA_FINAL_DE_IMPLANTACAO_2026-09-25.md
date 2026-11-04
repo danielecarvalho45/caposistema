@@ -8136,3 +8136,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Commits confirmados:** `8b3584f5527f54e3c36fe34da30252789a0d72bf` (transporte RPC) e `604adfd1f0796ab5a0b7d83db358f3aa15000d23` (interface e verificação). Blobs recuperados de `main` coincidem com as revisões publicadas no GitHub.
 
 **Escopo e limites:** nenhuma alteração direta de registros profissionais ou pacientes no banco; não é possível recuperar automaticamente o endereço anteriormente digitado, porque não foi persistido. Titular deverá reabrir a ficha, informar o endereço novamente e salvar após a publicação. A compilação integral não foi executada por indisponibilidade do registro de pacotes no ambiente; a implantação Cloudflare e a homologação real de leitura/gravação pela conta autorizada seguem **pendentes**. Não declarar verificação funcional 100%.
+
+
+## §28.178 — Atualização da mensagem WhatsApp da Oferta Inicial CAPO (04/11/2026)
+
+**Solicitação e autorização:** Titular aprovou novo texto da Oferta CAPO e deu VERDE expresso.
+
+**Alteração cirúrgica:** em `src/features/patients/PatientsPage.tsx`, substituído exclusivamente o conteúdo de `offerMessage`. A saudação continua dinâmica conforme o horário (Bom dia/Boa tarde) e não pergunta “Tudo bem?”, por sensibilidade à situação do paciente. A mensagem apresenta o CAPO, destaca que **o atendimento do serviço é gratuito pelo SUS**, informa o acompanhamento multiprofissional e familiar, preserva o esclarecimento de que o encaminhamento não implica necessariamente diagnóstico confirmado e oferece agendamento de consulta com **um dos profissionais**, sem direcionamento obrigatório à assistência social. Final acolhedor e assinatura dinâmica de `accessContext.full_name ?? accessContext.username` com função administrativa; não fixa o nome Daniele. Formatação simples por asteriscos, compatível com WhatsApp.
+
+**Preservados:** número do paciente, codificação da mensagem no link, reutilização de aba do WhatsApp, registro da abertura, fluxos de cadastro/Busca Ativa e demais operações; nenhuma escrita SQL ou em dados pessoais foi feita.
+
+**Commit GitHub `main`:** `f0703b6e447b9ced5e889b4c00f5542bbcb9d7ed`.
+
+**Verificação e pendência:** conferir código recuperado do GitHub e presença das expressões autorizadas; build, implantação Cloudflare e teste de envio em interface real não declarados como realizados. Abrir WhatsApp não comprova envio efetivo ao paciente.
