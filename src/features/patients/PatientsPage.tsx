@@ -4,6 +4,7 @@ import { canAccessAppRoute } from '../../app/route-access'
 import { getRpcService, type AsyncState } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
+import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import './patients-page.css'
 
 type PatientDuplicateMatch = Readonly<{ patient_id: string; patient_number: string | null; full_name: string; birth_date: string; match_type: 'exato' | 'semelhante' }>
@@ -130,12 +131,12 @@ ${operatorName} – ADMINISTRATIVO CAPO`
 
   async function openWhatsApp() {
     if (whatsappNumber.length < 10 || !offerPatientId || offerOpenBusy) return
-    // Abrir durante o clique para evitar bloqueio de pop-up por await.
-    window.open(
-      `https://web.whatsapp.com/send?phone=${encodeURIComponent(whatsappNumber)}&text=${encodeURIComponent(offerMessage)}`,
-      '_blank',
-      'noopener,noreferrer',
-    )
+    // Reutiliza a aba CAPO durante o clique, antes da confirmação assíncrona no banco.
+    const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(whatsappNumber)}&text=${encodeURIComponent(offerMessage)}`
+    if (!openCapoWhatsAppTab(url)) {
+      setOfferFeedback('Não foi possível abrir a aba do WhatsApp. Autorize pop-ups para o CAPO e tente novamente.')
+      return
+    }
     setOfferOpenBusy(true)
     setOfferFeedback('Registrando abertura do WhatsApp na Oferta Inicial…')
     const result = await getRpcService().openInitialOfferWhatsApp(offerPatientId)
