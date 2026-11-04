@@ -8059,3 +8059,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Adequação cirúrgica:** `src/features/agenda/AgendaPage.tsx` passa a preencher nome a partir de `accessContext.real_identity.full_name`, com alternativas `accessContext.full_name` e `username`. A função é obtida de `function_title`, `real_identity.function_title` ou nome do contexto principal, com fallback genérico “Equipe CAPO”. Nome e função são inseridos em maiúsculas. Mantidos texto, horários, dados da consulta e botão manual de WhatsApp. Não há envio automático nem registro automático de aviso.
 
 **Commit:** `3cae60d52ef09b5c6fca0b08930615d79e9f2f33`. Publicação e homologação com diferentes contas ainda pendentes.
+
+
+## §28.175 — Nova regra estrutural: locais de atendimento por profissional (04/11/2026)
+
+**Autorização da Titular:** VERDE concedido para implementação em ordem controlada: Matriz Funcional → Supabase → GitHub/interface → registro de auditoria e validação. A Titular escolheu expressamente a **Matriz Funcional de 12/09** como documento normativo de destino, pois os arquivos de Especificação Estrutural citados historicamente não estão disponíveis individualmente na raiz do repositório oficial.
+
+**Etapa documental concluída:** adicionada a seção **18.16 — Endereço de atendimento por profissional e comunicação de mudanças** em `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`, commit `eb40593529392967bb7c5d5e6e22117105cac01f`. A regra define endereço por profissional, cópia do endereço por consulta, novas mensagens com o endereço atual, preservação dos agendamentos antigos, pendências administrativas de comunicação na Home, rastreabilidade, confirmação humana do aviso e não duplicação de pendências.
+
+**Situação de implantação neste registro:** normatização concluída; alterações do esquema Supabase, código de cadastro/agenda, geração de pendências e interface da Home **ainda não executadas** e portanto **não homologadas**. Proibido considerar a função disponível em produção com base apenas no registro documental. Resguardar as regras de produção/manuteste, os contratos das agendas, o histórico real e o funcionamento de Faltosos e Busca Ativa.
+
+**Próxima etapa aprovada:** avaliar fisicamente os contratos e o esquema atuais no Supabase oficial antes de qualquer migração; implementar apenas o delta necessário e verificar integridade, testes, interface e publicação.
