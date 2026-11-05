@@ -8272,3 +8272,5 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Validação executada:** consulta ao catálogo `pg_proc` confirmou ambas RPCs presentes, `SECURITY DEFINER` com execução permitida a `authenticated`, negada a `anon`. A migração foi aceita pelo Supabase oficial. O código foi preparado na branch `fix/consulta-dois-blocos-20261105`.
 
 **Limites e próximos passos:** build/testes automatizados, deploy Cloudflare e homologação com usuário real autorizado ainda não comprovados. Não declarar agendamento prolongado operacional em produção antes da integração/publicação e teste funcional sem dados fictícios. Mudança não inclui prolongamento durante remarcação de consultas preexistentes nem fluxo separado de familiar/cuidador, que exigem avaliação específica.
+
+**Registro adicional de verificação:** workflow `Validate production build` da PR #2, execução `42079839030`, falhou em ~2 segundos, `runner_id=0`, sem etapas executadas. Não demonstra erro de compilação, mas impede validação. PR não mesclada enquanto o build estiver indisponível.
