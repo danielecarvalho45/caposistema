@@ -808,6 +808,7 @@ export function AgendaPage({
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('')
   const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
   const [selectedSlotStart, setSelectedSlotStart] = useState('')
+  const [selectedSlotCount, setSelectedSlotCount] = useState<1 | 2>(1)
   const [slotResult, setSlotResult] = useState<{ key: string; rows: readonly AvailableAppointmentSlot[]; status: 'success' | 'empty' | 'error' } | null>(null)
   const [returnScheduleGrid, setReturnScheduleGrid] = useState<{
     key: string
@@ -953,7 +954,14 @@ export function AgendaPage({
     reschedulableResult?.key === reschedulableKey
       ? reschedulableResult.rows
       : []
-  const validSlotStart = availableSlots.some((slot) => slot.slot_start === selectedSlotStart) ? selectedSlotStart : ''
+  const selectedBookingSlot = availableSlots.find((slot) => slot.slot_start === selectedSlotStart)
+  const consecutiveBookingSlot = selectedBookingSlot
+    ? availableSlots.find((slot) =>
+        new Date(slot.slot_start).getTime() === new Date(selectedBookingSlot.slot_end).getTime() &&
+        slot.duration_minutes === selectedBookingSlot.duration_minutes)
+    : undefined
+  const validSlotStart = selectedBookingSlot && (selectedSlotCount === 1 || consecutiveBookingSlot)
+    ? selectedSlotStart : ''
   const rescheduleSlotKey = `${rescheduleProfessionalId}:${rescheduleTargetDate}`
   const rescheduleSlots =
     showRescheduleForm &&
@@ -1184,6 +1192,7 @@ export function AgendaPage({
       appointmentType,
       generalNotes: appointmentNotes.trim() || null,
       operationalOrigin: appointmentOrigin.trim() || null,
+      slotCount: selectedSlotCount,
     })
     if (result.status === 'success') {
       let locationWarning = false
@@ -2057,6 +2066,18 @@ export function AgendaPage({
                       ))
                     )}
                   </div>
+                </label>
+              )}
+              {!isProfessional && selectedBookingSlot && (
+                <label className="agenda-form-wide">
+                  Duração desta consulta
+                  <select value={selectedSlotCount} onChange={(event) => setSelectedSlotCount(event.target.value === '2' ? 2 : 1)}>
+                    <option value="1">{selectedBookingSlot.duration_minutes} minutos — horário padrão</option>
+                    <option value="2" disabled={!consecutiveBookingSlot}>{selectedBookingSlot.duration_minutes * 2} minutos — reservar dois horários consecutivos{!consecutiveBookingSlot ? ' (próximo horário indisponível)' : ''}</option>
+                  </select>
+                  {selectedSlotCount === 2 && consecutiveBookingSlot && (
+                    <small>Uma única consulta: {selectedBookingSlot.slot_time} até {new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(new Date(consecutiveBookingSlot.slot_end))}. Os dois horários ficarão ocupados.</small>
+                  )}
                 </label>
               )}
               {!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role)) && appointmentPatientId && selectedSpecialtyId && selectedProfessionalId && slotResult?.key === slotKey && slotResult.status !== 'error' && availableSlots.length === 0 && <button type="button" disabled={queueInclusionBusy} onClick={() => void addSelectedPatientToQueue()}>Incluir na fila</button>}

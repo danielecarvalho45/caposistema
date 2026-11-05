@@ -3266,10 +3266,11 @@ export function createRpcService(transport: RpcTransport) {
       appointmentType: string
       generalNotes: string | null
       operationalOrigin: string | null
+      slotCount?: 1 | 2
     }) =>
       execute({
         transport,
-        operation: 'create_appointment_for_interface',
+        operation: input.slotCount === 2 ? 'create_extended_appointment_for_interface' : 'create_appointment_for_interface',
         args: {
           p_patient_id: input.patientId,
           p_professional_id: input.professionalId,
@@ -3277,6 +3278,7 @@ export function createRpcService(transport: RpcTransport) {
           p_appointment_type: input.appointmentType,
           p_general_notes: input.generalNotes,
           p_operational_origin: input.operationalOrigin,
+          ...(input.slotCount === 2 ? { p_slot_count: 2 } : {}),
         },
         parse: (value) => value,
       }),
