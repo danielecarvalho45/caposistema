@@ -8217,3 +8217,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limites:** a conta não autentica nem lê dados enquanto não receber senha e permissões revisadas. Uma conta restrita pode não conseguir exportar papéis/esquemas completos; validar antes de executar a rotina. Secret GitHub, restauração isolada e ativação seguem pendentes.
 
 **Estado: CRIADO E CONFERIDO / INATIVO NA PRÁTICA / NÃO HOMOLOGADO PARA BACKUP.**
+
+
+## §28.183 — Senha dedicada e ajuste da conexão de backup (05/11/2026)
+
+**Confirmação da Titular:** senha exclusiva da role `capo_backup` definida manualmente no painel Supabase, sem divulgação ao chat. Não foi alterada a senha do usuário `postgres` nem o login Gestor/Titular.
+
+**Auditoria somente leitura:** Supabase conta 65 tabelas em `public` (todas com RLS), 27 em `auth` (16 com RLS), 10 em `storage` (todas com RLS), 3 em `realtime` e 1 em `vault`. Uma role sem BYPASSRLS e sem grants não garante exportação completa; não conceder privilégios amplos antes do desenho e teste. A CLI Supabase também exclui por padrão esquemas gerenciados como `auth` e `storage`: o pacote lógico inicial não equivale a recuperação integral da plataforma ou dos binários de Storage.
+
+**Ajuste em branch isolada:** `.github/workflows/backup-supabase-r2.yml` passa a aceitar o segredo `CAPO_BACKUP_DB_PASSWORD`, montando localmente a URL do Session Pooler para `capo_backup.fftebavlhbfcrvrtnrld` com codificação segura da senha; substitui a expectativa de montagem manual de `SUPABASE_DB_URL`. Mantida a trava `CAPO_BACKUP_ENABLE == 'true'`. Commit `83c1b1749bc44b296d69858dcd58f2179d3aac92`.
+
+**Estado:** CONFIGURAÇÃO PREPARADA / SEM PRIVILÉGIOS DE LEITURA / NÃO EXECUTADA / AGUARDANDO SECRET, PROJETO DE EXPORTAÇÃO COMPLETA E TESTE DE RESTAURAÇÃO. Nenhuma alteração assistencial.
