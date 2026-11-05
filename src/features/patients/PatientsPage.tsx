@@ -420,7 +420,13 @@ ADMINISTRATIVO DO CAPO`
             type="button"
             className={activeView === 'register' ? 'is-active' : undefined}
             aria-pressed={activeView === 'register'}
-            onClick={() => setActiveView('register')}
+            onClick={() => {
+              setActiveView('register')
+              setEditingPatientId(null)
+              setEditForm({})
+              setResult(emptyState)
+              setQuery('')
+            }}
           >
             Cadastrar
           </button>}
@@ -708,7 +714,7 @@ ADMINISTRATIVO DO CAPO`
         </section>
       )}
 
-      {editingPatientId && (
+      {activeView === 'search' && editingPatientId && (
         <section className="home-profile patients-selected" aria-labelledby="patient-edit-title">
           <div className="patients-selected-heading">
             <div>
