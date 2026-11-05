@@ -8191,3 +8191,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Evidência:** migração retornou sucesso, contagem de função instalada = 1, código do `main` conferido quanto à chamada e ao guarda de exibição. Commits `83d30b43ff72d3da1e91e487fbcb67ee8c2c801e` (migração versionada), `ebb7cee82673f7cdf0daa1d79ad12299985c9869` (transporte) e `d54ebb1077ee73ab64228cac271713e02ed98e7a` (interface).
 
 **Pendências honestas:** não houve teste final autenticado com a ficha real pela interface, nem confirmação do deploy Cloudflare ou suíte completa de build/testes. Não declarar homologação 100%.
+
+
+## §28.181 — Preparação do backup externo Supabase → Cloudflare R2 (05/11/2026)
+
+**Demanda da Titular:** criar rotina automática de cópias externas do banco CAPO, preservando backups anteriores, com rastreabilidade e possibilidade de recuperação. A manutenção é exclusivamente de infraestrutura: não altera agendas, cadastros, prontuários externos, permissões assistenciais, tabelas ou RPCs do sistema.
+
+**Inspeção física:** GitHub \`danielecarvalho45/caposistema\` em \`main\` tinha somente \`.github/workflows/validate-build.yml\`; não havia rotina de backup. Supabase oficial \`fftebavlhbfcrvrtnrld\` está ativo, plano Free, PostgreSQL 17. Documentação Supabase recomenda exportação lógica de papéis, esquema e dados e guarda externa privada em projetos públicos. O repositório é público: é proibido versionar dados exportados nele.
+
+**Preparação isolada:** branch \`infra/backup-supabase-r2-20261105\` com novo arquivo \`.github/workflows/backup-supabase-r2.yml\`, commit \`b6e4d26b9f7a99415086ed883e86f72988ce0cb5\`. A rotina está prevista para disparo manual ou diário às 06:00 UTC, porém o job possui trava \`vars.CAPO_BACKUP_ENABLE == 'true'\` (ausente/desativada por padrão). Não foi integrado ao \`main\`, executado ou homologado.
+
+**Projeto técnico do workflow:** usa \`SUPABASE_DB_URL\` (secret, conexão Session pooler), \`R2_ACCESS_KEY_ID\` e \`R2_SECRET_ACCESS_KEY\` (secrets) e \`R2_ENDPOINT\` e \`R2_BUCKET_NAME\` (variables). Exporta \`roles.sql\`, \`schema.sql\` e \`data.sql\` pelo CLI oficial; compacta em \`.tar.gz\` com nome único UTC + identificador da execução; envia ao bucket R2 via endpoint S3, com criptografia do lado do servidor; confere tamanho do objeto remoto e falha em caso de colisão conhecida. Permissões GitHub somente \`contents: read\`. Nenhum conteúdo do banco é gravado no Git.
+
+**Bloqueios de ativação e segurança:** a Titular publicou anteriormente uma imagem que expôs token/chaves R2. É obrigatório gerar credenciais novas, substituir os dois secrets no GitHub e revogar as credenciais expostas antes de ativar produção. Falta cadastrar \`SUPABASE_DB_URL\` diretamente no GitHub sem divulgar senha e conferir o bucket privado e escopo mínimo do token. Não ativar \`CAPO_BACKUP_ENABLE\`, mesclar a branch nem executar contra dados reais antes desses requisitos. A cópia lógica do banco não inclui automaticamente os arquivos binários do Supabase Storage; proteção de documentos exige procedimento separado. A confirmação de upload/tamanho não equivale a teste completo de restauração.
+
+**Estado:** **PREPARADO EM BRANCH ISOLADA / NÃO ATIVADO / NÃO EXECUTADO / PENDENTE DE CREDENCIAIS SEGURAS, REVISÃO, TESTE DE RESTAURAÇÃO E HOMOLOGAÇÃO.** Preservada a rotina \`validate-build.yml\` e o \`main\`.
