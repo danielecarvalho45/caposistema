@@ -8206,3 +8206,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Bloqueios de ativação e segurança:** a Titular publicou anteriormente uma imagem que expôs token/chaves R2. É obrigatório gerar credenciais novas, substituir os dois secrets no GitHub e revogar as credenciais expostas antes de ativar produção. Falta cadastrar \`SUPABASE_DB_URL\` diretamente no GitHub sem divulgar senha e conferir o bucket privado e escopo mínimo do token. Não ativar \`CAPO_BACKUP_ENABLE\`, mesclar a branch nem executar contra dados reais antes desses requisitos. A cópia lógica do banco não inclui automaticamente os arquivos binários do Supabase Storage; proteção de documentos exige procedimento separado. A confirmação de upload/tamanho não equivale a teste completo de restauração.
 
 **Estado:** **PREPARADO EM BRANCH ISOLADA / NÃO ATIVADO / NÃO EXECUTADO / PENDENTE DE CREDENCIAIS SEGURAS, REVISÃO, TESTE DE RESTAURAÇÃO E HOMOLOGAÇÃO.** Preservada a rotina \`validate-build.yml\` e o \`main\`.
+
+
+## §28.182 — Identidade técnica exclusiva para backup (05/11/2026)
+
+**Autorização:** Titular solicitou a conta técnica CAPO Backup sob responsabilidade de saporekrikamassas@gmail.com, sem alterar seu usuário Gestor/Titular.
+
+**Aplicação Supabase:** migração `capo_backup_identity_without_password_20261105` criou `capo_backup` com LOGIN, NOINHERIT e senha nula, sem privilégios de leitura ou administração. Verificação em `pg_roles`: login=true; inherit=false; superuser=false; bypassrls=false; createrole=false; createdb=false; replication=false. Nenhuma senha anterior ou dado operacional foi alterado.
+
+**Limites:** a conta não autentica nem lê dados enquanto não receber senha e permissões revisadas. Uma conta restrita pode não conseguir exportar papéis/esquemas completos; validar antes de executar a rotina. Secret GitHub, restauração isolada e ativação seguem pendentes.
+
+**Estado: CRIADO E CONFERIDO / INATIVO NA PRÁTICA / NÃO HOMOLOGADO PARA BACKUP.**
