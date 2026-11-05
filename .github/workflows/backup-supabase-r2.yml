@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 45
     env:
       CAPO_BACKUP_DB_PASSWORD: ${{ secrets.CAPO_BACKUP_DB_PASSWORD }}
+      CAPO_BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.CAPO_BACKUP_ENCRYPTION_PASSPHRASE }}
       AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
@@ -29,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in CAPO_BACKUP_DB_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ENDPOINT R2_BUCKET_NAME; do
+          for key in CAPO_BACKUP_DB_PASSWORD CAPO_BACKUP_ENCRYPTION_PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ENDPOINT R2_BUCKET_NAME; do
             if [[ -z "${!key}" ]]; then
               echo "::error::Configuração obrigatória ausente: $key"
               exit 1
@@ -70,16 +71,21 @@ jobs:
           set -euo pipefail
           umask 077
           stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-          object="capo-supabase/${stamp}-run${GITHUB_RUN_ID}-attempt${GITHUB_RUN_ATTEMPT}.tar.gz"
+          object="capo-supabase/${stamp}-run${GITHUB_RUN_ID}-attempt${GITHUB_RUN_ATTEMPT}.tar.gz.gpg"
           archive="$RUNNER_TEMP/capo-backup.tar.gz"
           tar -czf "$archive" -C "$RUNNER_TEMP/capo-backup" roles.sql schema.sql data.sql
-          local_size="$(stat -c %s "$archive")"
-          local_sha="$(sha256sum "$archive" | cut -d ' ' -f 1)"
+          encrypted="$archive.gpg"
+          plain_sha="$(sha256sum "$archive" | cut -d ' ' -f 1)"
+          printf '%s' "$CAPO_BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 --output "$encrypted" "$archive"
+          recovered_sha="$(printf '%s' "$CAPO_BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --decrypt "$encrypted" 2>/dev/null | sha256sum | cut -d ' ' -f 1)"
+          test "$plain_sha" = "$recovered_sha"
+          local_size="$(stat -c %s "$encrypted")"
+          local_sha="$(sha256sum "$encrypted" | cut -d ' ' -f 1)"
           if aws s3api head-object --bucket "$R2_BUCKET_NAME" --key "$object" --endpoint-url "$R2_ENDPOINT" >/dev/null 2>&1; then
             echo "::error::Objeto já existente; não substituir backup"
             exit 1
           fi
-          aws s3 cp "$archive" "s3://$R2_BUCKET_NAME/$object" --endpoint-url "$R2_ENDPOINT" --sse AES256 --no-progress
+          aws s3 cp "$encrypted" "s3://$R2_BUCKET_NAME/$object" --endpoint-url "$R2_ENDPOINT" --sse AES256 --no-progress
           remote_size="$(aws s3api head-object --bucket "$R2_BUCKET_NAME" --key "$object" --endpoint-url "$R2_ENDPOINT" --query ContentLength --output text)"
           test "$local_size" = "$remote_size"
           echo "Backup enviado e tamanho conferido: $object"
