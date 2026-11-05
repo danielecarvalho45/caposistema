@@ -8259,3 +8259,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Preparação adicional:** commit `b4cbbb789b5b16c277820ebd6f6494964d263fb0` no workflow de backup adiciona job `preflight` exclusivamente manual (`workflow_dispatch`), separado do job de exportação. Confere credenciais presentes, conexão SQL do usuário `capo_backup` por `SELECT 1`, acesso ao bucket R2 via `head-bucket` e criptografia/descriptografia de amostra sintética no runner. Não consulta pacientes nem grava backup no R2; a exportação real permanece condicionada a `CAPO_BACKUP_ENABLE=true` e não foi ativada.
 
 **Estado:** PREPARADO EM BRANCH / PREFLIGHT AINDA NÃO EXECUTADO / RESTAURAÇÃO E STORAGE PENDENTES. Não declarar backup ativo.
+
+
+## §28.188 — Pacientes: consulta anterior não permanece sob formulário de cadastro (05/11/2026)
+
+**Ocorrência relatada pela Titular em implantação com pacientes reais:** após buscar paciente em **Pacientes → Consultar** e alternar para **Cadastrar**, a ficha selecionada continuava renderizada ao fim da tela de cadastro. A seção `patients-selected` era condicionada apenas a `editingPatientId`, sem verificar a aba ativa. A pesquisa já tinha controle de exibição por `activeView`, mas o paciente selecionado não.
+
+**Correção cirúrgica:** `src/features/patients/PatientsPage.tsx` passa a renderizar o painel de paciente selecionado exclusivamente quando `activeView === 'search'`; ao clicar em **Cadastrar**, limpa seleção, formulário de edição, resultados e termo da pesquisa, sem afetar os campos em andamento do novo cadastro. O fluxo de busca permanece disponível pela aba **Consultar** e deverá realizar nova consulta ao retornar.
+
+**Preservação:** somente estado e exibição React; nenhuma alteração em RPC, schema, dados de pacientes, Oferta CAPO, banco Supabase ou registros reais. Alteração preparada na branch `fix/pacientes-ocultar-consulta-no-cadastro-20261105` (commit `14ea9395de9efc23eaeb2ab42201cf8c7b3a404a`).
+
+**Validação:** inspeção estática do componente confirmou ambos os pontos da correção; build, publicação e homologação visual ainda pendentes devido à indisponibilidade anterior de executores do GitHub Actions. Não declarar publicada até integração em `main` e conferência.
