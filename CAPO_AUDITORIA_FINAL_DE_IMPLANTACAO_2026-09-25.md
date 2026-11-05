@@ -8250,3 +8250,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Ajuste preparado apenas na branch de backup:** `.github/workflows/backup-supabase-r2.yml`, commit `dc028dad46ebd0e4e08c1ead1cd826d3e8702c18`, exige novo segredo independente `CAPO_BACKUP_ENCRYPTION_PASSPHRASE`. O pacote lógico é criptografado localmente com GPG AES-256 antes do envio ao R2, e a rotina confere a descriptografia local por SHA-256 antes do upload. A extensão passa a `.tar.gz.gpg`. A chave de descriptografia não é gravada no repositório nem no R2. Isso reduz exposição do conteúdo no armazenamento, mas não impede a exclusão de cópias por uma credencial R2 comprometida; avaliar regra de retenção/bucket lock sem presumir que esteja ativada.
 
 **Estado:** CÓDIGO PREPARADO / NÃO EXECUTADO / PENDENTE DE SEGREDO DE CRIPTOGRAFIA, TESTE DE RESTAURAÇÃO COMPLETA, PROTEÇÃO DOS BINÁRIOS DE STORAGE E ATIVAÇÃO CONTROLADA.
+
+
+## §28.186 — Preflight do backup sem extração de dados (05/11/2026)
+
+**Titular confirmou:** segredo `CAPO_BACKUP_ENCRYPTION_PASSPHRASE` cadastrado diretamente no GitHub, sem revelar valor.
+
+**Preparação adicional:** commit `b4cbbb789b5b16c277820ebd6f6494964d263fb0` no workflow de backup adiciona job `preflight` exclusivamente manual (`workflow_dispatch`), separado do job de exportação. Confere credenciais presentes, conexão SQL do usuário `capo_backup` por `SELECT 1`, acesso ao bucket R2 via `head-bucket` e criptografia/descriptografia de amostra sintética no runner. Não consulta pacientes nem grava backup no R2; a exportação real permanece condicionada a `CAPO_BACKUP_ENABLE=true` e não foi ativada.
+
+**Estado:** PREPARADO EM BRANCH / PREFLIGHT AINDA NÃO EXECUTADO / RESTAURAÇÃO E STORAGE PENDENTES. Não declarar backup ativo.
