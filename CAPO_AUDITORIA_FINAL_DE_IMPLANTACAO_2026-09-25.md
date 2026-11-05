@@ -8191,3 +8191,71 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Evidência:** migração retornou sucesso, contagem de função instalada = 1, código do `main` conferido quanto à chamada e ao guarda de exibição. Commits `83d30b43ff72d3da1e91e487fbcb67ee8c2c801e` (migração versionada), `ebb7cee82673f7cdf0daa1d79ad12299985c9869` (transporte) e `d54ebb1077ee73ab64228cac271713e02ed98e7a` (interface).
 
 **Pendências honestas:** não houve teste final autenticado com a ficha real pela interface, nem confirmação do deploy Cloudflare ou suíte completa de build/testes. Não declarar homologação 100%.
+
+
+## §28.181 — Preparação do backup externo Supabase → Cloudflare R2 (05/11/2026)
+
+**Demanda da Titular:** criar rotina automática de cópias externas do banco CAPO, preservando backups anteriores, com rastreabilidade e possibilidade de recuperação. A manutenção é exclusivamente de infraestrutura: não altera agendas, cadastros, prontuários externos, permissões assistenciais, tabelas ou RPCs do sistema.
+
+**Inspeção física:** GitHub \`danielecarvalho45/caposistema\` em \`main\` tinha somente \`.github/workflows/validate-build.yml\`; não havia rotina de backup. Supabase oficial \`fftebavlhbfcrvrtnrld\` está ativo, plano Free, PostgreSQL 17. Documentação Supabase recomenda exportação lógica de papéis, esquema e dados e guarda externa privada em projetos públicos. O repositório é público: é proibido versionar dados exportados nele.
+
+**Preparação isolada:** branch \`infra/backup-supabase-r2-20261105\` com novo arquivo \`.github/workflows/backup-supabase-r2.yml\`, commit \`b6e4d26b9f7a99415086ed883e86f72988ce0cb5\`. A rotina está prevista para disparo manual ou diário às 06:00 UTC, porém o job possui trava \`vars.CAPO_BACKUP_ENABLE == 'true'\` (ausente/desativada por padrão). Não foi integrado ao \`main\`, executado ou homologado.
+
+**Projeto técnico do workflow:** usa \`SUPABASE_DB_URL\` (secret, conexão Session pooler), \`R2_ACCESS_KEY_ID\` e \`R2_SECRET_ACCESS_KEY\` (secrets) e \`R2_ENDPOINT\` e \`R2_BUCKET_NAME\` (variables). Exporta \`roles.sql\`, \`schema.sql\` e \`data.sql\` pelo CLI oficial; compacta em \`.tar.gz\` com nome único UTC + identificador da execução; envia ao bucket R2 via endpoint S3, com criptografia do lado do servidor; confere tamanho do objeto remoto e falha em caso de colisão conhecida. Permissões GitHub somente \`contents: read\`. Nenhum conteúdo do banco é gravado no Git.
+
+**Bloqueios de ativação e segurança:** a Titular publicou anteriormente uma imagem que expôs token/chaves R2. É obrigatório gerar credenciais novas, substituir os dois secrets no GitHub e revogar as credenciais expostas antes de ativar produção. Falta cadastrar \`SUPABASE_DB_URL\` diretamente no GitHub sem divulgar senha e conferir o bucket privado e escopo mínimo do token. Não ativar \`CAPO_BACKUP_ENABLE\`, mesclar a branch nem executar contra dados reais antes desses requisitos. A cópia lógica do banco não inclui automaticamente os arquivos binários do Supabase Storage; proteção de documentos exige procedimento separado. A confirmação de upload/tamanho não equivale a teste completo de restauração.
+
+**Estado:** **PREPARADO EM BRANCH ISOLADA / NÃO ATIVADO / NÃO EXECUTADO / PENDENTE DE CREDENCIAIS SEGURAS, REVISÃO, TESTE DE RESTAURAÇÃO E HOMOLOGAÇÃO.** Preservada a rotina \`validate-build.yml\` e o \`main\`.
+
+
+## §28.182 — Identidade técnica exclusiva para backup (05/11/2026)
+
+**Autorização:** Titular solicitou a conta técnica CAPO Backup sob responsabilidade de saporekrikamassas@gmail.com, sem alterar seu usuário Gestor/Titular.
+
+**Aplicação Supabase:** migração `capo_backup_identity_without_password_20261105` criou `capo_backup` com LOGIN, NOINHERIT e senha nula, sem privilégios de leitura ou administração. Verificação em `pg_roles`: login=true; inherit=false; superuser=false; bypassrls=false; createrole=false; createdb=false; replication=false. Nenhuma senha anterior ou dado operacional foi alterado.
+
+**Limites:** a conta não autentica nem lê dados enquanto não receber senha e permissões revisadas. Uma conta restrita pode não conseguir exportar papéis/esquemas completos; validar antes de executar a rotina. Secret GitHub, restauração isolada e ativação seguem pendentes.
+
+**Estado: CRIADO E CONFERIDO / INATIVO NA PRÁTICA / NÃO HOMOLOGADO PARA BACKUP.**
+
+
+## §28.183 — Senha dedicada e ajuste da conexão de backup (05/11/2026)
+
+**Confirmação da Titular:** senha exclusiva da role `capo_backup` definida manualmente no painel Supabase, sem divulgação ao chat. Não foi alterada a senha do usuário `postgres` nem o login Gestor/Titular.
+
+**Auditoria somente leitura:** Supabase conta 65 tabelas em `public` (todas com RLS), 27 em `auth` (16 com RLS), 10 em `storage` (todas com RLS), 3 em `realtime` e 1 em `vault`. Uma role sem BYPASSRLS e sem grants não garante exportação completa; não conceder privilégios amplos antes do desenho e teste. A CLI Supabase também exclui por padrão esquemas gerenciados como `auth` e `storage`: o pacote lógico inicial não equivale a recuperação integral da plataforma ou dos binários de Storage.
+
+**Ajuste em branch isolada:** `.github/workflows/backup-supabase-r2.yml` passa a aceitar o segredo `CAPO_BACKUP_DB_PASSWORD`, montando localmente a URL do Session Pooler para `capo_backup.fftebavlhbfcrvrtnrld` com codificação segura da senha; substitui a expectativa de montagem manual de `SUPABASE_DB_URL`. Mantida a trava `CAPO_BACKUP_ENABLE == 'true'`. Commit `83c1b1749bc44b296d69858dcd58f2179d3aac92`.
+
+**Estado:** CONFIGURAÇÃO PREPARADA / SEM PRIVILÉGIOS DE LEITURA / NÃO EXECUTADA / AGUARDANDO SECRET, PROJETO DE EXPORTAÇÃO COMPLETA E TESTE DE RESTAURAÇÃO. Nenhuma alteração assistencial.
+
+
+## §28.184 — Acesso de leitura para backup das tabelas CAPO (05/11/2026)
+
+**Autorização expressa da Titular:** conceder à role técnica `capo_backup` leitura de todas as 65 tabelas do esquema `public`, inclusive registros protegidos por RLS, sem permitir alteração/exclusão dos dados.
+
+**Migração aplicada:** `capo_backup_public_read_only_rls_20261105`: `ALTER ROLE capo_backup BYPASSRLS`, `GRANT USAGE ON SCHEMA public` e `GRANT SELECT ON ALL TABLES IN SCHEMA public`. Não foram concedidos INSERT, UPDATE, DELETE, CREATEROLE, CREATEDB, SUPERUSER ou REPLICATION. BYPASSRLS é atributo global da role, mas o acesso efetivo às demais tabelas segue condicionado a grants: preservar escopo e reauditar caso futuras permissões sejam adicionadas.
+
+**Conferência após migração:** `pg_roles` confirma `rolbypassrls=true`, `rolsuper=false`, `rolcreaterole=false`, `rolcreatedb=false`, `rolreplication=false`. `has_table_privilege` confirma exatamente 65/65 tabelas `public` com SELECT e 0/65 com qualquer INSERT/UPDATE/DELETE; em `auth` 0/27 SELECT, `storage` 0/10, `realtime` 0/3, `vault` 0/1. Não foi consultado nem modificado conteúdo de pacientes.
+
+**Limites:** permissão testada por catálogo de privilégios, não por uma conexão real `capo_backup` com dump/restauração. A exportação oficial CLI pode exigir privilégios adicionais para roles/schema e exclui parte da infraestrutura Supabase; não declarar backup completo. Nenhum workflow foi ativado ou integrado ao `main`.
+
+**Estado: PERMISSÃO APLICADA E CONFERIDA NO BANCO / EXECUÇÃO DO BACKUP E RESTAURAÇÃO PENDENTES.**
+
+
+## §28.185 — Proteção adicional do arquivo de backup antes do R2 (05/11/2026)
+
+**Contexto:** o banco contém registros protegidos de pacientes e o token R2 anteriormente foi exposto em imagem. A Titular optou por conservar as credenciais R2. Não se declara tal opção equivalente a rotação de segredo.
+
+**Ajuste preparado apenas na branch de backup:** `.github/workflows/backup-supabase-r2.yml`, commit `dc028dad46ebd0e4e08c1ead1cd826d3e8702c18`, exige novo segredo independente `CAPO_BACKUP_ENCRYPTION_PASSPHRASE`. O pacote lógico é criptografado localmente com GPG AES-256 antes do envio ao R2, e a rotina confere a descriptografia local por SHA-256 antes do upload. A extensão passa a `.tar.gz.gpg`. A chave de descriptografia não é gravada no repositório nem no R2. Isso reduz exposição do conteúdo no armazenamento, mas não impede a exclusão de cópias por uma credencial R2 comprometida; avaliar regra de retenção/bucket lock sem presumir que esteja ativada.
+
+**Estado:** CÓDIGO PREPARADO / NÃO EXECUTADO / PENDENTE DE SEGREDO DE CRIPTOGRAFIA, TESTE DE RESTAURAÇÃO COMPLETA, PROTEÇÃO DOS BINÁRIOS DE STORAGE E ATIVAÇÃO CONTROLADA.
+
+
+## §28.186 — Preflight do backup sem extração de dados (05/11/2026)
+
+**Titular confirmou:** segredo `CAPO_BACKUP_ENCRYPTION_PASSPHRASE` cadastrado diretamente no GitHub, sem revelar valor.
+
+**Preparação adicional:** commit `b4cbbb789b5b16c277820ebd6f6494964d263fb0` no workflow de backup adiciona job `preflight` exclusivamente manual (`workflow_dispatch`), separado do job de exportação. Confere credenciais presentes, conexão SQL do usuário `capo_backup` por `SELECT 1`, acesso ao bucket R2 via `head-bucket` e criptografia/descriptografia de amostra sintética no runner. Não consulta pacientes nem grava backup no R2; a exportação real permanece condicionada a `CAPO_BACKUP_ENABLE=true` e não foi ativada.
+
+**Estado:** PREPARADO EM BRANCH / PREFLIGHT AINDA NÃO EXECUTADO / RESTAURAÇÃO E STORAGE PENDENTES. Não declarar backup ativo.

@@ -1,0 +1,122 @@
+name: CAPO - backup privado Supabase para R2
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capo-supabase-r2-backup
+  cancel-in-progress: false
+
+jobs:
+
+  preflight:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PGPASSWORD: ${{ secrets.CAPO_BACKUP_DB_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+      CAPO_BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.CAPO_BACKUP_ENCRYPTION_PASSPHRASE }}
+    steps:
+      - name: Validar configuração sem ler pacientes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in PGPASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ENDPOINT R2_BUCKET_NAME CAPO_BACKUP_ENCRYPTION_PASSPHRASE; do
+            if [[ -z "${!key}" ]]; then echo "::error::Credencial ausente: $key"; exit 1; fi
+          done
+          export PGSSLMODE=require
+          psql -h aws-0-sa-east-1.pooler.supabase.com -p 5432 -U capo_backup.fftebavlhbfcrvrtnrld -d postgres -X -v ON_ERROR_STOP=1 -Atqc 'select 1' | grep -qx 1
+          aws s3api head-bucket --bucket "$R2_BUCKET_NAME" --endpoint-url "$R2_ENDPOINT"
+          printf 'CAPO backup preflight test' > "$RUNNER_TEMP/sample.txt"
+          printf '%s' "$CAPO_BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 --output "$RUNNER_TEMP/sample.gpg" "$RUNNER_TEMP/sample.txt"
+          test "$(printf '%s' "$CAPO_BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --decrypt "$RUNNER_TEMP/sample.gpg" 2>/dev/null)" = 'CAPO backup preflight test'
+          echo "Conectividade PostgreSQL, R2 e criptografia conferidas; nenhum dado de paciente exportado."
+
+  backup:
+    if: vars.CAPO_BACKUP_ENABLE == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CAPO_BACKUP_DB_PASSWORD: ${{ secrets.CAPO_BACKUP_DB_PASSWORD }}
+      CAPO_BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.CAPO_BACKUP_ENCRYPTION_PASSPHRASE }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+    steps:
+      - name: Validar configuração obrigatória
+        shell: bash
+        run: |
+          set -euo pipefail
+          for key in CAPO_BACKUP_DB_PASSWORD CAPO_BACKUP_ENCRYPTION_PASSPHRASE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ENDPOINT R2_BUCKET_NAME; do
+            if [[ -z "${!key}" ]]; then
+              echo "::error::Configuração obrigatória ausente: $key"
+              exit 1
+            fi
+          done
+          case "$R2_ENDPOINT" in
+            https://*.r2.cloudflarestorage.com) ;;
+            *) echo "::error::Endpoint R2 inválido"; exit 1 ;;
+          esac
+
+      - name: Instalar CLI Supabase
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Gerar cópia lógica (papéis, esquema e dados)
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/capo-backup"
+          db_url="$(python3 - <<'PY'
+          import os
+          from urllib.parse import quote
+          password = quote(os.environ["CAPO_BACKUP_DB_PASSWORD"], safe="")
+          print("postgresql://capo_backup.fftebavlhbfcrvrtnrld:" + password + "@aws-0-sa-east-1.pooler.supabase.com:5432/postgres")
+          PY
+          )"
+          supabase db dump --db-url="$db_url" -f "$RUNNER_TEMP/capo-backup/roles.sql" --role-only
+          supabase db dump --db-url="$db_url" -f "$RUNNER_TEMP/capo-backup/schema.sql"
+          supabase db dump --db-url="$db_url" -f "$RUNNER_TEMP/capo-backup/data.sql" --data-only --use-copy -x storage.buckets_vectors -x storage.vector_indexes
+          test -s "$RUNNER_TEMP/capo-backup/schema.sql"
+          test -s "$RUNNER_TEMP/capo-backup/data.sql"
+
+      - name: Compactar, enviar e conferir R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          object="capo-supabase/${stamp}-run${GITHUB_RUN_ID}-attempt${GITHUB_RUN_ATTEMPT}.tar.gz.gpg"
+          archive="$RUNNER_TEMP/capo-backup.tar.gz"
+          tar -czf "$archive" -C "$RUNNER_TEMP/capo-backup" roles.sql schema.sql data.sql
+          encrypted="$archive.gpg"
+          plain_sha="$(sha256sum "$archive" | cut -d ' ' -f 1)"
+          printf '%s' "$CAPO_BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --symmetric --cipher-algo AES256 --output "$encrypted" "$archive"
+          recovered_sha="$(printf '%s' "$CAPO_BACKUP_ENCRYPTION_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --decrypt "$encrypted" 2>/dev/null | sha256sum | cut -d ' ' -f 1)"
+          test "$plain_sha" = "$recovered_sha"
+          local_size="$(stat -c %s "$encrypted")"
+          local_sha="$(sha256sum "$encrypted" | cut -d ' ' -f 1)"
+          if aws s3api head-object --bucket "$R2_BUCKET_NAME" --key "$object" --endpoint-url "$R2_ENDPOINT" >/dev/null 2>&1; then
+            echo "::error::Objeto já existente; não substituir backup"
+            exit 1
+          fi
+          aws s3 cp "$encrypted" "s3://$R2_BUCKET_NAME/$object" --endpoint-url "$R2_ENDPOINT" --sse AES256 --no-progress
+          remote_size="$(aws s3api head-object --bucket "$R2_BUCKET_NAME" --key "$object" --endpoint-url "$R2_ENDPOINT" --query ContentLength --output text)"
+          test "$local_size" = "$remote_size"
+          echo "Backup enviado e tamanho conferido: $object"
+          echo "SHA-256 local: $local_sha"
+          echo "Restauração completa requer teste separado em banco isolado."
