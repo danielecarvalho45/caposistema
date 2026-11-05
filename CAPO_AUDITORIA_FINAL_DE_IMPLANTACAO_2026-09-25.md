@@ -8241,3 +8241,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limites:** permissão testada por catálogo de privilégios, não por uma conexão real `capo_backup` com dump/restauração. A exportação oficial CLI pode exigir privilégios adicionais para roles/schema e exclui parte da infraestrutura Supabase; não declarar backup completo. Nenhum workflow foi ativado ou integrado ao `main`.
 
 **Estado: PERMISSÃO APLICADA E CONFERIDA NO BANCO / EXECUÇÃO DO BACKUP E RESTAURAÇÃO PENDENTES.**
+
+
+## §28.185 — Proteção adicional do arquivo de backup antes do R2 (05/11/2026)
+
+**Contexto:** o banco contém registros protegidos de pacientes e o token R2 anteriormente foi exposto em imagem. A Titular optou por conservar as credenciais R2. Não se declara tal opção equivalente a rotação de segredo.
+
+**Ajuste preparado apenas na branch de backup:** `.github/workflows/backup-supabase-r2.yml`, commit `dc028dad46ebd0e4e08c1ead1cd826d3e8702c18`, exige novo segredo independente `CAPO_BACKUP_ENCRYPTION_PASSPHRASE`. O pacote lógico é criptografado localmente com GPG AES-256 antes do envio ao R2, e a rotina confere a descriptografia local por SHA-256 antes do upload. A extensão passa a `.tar.gz.gpg`. A chave de descriptografia não é gravada no repositório nem no R2. Isso reduz exposição do conteúdo no armazenamento, mas não impede a exclusão de cópias por uma credencial R2 comprometida; avaliar regra de retenção/bucket lock sem presumir que esteja ativada.
+
+**Estado:** CÓDIGO PREPARADO / NÃO EXECUTADO / PENDENTE DE SEGREDO DE CRIPTOGRAFIA, TESTE DE RESTAURAÇÃO COMPLETA, PROTEÇÃO DOS BINÁRIOS DE STORAGE E ATIVAÇÃO CONTROLADA.
