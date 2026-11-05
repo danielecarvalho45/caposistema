@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      CAPO_BACKUP_DB_PASSWORD: ${{ secrets.CAPO_BACKUP_DB_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for key in SUPABASE_DB_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ENDPOINT R2_BUCKET_NAME; do
+          for key in CAPO_BACKUP_DB_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ENDPOINT R2_BUCKET_NAME; do
             if [[ -z "${!key}" ]]; then
               echo "::error::Configuração obrigatória ausente: $key"
               exit 1
@@ -51,9 +51,16 @@ jobs:
           set -euo pipefail
           umask 077
           mkdir -p "$RUNNER_TEMP/capo-backup"
-          supabase db dump --remote="$SUPABASE_DB_URL" -f "$RUNNER_TEMP/capo-backup/roles.sql" --role-only
-          supabase db dump --remote="$SUPABASE_DB_URL" -f "$RUNNER_TEMP/capo-backup/schema.sql"
-          supabase db dump --remote="$SUPABASE_DB_URL" -f "$RUNNER_TEMP/capo-backup/data.sql" --data-only --use-copy -x storage.buckets_vectors -x storage.vector_indexes
+          db_url="$(python3 - <<'PY'
+          import os
+          from urllib.parse import quote
+          password = quote(os.environ["CAPO_BACKUP_DB_PASSWORD"], safe="")
+          print("postgresql://capo_backup.fftebavlhbfcrvrtnrld:" + password + "@aws-0-sa-east-1.pooler.supabase.com:5432/postgres")
+          PY
+          )"
+          supabase db dump --db-url="$db_url" -f "$RUNNER_TEMP/capo-backup/roles.sql" --role-only
+          supabase db dump --db-url="$db_url" -f "$RUNNER_TEMP/capo-backup/schema.sql"
+          supabase db dump --db-url="$db_url" -f "$RUNNER_TEMP/capo-backup/data.sql" --data-only --use-copy -x storage.buckets_vectors -x storage.vector_indexes
           test -s "$RUNNER_TEMP/capo-backup/schema.sql"
           test -s "$RUNNER_TEMP/capo-backup/data.sql"
 
