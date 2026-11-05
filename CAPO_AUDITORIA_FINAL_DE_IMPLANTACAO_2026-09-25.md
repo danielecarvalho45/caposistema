@@ -8259,3 +8259,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Preparação adicional:** commit `b4cbbb789b5b16c277820ebd6f6494964d263fb0` no workflow de backup adiciona job `preflight` exclusivamente manual (`workflow_dispatch`), separado do job de exportação. Confere credenciais presentes, conexão SQL do usuário `capo_backup` por `SELECT 1`, acesso ao bucket R2 via `head-bucket` e criptografia/descriptografia de amostra sintética no runner. Não consulta pacientes nem grava backup no R2; a exportação real permanece condicionada a `CAPO_BACKUP_ENABLE=true` e não foi ativada.
 
 **Estado:** PREPARADO EM BRANCH / PREFLIGHT AINDA NÃO EXECUTADO / RESTAURAÇÃO E STORAGE PENDENTES. Não declarar backup ativo.
+
+
+## §28.187 — Prolongamento pontual de consulta em dois blocos consecutivos (05/11/2026)
+
+**Solicitação urgente da Titular:** quando a agenda profissional usa janelas regulares de 30 minutos, permitir reservar 60 minutos para um único paciente e um único atendimento, ocupando dois horários seguidos do mesmo profissional. Não alterar a duração padrão dos demais pacientes, nem gerar duas consultas/presenças/retornos independentes.
+
+**Diagnóstico confirmado no GitHub e Supabase:** `AgendaPage.tsx` só selecionava uma vaga; `create_appointment_for_interface` gravava sem `appointment_end` explícito e o gatilho `capo_prepare_appointment_period` aplicava a duração configurada. Os gatilhos `capo_prevent_professional_overlap` e `capo_prevent_patient_overlap` já protegem o período completo. Nenhum paciente real foi criado ou alterado durante o diagnóstico.
+
+**Correção cirúrgica:** criada RPC aditiva `create_extended_appointment_for_interface` (migração `allow_two_consecutive_appointment_slots_20261105`) mantendo intacta a RPC canônica. A nova rotina preserva validação de conta, termo, papéis, ciclo CAPO, contexto do paciente, especialidade e gatilhos existentes; exige exatamente duas vagas de igual duração, consecutivas e livres na consulta vigente, gravando um único `patient_appointments` com início e fim explícitos. A interface `AgendaPage.tsx` oferece seleção de duração padrão ou dupla somente quando há próximo bloco contíguo; o serviço `rpc.ts` chama a função nova apenas para a duração dupla. Proteções do banco conferem novamente a disponibilidade no momento da gravação.
+
+**Validação executada:** consulta ao catálogo `pg_proc` confirmou ambas RPCs presentes, `SECURITY DEFINER` com execução permitida a `authenticated`, negada a `anon`. A migração foi aceita pelo Supabase oficial. O código foi preparado na branch `fix/consulta-dois-blocos-20261105`.
+
+**Limites e próximos passos:** build/testes automatizados, deploy Cloudflare e homologação com usuário real autorizado ainda não comprovados. Não declarar agendamento prolongado operacional em produção antes da integração/publicação e teste funcional sem dados fictícios. Mudança não inclui prolongamento durante remarcação de consultas preexistentes nem fluxo separado de familiar/cuidador, que exigem avaliação específica.
