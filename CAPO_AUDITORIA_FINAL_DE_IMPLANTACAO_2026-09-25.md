@@ -8228,3 +8228,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Ajuste em branch isolada:** `.github/workflows/backup-supabase-r2.yml` passa a aceitar o segredo `CAPO_BACKUP_DB_PASSWORD`, montando localmente a URL do Session Pooler para `capo_backup.fftebavlhbfcrvrtnrld` com codificação segura da senha; substitui a expectativa de montagem manual de `SUPABASE_DB_URL`. Mantida a trava `CAPO_BACKUP_ENABLE == 'true'`. Commit `83c1b1749bc44b296d69858dcd58f2179d3aac92`.
 
 **Estado:** CONFIGURAÇÃO PREPARADA / SEM PRIVILÉGIOS DE LEITURA / NÃO EXECUTADA / AGUARDANDO SECRET, PROJETO DE EXPORTAÇÃO COMPLETA E TESTE DE RESTAURAÇÃO. Nenhuma alteração assistencial.
+
+
+## §28.184 — Acesso de leitura para backup das tabelas CAPO (05/11/2026)
+
+**Autorização expressa da Titular:** conceder à role técnica `capo_backup` leitura de todas as 65 tabelas do esquema `public`, inclusive registros protegidos por RLS, sem permitir alteração/exclusão dos dados.
+
+**Migração aplicada:** `capo_backup_public_read_only_rls_20261105`: `ALTER ROLE capo_backup BYPASSRLS`, `GRANT USAGE ON SCHEMA public` e `GRANT SELECT ON ALL TABLES IN SCHEMA public`. Não foram concedidos INSERT, UPDATE, DELETE, CREATEROLE, CREATEDB, SUPERUSER ou REPLICATION. BYPASSRLS é atributo global da role, mas o acesso efetivo às demais tabelas segue condicionado a grants: preservar escopo e reauditar caso futuras permissões sejam adicionadas.
+
+**Conferência após migração:** `pg_roles` confirma `rolbypassrls=true`, `rolsuper=false`, `rolcreaterole=false`, `rolcreatedb=false`, `rolreplication=false`. `has_table_privilege` confirma exatamente 65/65 tabelas `public` com SELECT e 0/65 com qualquer INSERT/UPDATE/DELETE; em `auth` 0/27 SELECT, `storage` 0/10, `realtime` 0/3, `vault` 0/1. Não foi consultado nem modificado conteúdo de pacientes.
+
+**Limites:** permissão testada por catálogo de privilégios, não por uma conexão real `capo_backup` com dump/restauração. A exportação oficial CLI pode exigir privilégios adicionais para roles/schema e exclui parte da infraestrutura Supabase; não declarar backup completo. Nenhum workflow foi ativado ou integrado ao `main`.
+
+**Estado: PERMISSÃO APLICADA E CONFERIDA NO BANCO / EXECUÇÃO DO BACKUP E RESTAURAÇÃO PENDENTES.**
