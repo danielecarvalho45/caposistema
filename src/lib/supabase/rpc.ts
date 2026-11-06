@@ -3788,6 +3788,7 @@ function createSupabaseTransport(
       case 'update_appointment_attendance_for_interface':
       case 'get_reports_dashboard_for_interface':
       case 'get_patient_timeline_for_interface':
+      case 'get_patient_appointment_history_for_interface':
       case 'get_audit_logs_for_interface':
       case 'create_team_member_profile_for_interface':
       case 'get_team_management_context_for_interface':

@@ -8320,3 +8320,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Ajuste cirúrgico:** reposicionado o único botão `📅 Consultar agendamentos` dentro da grade existente `patients-flow-actions`, junto a `Agendamento`, preservando o próprio painel paginado de histórico logo abaixo da grade. O botão não encaminha à tela de marcar consultas; abre o histórico do paciente selecionado, somente para leitura. Não foram alteradas RPCs, permissões, cadastros ou agendamentos existentes. Sem duplicação de atalhos.
 
 **Validação:** inspeção do componente e confirmação de uma única ocorrência do botão e de um único painel na versão preparada. A publicação Cloudflare e a visualização pela Titular requerem homologação manual. Testes automáticos permanecem suspensos por faturamento do GitHub Actions.
+
+
+### §28.193 — Registro da RPC do histórico na camada de transporte CAPO (06/11/2026)
+
+**Evidência de homologação da Titular:** após aparecer o botão `📅 Consultar agendamentos` na ficha, o painel mostrou: `Resposta inválida de get_patient_appointment_history_for_interface: RPC não cadastrada na camada CAPO.` A RPC existe no banco (migração §28.191); a rejeição ocorria antes da consulta por ausência do nome da operação na lista permitida do transporte frontend.
+
+**Correção cirúrgica:** adicionada somente a operação `get_patient_appointment_history_for_interface` à lista de RPCs encaminhadas com argumentos em `createSupabaseTransport()` de `src/lib/supabase/rpc.ts`, ao lado da consulta de linha do tempo do paciente. Não houve alteração de SQL, permissões, agendamentos, dados clínicos ou cadastro real.
+
+**Verificação:** o código passa a encaminhar o nome da operação ao cliente Supabase, mantidos o parser de resposta e os controles internos da função. Homologação funcional final pelo operador após atualização Cloudflare pendente; suíte automática suspensa por faturamento conforme decisão da Titular.
