@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useBackToPreviousFunction } from '../../lib/navigation/back'
 import type { AccessContext } from '../../types/access'
 import type { ReferralPatient } from '../../lib/supabase/rpc'
 import {
@@ -34,6 +35,7 @@ export function FamilyCaregiverPage({
   service?: FamilyCaregiverService
 }>) {
   const location = useLocation()
+  const goBack = useBackToPreviousFunction()
   const service = useMemo(
     () => serviceProp ?? createFamilyCaregiverService(),
     [serviceProp],
@@ -233,9 +235,9 @@ export function FamilyCaregiverPage({
         </span>
       </header>
 
-      <a className="family-caregiver-back" href="/">
-        ← Voltar ao painel inicial
-      </a>
+      <button className="family-caregiver-back" type="button" onClick={goBack}>
+        ← Voltar
+      </button>
 
       <section className="family-caregiver-panel">
         <h2>Paciente</h2>
