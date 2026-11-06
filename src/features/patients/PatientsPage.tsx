@@ -976,7 +976,11 @@ ADMINISTRATIVO DO CAPO`
                       <tbody>
                         {appointmentHistory.rows.map((item) => (
                           <tr key={item.appointment_id}>
-                            <td>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.appointment_date))}</td>
+                            <td>{canAccessAppRoute(accessContext, '/agenda') ? (
+                              <Link to="/agenda" state={{ origin: 'patient_appointment_history', appointmentId: item.appointment_id, patientId: editingPatientId, slotDate: new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(item.appointment_date)) }} aria-label={`Abrir consulta de ${editForm.full_name || 'paciente'} na agenda do profissional`}>
+                                {new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.appointment_date))} · Abrir na agenda
+                              </Link>
+                            ) : new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.appointment_date))}</td>
                             <td>{item.professional_name}</td>
                             <td>{item.specialty_name ?? '—'}</td>
                             <td>{item.appointment_type}</td>

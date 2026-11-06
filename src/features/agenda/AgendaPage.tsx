@@ -887,11 +887,28 @@ export function AgendaPage({
   const professionalId = isProfessional
     ? accessContext.professional_id
     : selectedProfessionalId || null
+  const navigationState = location.state && typeof location.state === 'object'
+    ? location.state as Record<string, unknown>
+    : null
+  const appointmentFromHistoryId = navigationState?.origin === 'patient_appointment_history' && typeof navigationState.appointmentId === 'string'
+    ? navigationState.appointmentId
+    : ''
   const visibleAppointments = state.status === 'success'
     ? state.data.map((appointment) => attendanceOverrides[appointment.appointment_id]
       ? { ...appointment, attendance_status: attendanceOverrides[appointment.appointment_id] }
       : appointment)
     : []
+  const appointmentFromHistory = appointmentFromHistoryId
+    ? visibleAppointments.find((appointment) => appointment.appointment_id === appointmentFromHistoryId)
+    : undefined
+
+  // Resolver o profissional a partir do agendamento que a própria agenda autorizada retornou.
+  useEffect(() => {
+    if (!appointmentFromHistoryId || isProfessional || selectedProfessionalId || state.status !== 'success') return
+    const selected = state.data.find((appointment) => appointment.appointment_id === appointmentFromHistoryId)
+    if (selected) setSelectedProfessionalId(selected.professional_id)
+  }, [appointmentFromHistoryId, isProfessional, selectedProfessionalId, state])
+
   const periodScheduled =
     state.status === 'success'
       ? visibleAppointments.filter((appointment) => appointment.attendance_status === 'agendado').length
@@ -1463,7 +1480,6 @@ export function AgendaPage({
   }, [canAccess, endDate, professionalId, startDate])
 
   useEffect(() => {
-    if (isProfessional) return
     const stateValue =
       location.state && typeof location.state === 'object'
         ? location.state as Record<string, unknown>
@@ -1491,6 +1507,21 @@ export function AgendaPage({
       typeof stateValue?.slotDate === 'string' ? stateValue.slotDate : ''
     const requestedSlotStart =
       typeof stateValue?.slotStart === 'string' ? stateValue.slotStart : ''
+
+    // Histórico do paciente abre o dia da consulta sem iniciar novo agendamento.
+    if (origin === 'patient_appointment_history' && requestedAppointmentId && requestedSlotDate) {
+      setShowScheduleForm(false)
+      setShowRescheduleForm(false)
+      setView('day')
+      setConsultationStartDate(requestedSlotDate)
+      setConsultationEndDate(requestedSlotDate)
+      setAnchorDate(requestedSlotDate)
+      setAppointmentFeedback(null)
+      if (requestedProfessionalId && !isProfessional) setSelectedProfessionalId(requestedProfessionalId)
+      return
+    }
+
+    if (isProfessional) return
 
     if (
       origin === 'home_previsit_appointment' &&
@@ -2177,6 +2208,16 @@ export function AgendaPage({
               <button type="button" disabled={!validReschedulableId || !validRescheduleSlotStart} onClick={() => void rescheduleAppointment()}>Aplicar remarcação</button>
             </div>
           </section>
+        )}
+
+        {appointmentFromHistoryId && state.status === 'success' && (
+          <div className="agenda-history-selection" role="status">
+            {appointmentFromHistory ? (
+              <p><strong>Consulta localizada na agenda:</strong> {appointmentFromHistory.patient_name} · {formatDateTime(appointmentFromHistory.appointment_date)} · {appointmentFromHistory.professional_name} · {appointmentFromHistory.attendance_status}</p>
+            ) : (
+              <p>Este agendamento histórico não foi encontrado na agenda atual para a data selecionada. Consulte o histórico do paciente para conferir a situação registrada.</p>
+            )}
+          </div>
         )}
 
         <div className="agenda-toolbar">
