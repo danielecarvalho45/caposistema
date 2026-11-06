@@ -137,8 +137,6 @@ function appointmentNoticeMessage(contact: {
     '',
     'Pedimos que compareça no horário agendado.',
     '',
-    'CAPO — Secretaria Municipal de Saúde de Pouso Alegre/MG.',
-    '',
     '⚠️ Importante:',
     'Qualquer dúvida ou necessidade de reagendamento, estamos à disposição por aqui.',
     '',
