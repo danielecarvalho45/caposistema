@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { useBackToPreviousFunction } from '../../lib/navigation/back'
 import type { AccessContext } from '../../types/access'
 import { authorizedNavigationItems } from '../navigation/navigation-config'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
@@ -28,6 +29,7 @@ export function AppShell({
   onRefreshAccessContext,
   activePath = '/',
 }: AppShellProps) {
+  const goBack = useBackToPreviousFunction()
   const [loggingOut, setLoggingOut] = useState(false)
   const [menuOpenedAtPath, setMenuOpenedAtPath] = useState<string | null>(null)
   const menuOpen = menuOpenedAtPath === activePath
@@ -288,7 +290,7 @@ export function AppShell({
             <button
               className="app-back-button"
               type="button"
-              onClick={() => window.location.assign('/')}
+              onClick={goBack}
             >
               ← <span>Voltar</span>
             </button>

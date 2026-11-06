@@ -21,6 +21,11 @@
 }
 .family-caregiver-back {
   width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
   color: #246da7;
   font-weight: 700;
   text-decoration: none;
