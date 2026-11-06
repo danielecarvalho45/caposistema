@@ -1,0 +1,132 @@
+-- CAPO: motivo de remarcacao opcional; preservar controles de contexto e integridade.
+CREATE OR REPLACE FUNCTION public.reschedule_appointment_for_interface(p_appointment_id uuid, p_new_professional_id uuid, p_new_slot_start timestamp with time zone, p_reason text, p_origin text DEFAULT 'manual'::text, p_new_notes text DEFAULT NULL::text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'pg_catalog', 'public', 'auth', 'pg_temp'
+AS $function$
+declare
+  v_probe public.patient_appointments;
+  v_old public.patient_appointments;
+  v_new jsonb;
+  v_new_id uuid;
+  v_origin text;
+  v_reason text;
+  v_new_specialty_id uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'Usuário não autenticado.' using errcode='42501';
+  end if;
+  if not coalesce(public.has_accepted_current_legal_term(),false) then
+    raise exception 'É necessário aceitar o termo vigente.' using errcode='42501';
+  end if;
+
+  if not (
+    public.has_app_role('administrador')
+    or public.has_app_role('administrativo_operacional')
+  ) then
+    raise exception 'Somente o Administrativo autorizado pode remarcar consultas.' using errcode='42501';
+  end if;
+
+  -- Motivo opcional; registrar NULL quando o operador deixar em branco.
+  v_reason:=nullif(btrim(coalesce(p_reason,'')),'');
+  v_origin:=lower(btrim(coalesce(p_origin,'manual')));
+
+  if char_length(coalesce(v_reason,''))>500 then
+    raise exception 'O motivo excede 500 caracteres.' using errcode='22023';
+  end if;
+  if v_origin not in ('manual','bloqueio_agenda','alteracao_agenda','faltoso') then
+    raise exception 'Origem da remarcação inválida.' using errcode='22023';
+  end if;
+  if char_length(coalesce(p_new_notes,''))>500 then
+    raise exception 'Observação excede 500 caracteres.' using errcode='22023';
+  end if;
+
+  select pa.* into v_probe
+  from public.patient_appointments pa
+  where pa.id=p_appointment_id;
+
+  if v_probe.id is null then
+    raise exception 'Agendamento não encontrado.' using errcode='22023';
+  end if;
+
+  perform public.capo_assert_patient_write_context(v_probe.patient_id);
+
+  if v_probe.care_cycle_id is null or v_probe.specialty_id is null then
+    raise exception 'Agendamento sem contexto canônico de ciclo não pode ser remarcado.' using errcode='22023';
+  end if;
+
+  perform 1 from public.patients p where p.id=v_probe.patient_id for update;
+
+  perform 1 from public.patient_care_cycles c
+  where c.id=v_probe.care_cycle_id
+    and c.patient_id=v_probe.patient_id
+    and c.status in ('ativo','encerramento_em_andamento')
+  for update;
+  if not found then
+    raise exception 'Ciclo do agendamento não está aberto.' using errcode='22023';
+  end if;
+
+  perform 1 from public.patient_care_cycle_specialties cs
+  where cs.care_cycle_id=v_probe.care_cycle_id
+    and cs.specialty_id=v_probe.specialty_id
+  for update;
+  if not found then
+    raise exception 'Especialidade do agendamento não pertence ao ciclo.' using errcode='22023';
+  end if;
+
+  select pa.* into v_old
+  from public.patient_appointments pa
+  where pa.id=p_appointment_id
+  for update;
+
+  if v_old.patient_id<>v_probe.patient_id
+     or v_old.care_cycle_id<>v_probe.care_cycle_id
+     or v_old.specialty_id<>v_probe.specialty_id then
+    raise exception 'Agendamento mudou durante a remarcação; repita a operação.';
+  end if;
+
+  if v_old.attendance_status not in ('agendado','confirmado','faltou') then
+    raise exception 'Este agendamento não pode ser remarcado.' using errcode='22023';
+  end if;
+
+  v_new_specialty_id:=public.resolve_single_active_professional_specialty(p_new_professional_id);
+  if v_new_specialty_id<>v_old.specialty_id then
+    raise exception 'Remarcação deve permanecer na mesma especialidade do agendamento original.' using errcode='22023';
+  end if;
+
+  v_new:=public.create_appointment_for_interface(
+    v_old.patient_id,
+    p_new_professional_id,
+    p_new_slot_start,
+    v_old.appointment_type,
+    p_new_notes,
+    v_old.operational_origin
+  );
+
+  v_new_id:=(v_new->>'appointment_id')::uuid;
+
+  if (v_new->>'care_cycle_id')::uuid<>v_old.care_cycle_id
+     or (v_new->>'specialty_id')::uuid<>v_old.specialty_id then
+    raise exception 'Novo agendamento não preservou ciclo e especialidade da remarcação.';
+  end if;
+
+  update public.patient_appointments
+     set attendance_status='remarcado',updated_at=clock_timestamp()
+   where id=v_old.id;
+
+  update public.patient_appointments
+     set rescheduled_from_id=v_old.id,reschedule_reason=v_reason,
+         reschedule_origin=v_origin,updated_at=clock_timestamp()
+   where id=v_new_id;
+
+  return jsonb_build_object(
+    'previous_appointment_id',v_old.id,'previous_status','remarcado',
+    'new_appointment_id',v_new_id,'new_professional_id',p_new_professional_id,
+    'new_slot_start',p_new_slot_start,'reason',v_reason,'origin',v_origin,
+    'operational_origin',v_old.operational_origin,'care_cycle_id',v_old.care_cycle_id,
+    'specialty_id',v_old.specialty_id
+  );
+end;
+$function$
+;

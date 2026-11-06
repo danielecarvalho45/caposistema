@@ -8285,3 +8285,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Integração:** commit `e5fdc8ba031137631dd3f4cb712bc326db2af9ba` diretamente em `main`, conforme autorização para correções pontuais e suspensão dos testes automáticos.
 
 **Verificação:** alteração textual única conferida no código; testes automáticos não executados por decisão da Titular, e publicação/homologação visual no Cloudflare ainda não comprovadas nesta etapa.
+
+
+## §28.190 — Remarcação sem motivo obrigatório e colagem de datas em campos nativos (06/11/2026)
+
+**Solicitação expressa da Titular, durante implantação com pacientes reais:** o motivo da remarcação deve iniciar em branco e permanecer opcional, sem contagem mínima de caracteres; todos os campos nativos de data, inclusive nascimento, devem permitir colar uma data. Após essas adequações, a Titular fará nova tentativa de remarcação e comunicará o resultado.
+
+**Diagnóstico:** `AgendaPage.tsx` exigia três caracteres e desabilitava o botão, enquanto a função `reschedule_appointment_for_interface` exigia cinco, provocando divergência de validação. Havia preenchimento automático de motivo nas origens de contato prévio e faltoso e origem técnica `confirmacao_previa` / `gestor_home` não aceita pela RPC (somente `manual`, `bloqueio_agenda`, `alteracao_agenda`, `faltoso`). Os campos nativos `input[type=date]` eram controlados pelo navegador e não ofereciam interpretação de datas coladas em formato brasileiro.
+
+**Correção de interface preparada:** `src/features/agenda/AgendaPage.tsx` retira preenchimentos automáticos e obrigatoriedade do motivo, elimina os bloqueios por três caracteres, mantém campo opcional e converte origens administrativas de contato prévio e Home para `manual`, preservando `faltoso` na fila correspondente. Novo utilitário `src/lib/date-paste.ts` instalado por `src/main.tsx` intercepta colagem em campos nativos `type=date` habilitados, aceita `DD/MM/AAAA`, `DD-MM-AAAA`, `DD.MM.AAAA` ou `AAAA-MM-DD`, valida dia/mês/ano reais, respeita min/max do campo e dispara atualização compatível com entradas React controladas. Não interfere em campos textuais, datas inválidas nem campos bloqueados.
+
+**Banco oficial:** migração `optional_reschedule_reason_20261106` aplicada ao Supabase. A RPC existente conserva autorizações, ciclo CAPO, contexto do paciente, validação do profissional/novo horário e histórico, mas normaliza motivo vazio para `NULL` (coluna já admite nulo). Permanece limite máximo técnico de 500 caracteres. Consulta a `pg_get_functiondef` confirmou a nova regra. Nenhuma consulta real foi remarcada durante a verificação.
+
+**Estado de integração:** alterações preparadas na branch `fix/remarcacao-motivo-opcional-e-colar-datas-20261106`. Testes automáticos permanecem suspensos por decisão da Titular (faturamento do GitHub Actions). Sem comprovação de publicação ou homologação em produção até integração e conferência manual; não afirmar sucesso operacional de remarcação antes de tentativa real autorizada.

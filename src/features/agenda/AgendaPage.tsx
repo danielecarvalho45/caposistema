@@ -1070,8 +1070,8 @@ export function AgendaPage({
     setAppointmentPatientQuery(appointment.patient_name)
     setSelectedProfessionalId(appointment.professional_id)
     setSelectedReschedulableId(appointment.appointment_id)
-    setRescheduleOrigin('confirmacao_previa')
-    setRescheduleReason('Remarcação solicitada pelo paciente após contato prévio.')
+    setRescheduleOrigin('manual')
+    setRescheduleReason('')
     setRescheduleTargetDate(dateInputValue(new Date()))
     setAppointmentFeedback(null)
   }
@@ -1291,8 +1291,8 @@ export function AgendaPage({
       setAppointmentFeedback('Remarcações de consultas pertencem ao fluxo Administrativo.')
       return
     }
-    if (!validReschedulableId || !rescheduleProfessionalId || !validRescheduleSlotStart || rescheduleReason.trim().length < 3) {
-      setAppointmentFeedback('Selecione agendamento, novo horário e informe o motivo da remarcação.')
+    if (!validReschedulableId || !rescheduleProfessionalId || !validRescheduleSlotStart) {
+      setAppointmentFeedback('Selecione o agendamento e o novo horário.')
       return
     }
     setAppointmentFeedback('Remarcando agendamento no banco…')
@@ -1534,7 +1534,7 @@ export function AgendaPage({
       setAppointmentPatientQuery(patientName)
       setSelectedProfessionalId(requestedProfessionalId)
       setSelectedReschedulableId(requestedAppointmentId)
-      setRescheduleOrigin('gestor_home')
+      setRescheduleOrigin('manual')
       setRescheduleReason('')
       setRescheduleTargetDate(dateInputValue(new Date()))
       setAppointmentFeedback(null)
@@ -1583,7 +1583,7 @@ export function AgendaPage({
       setSelectedProfessionalId(requestedProfessionalId)
       setSelectedReschedulableId(sourceAppointmentId)
       setRescheduleOrigin('faltoso')
-      setRescheduleReason('Remarcação após falta registrada.')
+      setRescheduleReason('')
       setRescheduleTargetDate(dateInputValue(new Date()))
       return
     }
@@ -2159,7 +2159,7 @@ export function AgendaPage({
                 </select>
               </label>
               <label>
-                Motivo *
+                Motivo (opcional)
                 <input value={rescheduleReason} onChange={(event) => setRescheduleReason(event.target.value)} />
               </label>
               {!isProfessional && (
@@ -2174,7 +2174,7 @@ export function AgendaPage({
               </label>
             </div>
             <div className="agenda-form-actions">
-              <button type="button" disabled={!validReschedulableId || !validRescheduleSlotStart || rescheduleReason.trim().length < 3} onClick={() => void rescheduleAppointment()}>Aplicar remarcação</button>
+              <button type="button" disabled={!validReschedulableId || !validRescheduleSlotStart} onClick={() => void rescheduleAppointment()}>Aplicar remarcação</button>
             </div>
           </section>
         )}
