@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { canAccessAppRoute } from '../../app/route-access'
-import { getRpcService, type AsyncState } from '../../lib/supabase/rpc'
+import { getRpcService, type AsyncState, type PatientAppointmentHistoryRow } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
@@ -80,6 +80,9 @@ export function PatientsPage({
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Record<string, string>>({})
   const [editBusy, setEditBusy] = useState(false)
+  const [appointmentHistoryOpen, setAppointmentHistoryOpen] = useState(false)
+  const [appointmentHistory, setAppointmentHistory] = useState<{ patientId: string; rows: readonly PatientAppointmentHistoryRow[]; total: number; error: string | null } | null>(null)
+  const [appointmentHistoryBusy, setAppointmentHistoryBusy] = useState(false)
 
   const patientAge = calculateAge(patientBirthDate)
   const selectedPatientAge = calculateAge(editForm.birth_date ?? '')
@@ -312,6 +315,8 @@ ADMINISTRATIVO DO CAPO`
   }
 
   async function openPatientEditor(patientId: string) {
+    setAppointmentHistoryOpen(false)
+    setAppointmentHistory(null)
     setExistingOfferAvailable(false)
     setOfferFeedback(null)
     setEditBusy(true)
@@ -361,6 +366,41 @@ ADMINISTRATIVO DO CAPO`
     setActiveView('search')
     void openPatientEditor(notificationPatientId)
   }, [notificationPatientId])
+
+  async function loadAppointmentHistory(patientId: string, previous: readonly PatientAppointmentHistoryRow[] = []) {
+    if (appointmentHistoryBusy) return
+    setAppointmentHistoryBusy(true)
+    const result = await getRpcService().getPatientAppointmentHistory(patientId, 50, previous.length)
+    if (result.status === 'success') {
+      const rows = [...previous, ...result.data]
+      setAppointmentHistory({
+        patientId,
+        rows,
+        total: result.data[0]?.total_count ?? previous[0]?.total_count ?? rows.length,
+        error: null,
+      })
+    } else if (result.status === 'empty') {
+      setAppointmentHistory({ patientId, rows: previous, total: previous.length, error: null })
+    } else {
+      setAppointmentHistory({
+        patientId,
+        rows: previous,
+        total: previous[0]?.total_count ?? previous.length,
+        error: result.status === 'error' ? result.error.message : 'Histórico indisponível.',
+      })
+    }
+    setAppointmentHistoryBusy(false)
+  }
+
+  function toggleAppointmentHistory() {
+    if (!editingPatientId) return
+    if (appointmentHistoryOpen) {
+      setAppointmentHistoryOpen(false)
+      return
+    }
+    setAppointmentHistoryOpen(true)
+    if (appointmentHistory?.patientId !== editingPatientId) void loadAppointmentHistory(editingPatientId)
+  }
 
   async function savePatientEditor() {
     if (!editingPatientId || editBusy) return
@@ -424,6 +464,8 @@ ADMINISTRATIVO DO CAPO`
               setActiveView('register')
               setEditingPatientId(null)
               setEditForm({})
+              setAppointmentHistoryOpen(false)
+              setAppointmentHistory(null)
               setResult(emptyState)
               setQuery('')
             }}
@@ -727,6 +769,45 @@ ADMINISTRATIVO DO CAPO`
             </div>
             <span className="patients-selected-status">{editForm.status === 'inativo' ? 'Inativo' : 'Ativo'}</span>
           </div>
+
+          <div className="patients-history-actions">
+            <button type="button" aria-expanded={appointmentHistoryOpen} onClick={toggleAppointmentHistory}>
+              📅 Consultar agendamentos
+            </button>
+          </div>
+          {appointmentHistoryOpen && (
+            <section className="patients-appointment-history" aria-label="Histórico de agendamentos do paciente">
+              <h3>Histórico de agendamentos</h3>
+              {appointmentHistoryBusy && !appointmentHistory?.rows.length && <p role="status">Carregando agendamentos…</p>}
+              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.error && <p role="alert">{appointmentHistory.error}</p>}
+              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.rows.length === 0 && !appointmentHistoryBusy && !appointmentHistory.error && <p>Nenhum agendamento registrado para este paciente.</p>}
+              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.rows.length > 0 && (
+                <>
+                  <div className="assistential-table-wrap">
+                    <table className="assistential-table">
+                      <thead><tr><th>Data e horário</th><th>Profissional</th><th>Especialidade</th><th>Tipo</th><th>Situação</th></tr></thead>
+                      <tbody>
+                        {appointmentHistory.rows.map((item) => (
+                          <tr key={item.appointment_id}>
+                            <td>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.appointment_date))}</td>
+                            <td>{item.professional_name}</td>
+                            <td>{item.specialty_name ?? '—'}</td>
+                            <td>{item.appointment_type}</td>
+                            <td>{item.attendance_status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {appointmentHistory.rows.length < appointmentHistory.total && (
+                    <button type="button" disabled={appointmentHistoryBusy} onClick={() => void loadAppointmentHistory(editingPatientId!, appointmentHistory.rows)}>
+                      {appointmentHistoryBusy ? 'Carregando…' : 'Mostrar mais agendamentos'}
+                    </button>
+                  )}
+                </>
+              )}
+            </section>
+          )}
 
           <div className="patients-form-grid patients-selected-grid">
             <label className="patients-span-2">Nome completo
