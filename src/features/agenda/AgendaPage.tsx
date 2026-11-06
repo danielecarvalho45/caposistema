@@ -344,14 +344,25 @@ function HomeScheduleGrid({
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
   )
-  const days = [...new Set(slots.map((slot) => slot.slot_date))].sort()
+  const periodDays = datesBetween(startDate, endDate)
+  const days = view === 'month'
+    ? (() => {
+        const first = localDate(startDate)
+        first.setDate(first.getDate() - ((first.getDay() + 6) % 7))
+        return Array.from({ length: 42 }, (_, index) => {
+          const day = new Date(first)
+          day.setDate(day.getDate() + index)
+          return dateInputValue(day)
+        })
+      })()
+    : periodDays
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
     weekday: 'long',
     day: '2-digit',
     month: '2-digit',
   })
 
-  if (days.length === 0) {
+  if (slots.length === 0 && view === 'day') {
     return <p className="agenda-schedule-no-hours">Nenhum horário configurado neste período.</p>
   }
 
@@ -482,7 +493,6 @@ function HomeScheduleGrid({
     <div
       className={[
         'agenda-schedule-grid',
-        view === 'day' ? 'agenda-schedule-grid--day' : '',
         view === 'week' ? 'agenda-schedule-grid--week' : '',
         view === 'month' ? 'agenda-schedule-grid--month' : '',
       ].filter(Boolean).join(' ')}
@@ -491,9 +501,10 @@ function HomeScheduleGrid({
       {days.map((day) => {
         const daySlots = slots.filter((slot) => slot.slot_date === day)
         return (
-          <article className="agenda-schedule-day" key={day}>
+          <article className={`agenda-schedule-day${view === 'month' && localDate(day).getMonth() !== localDate(startDate).getMonth() ? ' is-outside' : ''}`} key={day}>
             <h3>{dateFormatter.format(localDate(day))}</h3>
             <div className="agenda-schedule-slots">
+                {daySlots.length === 0 && <small className="agenda-schedule-no-hours">Sem horários</small>}
                 {daySlots.map((slot) => {
                   const appointment = slot.appointment_id
                     ? appointmentById.get(slot.appointment_id)
@@ -678,17 +689,23 @@ function AgendaResults({
                   <p className="agenda-week-empty">Sem atendimento</p>
                 )
               ) : dayAppointments.length > 0 ? (
-                <AppointmentTable
-                  appointments={dayAppointments}
-                  includeDate={false}
-                  showSpecialty={showSpecialty}
-                  onAttendance={onAttendance}
-                  onReturn={onReturn}
-                  onCancel={onCancel}
-                  busyAppointmentId={busyAppointmentId}
-                  patientSpecialties={patientSpecialties}
-                  previsitContacts={previsitContacts}
-                />
+                <div className="agenda-week-home-list">
+                  {dayAppointments.map((appointment) => (
+                    <div className="agenda-week-home-item" key={appointment.appointment_id}>
+                      <strong>{formatTimeRange(appointment)}</strong>
+                      <span>{appointment.patient_name}</span>
+                      <small>{showSpecialty ? appointment.specialty_name ?? appointment.appointment_type : appointment.appointment_type}</small>
+                      {attendanceMarker(appointment.attendance_status)}
+                      {onAttendance && appointment.attendance_status === 'agendado' && (
+                        <div className="agenda-week-home-actions">
+                          <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}>Confirmar</button>
+                          <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}>Falta</button>
+                        </div>
+                      )}
+                      {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && <button type="button" onClick={() => onCancel(appointment.appointment_id)}>Cancelar</button>}
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <p>Nenhum atendimento neste dia.</p>
               )}
@@ -2237,7 +2254,7 @@ export function AgendaPage({
                   setScheduleGrid(loadingState())
                   setView(option)
                   if (!embeddedHome) {
-                    setConsultationRangeForView(consultationStartDate, option)
+                    setConsultationRangeForView(dateInputValue(new Date()), option)
                   }
                 }}
               >
@@ -2297,7 +2314,7 @@ export function AgendaPage({
           </strong>
         </div>
 
-        {!isProfessional && state.status === 'success' && state.data.some((item) => item.attendance_status === 'agendado') && (
+        {!isProfessional && view === 'day' && state.status === 'success' && state.data.some((item) => item.attendance_status === 'agendado') && (
           <section className="agenda-schedule-form" aria-label="Avisos prévios das consultas">
             <h3>Avisos prévios das consultas</h3>
             {previsitLoadError && <p role="alert">{previsitLoadError}</p>}
