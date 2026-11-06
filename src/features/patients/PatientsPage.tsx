@@ -770,45 +770,6 @@ ADMINISTRATIVO DO CAPO`
             <span className="patients-selected-status">{editForm.status === 'inativo' ? 'Inativo' : 'Ativo'}</span>
           </div>
 
-          <div className="patients-history-actions">
-            <button type="button" aria-expanded={appointmentHistoryOpen} onClick={toggleAppointmentHistory}>
-              📅 Consultar agendamentos
-            </button>
-          </div>
-          {appointmentHistoryOpen && (
-            <section className="patients-appointment-history" aria-label="Histórico de agendamentos do paciente">
-              <h3>Histórico de agendamentos</h3>
-              {appointmentHistoryBusy && !appointmentHistory?.rows.length && <p role="status">Carregando agendamentos…</p>}
-              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.error && <p role="alert">{appointmentHistory.error}</p>}
-              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.rows.length === 0 && !appointmentHistoryBusy && !appointmentHistory.error && <p>Nenhum agendamento registrado para este paciente.</p>}
-              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.rows.length > 0 && (
-                <>
-                  <div className="assistential-table-wrap">
-                    <table className="assistential-table">
-                      <thead><tr><th>Data e horário</th><th>Profissional</th><th>Especialidade</th><th>Tipo</th><th>Situação</th></tr></thead>
-                      <tbody>
-                        {appointmentHistory.rows.map((item) => (
-                          <tr key={item.appointment_id}>
-                            <td>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.appointment_date))}</td>
-                            <td>{item.professional_name}</td>
-                            <td>{item.specialty_name ?? '—'}</td>
-                            <td>{item.appointment_type}</td>
-                            <td>{item.attendance_status}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {appointmentHistory.rows.length < appointmentHistory.total && (
-                    <button type="button" disabled={appointmentHistoryBusy} onClick={() => void loadAppointmentHistory(editingPatientId!, appointmentHistory.rows)}>
-                      {appointmentHistoryBusy ? 'Carregando…' : 'Mostrar mais agendamentos'}
-                    </button>
-                  )}
-                </>
-              )}
-            </section>
-          )}
-
           <div className="patients-form-grid patients-selected-grid">
             <label className="patients-span-2">Nome completo
               <input
@@ -941,6 +902,12 @@ ADMINISTRATIVO DO CAPO`
               </Link>
             )}
 
+          <div className="patients-history-actions">
+            <button type="button" aria-expanded={appointmentHistoryOpen} onClick={toggleAppointmentHistory}>
+              📅 Consultar agendamentos
+            </button>
+          </div>
+
             {canAccessAppRoute(accessContext, '/familiar-cuidador') && (
               <Link
                 to="/familiar-cuidador"
@@ -995,6 +962,40 @@ ADMINISTRATIVO DO CAPO`
               />
             )}
           </div>
+          {appointmentHistoryOpen && (
+            <section className="patients-appointment-history" aria-label="Histórico de agendamentos do paciente">
+              <h3>Histórico de agendamentos</h3>
+              {appointmentHistoryBusy && !appointmentHistory?.rows.length && <p role="status">Carregando agendamentos…</p>}
+              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.error && <p role="alert">{appointmentHistory.error}</p>}
+              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.rows.length === 0 && !appointmentHistoryBusy && !appointmentHistory.error && <p>Nenhum agendamento registrado para este paciente.</p>}
+              {appointmentHistory?.patientId === editingPatientId && appointmentHistory.rows.length > 0 && (
+                <>
+                  <div className="assistential-table-wrap">
+                    <table className="assistential-table">
+                      <thead><tr><th>Data e horário</th><th>Profissional</th><th>Especialidade</th><th>Tipo</th><th>Situação</th></tr></thead>
+                      <tbody>
+                        {appointmentHistory.rows.map((item) => (
+                          <tr key={item.appointment_id}>
+                            <td>{new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.appointment_date))}</td>
+                            <td>{item.professional_name}</td>
+                            <td>{item.specialty_name ?? '—'}</td>
+                            <td>{item.appointment_type}</td>
+                            <td>{item.attendance_status}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {appointmentHistory.rows.length < appointmentHistory.total && (
+                    <button type="button" disabled={appointmentHistoryBusy} onClick={() => void loadAppointmentHistory(editingPatientId!, appointmentHistory.rows)}>
+                      {appointmentHistoryBusy ? 'Carregando…' : 'Mostrar mais agendamentos'}
+                    </button>
+                  )}
+                </>
+              )}
+            </section>
+          )}
+
         </section>
       )}
     </section>
