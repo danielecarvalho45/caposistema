@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useBackToPreviousFunction } from '../../lib/navigation/back'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { AccessContext } from '../../types/access'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
@@ -78,6 +79,7 @@ export function GestorShell({
   onLogout,
 }: GestorShellProps) {
   const navigate = useNavigate()
+  const goBack = useBackToPreviousFunction()
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'available' | 'unavailable'>('checking')
   const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -181,7 +183,7 @@ export function GestorShell({
             <p>Administrador do Sistema / Titular</p>
           </div>
           <div className="gestor-header-actions">
-            <button type="button" onClick={() => navigate('/')}>← <span>Voltar</span></button>
+            <button type="button" onClick={goBack}>← <span>Voltar</span></button>
             {canAccessAppRoute(accessContext, '/notificacoes') && (
               <button className="gestor-notice-button" type="button" onClick={() => navigate('/notificacoes')}>
                 <span aria-hidden="true">🔔</span><span>Avisos</span>
