@@ -64,8 +64,8 @@ describe('FamilyCaregiverPage', () => {
       screen.getByText('Nenhum familiar ativo para o paciente selecionado.'),
     ).toBeVisible()
     expect(
-      screen.getByRole('link', { name: '← Voltar ao painel inicial' }),
-    ).toHaveAttribute('href', '/')
+      screen.getByRole('button', { name: '← Voltar' }),
+    ).toBeVisible()
     expect(screen.queryByText(/Paciente demonstração/i)).not.toBeInTheDocument()
   })
 
