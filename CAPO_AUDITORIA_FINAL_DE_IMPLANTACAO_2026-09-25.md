@@ -8338,3 +8338,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Implementação pontual:** a data/hora de cada registro no histórico passa a ter ação `Abrir na agenda`, se o perfil puder acessar `/agenda`, enviando apenas identificação do agendamento, paciente, data local e origem `patient_appointment_history`. A Agenda interpreta essa origem para abrir a visualização **Dia** na data histórica e não iniciar o formulário de novo agendamento. Para perfil de gestão, resolve o profissional a partir do próprio agendamento retornado pela consulta autorizada à agenda; para profissional, preserva o escopo de sua própria agenda. A interface mostra a consulta localizada com paciente, data/hora, profissional e situação, ou mensagem clara quando o evento histórico não estiver presente na visão atual da agenda (por exemplo, registros removidos da grade ativa). A data usa fuso de Brasília.
 
 **Garantias:** nenhuma modificação de agendamento, paciente, autorização, função SQL ou banco; sem dados fictícios. Suíte GitHub Actions segue suspensa por faturamento. Homologação manual após publicação Cloudflare pendente.
+
+
+### §28.195 — Botão Voltar retorna à função anterior (06/11/2026)
+
+**Relato da Titular:** ao utilizar o botão `← Voltar` em módulo do CAPO, a interface encaminhava indevidamente para a tela inicial, interrompendo o fluxo entre funções (por exemplo, histórico de agendamentos → agenda → retorno).
+
+**Causa e correção cirúrgica:** os cabeçalhos compartilhados `AppShell` e `GestorShell` apontavam rigidamente para `/`, incluindo `window.location.assign('/')`, que também recarregava a aplicação. Passaram a usar o utilitário compartilhado `useBackToPreviousFunction`, com `navigate(-1)` quando houver entrada anterior no histórico interno do React Router; em abertura direta sem entrada anterior, há fallback seguro para `location.state.from` quando válido, e somente em último caso para o início. A página Familiar/Cuidador teve seu comando explícito de retorno ao início alinhado à mesma regra, com estilo de botão preservado. Ajustada expectativa do teste de interface correspondente.
+
+**Garantias:** o retorno preserva a navegação e o estado já registrado pelo roteador; não modifica perfis, banco, cadastros, agendamentos ou dados reais. Testes automáticos mantidos suspensos por faturamento; homologação manual após a publicação Cloudflare pendente.
