@@ -8274,3 +8274,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Continuidade §28.188 — integração autorizada pela Titular (05/11/2026):** após solicitação expressa para corrigir e registrar sem executar testes automáticos, PR #3 mesclada em `main`, commit `eb10d3f416178e98921f95bc025a42d80ac4e526`. Conferência de leitura do GitHub confirmou a condição `activeView === 'search' && editingPatientId` e a limpeza de seleção, formulário e pesquisa ao clicar em **Cadastrar** na branch principal. Os testes automáticos permanecem suspensos por decisão da Titular diante do problema de faturamento do GitHub Actions. **Publicação efetiva no Cloudflare e homologação visual com paciente real autorizado não comprovadas nesta etapa**; qualquer comportamento divergente deverá ser comunicado para correção pontual, sem alterar dados de produção.
 
 **Homologação da Titular (06/11/2026):** após verificar o funcionamento da tela de Pacientes no CAPO, Daniele confirmou expressamente **“deu certo”** para a correção que oculta a consulta anterior ao entrar em **Cadastrar**. A manutenção pontual §28.188 fica **HOMOLOGADA FUNCIONALMENTE PELA TITULAR**. A confirmação diz respeito a esse comportamento visual específico; não constitui validação da suíte automatizada nem de outros fluxos do sistema. Testes automáticos seguem suspensos por decisão da Titular.
+
+
+## §28.189 — Aviso de marcação: retirada de frase institucional específica (06/11/2026)
+
+**Pedido expresso da Titular:** remover **somente** a frase “CAPO — Secretaria Municipal de Saúde de Pouso Alegre/MG.” do texto preparado para o WhatsApp de aviso de consulta agendada.
+
+**Correção pontual:** em `src/features/agenda/AgendaPage.tsx`, função `appointmentNoticeMessage`, removida exclusivamente a entrada literal solicitada e normalizado o espaçamento entre “Pedimos que compareça no horário agendado.” e “⚠️ Importante:”. Foram preservados saudação dinâmica, nome real, data, horário, especialidade, local, orientações de reagendamento, agradecimento e assinatura dinâmica do usuário autenticado. Sem alteração de RPC, Supabase, pacientes, agendamentos ou envio manual de mensagens.
+
+**Integração:** commit `e5fdc8ba031137631dd3f4cb712bc326db2af9ba` diretamente em `main`, conforme autorização para correções pontuais e suspensão dos testes automáticos.
+
+**Verificação:** alteração textual única conferida no código; testes automáticos não executados por decisão da Titular, e publicação/homologação visual no Cloudflare ainda não comprovadas nesta etapa.
