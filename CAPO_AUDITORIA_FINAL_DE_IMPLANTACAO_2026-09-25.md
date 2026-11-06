@@ -8329,3 +8329,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção cirúrgica:** adicionada somente a operação `get_patient_appointment_history_for_interface` à lista de RPCs encaminhadas com argumentos em `createSupabaseTransport()` de `src/lib/supabase/rpc.ts`, ao lado da consulta de linha do tempo do paciente. Não houve alteração de SQL, permissões, agendamentos, dados clínicos ou cadastro real.
 
 **Verificação:** o código passa a encaminhar o nome da operação ao cliente Supabase, mantidos o parser de resposta e os controles internos da função. Homologação funcional final pelo operador após atualização Cloudflare pendente; suíte automática suspensa por faturamento conforme decisão da Titular.
+
+
+### §28.194 — Abrir agendamento histórico na agenda do profissional (06/11/2026)
+
+**Solicitação:** na consulta do histórico de agendamentos de um paciente (§§28.191–28.193), clicar na consulta e abrir a agenda do profissional correspondente, no dia da marcação. Consulta navegável, sem editar o registro.
+
+**Implementação pontual:** a data/hora de cada registro no histórico passa a ter ação `Abrir na agenda`, se o perfil puder acessar `/agenda`, enviando apenas identificação do agendamento, paciente, data local e origem `patient_appointment_history`. A Agenda interpreta essa origem para abrir a visualização **Dia** na data histórica e não iniciar o formulário de novo agendamento. Para perfil de gestão, resolve o profissional a partir do próprio agendamento retornado pela consulta autorizada à agenda; para profissional, preserva o escopo de sua própria agenda. A interface mostra a consulta localizada com paciente, data/hora, profissional e situação, ou mensagem clara quando o evento histórico não estiver presente na visão atual da agenda (por exemplo, registros removidos da grade ativa). A data usa fuso de Brasília.
+
+**Garantias:** nenhuma modificação de agendamento, paciente, autorização, função SQL ou banco; sem dados fictícios. Suíte GitHub Actions segue suspensa por faturamento. Homologação manual após publicação Cloudflare pendente.
