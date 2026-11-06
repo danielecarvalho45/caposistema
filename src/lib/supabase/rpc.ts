@@ -14,6 +14,17 @@ import {
   SupabaseOperationError,
 } from './errors'
 
+export type PatientAppointmentHistoryRow = Readonly<{
+  appointment_id: string
+  appointment_date: string
+  appointment_end: string | null
+  appointment_type: string
+  attendance_status: string
+  professional_name: string
+  specialty_name: string | null
+  total_count: number
+}>
+
 export type AsyncState<T> =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'success'; data: T }>
@@ -2346,6 +2357,28 @@ export function createRpcService(transport: RpcTransport) {
           p_specialty_id: specialtyId,
         },
         parse: parseConfirmedJson,
+      }),
+    getPatientAppointmentHistory: (patientId: string, limit = 50, offset = 0) =>
+      execute({
+        transport,
+        operation: 'get_patient_appointment_history_for_interface',
+        args: { p_patient_id: patientId, p_limit: limit, p_offset: offset },
+        parse: (value): readonly PatientAppointmentHistoryRow[] => {
+          if (!Array.isArray(value)) throw contractError('get_patient_appointment_history_for_interface', 'lista esperada.')
+          return value.map((item) => {
+            if (!isRecord(item)) throw contractError('get_patient_appointment_history_for_interface', 'agendamento inválido.')
+            return {
+              appointment_id: requiredString(item, 'appointment_id', 'get_patient_appointment_history_for_interface'),
+              appointment_date: requiredString(item, 'appointment_date', 'get_patient_appointment_history_for_interface'),
+              appointment_end: typeof item.appointment_end === 'string' ? item.appointment_end : null,
+              appointment_type: requiredString(item, 'appointment_type', 'get_patient_appointment_history_for_interface'),
+              attendance_status: requiredString(item, 'attendance_status', 'get_patient_appointment_history_for_interface'),
+              professional_name: requiredString(item, 'professional_name', 'get_patient_appointment_history_for_interface'),
+              specialty_name: typeof item.specialty_name === 'string' ? item.specialty_name : null,
+              total_count: Number(item.total_count ?? 0),
+            }
+          })
+        },
       }),
     getPatientTimeline: (
       patientId: string,
