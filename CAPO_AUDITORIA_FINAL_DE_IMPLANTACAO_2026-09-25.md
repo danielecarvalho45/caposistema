@@ -8311,3 +8311,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Banco e segurança:** nova função somente de leitura `public.get_patient_appointment_history_for_interface(uuid, integer, integer)` com autenticação, termo legal aceito, conta ativa, contexto permitido e restrição por perfil. Gestor/Titular, Administrativo Operacional e Coordenação podem consultar; profissional vê apenas seus próprios agendamentos de paciente sob sua atuação. `anon` não recebe `EXECUTE`; `authenticated` recebe. Consulta limitada a 100 registros por chamada e ordenada por data decrescente. Migração versionada em `supabase/migrations/20261106_patient_appointment_history_read_only.sql`.
 
 **Verificação:** inspeção estrutural dos campos do banco e contratos da interface; conferir função e permissões após aplicação. Testes automáticos mantidos suspensos por questão de faturamento do GitHub Actions, conforme decisão da Titular. Homologação manual da interface na publicação permanece necessária. Sem escrita em prontuários, pacientes ou agendamentos.
+
+
+### §28.192 — Correção da localização do atalho de histórico no cadastro (06/11/2026)
+
+**Relato da Titular, com captura de tela:** após abrir o cadastro do paciente, o conjunto de ações visível ao final da ficha contém WhatsApp, Agendamento, Familiar/Cuidador, Fila de espera, Encerramentos e Óbito; o botão para consulta do histórico não aparece ali. O §28.191 havia colocado o atalho na parte superior da ficha, distante das ações operacionais esperadas.
+
+**Ajuste cirúrgico:** reposicionado o único botão `📅 Consultar agendamentos` dentro da grade existente `patients-flow-actions`, junto a `Agendamento`, preservando o próprio painel paginado de histórico logo abaixo da grade. O botão não encaminha à tela de marcar consultas; abre o histórico do paciente selecionado, somente para leitura. Não foram alteradas RPCs, permissões, cadastros ou agendamentos existentes. Sem duplicação de atalhos.
+
+**Validação:** inspeção do componente e confirmação de uma única ocorrência do botão e de um único painel na versão preparada. A publicação Cloudflare e a visualização pela Titular requerem homologação manual. Testes automáticos permanecem suspensos por faturamento do GitHub Actions.
