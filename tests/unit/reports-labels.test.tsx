@@ -46,6 +46,9 @@ it.each(['administrador', 'coordenador'])('oferece impressão e PDF do relatóri
   await screen.findByText('Total atual')
   expect(screen.getByRole('button', { name: 'Imprimir' })).toBeEnabled()
   expect(screen.getByRole('button', { name: 'Gerar / salvar PDF' })).toBeEnabled()
+  expect(screen.getByRole('heading', { name: 'RELATÓRIO QUANTITATIVO E ANALÍTICO' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'RELATÓRIO GRÁFICO DEMONSTRATIVO' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Gerar / salvar PDF gráfico' })).toBeEnabled()
   await user.selectOptions(screen.getByLabelText('Especialidade'), 'nutrition')
   expect(loadDashboard).toHaveBeenCalledWith(expect.any(String), expect.any(String), 'nutrition')
   expect(await screen.findByText(/Especialidade: Nutrição/)).toBeVisible()
@@ -129,6 +132,8 @@ it('profissional gera relatório da própria especialidade sem chamar dashboard 
 
   expect(await screen.findByRole('heading', { name: 'Relatorio operacional' })).toBeVisible()
   expect(await screen.findByRole('button', { name: /Agenda/ })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'RELATÓRIO QUANTITATIVO E ANALÍTICO' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'RELATÓRIO GRÁFICO DEMONSTRATIVO' })).toBeVisible()
   expect(loadReport).toHaveBeenCalledWith('clinica-geral', expect.any(String), expect.any(String))
   expect(loadDashboard).not.toHaveBeenCalled()
   expect(screen.queryByText(/Perfil sem autorização para Relatórios gerenciais do CAPO/)).not.toBeInTheDocument()
