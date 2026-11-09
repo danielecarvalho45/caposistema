@@ -8421,3 +8421,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificações:** `npm run build` **PASS** (167 módulos). Testes focados de três arquivos (`report-export`, `reports-labels`, `administrative-operational-report`): **15/15 PASS** com ambiente isolado, chaves públicas fictícias e sem consulta a registros reais. PDFs de amostra temporária com métricas de teste foram renderizados visualmente em A4 (página 1 de barras, página 2 de pizza e documento analítico): títulos e rodapés estão legíveis e não houve sobreposição; a legenda de barras foi ajustada após inspeção para não truncar os nomes das categorias. `npm run typecheck` mantém **10 erros já existentes em outros módulos**, sem erros novos nos arquivos alterados. Não foi realizada homologação real em produção com contas de todos os perfis.
 
 **Estado:** **CÓDIGO E TESTES PUBLICADOS NO GITHUB / TESTES FOCADOS PASS / CONFERÊNCIA POR PERFIL NA PRODUÇÃO PENDENTE**. Não confundir o resultado dos testes locais com homologação dos perfis reais. A publicação em Cloudflare depende do fluxo de implantação do repositório.
+
+
+### §28.202 — Ajustes pontuais da agenda no final da configuração e botões responsivos (09/11/2026)
+
+**Autorização:** comando `VERDE` da Titular após evidência visual de nove cartões azuis, textos cortados e ações muito próximas na seção `Ajustes pontuais de uma data`.
+
+**Alteração cirúrgica:** no componente compartilhado `src/features/agenda/OwnAgendaManager.tsx`, a seção de ajustes pontuais foi deslocada para depois da configuração semanal permanente, na parte final da configuração antes dos campos do registro temporário, mantendo o fluxo selecionar ação → preencher dados → registrar. Os nove tipos de ação e respectivas regras de visibilidade foram preservados, inclusive `Horário de urgência` somente se `allowEmergencySlot` estiver habilitado. Cada botão recebeu nome acessível explícito e preservou seleção `aria-pressed`, bloqueio por ausência de configuração e a lógica anterior de execução.
+
+**Layout:** `src/features/agenda/agenda-page.css` usa cartões individualizados com contraste, texto completo, espaçamento ampliado e estado de seleção destacado; três colunas no desktop, duas em tela intermediária e uma no celular. O CSS específico dos cartões evita a aparência azul uniforme e os textos truncados observados na captura. Nenhum contrato de RPC, agenda recorrente, duração ou permissão foi alterado.
+
+**Verificação local:** `npm run build` PASS (Vite 167 módulos). `tests/unit/OwnAgendaManager.test.tsx`: **2/2 PASS** com mocks de RPC e sem acessar pacientes reais, incluindo teste específico da ordem estrutural da seção, presença das nove ações, escolha de `Café / Intervalo` e ausência de gravação no clique de seleção. O teste legado foi ajustado apenas ao texto vigente do botão de salvar novo padrão semanal (`Salvar novo padrão semanal`), sem alteração desse comportamento. Não foi executada inspeção visual em dispositivos reais ou homologação autenticada com todos os perfis no ambiente publicado.
+
+**Estado:** **CÓDIGO E TESTES PUBLICADOS NO GITHUB / TESTES FOCADOS PASS / HOMOLOGAÇÃO VISUAL EM PRODUÇÃO PENDENTE**.
