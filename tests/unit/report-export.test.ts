@@ -25,7 +25,7 @@ it('identifica profissional e função sem termo escopo e centraliza o titulo do
   const report = {
     scope: 'Coordenador', generatedBy: 'Profissional real autenticado', generatedByRole: 'Coordenador',
     from: '2026-11-01', to: '2026-11-09', specialty: 'Todas', issuedAt: '09/11/2026 10:15',
-    sections: [{ title: 'Agenda', metrics: [['Realizados no período', '10'], ['Faltas no período', '2']] }],
+    sections: [{ title: 'Agenda', metrics: [['Realizados no período', '10'], ['Faltas no período', '2']] as const }],
   }
   const chart = new TextDecoder('latin1').decode(await buildReportChartPdf(report, 'ambos').arrayBuffer())
   const analytic = new TextDecoder('latin1').decode(await buildReportPdf(report).arrayBuffer())
