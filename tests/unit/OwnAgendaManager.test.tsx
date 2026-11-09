@@ -72,6 +72,21 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     vi.clearAllMocks()
   })
 
+  it('exibe ajustes pontuais depois da configuração permanente e mantém as nove ações acessíveis', async () => {
+    const user = userEvent.setup()
+    render(<OwnAgendaManager professionalId="professional-id" allowStructuralEdit allowEmergencySlot />)
+    await screen.findByRole('option', { name: /Seg, Ter · 08:00–11:00 · Ativo/ })
+    const structural = screen.getByRole('region', { name: 'Configuração semanal permanente' })
+    const pointual = screen.getByRole('region', { name: 'Ajustes pontuais de uma data' })
+    expect(structural.compareDocumentPosition(pointual) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const choices = within(pointual).getAllByRole('button')
+    expect(choices).toHaveLength(9)
+    await user.click(within(pointual).getByRole('button', { name: 'Café / Intervalo' }))
+    expect(within(pointual).getByRole('button', { name: 'Café / Intervalo' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('Ação selecionada')).toHaveValue('Café / Intervalo')
+    expect(rpc.createAgendaBlock).not.toHaveBeenCalled()
+  })
+
   it('adiciona outro grupo de dias sem editar o padrão já existente', async () => {
     const user = userEvent.setup()
 
@@ -109,7 +124,7 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     await user.click(weekdays.getByLabelText('Quinta'))
     await user.click(weekdays.getByLabelText('Sexta'))
 
-    await user.click(screen.getByRole('button', { name: 'Salvar configuração-base' }))
+    await user.click(screen.getByRole('button', { name: 'Salvar novo padrão semanal' }))
 
     await waitFor(() =>
       expect(rpc.saveAgendaConfiguration).toHaveBeenCalledWith(
