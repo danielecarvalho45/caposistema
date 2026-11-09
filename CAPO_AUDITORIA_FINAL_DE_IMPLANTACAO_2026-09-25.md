@@ -8380,3 +8380,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Adaptação de interface:** `agenda-page.css` define sete colunas semanais e mensais, texto com redução controlada e quebra de palavras; em telas estreitas, mantém colunas legíveis com rolagem horizontal dentro da grade, sem sobrepor controles. Código compartilhado atende às telas de profissional, Gestor e Administrativo Operacional que o utilizam.
 
 **Verificação local:** `npm run build` PASS (Vite, 167 módulos). `npm run typecheck` permanece com 11 erros já encontrados anteriormente em áreas diversas, sem novo erro relativo à alteração. Suíte existente `AgendaPage.test.tsx` + `agenda-queue-context.test.tsx`: 5 PASS / 15 FAIL, principalmente por ambiente `VITE_SUPABASE_URL` ausente e mocks incompletos de RPC; portanto **não houve homologação automatizada completa nem teste visual instrumentado por dispositivo**. Necessária homologação após publicação nos tamanhos computador, tablet e celular. Não foram executados comandos de escrita no Supabase ou modificados agendamentos reais; GitHub Actions não acionado.
+
+
+### §28.199 — Homologação real da recuperação de senha (09/11/2026)
+
+**Escopo:** validação funcional do link recebido por e-mail e da redefinição de senha do login CAPO; somente registro documental, sem modificação de código, banco ou contas por este agente.
+
+**Problema anterior:** o link de recuperação enviado pelo Supabase direcionava ao domínio antigo `capo-administrativo-teste.administrativo-capo.workers.dev`, no qual o navegador apresentava a página da Cloudflare “There is nothing here yet”.
+
+**Configuração orientada e informada pela Titular:** endereço oficial `https://caposistema.pages.dev` configurado como Site URL no Supabase Authentication; `https://caposistema.pages.dev/**` incluído na lista de URLs de redirecionamento. A Titular confirmou a realização dos ajustes no painel. O modelo de e-mail “Reset your password” permaneceu no padrão do Supabase, pois a interface informou que a personalização requer SMTP próprio; não foi configurado SMTP.
+
+**Teste real de 09/11/2026:** a Titular solicitou novo e-mail de recuperação, abriu o fluxo de redefinição, enviou captura da tela CAPO “Definir nova senha” e, em seguida, declarou expressamente: “já troquei a senha deu certo”. Assim, **link de recuperação e alteração de senha: HOMOLOGADOS PELA TITULAR EM TESTE REAL**. Não foram recolhidos, registrados nem expostos senha, código de verificação ou token de sessão.
+
+**Limite da evidência:** a Titular confirmou a troca bem-sucedida, mas não informou de modo separado um novo login completo após sair da sessão. Portanto não marcar o teste independente de login posterior como executado. A configuração foi conferida por imagens e relato, não por leitura administrativa automatizada dos parâmetros do Supabase.
+
+**Estado:** **🟢 RECUPERAÇÃO DE SENHA FUNCIONAL — TESTE REAL CONCLUÍDO / NOVO LOGIN ISOLADO NÃO AFERIDO**.
