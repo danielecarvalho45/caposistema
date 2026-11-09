@@ -344,28 +344,44 @@
 
 .agenda-own-action-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.agenda-own-action-card {
+.agenda-pointual-actions {
+  display: grid;
+  gap: 14px;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.agenda-own-management button.agenda-own-action-card {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 4px;
-  min-height: 118px;
-  padding: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-medium);
-  background: #f8fbfd;
-  color: var(--color-text);
+  gap: 8px;
+  min-width: 0;
+  min-height: 142px;
+  padding: 16px 12px;
+  border: 1px solid #cbdbe9;
+  border-radius: 12px;
+  background: #f5f9fd;
+  color: #17365f;
   text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
-.agenda-own-action-card[aria-pressed='true'] {
+.agenda-own-management button.agenda-own-action-card:hover:not(:disabled) {
+  border-color: #2877bc;
+  background: #eaf4fc;
+}
+
+.agenda-own-management button.agenda-own-action-card[aria-pressed='true'] {
   border-color: var(--color-brand-blue);
-  background: #eef6fc;
-  box-shadow: 0 0 0 2px rgb(0 113 220 / 10%);
+  background: #dfedf9;
+  box-shadow: 0 0 0 2px rgb(0 113 220 / 18%);
 }
 
 .agenda-own-action-card:disabled {
@@ -379,14 +395,14 @@
 }
 
 .agenda-own-action-card strong {
-  font-size: .82rem;
-  line-height: 1.2;
+  font-size: .95rem;
+  line-height: 1.3;
 }
 
 .agenda-own-action-card small {
-  color: var(--color-muted);
-  font-size: .7rem;
-  line-height: 1.25;
+  color: #4b6178;
+  font-size: .8rem;
+  line-height: 1.4;
 }
 
 .agenda-own-management label {
@@ -423,9 +439,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .agenda-own-action-card {
-    min-height: 104px;
+  .agenda-own-management button.agenda-own-action-card {
+    min-height: 132px;
   }
+}
+
+@media (max-width: 480px) {
+  .agenda-own-action-grid { grid-template-columns: 1fr; }
+  .agenda-own-management button.agenda-own-action-card { min-height: 112px; }
 }
 
 
