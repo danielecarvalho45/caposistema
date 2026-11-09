@@ -8560,3 +8560,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção pontual:** commit `e4222a6821d45190a851031036ea54ea8fcb4aec` ajusta exclusivamente o CSS do `HomeScheduleGrid` para que as grades de semana/mês tenham sete colunas de largura mínima legível, com rolagem horizontal quando necessário; cada cartão organiza horário, nome, situação e ações verticalmente. O CSS da vista diária, os componentes, os handlers, a consulta a vagas/bloqueios, as permissões e os registros do banco não foram alterados. A página `AgendaPage` e o componente são compartilhados entre os perfis.
 
 **Verificação:** causa e precedência das regras conferidas no CSS remoto. Teste visual autenticado nas contas Gestor, Administrativo Operacional e profissionais, em desktop e celular, continua **pendente de homologação**; não declarar funcionamento visual em produção sem validação da Gestora.
+
+
+### §28.215 — Familiar/cuidador na grade canônica da Psicologia — 09/11/2026
+
+**Autorização:** VERDE da Gestora após constatar que uma consulta de familiar/cuidador aparecia em lista paralela, sem ocupar visualmente a agenda oficial da psicóloga; risco de dupla marcação.
+
+**Diagnóstico:** a função vigente `get_agenda_schedule_grid_for_interface` consultava exclusivamente `patient_appointments`. Já `get_available_appointment_slots` contemplava `family_psychology_appointments`. Havia um agendamento familiar ativo e nenhum conflito de sobreposição entre ele e consultas comuns no momento da leitura.
+
+**Correção no banco:** migração Supabase `20261109210123_family_psychology_appointments_in_canonical_professional_grid` acrescentou a leitura de consultas familiares ativas à mesma geração de slots por profissional, data, início e fim. Para cada horário, a grade agora retorna situação `agendado`, nome do familiar e tipo `Familiar/Cuidador — Psicologia` quando não houver consulta comum. O familiar mantém identificação e prontuário próprios; nenhuma consulta foi copiada para `patient_appointments`, excluída ou remarcada. Conflitos preexistentes não foram identificados. Migração versionada no GitHub: commit `c387990ee33af404c0e407949bd0dd7891c223f3`.
+
+**Verificação:** função modificada confirmada no catálogo SQL; permanece um registro familiar ativo vinculado a profissional ativo e sem choque atual com `patient_appointments`. Teste autenticado ponta a ponta de ocupação/visibilidade na agenda da psicóloga e teste concorrente de tentativa simultânea de duas marcações permanecem **pendentes**. Os botões clínicos/cancelamento específicos do atendimento familiar na grade canônica não foram homologados; preservar a lista específica de familiares até integração segura dessas ações.
