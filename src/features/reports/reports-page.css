@@ -6,6 +6,33 @@
 .reports-print-brand,
 .reports-print-footer { display: none; }
 
+.reports-export-actions {
+  display: grid;
+  gap: 18px;
+}
+
+.reports-export-group {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.reports-export-group h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.reports-export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reports-export-group label { max-width: 100%; }
+
 .reports-card {
   padding: clamp(20px, 4vw, 28px);
   border: 1px solid var(--color-border);
