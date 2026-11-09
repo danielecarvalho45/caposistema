@@ -256,6 +256,53 @@ export function QueuePage({
     setFamilyBusy(false)
   }
 
+  async function scheduleSelectedFamily() {
+    if (!canScheduleFamily || !familyProfessionalId || !familySlotStart || familyBusy) return
+    setFamilyBusy(true)
+    setFamilyFeedback(null)
+    // A vaga precisa ser cruzada com a fila antes de gravar. Não presumir que
+    // selecionar uma data equivale à autorização de agendamento.
+    const candidates = await getRpcService().getFamilyQueueCandidatesForSlot(
+      familyProfessionalId, familySlotStart, 20,
+    )
+    if (candidates.status !== 'success' || !Array.isArray(candidates.data)) {
+      setFamilyFeedback(candidates.status === 'error'
+        ? candidates.error.message : 'Não foi possível verificar a elegibilidade nesta vaga.')
+      setFamilyBusy(false)
+      return
+    }
+    const first = (candidates.data as readonly Record<string, unknown>[])[0]
+    const eligibleId = first ? rowText(first, 'waiting_list_id') : ''
+    if (!eligibleId) {
+      setFamilyFeedback('Nenhum familiar elegível para esse psicólogo e horário. Selecione outra vaga ou profissional.')
+      setFamilyBusy(false)
+      return
+    }
+    if (selectedFamilyWaitingId && selectedFamilyWaitingId !== eligibleId) {
+      setFamilyCandidates(candidates.data as readonly Record<string, unknown>[])
+      setFamilyFeedback('O familiar selecionado não é o próximo elegível para esta vaga. Confira a prioridade e a incompatibilidade do psicólogo; nenhum agendamento foi criado.')
+      setFamilyBusy(false)
+      return
+    }
+    const result = await getRpcService().createFamilyPsychologyAppointment({
+      waitingListId: eligibleId,
+      professionalId: familyProfessionalId,
+      slotStart: familySlotStart,
+      generalNotes: familyNotes.trim() || null,
+    })
+    if (result.status === 'success') {
+      setFamilyFeedback('Consulta de Psicologia agendada com sucesso. O familiar saiu da fila ativa e o registro foi preservado.')
+      setFamilyCandidates([])
+      setFamilySlotStart('')
+      setSelectedFamilyWaitingId('')
+      setFamilyNotes('')
+      await loadFamilyQueue()
+    } else {
+      setFamilyFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o agendamento.')
+    }
+    setFamilyBusy(false)
+  }
+
   async function scheduleFamily(waitingListId: string) {
     if (!canScheduleFamily || !familyProfessionalId || !familySlotStart || familyBusy) return
     setFamilyBusy(true)
@@ -628,16 +675,22 @@ export function QueuePage({
           </label>
         )}
 
+        {familySlotStart && (
+          <label>Observação do agendamento
+            <textarea value={familyNotes} onChange={(event) => setFamilyNotes(event.target.value)} maxLength={500} />
+          </label>
+        )}
+        {familySlotStart && canScheduleFamily && (
+          <button type="button" className="queue-schedule-primary" disabled={familyBusy} onClick={() => void scheduleSelectedFamily()}>
+            ✓ {selectedFamilyWaitingId ? 'Agendar consulta do familiar selecionado' : 'Agendar próximo familiar elegível'}
+          </button>
+        )}
         <button type="button" disabled={familyBusy || !familyProfessionalId || !familySlotStart} onClick={() => void loadFamilyCandidates()}>
-          Identificar próximo familiar elegível
+          Consultar elegibilidade e prioridade
         </button>
 
         {familyCandidates.length > 0 && (
           <>
-            <label>
-              Observação do agendamento
-              <textarea value={familyNotes} onChange={(event) => setFamilyNotes(event.target.value)} maxLength={500} />
-            </label>
             <ul>
               {familyCandidates.map((candidate, index) => (
                 <li key={rowText(candidate, 'waiting_list_id') + index}>
