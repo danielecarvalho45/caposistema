@@ -883,6 +883,7 @@ export function AgendaPage({
   const [previsitBusyId, setPrevisitBusyId] = useState<string | null>(null)
   const [previsitOutcomes, setPrevisitOutcomes] = useState<Readonly<Record<string, string>>>({})
   const [previsitLoadError, setPrevisitLoadError] = useState<string | null>(null)
+  const [familyPsychologyCards, setFamilyPsychologyCards] = useState<readonly Record<string, unknown>[]>([])
   const [specialtyResult, setSpecialtyResult] = useState<{ agenda: AsyncState<readonly AgendaAppointment[]>; byPatient: Record<string, AsyncState<readonly { specialty_id: string; specialty_name: string }[]>> } | null>(null)
   const requestSequence = useRef(0)
   const automaticBounds = agendaBounds(anchorDate, view)
@@ -1110,6 +1111,25 @@ export function AgendaPage({
     if (!canAccess || state.status !== 'success') return
     void loadPrevisitContacts()
   }, [canAccess, state, loadPrevisitContacts])
+
+  // O familiar possui cadastro próprio; nunca abrimos a ficha do paciente de
+  // origem como se fosse o atendimento psicológico do familiar.
+  useEffect(() => {
+    if (!canAccess || (state.status !== 'success' && state.status !== 'empty')) return
+    let active = true
+    const rpcClient = getSupabaseClient() as unknown as {
+      rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>
+    }
+    void rpcClient.rpc('get_family_psychology_agenda_cards_for_interface', {
+      p_start_date: startDate, p_end_date: endDate, p_professional_id: professionalId || null,
+    }).then(({ data, error }) => {
+      if (!active) return
+      setFamilyPsychologyCards(!error && Array.isArray(data)
+        ? data.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
+        : [])
+    }).catch(() => { if (active) setFamilyPsychologyCards([]) })
+    return () => { active = false }
+  }, [canAccess, state, startDate, endDate, professionalId])
 
   async function registerPrevisitContact(appointmentId: string) {
     const outcome = previsitOutcomes[appointmentId]
@@ -2523,7 +2543,7 @@ export function AgendaPage({
           )}
           {!professionalId && (state.status === 'empty' ||
             (state.status === 'success' && calendarAppointments.length === 0)) &&
-            view === 'day' && (
+            view === 'day' && familyPsychologyCards.length === 0 && (
               <p>Nenhum atendimento agendado para este dia.</p>
             )}
           {!professionalId && (state.status === 'empty' || state.status === 'success') &&
@@ -2540,6 +2560,34 @@ export function AgendaPage({
                 previsitContacts={previsitContacts}
               />
             )}
+          {familyPsychologyCards.length > 0 && (
+            <section aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
+              <h3>Atendimentos de familiares — Psicologia</h3>
+              <div className="assistential-table-wrap">
+                <table className="assistential-table">
+                  <thead><tr><th>Data e horário</th><th>Familiar atendido</th><th>Profissional</th><th>Situação</th></tr></thead>
+                  <tbody>
+                    {familyPsychologyCards.map((item) => (
+                      <tr key={String(item.appointment_id)}>
+                        <td>{formatDateTime(String(item.appointment_date))}</td>
+                        <td>
+                          <strong>{String(item.family_name ?? 'Familiar identificado')}</strong>
+                          <small>Nº CAPO: {String(item.family_capo_number ?? 'Pendente')} · CMS: {String(item.family_cms ?? 'Não informado')}</small>
+                          {item.source_patient_deceased === true && (
+                            <small title="Informação reservada à equipe autorizada">
+                              Paciente vinculado: {String(item.source_patient_name ?? 'Não informado')} · óbito em {String(item.source_patient_death_date ?? 'data não registrada').split('-').reverse().join('/')}
+                            </small>
+                          )}
+                        </td>
+                        <td>{String(item.professional_name ?? '—')}</td>
+                        <td>{String(item.attendance_status ?? '—')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </div>
       </div>
       {embeddedHome && isProfessional && (
