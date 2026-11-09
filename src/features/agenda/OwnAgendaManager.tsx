@@ -708,33 +708,6 @@ export function OwnAgendaManager({
         <p>Nenhuma configuração de agenda foi encontrada.</p>
       )}
 
-      <div className="agenda-operation-heading">
-        <h4>Ajustes pontuais de uma data</h4>
-        <p>Use estas ações quando a mudança valer somente para uma data específica. O padrão semanal permanece inalterado.</p>
-      </div>
-      <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
-        {managementActions
-          .filter((action) => action.value !== 'urgencia' || allowEmergencySlot)
-          .map((action) => (
-          <button
-            key={action.value}
-            type="button"
-            className="agenda-own-action-card"
-            aria-pressed={entryType === action.value}
-            disabled={configurations.length === 0 || busy}
-            onClick={() => {
-              setEntryType(action.value)
-              setPendingConfirmation(null)
-              setFeedback(null)
-            }}
-          >
-            <span className="agenda-own-action-icon" aria-hidden="true">{action.icon}</span>
-            <strong>{action.label}</strong>
-            <small>{action.description}</small>
-          </button>
-        ))}
-      </div>
-
       {allowStructuralEdit && configuration?.status === 'success' && (
         <section className="agenda-structural-editor" aria-labelledby="agenda-structural-title">
           <div className="agenda-structural-heading">
@@ -975,6 +948,36 @@ export function OwnAgendaManager({
           Os ajustes temporários só podem ser registrados depois que existir uma agenda configurada para este profissional.
         </p>
       )}
+
+      <section className="agenda-pointual-actions" aria-labelledby="agenda-pointual-actions-title">
+        <div className="agenda-operation-heading">
+          <h4 id="agenda-pointual-actions-title">Ajustes pontuais de uma data</h4>
+          <p>Selecione uma ação para alterar somente uma data. O padrão semanal permanece inalterado.</p>
+        </div>
+        <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
+          {managementActions
+            .filter((action) => action.value !== 'urgencia' || allowEmergencySlot)
+            .map((action) => (
+              <button
+                key={action.value}
+                type="button"
+                className="agenda-own-action-card"
+                aria-label={action.label}
+                aria-pressed={entryType === action.value}
+                disabled={configurations.length === 0 || busy}
+                onClick={() => {
+                  setEntryType(action.value)
+                  setPendingConfirmation(null)
+                  setFeedback(null)
+                }}
+              >
+                <span className="agenda-own-action-icon" aria-hidden="true">{action.icon}</span>
+                <strong>{action.label}</strong>
+                <small>{action.description}</small>
+              </button>
+            ))}
+        </div>
+      </section>
 
       {configurations.length > 0 && (
         <>
