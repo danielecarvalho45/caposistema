@@ -3351,6 +3351,33 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: (value) => value,
       }),
+    getAgendaBlockAffected: (configId: string, date: string, start: string, end: string) =>
+      execute({
+        transport,
+        operation: 'get_agenda_block_affected_for_interface',
+        args: {
+          p_agenda_config_id: configId,
+          p_date: date,
+          p_start_time: start,
+          p_end_time: end,
+        },
+        parse: (value) => {
+          if (!Array.isArray(value)) throw contractError('get_agenda_block_affected_for_interface', 'lista esperada.')
+          return value as readonly Record<string, unknown>[]
+        },
+      }),
+    rescheduleFamilyPsychologyAppointment: (appointmentId: string, professionalId: string, slotStart: string, reason: string) =>
+      execute({
+        transport,
+        operation: 'reschedule_family_psychology_appointment_for_interface',
+        args: {
+          p_appointment_id: appointmentId,
+          p_new_professional_id: professionalId,
+          p_new_slot_start: slotStart,
+          p_reason: reason,
+        },
+        parse: (value) => value,
+      }),
     createAgendaBlock: (input: {
       agendaConfigId: string
       weekday: number | null

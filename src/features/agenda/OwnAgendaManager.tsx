@@ -192,6 +192,14 @@ export function OwnAgendaManager({
   const [rescheduleInstructions, setRescheduleInstructions] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [needsRemanejamento, setNeedsRemanejamento] = useState(false)
+  const [affectedAppointments, setAffectedAppointments] = useState<readonly Row[]>([])
+  const [affectedLoading, setAffectedLoading] = useState(false)
+  const [remanejamentoId, setRemanejamentoId] = useState('')
+  const [remanejamentoDate, setRemanejamentoDate] = useState('')
+  const [remanejamentoStart, setRemanejamentoStart] = useState('')
+  const [remanejamentoReason, setRemanejamentoReason] = useState('')
+  const [remanejamentoSlots, setRemanejamentoSlots] = useState<readonly Row[]>([])
+  const [remanejamentoBusy, setRemanejamentoBusy] = useState(false)
   const [busy, setBusy] = useState(false)
   const [pendingConfirmation, setPendingConfirmation] =
     useState<PendingConfirmation | null>(null)
@@ -291,6 +299,61 @@ export function OwnAgendaManager({
     setDescription('')
     setRescheduleInstructions('')
     setPendingConfirmation(null)
+    setAffectedAppointments([])
+    setNeedsRemanejamento(false)
+  }
+
+  async function refreshAffectedAppointments() {
+    if (!configId || !date || !startTime || !endTime) return
+    setAffectedLoading(true)
+    const result = await rpc.getAgendaBlockAffected(configId, date, startTime, endTime)
+    if (result.status === 'success') {
+      setAffectedAppointments(result.data)
+    } else if (result.status === 'empty') {
+      setAffectedAppointments([])
+    } else if (result.status === 'error') {
+      setFeedback(`Bloqueio não aplicado. Não foi possível consultar a lista: ${result.error.message}`)
+    }
+    setAffectedLoading(false)
+  }
+
+  async function loadRemanejamentoSlots(targetDate: string) {
+    setRemanejamentoDate(targetDate)
+    setRemanejamentoStart('')
+    setRemanejamentoSlots([])
+    if (!targetDate) return
+    const result = await rpc.getAvailableAppointmentSlots(professionalId, targetDate)
+    if (result.status === 'success') {
+      setRemanejamentoSlots(result.data as readonly Row[])
+    } else if (result.status === 'error') {
+      setFeedback(result.error.message)
+    }
+  }
+
+  async function applyRemanejamento() {
+    const appointment = affectedAppointments.find((item) => stringValue(item.appointment_id) === remanejamentoId)
+    if (!appointment || !remanejamentoStart || remanejamentoBusy || !allowStructuralEdit) return
+    setRemanejamentoBusy(true)
+    const result = stringValue(appointment.appointment_kind) === 'familiar'
+      ? await rpc.rescheduleFamilyPsychologyAppointment(remanejamentoId, professionalId, remanejamentoStart, remanejamentoReason)
+      : await rpc.rescheduleAppointment({
+          appointmentId: remanejamentoId,
+          newProfessionalId: professionalId,
+          newSlotStart: remanejamentoStart,
+          reason: remanejamentoReason,
+          origin: 'bloqueio_agenda',
+          newNotes: '',
+        })
+    if (result.status === 'success') {
+      setFeedback('Consulta remarcada e histórico preservado. Confira as demais pendências antes de bloquear.')
+      setRemanejamentoId('')
+      setRemanejamentoStart('')
+      setRemanejamentoSlots([])
+      await refreshAffectedAppointments()
+    } else if (result.status === 'error') {
+      setFeedback(result.error.message)
+    }
+    setRemanejamentoBusy(false)
   }
 
   function startNewStructuralConfiguration() {
@@ -622,6 +685,7 @@ export function OwnAgendaManager({
     setBusy(true)
     setFeedback(null)
     setNeedsRemanejamento(false)
+    setAffectedAppointments([])
 
     if (entryType === 'excecao' || entryType === 'horario_provisorio' || entryType === 'urgencia') {
       const result = await rpc.createAgendaException({
@@ -644,6 +708,7 @@ export function OwnAgendaManager({
           setPendingConfirmation(null)
           setNeedsRemanejamento(true)
           setFeedback(stringValue(data.message) || 'Remaneje as consultas afetadas antes do bloqueio.')
+          await refreshAffectedAppointments()
         } else if (data && data.success === false && data.requires_conflict_confirmation === true) {
           setPendingConfirmation({ overlap: false, affected: false, conflict: true })
           setFeedback(
@@ -687,6 +752,7 @@ export function OwnAgendaManager({
           setPendingConfirmation(null)
           setNeedsRemanejamento(true)
           setFeedback(stringValue(data.message) || 'Remaneje as consultas afetadas antes do bloqueio.')
+          await refreshAffectedAppointments()
           setBusy(false)
           return
         }
@@ -1053,11 +1119,56 @@ export function OwnAgendaManager({
 
           {feedback && <p role="status">{feedback}</p>}
           {needsRemanejamento && (
-            <p>
-              <a href="/agenda" className="agenda-slot-schedule-button">
-                Abrir agenda oficial para remanejar os pacientes
-              </a>
-            </p>
+            <section aria-label="Consultas atingidas pelo bloqueio">
+              <strong>Consultas que precisam ser remanejadas</strong>
+              {affectedLoading && <p>Consultando agendamentos reais...</p>}
+              {!affectedLoading && affectedAppointments.length === 0 && (
+                <p>Não há consultas na lista atual. Consulte a agenda e tente validar novamente o bloqueio.</p>
+              )}
+              <ul>
+                {affectedAppointments.map((item) => {
+                  const id = stringValue(item.appointment_id)
+                  const selected = remanejamentoId === id
+                  return (
+                    <li key={id}>
+                      {stringValue(item.person_name)} · {stringValue(item.appointment_kind) === 'familiar' ? 'Familiar/Cuidador · ' : ''}
+                      {new Date(stringValue(item.appointment_date)).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                      {allowStructuralEdit && (
+                        <button type="button" disabled={remanejamentoBusy} onClick={() => {
+                          setRemanejamentoId(selected ? '' : id)
+                          setRemanejamentoSlots([])
+                          setRemanejamentoStart('')
+                        }}>
+                          {selected ? 'Fechar remanejamento' : 'Remanejar esta consulta'}
+                        </button>
+                      )}
+                      {selected && allowStructuralEdit && (
+                        <div className="agenda-form-grid">
+                          <label>Nova data
+                            <input type="date" value={remanejamentoDate} onChange={(event) => void loadRemanejamentoSlots(event.target.value)} />
+                          </label>
+                          <label>Horário livre
+                            <select value={remanejamentoStart} onChange={(event) => setRemanejamentoStart(event.target.value)}>
+                              <option value="">Selecionar horário</option>
+                              {remanejamentoSlots.map((slot) => <option key={stringValue(slot.slot_start)} value={stringValue(slot.slot_start)}>{stringValue(slot.slot_time)}</option>)}
+                            </select>
+                          </label>
+                          <label>Motivo (opcional)
+                            <input value={remanejamentoReason} maxLength={500} onChange={(event) => setRemanejamentoReason(event.target.value)} />
+                          </label>
+                          <button type="button" disabled={!remanejamentoStart || remanejamentoBusy} onClick={() => void applyRemanejamento()}>
+                            Confirmar remarcação
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+              {!allowStructuralEdit && <p>Solicite ao Administrativo o remanejamento individual das consultas indicadas.</p>}
+              <a href="/agenda" className="agenda-slot-schedule-button">Abrir agenda oficial</a>
+              <button type="button" disabled={affectedLoading} onClick={() => void refreshAffectedAppointments()}>Atualizar pendências</button>
+            </section>
           )}
 
           {pendingConfirmation ? (

@@ -884,6 +884,12 @@ export function AgendaPage({
   const [previsitOutcomes, setPrevisitOutcomes] = useState<Readonly<Record<string, string>>>({})
   const [previsitLoadError, setPrevisitLoadError] = useState<string | null>(null)
   const [familyPsychologyCards, setFamilyPsychologyCards] = useState<readonly Record<string, unknown>[]>([])
+  const [familyRescheduleId, setFamilyRescheduleId] = useState('')
+  const [familyRescheduleDate, setFamilyRescheduleDate] = useState('')
+  const [familyRescheduleStart, setFamilyRescheduleStart] = useState('')
+  const [familyRescheduleReason, setFamilyRescheduleReason] = useState('')
+  const [familyRescheduleSlots, setFamilyRescheduleSlots] = useState<readonly AvailableAppointmentSlot[]>([])
+  const [familyRescheduleBusy, setFamilyRescheduleBusy] = useState(false)
   const [specialtyResult, setSpecialtyResult] = useState<{ agenda: AsyncState<readonly AgendaAppointment[]>; byPatient: Record<string, AsyncState<readonly { specialty_id: string; specialty_name: string }[]>> } | null>(null)
   const requestSequence = useRef(0)
   const automaticBounds = agendaBounds(anchorDate, view)
@@ -1403,6 +1409,32 @@ export function AgendaPage({
       setSelectedRescheduleSlotStart('')
       await load()
     } else if (result.status === 'error') setAppointmentFeedback(result.error.message)
+  }
+
+  async function selectFamilyRescheduleDate(professional: string, targetDate: string) {
+    setFamilyRescheduleDate(targetDate)
+    setFamilyRescheduleStart('')
+    setFamilyRescheduleSlots([])
+    if (!targetDate) return
+    const result = await getRpcService().getAvailableAppointmentSlots(professional, targetDate)
+    if (result.status === 'success') setFamilyRescheduleSlots(result.data)
+    else if (result.status === 'error') setAppointmentFeedback(result.error.message)
+  }
+
+  async function applyFamilyReschedule(professional: string) {
+    if (!familyRescheduleId || !familyRescheduleStart || familyRescheduleBusy || isProfessional) return
+    setFamilyRescheduleBusy(true)
+    const result = await getRpcService().rescheduleFamilyPsychologyAppointment(
+      familyRescheduleId, professional, familyRescheduleStart, familyRescheduleReason,
+    )
+    if (result.status === 'success') {
+      setAppointmentFeedback('Consulta do familiar remarcada; histórico anterior preservado.')
+      setFamilyRescheduleId('')
+      setFamilyRescheduleSlots([])
+      setFamilyRescheduleStart('')
+      await load()
+    } else if (result.status === 'error') setAppointmentFeedback(result.error.message)
+    setFamilyRescheduleBusy(false)
   }
 
   function prepareCancellation(appointmentId: string) {
@@ -2565,7 +2597,7 @@ export function AgendaPage({
               <h3>Atendimentos de familiares — Psicologia</h3>
               <div className="assistential-table-wrap">
                 <table className="assistential-table">
-                  <thead><tr><th>Data e horário</th><th>Familiar atendido</th><th>Profissional</th><th>Situação</th></tr></thead>
+                  <thead><tr><th>Data e horário</th><th>Familiar atendido</th><th>Profissional</th><th>Situação</th>{!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role)) && <th>Remanejamento</th>}</tr></thead>
                   <tbody>
                     {familyPsychologyCards.map((item) => (
                       <tr key={String(item.appointment_id)}>
@@ -2581,6 +2613,34 @@ export function AgendaPage({
                         </td>
                         <td>{String(item.professional_name ?? '—')}</td>
                         <td>{String(item.attendance_status ?? '—')}</td>
+                        {!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role)) && (
+                          <td>
+                            {['agendado', 'confirmado'].includes(String(item.attendance_status)) && (
+                              <button type="button" disabled={familyRescheduleBusy} onClick={() => {
+                                setFamilyRescheduleId(familyRescheduleId === String(item.appointment_id) ? '' : String(item.appointment_id))
+                                setFamilyRescheduleSlots([])
+                                setFamilyRescheduleStart('')
+                              }}>Remarcar familiar</button>
+                            )}
+                            {familyRescheduleId === String(item.appointment_id) && (
+                              <div className="agenda-form-grid">
+                                <label>Nova data
+                                  <input type="date" value={familyRescheduleDate} onChange={(event) => void selectFamilyRescheduleDate(String(item.professional_id), event.target.value)} />
+                                </label>
+                                <label>Novo horário
+                                  <select value={familyRescheduleStart} onChange={(event) => setFamilyRescheduleStart(event.target.value)}>
+                                    <option value="">Selecionar horário</option>
+                                    {familyRescheduleSlots.map((slot) => <option key={slot.slot_start} value={slot.slot_start}>{slot.slot_time}</option>)}
+                                  </select>
+                                </label>
+                                <label>Motivo (opcional)
+                                  <input value={familyRescheduleReason} maxLength={500} onChange={(event) => setFamilyRescheduleReason(event.target.value)} />
+                                </label>
+                                <button type="button" disabled={!familyRescheduleStart || familyRescheduleBusy} onClick={() => void applyFamilyReschedule(String(item.professional_id))}>Confirmar remarcação</button>
+                              </div>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
