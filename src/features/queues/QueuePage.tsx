@@ -79,6 +79,7 @@ export function QueuePage({
   const [familySlotDate, setFamilySlotDate] = useState('')
   const [familySlots, setFamilySlots] = useState<readonly Record<string, unknown>[]>([])
   const [familySlotStart, setFamilySlotStart] = useState('')
+  const [selectedFamilyWaitingId, setSelectedFamilyWaitingId] = useState('')
   const [familyCandidates, setFamilyCandidates] = useState<readonly Record<string, unknown>[]>([])
   const [familyNotes, setFamilyNotes] = useState('')
   const [familyFeedback, setFamilyFeedback] = useState<string | null>(null)
@@ -535,7 +536,15 @@ export function QueuePage({
                         : undefined
                     }
                   >
-                    <td>{rowText(row, 'family_name')}</td>
+                    <td>
+                      {canScheduleFamily ? (
+                        <button type="button" className="queue-family-name-button" onClick={() => {
+                          setSelectedFamilyWaitingId(rowText(row, 'waiting_list_id'))
+                          setFamilyCandidates([])
+                          setFamilyFeedback(`Familiar selecionado: ${rowText(row, 'family_name')}. Escolha psicólogo, data e vaga abaixo; o CAPO verificará a prioridade e a incompatibilidade profissional.`)
+                        }}>{rowText(row, 'family_name')}</button>
+                      ) : rowText(row, 'family_name')}
+                    </td>
                     <td>{rowText(row, 'source_patient_name')}</td>
                     <td>{rowText(row, 'relationship')}</td>
                     <td>{rowText(row, 'priority')}</td>
@@ -568,6 +577,7 @@ export function QueuePage({
           <div>
             <h3>Cruzar vaga com próximo familiar elegível</h3>
             <p>O CAPO exclui automaticamente o psicólogo que acompanha o paciente vinculado e respeita prioridade e ordem da fila.</p>
+            {selectedFamilyWaitingId && <p role="status">Familiar selecionado na lista. A confirmação do agendamento respeitará a ordem de elegibilidade retornada pelo banco.</p>}
           </div>
         </div>
 
@@ -634,7 +644,7 @@ export function QueuePage({
                   <strong>{rowText(candidate, 'family_name')}</strong>
                   <span>Paciente vinculado: {rowText(candidate, 'source_patient_name')}</span>
                   <span>Prioridade: {rowText(candidate, 'priority')}</span>
-                  {canScheduleFamily && index === 0 && (
+                  {canScheduleFamily && index === 0 && (!selectedFamilyWaitingId || selectedFamilyWaitingId === rowText(candidate, 'waiting_list_id')) && (
                     <button type="button" disabled={familyBusy} onClick={() => void scheduleFamily(rowText(candidate, 'waiting_list_id'))}>
                       Agendar próximo elegível
                     </button>
