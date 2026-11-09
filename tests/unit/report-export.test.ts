@@ -12,11 +12,32 @@ it('exporta apenas os indicadores e recortes recebidos, com cabeçalho e várias
   const data = await pdf.arrayBuffer()
   const content = Array.from(new Uint8Array(data), (byte) => String.fromCharCode(byte)).join('')
   expect(content).toContain('/Count 2')
+  expect(content).toContain('Página 1 de 2')
+  expect(content).toContain('Página 2 de 2')
   expect(content).toContain('/Subtype /Image')
   expect(content).toContain('/XObject << /Logo 4 0 R >>')
   expect(content).toContain('/Logo Do')
   expect(content).toContain('Indicador 54: 54')
   expect(content).not.toContain('Dado inventado')
+})
+
+it('identifica profissional e função sem termo escopo e centraliza o titulo do grafico', async () => {
+  const report = {
+    scope: 'Coordenador', generatedBy: 'Profissional real autenticado', generatedByRole: 'Coordenador',
+    from: '2026-11-01', to: '2026-11-09', specialty: 'Todas', issuedAt: '09/11/2026 10:15',
+    sections: [{ title: 'Agenda', metrics: [['Realizados no período', '10'], ['Faltas no período', '2']] }],
+  }
+  const chart = new TextDecoder('latin1').decode(await buildReportChartPdf(report, 'ambos').arrayBuffer())
+  const analytic = new TextDecoder('latin1').decode(await buildReportPdf(report).arrayBuffer())
+  for (const content of [chart, analytic]) {
+    expect(content).toContain('Função: Coordenador')
+    expect(content).toContain('Profissional responsável: Profissional real autenticado')
+    expect(content).not.toContain('Escopo:')
+  }
+  expect(chart).toContain('Página 1 de 2')
+  expect(chart).toContain('Página 2 de 2')
+  expect(chart).toMatch(/1 0 0 1 \d+\.\d+ 706 Tm\n\(Relatório gráfico demonstrativo\)/)
+  expect(chart).toMatch(/\d+\.\d+ 580 Td\n\(Agenda - gráfico de barras\)/)
 })
 
 it('gera PDF grafico independente em barras e pizza com analise e sem somar indicadores distintos', async () => {
