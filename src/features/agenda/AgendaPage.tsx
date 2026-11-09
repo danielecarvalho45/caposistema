@@ -1118,6 +1118,12 @@ export function AgendaPage({
     setPrevisitFeedback(null)
     const result = await getRpcService().registerAppointmentPrevisitContact(appointmentId, outcome)
     if (result.status === 'success') {
+      // O contato administrativo não altera a situação da consulta.
+      setPrevisitContacts((current) => ({
+        ...current,
+        [appointmentId]: { result: outcome, recorded_at: new Date().toISOString() },
+      }))
+      setPrevisitOutcomes((current) => ({ ...current, [appointmentId]: outcome }))
       setPrevisitFeedback('Contato prévio registrado. Isso não registra presença nem inicia atendimento.')
       await loadPrevisitContacts()
     } else {
@@ -2367,8 +2373,8 @@ export function AgendaPage({
                         <td>
                           {contact
                             ? ({
-                                avisado: 'Avisado previamente',
-                                confirmou: 'Avisado previamente',
+                                avisado: '✓ Paciente avisado',
+                                confirmou: '✓ Paciente avisado',
                                 confirmou_paciente: 'Confirmada pelo paciente (link)',
                                 aguardando_paciente: 'Aguardando resposta pelo link',
                                 sem_resposta: 'Contato sem resposta',
@@ -2397,7 +2403,11 @@ export function AgendaPage({
                             />
                             <select
                               aria-label={`Resultado do contato com ${item.patient_name}`}
-                              value={previsitOutcomes[item.appointment_id] ?? ''}
+                              value={previsitOutcomes[item.appointment_id] ?? (
+                                contact && ['avisado', 'confirmou', 'solicitou_cancelamento'].includes(contact.result)
+                                  ? (contact.result === 'confirmou' ? 'avisado' : contact.result)
+                                  : ''
+                              )}
                               onChange={(event) => setPrevisitOutcomes((current) => ({
                                 ...current, [item.appointment_id]: event.target.value,
                               }))}
@@ -2410,7 +2420,8 @@ export function AgendaPage({
                               type="button"
                               disabled={!previsitOutcomes[item.appointment_id] || previsitBusyId !== null}
                               onClick={() => void registerPrevisitContact(item.appointment_id)}
-                            >✓ Registrar aviso</button>
+                            >{(contact?.result === 'avisado' || contact?.result === 'confirmou') && !previsitOutcomes[item.appointment_id]
+                              ? '✓ Aviso registrado' : '✓ Registrar aviso'}</button>
                             <button type="button" onClick={() => preparePrevisitReschedule(item)}>↻ Remarcar</button>
                             <button type="button" onClick={() => prepareCancellation(item.appointment_id)}>✕ Cancelar</button>
                           </td>
