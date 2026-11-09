@@ -13,6 +13,7 @@ import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { prepareAppointmentReminder } from './appointment-confirmation-link'
+import { isVisibleOnAgenda } from './agenda-visibility'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getNotificationsService } from '../notifications/notifications-integration'
 import './agenda-page.css'
@@ -200,7 +201,8 @@ function appointmentsForDay(
   day: string,
 ) {
   return appointments.filter(
-    (appointment) => appointmentDay(appointment.appointment_date) === day,
+    (appointment) => appointmentDay(appointment.appointment_date) === day &&
+      isVisibleOnAgenda(appointment.attendance_status),
   )
 }
 
@@ -919,6 +921,10 @@ export function AgendaPage({
       ? { ...appointment, attendance_status: attendanceOverrides[appointment.appointment_id] }
       : appointment)
     : []
+  // Histórico e auditoria conservam os registros; a agenda mostra só horários ativos.
+  const calendarAppointments = visibleAppointments.filter(
+    (appointment) => isVisibleOnAgenda(appointment.attendance_status),
+  )
   const appointmentFromHistory = appointmentFromHistoryId
     ? visibleAppointments.find((appointment) => appointment.appointment_id === appointmentFromHistoryId)
     : undefined
@@ -2231,7 +2237,10 @@ export function AgendaPage({
               </label>
               <label>
                 Motivo (opcional)
-                <input value={rescheduleReason} onChange={(event) => setRescheduleReason(event.target.value)} />
+                <input list="agenda-reschedule-reasons" value={rescheduleReason} onChange={(event) => setRescheduleReason(event.target.value)} />
+                <datalist id="agenda-reschedule-reasons">
+                  <option value="Remanejamento de agenda" />
+                </datalist>
               </label>
               {!isProfessional && (
                 <label>
@@ -2473,7 +2482,7 @@ export function AgendaPage({
               startDate={startDate}
               endDate={endDate}
               view={view}
-              appointments={visibleAppointments}
+              appointments={calendarAppointments}
               attendanceOverrides={attendanceOverrides}
               onAttendance={canRegisterAttendance ? updateAttendance : undefined}
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
@@ -2502,14 +2511,14 @@ export function AgendaPage({
             </div>
           )}
           {!professionalId && (state.status === 'empty' ||
-            (state.status === 'success' && state.data.length === 0)) &&
+            (state.status === 'success' && calendarAppointments.length === 0)) &&
             view === 'day' && (
               <p>Nenhum atendimento agendado para este dia.</p>
             )}
           {!professionalId && (state.status === 'empty' || state.status === 'success') &&
-            (view !== 'day' || (state.status === 'success' && state.data.length > 0)) && (
+            (view !== 'day' || (state.status === 'success' && calendarAppointments.length > 0)) && (
               <AgendaResults
-                appointments={visibleAppointments}
+                appointments={calendarAppointments}
                 startDate={startDate}
                 endDate={endDate}
                 view={view}
