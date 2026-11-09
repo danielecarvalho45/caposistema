@@ -12,6 +12,8 @@ import {
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { prepareAppointmentReminder } from './appointment-confirmation-link'
+import { getSupabaseClient } from '../../lib/supabase/client'
 import { getNotificationsService } from '../notifications/notifications-integration'
 import './agenda-page.css'
 
@@ -81,6 +83,8 @@ function formatPeriod(startDate: string, endDate: string, view: AgendaView) {
 
 function previsitIndicator(result?: string) {
   switch (result) {
+    case 'confirmou_paciente': return '✅ Confirmada pelo paciente (link)'
+    case 'aguardando_paciente': return '◌ Aguardando confirmação pelo link'
     case 'avisado': return '💬 Avisado previamente'
     case 'confirmou': return '💬 Avisado previamente'
     case 'sem_resposta': return '◌ Aviso sem resposta'
@@ -260,7 +264,7 @@ function AppointmentTable({
                 <td data-label="Ações" className="agenda-attendance-actions">
                   {onAttendance && appointment.attendance_status === 'agendado' && (
                     <>
-                      <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}><span aria-hidden="true">✓</span> Confirmar</button>
+                      <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}><span aria-hidden="true">✓</span> Iniciar atendimento</button>
                       <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}><span aria-hidden="true">✕</span> Falta</button>
                     </>
                   )}
@@ -430,9 +434,9 @@ function HomeScheduleGrid({
                               className="agenda-attendance-confirm"
                               disabled={busyAppointmentId === slot.appointment_id}
                               onClick={() => onAttendance(slot.appointment_id!, 'confirmado')}
-                              aria-label={`Confirmar consulta de ${patientName}`}
+                              aria-label={`Iniciar atendimento de ${patientName}`}
                             >
-                              Confirmar
+                              Iniciar atendimento
                             </button>
                             <button
                               type="button"
@@ -565,9 +569,9 @@ function HomeScheduleGrid({
                             className="agenda-attendance-confirm"
                             disabled={busyAppointmentId === slot.appointment_id}
                             onClick={() => onAttendance(slot.appointment_id!, 'confirmado')}
-                            aria-label={`Confirmar consulta de ${patientName}`}
+                            aria-label={`Iniciar atendimento de ${patientName}`}
                           >
-                            Confirmar
+                            Iniciar atendimento
                           </button>
                           <button
                             type="button"
@@ -672,7 +676,7 @@ function AgendaResults({
                         {attendanceMarker(appointment.attendance_status)}
                         {onAttendance && appointment.attendance_status === 'agendado' && (
                           <div className="agenda-week-home-actions">
-                            <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')} aria-label={`Confirmar consulta de ${appointment.patient_name}`}>Confirmar</button>
+                            <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')} aria-label={`Iniciar atendimento de ${appointment.patient_name}`}>Iniciar atendimento</button>
                             <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')} aria-label={`Marcar falta de ${appointment.patient_name}`}>Falta</button>
                           </div>
                         )}
@@ -698,7 +702,7 @@ function AgendaResults({
                       {attendanceMarker(appointment.attendance_status)}
                       {onAttendance && appointment.attendance_status === 'agendado' && (
                         <div className="agenda-week-home-actions">
-                          <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}>Confirmar</button>
+                          <button type="button" className="agenda-attendance-confirm" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'confirmado')}>Iniciar atendimento</button>
                           <button type="button" className="agenda-attendance-absence" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onAttendance(appointment.appointment_id, 'faltou')}>Falta</button>
                         </div>
                       )}
@@ -1055,11 +1059,11 @@ export function AgendaPage({
     const rpc = getRpcService()
     if (typeof rpc.getAppointmentPrevisitContacts !== 'function') return
     const result = await rpc.getAppointmentPrevisitContacts(startDate, endDate, professionalId)
-    if (result.status !== 'success') {
-      setPrevisitLoadError(result.status === 'error' ? result.error.message : 'Avisos prévios não disponíveis.')
+    if (result.status === 'error') {
+      setPrevisitLoadError(result.error.message)
       return
     }
-    const data = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+    const data = result.status === 'success' && result.data && typeof result.data === 'object' && !Array.isArray(result.data)
       ? result.data as Record<string, unknown>
       : null
     const items = Array.isArray(data?.items) ? data.items : []
@@ -1071,6 +1075,25 @@ export function AgendaPage({
       next[row.appointment_id] = {
         result: row.result,
         recorded_at: typeof row.recorded_at === 'string' ? row.recorded_at : '',
+      }
+    }
+    const confirmationClient = getSupabaseClient() as unknown as {
+      rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>
+    }
+    const confirmation = await confirmationClient.rpc('get_patient_confirmation_states_for_interface', {
+      p_start_date: startDate, p_end_date: endDate, p_professional_id: professionalId || null,
+    })
+    if (!confirmation.error && Array.isArray(confirmation.data)) {
+      for (const item of confirmation.data) {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) continue
+        const row = item as Record<string, unknown>
+        if (typeof row.appointment_id !== 'string') continue
+        if (row.decision === 'comparecera') next[row.appointment_id] = {
+          result: 'confirmou_paciente', recorded_at: String(row.responded_at ?? ''),
+        }
+        else if (row.decision === null && !next[row.appointment_id]) next[row.appointment_id] = {
+          result: 'aguardando_paciente', recorded_at: '',
+        }
       }
     }
     setPrevisitContacts(next)
@@ -2328,7 +2351,6 @@ export function AgendaPage({
                 <tbody>
                   {state.data.filter((item) => item.attendance_status === 'agendado').map((item) => {
                     const contact = previsitContacts[item.appointment_id]
-                    const reminderMessage = `Olá, ${item.patient_name}! Lembramos sua consulta no CAPO em ${formatCAPOMessageDateTime(item.appointment_date)}, com ${item.professional_name}. Caso precise cancelar ou remarcar, avise a equipe do CAPO.`
                     return (
                       <tr key={item.appointment_id}>
                         <td>{formatDateTime(item.appointment_date)} — {item.professional_name}</td>
@@ -2338,6 +2360,8 @@ export function AgendaPage({
                             ? ({
                                 avisado: 'Avisado previamente',
                                 confirmou: 'Avisado previamente',
+                                confirmou_paciente: 'Confirmada pelo paciente (link)',
+                                aguardando_paciente: 'Aguardando resposta pelo link',
                                 sem_resposta: 'Contato sem resposta',
                                 solicitou_cancelamento: 'Solicitou cancelamento',
                                 solicitou_remarcacao: 'Solicitou remarcação',
@@ -2349,7 +2373,18 @@ export function AgendaPage({
                             <PatientWhatsAppButton
                               patientId={item.patient_id}
                               label="💬 Lembrar consulta"
-                              message={reminderMessage}
+                              prepareMessage={() => prepareAppointmentReminder({
+                                appointmentId: item.appointment_id,
+                                patientName: item.patient_name,
+                                professionalName: item.professional_name,
+                                specialtyName: item.specialty_name ?? 'Consulta CAPO',
+                                appointmentDate: item.appointment_date,
+                                senderName: accessContext.real_identity.full_name?.trim()
+                                  || accessContext.full_name?.trim() || accessContext.username,
+                                senderTitle: accessContext.function_title?.trim()
+                                  || accessContext.real_identity.function_title?.trim()
+                                  || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+                              })}
                             />
                             <select
                               aria-label={`Resultado do contato com ${item.patient_name}`}
