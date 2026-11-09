@@ -13,11 +13,20 @@ import {
 import { getRpcService } from '../../lib/supabase/rpc'
 import './reports-page.css'
 import { AdministrativeOperationalReport } from './AdministrativeOperationalReport'
-import { buildReportPdf, type ReportExport } from './report-export'
+import { buildReportPdf, buildReportChartPdf, type ChartMode, type ReportExport } from './report-export'
 import documentHeader from '../../assets/capo-timbre-oficial.png'
 import { capoPdfFooter } from '../../lib/pdf/capo-document-pdf'
 
 const defaultIntegration = createReportsIntegration()
+
+function downloadReport(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}
 
 const reportSections: ReadonlyArray<
   readonly [keyof AssistentialOperationalReport, string, string, string]
@@ -228,6 +237,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
   const [selectedProfessionalReport, setSelectedProfessionalReport] =
     useState<keyof AssistentialOperationalReport>('agenda')
   const [printGeneratedAt, setPrintGeneratedAt] = useState<Date | null>(null)
+  const [chartMode, setChartMode] = useState<ChartMode>('barras')
   const hasManagerRole = accessContext.roles.some((role) =>
     role.code === 'administrador' || role.code === 'coordenador',
   )
@@ -325,12 +335,11 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     function downloadPdf() {
       if (!report) return
       const generatedAt = new Date()
-      const url = URL.createObjectURL(buildReportPdf({ ...report, generatedAt, issuedAt: generatedAt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) }))
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `CAPO-relatorio-gerencial-${startDate}-${endDate}.pdf`
-      link.click()
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      downloadReport(buildReportPdf({ ...report, generatedAt }), `CAPO-relatorio-gerencial-${startDate}-${endDate}.pdf`)
+    }
+    function downloadChartPdf() {
+      if (!report) return
+      downloadReport(buildReportChartPdf({ ...report, generatedAt: new Date() }, chartMode), `CAPO-graficos-${chartMode}-${startDate}-${endDate}.pdf`)
     }
     return (
       <section className="reports-page" aria-labelledby="manager-reports-title">
@@ -375,7 +384,15 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
         </div>}
         <div className="reports-card reports-export-actions">
           <button type="button" disabled={!report} onClick={() => { setPrintGeneratedAt(new Date()); window.setTimeout(() => window.print(), 0) }}>Imprimir</button>
-          <button type="button" disabled={!report} onClick={downloadPdf}>Gerar / salvar PDF</button>
+          <button type="button" disabled={!report} onClick={downloadPdf} title="Relatório quantitativo e analítico em PDF">Gerar / salvar PDF</button>
+          <label>Formato do gráfico
+            <select aria-label="Formato do gráfico" value={chartMode} onChange={(event) => setChartMode(event.target.value as ChartMode)}>
+              <option value="barras">Barras (torres)</option>
+              <option value="pizza">Pizza (quando aplicável)</option>
+              <option value="ambos">Pizza e barras</option>
+            </select>
+          </label>
+          <button type="button" disabled={!report} onClick={downloadChartPdf}>PDF gráfico demonstrativo</button>
         </div>
         <DashboardPanel state={dashboardState} management />
         {report && <div className="reports-print-footer">{capoPdfFooter(report.generatedBy ?? 'Autoria não informada', printGeneratedAt ?? new Date())}</div>}
@@ -394,6 +411,16 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
       </section>
     )
   }
+
+  const professionalSection = reportState.status === 'success' ? reportState.data[selectedProfessionalReport] : null
+  const professionalReport: ReportExport | null = professionalSection && typeof professionalSection === 'object' ? {
+    scope: 'Profissional assistencial', from: startDate, to: endDate,
+    specialty: specialtiesState.status === 'success' ? (specialtiesState.data.find((item) => item.specialty_id === selectedSpecialty)?.specialty_name ?? 'Especialidade') : 'Especialidade',
+    reportType: reportSections.find(([key]) => key === selectedProfessionalReport)?.[1],
+    issuedAt: new Date().toLocaleString('pt-BR'), generatedBy: accessContext.full_name?.trim() || accessContext.username,
+    generatedByRole: accessContext.function_title?.trim() || 'Profissional assistencial',
+    sections: [{ title: reportSections.find(([key]) => key === selectedProfessionalReport)?.[1] ?? 'Indicadores', metrics: sectionEntries(professionalSection).map(([key, value]) => [metricLabel(key), String(value)] as const) }],
+  } : null
 
   return (
     <section className="reports-page" aria-labelledby="reports-title">
@@ -475,6 +502,15 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
           )}
           {reportState.status === 'success' && (
             <>
+              <div className="reports-export-actions">
+                <button type="button" disabled={!professionalReport} onClick={() => professionalReport && downloadReport(buildReportPdf({ ...professionalReport, generatedAt: new Date() }), `CAPO-relatorio-profissional-${startDate}-${endDate}.pdf`)}>PDF quantitativo e analítico</button>
+                <label>Formato do gráfico
+                  <select aria-label="Formato do gráfico profissional" value={chartMode} onChange={(event) => setChartMode(event.target.value as ChartMode)}>
+                    <option value="barras">Barras (torres)</option><option value="pizza">Pizza (quando aplicável)</option><option value="ambos">Pizza e barras</option>
+                  </select>
+                </label>
+                <button type="button" disabled={!professionalReport} onClick={() => professionalReport && downloadReport(buildReportChartPdf({ ...professionalReport, generatedAt: new Date() }, chartMode), `CAPO-graficos-profissional-${startDate}-${endDate}.pdf`)}>PDF gráfico demonstrativo</button>
+              </div>
               <nav
                 className="reports-icon-grid"
                 aria-label="Tipos de relatório"
