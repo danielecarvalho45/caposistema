@@ -53,6 +53,7 @@ function notificationContextHref(
     waiting_list: '/fila',
     family_psychology_waiting_list: '/fila',
     patients: '/pacientes',
+    patient_appointments: '/agenda',
     patient: '/pacientes',
     clinical_records: '/encerramentos',
     patient_care_closures: '/encerramentos',
