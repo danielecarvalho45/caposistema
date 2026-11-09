@@ -1,0 +1,17 @@
+.capo-public-confirmation{min-height:100dvh;display:grid;place-items:center;padding:20px 14px;background:linear-gradient(150deg,#e8f3ff,#fff 55%,#e9f8ef);color:#17365f;font-family:Arial,Helvetica,sans-serif}
+.capo-confirmation-card{width:min(100%,510px);padding:clamp(20px,5vw,35px);border:1px solid #d5e4f2;border-radius:18px;background:#fff;box-shadow:0 12px 45px rgb(20 50 84 / 10%)}
+.capo-confirmation-card>img{display:block;width:min(190px,60%);height:auto;margin:0 auto 20px}
+.capo-confirmation-card h1{text-align:center;font-size:clamp(22px,5vw,28px);margin:0 0 20px}
+.capo-confirmation-card p{line-height:1.5;font-size:clamp(15px,3.8vw,17px)}
+.capo-confirmation-details{padding:14px;border-radius:10px;background:#f1f7ff;margin:16px 0 22px;overflow-wrap:anywhere}
+.capo-confirmation-details p{margin:9px 0}
+.capo-confirmation-actions{display:grid;gap:13px}
+.capo-confirmation-actions button{width:100%;min-height:58px;border:0;border-radius:11px;font-weight:700;font-size:clamp(16px,4vw,19px);cursor:pointer;padding:14px}
+.capo-confirmation-yes{background:#168447;color:#fff}
+.capo-confirmation-no{background:#ffedd5;color:#7c3900}
+.capo-confirmation-actions button:focus-visible{outline:3px solid #1766c7;outline-offset:3px}
+.capo-confirmation-actions button:disabled{opacity:.6;cursor:wait}
+.capo-confirmation-actions>p{text-align:center;color:#47647f;font-size:14px}
+.capo-confirmation-done{padding:16px;background:#e6f6ec;border-radius:10px;color:#125a32;font-weight:600}
+.capo-confirmation-error{color:#a32128}
+.capo-confirmation-card footer{margin-top:25px;padding-top:15px;border-top:1px solid #e1e9f0;font-size:13px;text-align:center;color:#526e88}
