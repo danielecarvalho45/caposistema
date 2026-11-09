@@ -72,7 +72,9 @@ export function PublicAppointmentConfirmation() {
     <section className="capo-confirmation-card" aria-labelledby="capo-confirmation-title">
       <img src="/assets/capo-logo.jpg" alt="CAPO — Centro de Apoio ao Paciente Oncológico" />
       <h1 id="capo-confirmation-title">Confirmação de consulta</h1>
-      {loading ? <p role="status">Consultando sua consulta…</p> : !details?.valid ? (
+      {loading ? <p role="status">Consultando sua consulta…</p> : error && !details ? (
+        <p role="alert">O serviço está temporariamente indisponível. Seu agendamento não foi alterado. Tente novamente mais tarde ou entre em contato com a equipe CAPO.</p>
+      ) : !details?.valid ? (
         <p role="alert">Este link é inválido ou expirou. Sua consulta não foi alterada. Entre em contato com a equipe CAPO.</p>
       ) : <>
         <p>Olá, {details.patient_first_name}! Confira os dados da sua consulta:</p>
@@ -93,7 +95,7 @@ export function PublicAppointmentConfirmation() {
           <p>Se não responder, sua consulta continuará agendada.</p>
         </div>}
       </>}
-      {error && <p role="alert" className="capo-confirmation-error">{error}</p>}
+      {error && details && <p role="alert" className="capo-confirmation-error">{error}</p>}
       <footer>Centro de Apoio ao Paciente Oncológico — CAPO</footer>
     </section>
   </main>
