@@ -13,6 +13,7 @@ export type FamilyMember = Readonly<Record<string, unknown>>
 export type FamilyLink = Readonly<Record<string, unknown>>
 export type FamilyContext = Readonly<{
   active_link: FamilyLink | null
+  source_patient?: Readonly<Record<string, unknown>> | null
   history: readonly FamilyLink[]
   can_admin_correct: boolean
   can_operate: boolean
@@ -45,6 +46,8 @@ function parseContext(value: unknown): FamilyContext {
     throw contractError('get_family_context_for_interface', 'history inválido.')
   return {
     active_link: active as FamilyLink | null,
+    source_patient: record.source_patient && typeof record.source_patient === 'object'
+      ? record.source_patient as Readonly<Record<string, unknown>> : null,
     history: history as FamilyLink[],
     can_admin_correct: record.can_admin_correct === true,
     can_operate: record.can_operate === true,
@@ -77,6 +80,7 @@ export type FamilyCaregiverService = Readonly<{
   createFamilyLink: (
     input: Record<string, unknown>,
   ) => Promise<AsyncState<Readonly<Record<string, unknown>>>>
+  updateFamilyCms: (linkId: string, cms: string) => Promise<AsyncState<Readonly<Record<string, unknown>>>>
   replaceFamilyLink: (
     input: Record<string, unknown>,
   ) => Promise<AsyncState<Readonly<Record<string, unknown>>>>
@@ -111,11 +115,15 @@ export function createFamilyCaregiverService(): FamilyCaregiverService {
       ),
     createFamilyLink: (input) =>
       call(
-        'create_family_link_for_interface',
-        'create_family_link_for_interface',
+        'create_family_link_with_cms_for_interface',
+        'create_family_link_with_cms_for_interface',
         input,
         parseMutation,
       ),
+    updateFamilyCms: (linkId, cms) => call(
+      'update_family_cms_for_interface', 'update_family_cms_for_interface',
+      { p_link_id: linkId, p_cms: cms }, parseMutation,
+    ),
     replaceFamilyLink: (input) =>
       call(
         'replace_family_link_for_interface',
