@@ -224,7 +224,9 @@ export function NotificationsPage({
                       Marcar como lida
                     </button>
                   )}
-                  {item.resolved_at === null && !item.entity_type && (
+                  {item.resolved_at === null &&
+                    (!item.entity_type ||
+                      ['appointment_patient_reschedule', 'appointment_confirmation_unanswered'].includes(item.notification_type)) && (
                     <button
                       type="button"
                       disabled={busy}
