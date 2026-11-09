@@ -6,6 +6,7 @@ type Props = Readonly<{
   patientId: string
   label?: string
   message?: string | null
+  prepareMessage?: () => Promise<string>
 }>
 
 function digits(value: string) {
@@ -16,6 +17,7 @@ export function PatientWhatsAppButton({
   patientId,
   label = 'WhatsApp',
   message = null,
+  prepareMessage,
 }: Props) {
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -47,7 +49,16 @@ export function PatientWhatsAppButton({
     }
 
     const normalizedPhone = phone.startsWith('55') ? phone : `55${phone}`
-    const preparedMessage = message?.trim() ?? ''
+    let preparedMessage = message?.trim() ?? ''
+    if (prepareMessage) {
+      try {
+        preparedMessage = (await prepareMessage()).trim()
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : 'Não foi possível preparar a mensagem.')
+        setBusy(false)
+        return
+      }
+    }
     const whatsappUrl = `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalizedPhone)}${preparedMessage ? `&text=${encodeURIComponent(preparedMessage)}` : ''}`
     if (!openCapoWhatsAppTab(whatsappUrl)) {
       setFeedback('Não foi possível abrir ou reutilizar a aba do WhatsApp. Autorize pop-ups para o CAPO e tente novamente.')
