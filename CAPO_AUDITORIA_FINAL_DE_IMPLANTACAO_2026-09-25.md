@@ -8395,3 +8395,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limite da evidência:** a Titular confirmou a troca bem-sucedida, mas não informou de modo separado um novo login completo após sair da sessão. Portanto não marcar o teste independente de login posterior como executado. A configuração foi conferida por imagens e relato, não por leitura administrativa automatizada dos parâmetros do Supabase.
 
 **Estado:** **🟢 RECUPERAÇÃO DE SENHA FUNCIONAL — TESTE REAL CONCLUÍDO / NOVO LOGIN ISOLADO NÃO AFERIDO**.
+
+
+### §28.200 — PDFs quantitativos, analíticos e gráficos demonstrativos separados (09/11/2026)
+
+**Autorização:** comando expresso `VERDE` da Titular após aprovação do modelo de dois documentos: (1) relatório principal quantitativo e analítico; (2) relatório gráfico demonstrativo independente, com pizza, barras ou ambos, cada gráfico acompanhado de breve análise. A alteração é restrita aos componentes compartilhados de relatórios e ao gerador PDF; não altera dados, RPCs, RLS, permissões nem documentos clínicos.
+
+**Implementação:** `src/features/reports/report-export.ts` passou a incluir análise factual por seção com preservação de indicadores zerados e aviso contra soma de bases diferentes. O relatório principal utiliza texto de 12 pt, títulos de 16 pt, subtítulos de 14 pt, rodapé de 9 pt, largura de linha reduzida e paginação de 34 linhas; mantém cabeçalho oficial, filtro, período e autoria. O PDF gráfico separado é gerado pelo novo `buildReportChartPdf` a partir do mesmo recorte autorizado, com seleção `barras`, `pizza` ou `ambos`, gráficos vetoriais e comentário descritivo. Em métricas com bases distintas ou sem distribuição positiva válida, a pizza informa que não é aplicável em vez de inventar proporções. O PDF de barras preserva a interpretação individual dos indicadores.
+
+**Abrangência:** `ReportsPage.tsx` expõe dois botões de exportação e seletor de gráficos para relatórios gerenciais do Gestor/Titular e Coordenação, e para a seção selecionada nos relatórios assistenciais de profissionais. O perfil Administrativo Operacional atualmente possui apenas vínculos para relações operacionais em módulos específicos e não um gerador PDF próprio nesta página; nenhuma nova permissão foi concedida. PDFs de transporte, receitas, planos assistenciais e outros documentos fora do módulo de relatórios não foram alterados.
+
+**Testes internos:** `npm run build` PASS (167 módulos); `tests/unit/report-export.test.ts`, `tests/unit/reports-labels.test.tsx` e `tests/unit/administrative-operational-report.test.tsx` **14/14 PASS** com variáveis públicas de ambiente fictícias e sem ligação a banco real. `npm run typecheck` acusa 10 erros já existentes em módulos fora da alteração, sem erros novos nos arquivos modificados. Não houve teste visual em PDF de todas as combinações nem homologação na produção por cada perfil; necessitam conferência da Titular após publicação, especialmente conteúdo de gráficos e impressão A4. Nenhum paciente ou registro real foi alterado.
+
+**Estado:** **IMPLEMENTAÇÃO PUBLICADA NO REPOSITÓRIO / TESTES UNITÁRIOS FOCADOS PASS / HOMOLOGAÇÃO VISUAL E FUNCIONAL EM PRODUÇÃO PENDENTE**.
