@@ -14,7 +14,61 @@ type CapoPdfOptions = Readonly<{
   generatedBy: string
   generatedByRole?: string
   generatedAt?: Date
+  charts?: readonly CapoPdfChart[]
+  reportLayout?: boolean
 }>
+
+export type CapoPdfChart = Readonly<{
+  type: 'pizza' | 'barras'
+  title: string
+  points: readonly Readonly<{ label: string; value: number }>[]
+  analysis: string
+}>
+
+const chartColors = ['0.09 0.43 0.75', '0.19 0.59 0.39', '0.93 0.55 0.15', '0.73 0.30 0.52', '0.36 0.37 0.73', '0.23 0.63 0.64']
+
+function chartDrawing(chart: CapoPdfChart) {
+  const points = chart.points.slice(0, 6)
+  const total = points.reduce((sum, point) => sum + point.value, 0)
+  const lines: string[] = ['BT', '/F1 14 Tf', '0 0.27 0.53 rg', '45 608 Td', `(${escape(chart.title)}) Tj`, 'ET']
+  if (total <= 0 || !points.length) {
+    lines.push('BT', '/F1 12 Tf', '0 0 0 rg', '45 485 Td', '(Nao ha valores positivos para representar neste grafico.) Tj', 'ET')
+  } else if (chart.type === 'pizza') {
+    let angle = -Math.PI / 2
+    points.forEach((point, index) => {
+      const next = angle + 2 * Math.PI * point.value / total
+      const segments = Math.max(2, Math.ceil((next - angle) / (Math.PI / 36)))
+      const coords = Array.from({ length: segments + 1 }, (_, i) => {
+        const a = angle + (next - angle) * i / segments
+        return `${(190 + 108 * Math.cos(a)).toFixed(2)} ${(448 + 108 * Math.sin(a)).toFixed(2)} ${i === 0 ? 'l' : 'l'}`
+      })
+      lines.push(`${chartColors[index]} rg`, '190 448 m', ...coords, 'h f')
+      angle = next
+    })
+    points.forEach((point, index) => {
+      const percentage = (point.value * 100 / total).toFixed(1).replace('.', ',')
+      lines.push(`${chartColors[index]} rg`, `330 ${553 - index * 29} 10 10 re f`, 'BT', '/F1 9 Tf', '0 0 0 rg', `345 ${554 - index * 29} Td`, `(${escape(`${point.label.slice(0, 23)}: ${point.value} (${percentage}%)`)}) Tj`, 'ET')
+    })
+  } else {
+    const max = Math.max(...points.map((point) => point.value))
+    lines.push('0.7 0.7 0.7 RG', '65 325 m 535 325 l S')
+    points.forEach((point, index) => {
+      const x = 83 + index * 77
+      const height = Math.max(1, 205 * point.value / max)
+      lines.push(`${chartColors[index]} rg`, `${x} 325 43 ${height.toFixed(2)} re f`, 'BT', '/F1 10 Tf', '0 0 0 rg', `${x} ${(333 + height).toFixed(2)} Td`, `(${escape(String(point.value))}) Tj`, 'ET', 'BT', '/F1 8 Tf', `${x} 308 Td`, `(${escape(point.label.slice(0, 12))}) Tj`, 'ET')
+    })
+  }
+  const words = chart.analysis.split(/\s+/)
+  const paragraphs: string[] = []
+  let current = ''
+  for (const word of words) {
+    if ((current + ' ' + word).length > 88) { paragraphs.push(current); current = word }
+    else current = current ? `${current} ${word}` : word
+  }
+  if (current) paragraphs.push(current)
+  lines.push('BT', '/F1 11 Tf', '0 0 0 rg', '45 244 Td', '15 TL', ...paragraphs.slice(0, 9).flatMap((line) => [`(${escape(line)}) Tj`, 'T*']), 'ET')
+  return lines.join('\n') + '\n'
+}
 
 export function capoPdfFooter(
   generatedBy: string,
@@ -80,7 +134,7 @@ export function buildCapoDocumentPdf(
     options.generatedAt ?? new Date(),
     options.generatedByRole,
   )
-  const pages = Array.from(
+  const pages = options.charts ? options.charts.map(() => lines.slice(0, 7)) : Array.from(
     { length: Math.max(1, Math.ceil(lines.length / linesPerPage)) },
     (_, page) => lines.slice(page * linesPerPage, (page + 1) * linesPerPage),
   )
@@ -101,7 +155,7 @@ export function buildCapoDocumentPdf(
 
   pages.forEach((page, index) => {
     const stream = bytes(
-      `q\n505 0 0 ${logoHeight.toFixed(2)} 45 745 cm\n/Logo Do\nQ\nq\n1 1 1 rg\n220 789 158 31 re f\nQ\nBT\n/F1 8 Tf\n0 0.27 0.53 rg\n241 807 Td\n(CENTRO DE APOIO AO) Tj\n0 -11 Td\n(PACIENTE ONCOLÓGICO) Tj\nET\nBT\n/F1 ${fontSize} Tf\n0 0 0 rg\n45 706 Td\n${lineHeight} TL\n${page.map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\nBT\n/F1 8 Tf\n0 0 0 rg\n11 TL\n45 54 Td\n${footerLines(footer).map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
+      `q\n505 0 0 ${logoHeight.toFixed(2)} 45 745 cm\n/Logo Do\nQ\nq\n1 1 1 rg\n220 789 158 31 re f\nQ\nBT\n/F1 8 Tf\n0 0.27 0.53 rg\n241 807 Td\n(CENTRO DE APOIO AO) Tj\n0 -11 Td\n(PACIENTE ONCOLÓGICO) Tj\nET\nBT\n/F1 ${fontSize} Tf\n0 0 0 rg\n45 706 Td\n${lineHeight} TL\n${page.map((line, lineIndex) => `${options.reportLayout && lineIndex === 0 ? '/F1 16 Tf\n0 0.27 0.53 rg\n' : options.reportLayout && lineIndex > 0 && page[lineIndex - 1] === '' && line !== '' ? '/F1 14 Tf\n0 0.27 0.53 rg\n' : `/F1 ${fontSize} Tf\n0 0 0 rg\n`}(${escape(line)}) Tj\nT*\n`).join('')}ET\n${options.charts?.[index] ? chartDrawing(options.charts[index]) : ''}BT\n/F1 9 Tf\n0 0 0 rg\n11 TL\n45 54 Td\n${footerLines(footer).map((line) => `(${escape(line)}) Tj\nT*\n`).join('')}ET\n`,
     )
     const contentId = pageIds[index] + 1
     objects.push(
