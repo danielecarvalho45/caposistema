@@ -17,7 +17,8 @@ export type ReportExport = Readonly<{
 export function reportLines(report: ReportExport): string[] {
   return [
     'Relatórios Gerenciais',
-    `Escopo: ${report.scope}`,
+    `Função: ${report.generatedByRole || report.scope}`,
+    `Profissional responsável: ${report.generatedBy || 'Não identificado'}`,
     `Período: ${report.from} a ${report.to}`,
     `Especialidade: ${report.specialty}`,
     ...(report.reportType ? [`Relatório: ${report.reportType}`] : []),
@@ -96,6 +97,6 @@ export function buildReportChartPdf(report: ReportExport, mode: ChartMode): Blob
     }
   }
   if (!charts.length) charts.push({ type: 'barras', title: 'Indicadores não disponíveis', points: [], analysis: 'Não foram retornados indicadores numéricos para gerar este demonstrativo.' })
-  const header = ['Relatório gráfico demonstrativo', `Escopo: ${report.scope}`, `Período: ${report.from} a ${report.to}`, `Especialidade: ${report.specialty}`, `Relatório: ${report.reportType ?? 'Visão geral'}`, `Emitido em: ${report.issuedAt}`, '']
-  return buildCapoDocumentPdf(header, { fontSize: 12, lineHeight: 17, charts, generatedBy: report.generatedBy ?? 'Autoria não informada', generatedByRole: report.generatedByRole ?? report.scope, generatedAt: report.generatedAt })
+  const header = ['Relatório gráfico demonstrativo', `Função: ${report.generatedByRole || report.scope}`, `Profissional responsável: ${report.generatedBy || 'Não identificado'}`, `Período: ${report.from} a ${report.to}`, `Especialidade: ${report.specialty}`, `Relatório: ${report.reportType ?? 'Visão geral'}`, `Emitido em: ${report.issuedAt}`]
+  return buildCapoDocumentPdf(header, { fontSize: 12, lineHeight: 17, charts, reportLayout: true, generatedBy: report.generatedBy ?? 'Autoria não informada', generatedByRole: report.generatedByRole ?? report.scope, generatedAt: report.generatedAt })
 }
