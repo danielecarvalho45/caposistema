@@ -50,7 +50,9 @@ function agendaBlockLabel(value: string | null) {
 
 const quickAccess = [
   ['/pacientes', '👥', 'Pacientes', 'Cadastrar e consultar', 'blue'],
-  ['/agenda', '▣', 'Agenda', 'Visualizar agendas', 'green'],
+  ['/agenda', '🗓️', 'Agenda', 'Consultar agendas dos profissionais', 'green'],
+  ['/gestor/equipe', '👥', 'Equipe', 'Gerenciar profissionais', 'blue'],
+  ['/gestor/busca-ativa', '🔎', 'Busca Ativa', 'Acompanhar pacientes', 'violet'],
   ['/gestor/equipe?aba=agenda', '⏱', 'Ampliar horário', 'Abrir horário adicional na agenda', 'blue'],
   ['/fila', '≡', 'Filas', 'Pacientes e familiares', 'mint'],
   ['/faltosos', '◷', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
