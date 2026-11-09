@@ -1592,3 +1592,61 @@
 .agenda-return-slots td {
   vertical-align: middle;
 }
+
+
+/* §28.214 — mesma leitura compacta da agenda geral nas grades filtradas.
+   O layout de três colunas pertence somente à vista diária; semana e mês
+   precisam de cartões verticais legíveis, inclusive no acesso profissional. */
+.agenda-schedule-grid--week,
+.agenda-schedule-grid--month {
+  grid-template-columns: repeat(7, minmax(128px, 1fr));
+  overflow-x: auto;
+  align-items: start;
+}
+
+.agenda-schedule-grid--week .agenda-schedule-day,
+.agenda-schedule-grid--month .agenda-schedule-day {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.agenda-schedule-grid--week .agenda-schedule-slot,
+.agenda-schedule-grid--month .agenda-schedule-slot,
+.agenda-schedule-grid--week .agenda-schedule-slot.is-agendado,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-agendado {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 5px;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.agenda-schedule-grid--week .agenda-schedule-slot.is-agendado .agenda-schedule-status,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-agendado .agenda-schedule-status,
+.agenda-schedule-grid--week .agenda-schedule-slot.is-agendado .agenda-week-home-actions,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-agendado .agenda-week-home-actions,
+.agenda-schedule-grid--week .agenda-schedule-slot.is-agendado > small,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-agendado > small,
+.agenda-schedule-grid--week .agenda-schedule-slot.is-agendado > .agenda-cancel-button,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-agendado > .agenda-cancel-button {
+  grid-column: 1;
+  grid-row: auto;
+  justify-self: stretch;
+  min-width: 0;
+}
+
+.agenda-schedule-grid--week .agenda-week-home-actions,
+.agenda-schedule-grid--month .agenda-week-home-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+}
+
+.agenda-schedule-grid--week .agenda-schedule-slot button,
+.agenda-schedule-grid--month .agenda-schedule-slot button {
+  min-width: 0;
+  width: 100%;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
