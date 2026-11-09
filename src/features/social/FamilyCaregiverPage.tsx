@@ -51,6 +51,7 @@ export function FamilyCaregiverPage({
   )
   const [form, setForm] = useState<Record<string, string>>({})
   const [reason, setReason] = useState('')
+  const [cmsCorrection, setCmsCorrection] = useState('')
   const [loading, setLoading] = useState(false)
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -139,6 +140,7 @@ export function FamilyCaregiverPage({
       p_existing_family_member_id: form.existing_family_member_id || null,
       p_full_name: form.full_name || null,
       p_phone: form.phone || null,
+      ...(action === 'create' ? { p_cms: form.cms || null } : {}),
       p_email: form.email || null,
       p_birth_date: form.birth_date || null,
       p_address: form.address || null,
@@ -149,7 +151,9 @@ export function FamilyCaregiverPage({
         ? await service.createFamilyLink(input)
         : await service.replaceFamilyLink(input)
     if (result.status === 'success') {
-      setFeedback('Vínculo registrado.')
+      setFeedback(action === 'create' && input.p_psychological_interest === 'avaliacao'
+        ? 'Familiar vinculado e encaminhado automaticamente à Fila de Avaliação Psicológica.'
+        : 'Vínculo registrado.')
       setReason('')
       await loadContext()
     } else if (result.status === 'error') setError(result.error.message)
@@ -169,6 +173,19 @@ export function FamilyCaregiverPage({
     if (result.status === 'success') {
       setFeedback('Vínculo encerrado.')
       setReason('')
+      await loadContext()
+    } else if (result.status === 'error') setError(result.error.message)
+    setBusy(false)
+  }
+
+  async function saveCms() {
+    const linkId = String(context?.active_link?.link_id ?? '')
+    if (!linkId || !cmsCorrection.trim() || busy) return
+    setBusy(true)
+    const result = await service.updateFamilyCms(linkId, cmsCorrection.trim())
+    if (result.status === 'success') {
+      setFeedback('CMS do familiar registrado.')
+      setCmsCorrection('')
       await loadContext()
     } else if (result.status === 'error') setError(result.error.message)
     setBusy(false)
@@ -309,6 +326,19 @@ export function FamilyCaregiverPage({
                     'Familiar identificado',
                 )}
               </p>
+              <p>Nº CAPO próprio: <strong>{String(context.active_link.capo_number ?? 'Pendente')}</strong></p>
+              <p>CMS do familiar: <strong>{String(context.active_link.cms ?? 'Não informado')}</strong></p>
+              {context.source_patient?.deceased === true && (
+                <small className="family-caregiver-death-note">
+                  Paciente vinculado: {String(context.source_patient.name ?? 'Não informado')} · óbito em {String(context.source_patient.death_date ?? 'data não registrada')}
+                </small>
+              )}
+              {context.can_admin_correct && (
+                <label>Atualizar CMS do familiar
+                  <input value={cmsCorrection} onChange={(event) => setCmsCorrection(event.target.value)} placeholder="CMS individual, sem utilizar o do paciente" />
+                  <button type="button" disabled={busy || !cmsCorrection.trim()} onClick={() => void saveCms()}>Salvar CMS</button>
+                </label>
+              )}
               <span>
                 {String(
                   context.active_link.relationship ?? 'Relação não informada',
@@ -362,6 +392,7 @@ export function FamilyCaregiverPage({
                 'full_name',
                 'relationship',
                 'phone',
+                'cms',
                 'email',
                 'birth_date',
                 'address',
@@ -374,6 +405,8 @@ export function FamilyCaregiverPage({
                     ? 'Relação'
                     : field === 'phone'
                       ? 'Telefone'
+                      : field === 'cms'
+                        ? 'CMS próprio do familiar'
                       : field === 'email'
                         ? 'E-mail'
                         : field === 'birth_date'
