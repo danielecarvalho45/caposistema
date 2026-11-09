@@ -8549,3 +8549,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Frontend:** ficha de vínculo exibe CAPO e CMS próprios, permite cadastrar CMS real, e mostra discreta informação de óbito do paciente vinculado quando registrada; fila tem nome clicável para seleção; agenda apresenta atendimentos familiares autorizados separadamente dos atendimentos oncológicos para impedir que a ação profissional abra a ficha errada. **Correção adicional após teste da Gestora:** botão primário `Agendar consulta do familiar selecionado` aparece ao escolher horário e consulta a elegibilidade antes de criar o agendamento, respeitando prioridade e incompatibilidade. Frontend commits `8c4863f`, `c42fea8`, `990b952`, `59f2c397`, `274b44e`. Build Vite PASS e nove testes direcionados do módulo familiar PASS.
 
 **Atenções que impedem homologação completa:** ainda não foi executado agendamento real por usuário autenticado, nem testado o encerramento independente do familiar após óbito. A listagem dos atendimentos familiares está na página da agenda, mas as ações profissionais da ficha psicológica e a integração visual exata com a grade horária canônica exigem homologação adicional; não declarar essas etapas PASS sem evidência. Os dados reais não foram usados para agendamentos de teste.
+
+
+### §28.214 — Padronização visual da agenda por profissional — 09/11/2026
+
+**Solicitação e autorização:** Gestora comparou capturas das visões semanais e mensais da Agenda Geral (legíveis) com as visões filtradas por profissional (nomes e botões comprimidos verticalmente) e autorizou com **VERDE**. Exigiu o mesmo padrão visual para agenda geral, filtro individual e agenda acessada pelo próprio profissional.
+
+**Causa identificada:** em `src/features/agenda/agenda-page.css`, a regra posterior `.agenda-schedule-slot.is-agendado` aplicava três colunas (horário, paciente e ações) também aos cartões de semana/mês, apesar de cada dia já ocupar apenas uma das sete colunas. O espaço restante provocava quebra caractere a caractere. Outras regras usavam `minmax(0,1fr)` e `overflow-wrap:anywhere` na grade filtrada.
+
+**Correção pontual:** commit `e4222a6821d45190a851031036ea54ea8fcb4aec` ajusta exclusivamente o CSS do `HomeScheduleGrid` para que as grades de semana/mês tenham sete colunas de largura mínima legível, com rolagem horizontal quando necessário; cada cartão organiza horário, nome, situação e ações verticalmente. O CSS da vista diária, os componentes, os handlers, a consulta a vagas/bloqueios, as permissões e os registros do banco não foram alterados. A página `AgendaPage` e o componente são compartilhados entre os perfis.
+
+**Verificação:** causa e precedência das regras conferidas no CSS remoto. Teste visual autenticado nas contas Gestor, Administrativo Operacional e profissionais, em desktop e celular, continua **pendente de homologação**; não declarar funcionamento visual em produção sem validação da Gestora.
