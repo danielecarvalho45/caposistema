@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { buildReportPdf, reportLines } from '../../src/features/reports/report-export'
+import { buildReportPdf, buildReportChartPdf, reportLines } from '../../src/features/reports/report-export'
 
 it('exporta apenas os indicadores e recortes recebidos, com cabeçalho e várias páginas quando necessário', async () => {
   const input = {
@@ -17,6 +17,34 @@ it('exporta apenas os indicadores e recortes recebidos, com cabeçalho e várias
   expect(content).toContain('/Logo Do')
   expect(content).toContain('Indicador 54: 54')
   expect(content).not.toContain('Dado inventado')
+})
+
+it('gera PDF grafico independente em barras e pizza com analise e sem somar indicadores distintos', async () => {
+  const report = {
+    scope: 'Coordenador', from: '2026-11-01', to: '2026-11-09', specialty: 'Todas',
+    issuedAt: '09/11/2026 10:00', sections: [{ title: 'Agenda', metrics: [
+      ['Realizados no período', '10'], ['Faltas no período', '2'], ['Cancelados no período', '3'],
+      ['Taxa de absenteísmo (%)', '16,7'],
+    ] as const }],
+  }
+  const pdf = buildReportChartPdf(report, 'ambos')
+  const content = new TextDecoder('latin1').decode(await pdf.arrayBuffer())
+  expect(content).toContain('/Count 2')
+  expect(content).toContain('Relatório gráfico demonstrativo')
+  expect(content).toContain('gráfico de barras')
+  expect(content).toContain('distribuição de situações')
+  expect(content).toContain('Percentuais referem-se ao total')
+  expect(content).not.toContain('16,7:')
+})
+
+it('nao inventa distribuicao de pizza quando indicadores se sobrepoem', async () => {
+  const pdf = buildReportChartPdf({
+    scope: 'Coordenador', from: '2026-11-01', to: '2026-11-09', specialty: 'Todas', issuedAt: '09/11/2026',
+    sections: [{ title: 'Pacientes', metrics: [['Total atual', '32'], ['Ativos atualmente', '32'], ['Cadastrados no período', '31']] }],
+  }, 'pizza')
+  const content = new TextDecoder('latin1').decode(await pdf.arrayBuffer())
+  expect(content).toContain('não aplicável')
+  expect(content).toContain('/Count 1')
 })
 
 
