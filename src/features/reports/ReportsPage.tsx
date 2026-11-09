@@ -380,19 +380,27 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
         </header>
         {report && <div className="reports-card reports-export-meta">
           <strong>CAPO — Relatórios Gerenciais</strong>
-          <span>Relatório: {report.reportType} · Escopo: {report.scope} · Período: {report.from} a {report.to} · Especialidade: {report.specialty} · Emissão: {report.issuedAt}</span>
+          <span>Relatório: {report.reportType} · Função: {report.generatedByRole || report.scope} · Profissional: {report.generatedBy} · Período: {report.from} a {report.to} · Especialidade: {report.specialty} · Emissão: {report.issuedAt}</span>
         </div>}
-        <div className="reports-card reports-export-actions">
-          <button type="button" disabled={!report} onClick={() => { setPrintGeneratedAt(new Date()); window.setTimeout(() => window.print(), 0) }}>Imprimir</button>
-          <button type="button" disabled={!report} onClick={downloadPdf} title="Relatório quantitativo e analítico em PDF">Gerar / salvar PDF</button>
-          <label>Formato do gráfico
-            <select aria-label="Formato do gráfico" value={chartMode} onChange={(event) => setChartMode(event.target.value as ChartMode)}>
-              <option value="barras">Barras (torres)</option>
-              <option value="pizza">Pizza (quando aplicável)</option>
-              <option value="ambos">Pizza e barras</option>
-            </select>
-          </label>
-          <button type="button" disabled={!report} onClick={downloadChartPdf}>PDF gráfico demonstrativo</button>
+        <div className="reports-card reports-export-actions" aria-label="Exportação dos relatórios">
+          <div className="reports-export-group">
+            <h3>RELATÓRIO QUANTITATIVO E ANALÍTICO</h3>
+            <div className="reports-export-buttons">
+              <button type="button" disabled={!report} onClick={() => { setPrintGeneratedAt(new Date()); window.setTimeout(() => window.print(), 0) }}>Imprimir</button>
+              <button type="button" disabled={!report} onClick={downloadPdf} title="Relatório quantitativo e analítico em PDF">Gerar / salvar PDF</button>
+            </div>
+          </div>
+          <div className="reports-export-group">
+            <h3>RELATÓRIO GRÁFICO DEMONSTRATIVO</h3>
+            <label>Formato do gráfico
+              <select aria-label="Formato do gráfico" value={chartMode} onChange={(event) => setChartMode(event.target.value as ChartMode)}>
+                <option value="barras">Barras (torres)</option>
+                <option value="pizza">Pizza (quando aplicável)</option>
+                <option value="ambos">Pizza e barras</option>
+              </select>
+            </label>
+            <button type="button" disabled={!report} onClick={downloadChartPdf}>Gerar / salvar PDF gráfico</button>
+          </div>
         </div>
         <DashboardPanel state={dashboardState} management />
         {report && <div className="reports-print-footer">{capoPdfFooter(report.generatedBy ?? 'Autoria não informada', printGeneratedAt ?? new Date())}</div>}
@@ -502,14 +510,20 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
           )}
           {reportState.status === 'success' && (
             <>
-              <div className="reports-export-actions">
-                <button type="button" disabled={!professionalReport} onClick={() => professionalReport && downloadReport(buildReportPdf({ ...professionalReport, generatedAt: new Date() }), `CAPO-relatorio-profissional-${startDate}-${endDate}.pdf`)}>PDF quantitativo e analítico</button>
-                <label>Formato do gráfico
-                  <select aria-label="Formato do gráfico profissional" value={chartMode} onChange={(event) => setChartMode(event.target.value as ChartMode)}>
-                    <option value="barras">Barras (torres)</option><option value="pizza">Pizza (quando aplicável)</option><option value="ambos">Pizza e barras</option>
-                  </select>
-                </label>
-                <button type="button" disabled={!professionalReport} onClick={() => professionalReport && downloadReport(buildReportChartPdf({ ...professionalReport, generatedAt: new Date() }, chartMode), `CAPO-graficos-profissional-${startDate}-${endDate}.pdf`)}>PDF gráfico demonstrativo</button>
+              <div className="reports-export-actions" aria-label="Exportação dos relatórios da especialidade">
+                <div className="reports-export-group">
+                  <h3>RELATÓRIO QUANTITATIVO E ANALÍTICO</h3>
+                  <button type="button" disabled={!professionalReport} onClick={() => professionalReport && downloadReport(buildReportPdf({ ...professionalReport, generatedAt: new Date() }), `CAPO-relatorio-profissional-${startDate}-${endDate}.pdf`)}>Gerar / salvar PDF</button>
+                </div>
+                <div className="reports-export-group">
+                  <h3>RELATÓRIO GRÁFICO DEMONSTRATIVO</h3>
+                  <label>Formato do gráfico
+                    <select aria-label="Formato do gráfico profissional" value={chartMode} onChange={(event) => setChartMode(event.target.value as ChartMode)}>
+                      <option value="barras">Barras (torres)</option><option value="pizza">Pizza (quando aplicável)</option><option value="ambos">Pizza e barras</option>
+                    </select>
+                  </label>
+                  <button type="button" disabled={!professionalReport} onClick={() => professionalReport && downloadReport(buildReportChartPdf({ ...professionalReport, generatedAt: new Date() }, chartMode), `CAPO-graficos-profissional-${startDate}-${endDate}.pdf`)}>Gerar / salvar PDF gráfico</button>
+                </div>
               </div>
               <nav
                 className="reports-icon-grid"
