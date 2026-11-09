@@ -191,6 +191,7 @@ export function OwnAgendaManager({
   const [description, setDescription] = useState('')
   const [rescheduleInstructions, setRescheduleInstructions] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [needsRemanejamento, setNeedsRemanejamento] = useState(false)
   const [busy, setBusy] = useState(false)
   const [pendingConfirmation, setPendingConfirmation] =
     useState<PendingConfirmation | null>(null)
@@ -620,6 +621,7 @@ export function OwnAgendaManager({
 
     setBusy(true)
     setFeedback(null)
+    setNeedsRemanejamento(false)
 
     if (entryType === 'excecao' || entryType === 'horario_provisorio' || entryType === 'urgencia') {
       const result = await rpc.createAgendaException({
@@ -638,7 +640,11 @@ export function OwnAgendaManager({
       })
       if (result.status === 'success') {
         const data = record(result.data)
-        if (data && data.success === false && data.requires_conflict_confirmation === true) {
+        if (data && data.success === false && data.requires_remanejamento === true) {
+          setPendingConfirmation(null)
+          setNeedsRemanejamento(true)
+          setFeedback(stringValue(data.message) || 'Remaneje as consultas afetadas antes do bloqueio.')
+        } else if (data && data.success === false && data.requires_conflict_confirmation === true) {
           setPendingConfirmation({ overlap: false, affected: false, conflict: true })
           setFeedback(
             stringValue(data.message) ||
@@ -677,6 +683,13 @@ export function OwnAgendaManager({
     if (result.status === 'success') {
       const data = record(result.data)
       if (data && data.success === false) {
+        if (data.requires_remanejamento === true) {
+          setPendingConfirmation(null)
+          setNeedsRemanejamento(true)
+          setFeedback(stringValue(data.message) || 'Remaneje as consultas afetadas antes do bloqueio.')
+          setBusy(false)
+          return
+        }
         const overlap = data.requires_overlap_confirmation === true
         const affected = data.requires_affected_confirmation === true
         setPendingConfirmation({ overlap, affected, conflict: false })
@@ -1039,6 +1052,13 @@ export function OwnAgendaManager({
           )}
 
           {feedback && <p role="status">{feedback}</p>}
+          {needsRemanejamento && (
+            <p>
+              <a href="/agenda" className="agenda-slot-schedule-button">
+                Abrir agenda oficial para remanejar os pacientes
+              </a>
+            </p>
+          )}
 
           {pendingConfirmation ? (
             <button
