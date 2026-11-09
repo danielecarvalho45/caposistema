@@ -8434,3 +8434,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificação local:** `npm run build` PASS (Vite 167 módulos). `tests/unit/OwnAgendaManager.test.tsx`: **2/2 PASS** com mocks de RPC e sem acessar pacientes reais, incluindo teste específico da ordem estrutural da seção, presença das nove ações, escolha de `Café / Intervalo` e ausência de gravação no clique de seleção. O teste legado foi ajustado apenas ao texto vigente do botão de salvar novo padrão semanal (`Salvar novo padrão semanal`), sem alteração desse comportamento. Não foi executada inspeção visual em dispositivos reais ou homologação autenticada com todos os perfis no ambiente publicado.
 
 **Estado:** **CÓDIGO E TESTES PUBLICADOS NO GITHUB / TESTES FOCADOS PASS / HOMOLOGAÇÃO VISUAL EM PRODUÇÃO PENDENTE**.
+
+
+### §28.203 — Isolamento de solicitação técnica de homologação na fila operacional (09/11/2026)
+
+**Autorização:** VERDE expresso pela Gestora/Titular. **Ocorrência:** no login real, a fila `Solicitações — 1` exibia uma solicitação cancelada de `Bloqueio de agenda — Afastamento aprovado`, criada para o perfil técnico `Homologação — Assistência Social`, sem paciente vinculado (registro `0332930d-2ff4-46a1-a239-6be7adbb374c`).
+
+**Diagnóstico:** a RPC `public.get_administrative_requests_for_interface(text, integer, integer)` retornava solicitações sem paciente vinculado, inclusive a de homologação, e calculava `total_count` sobre essa lista. Solicitações legítimas de bloqueio/afastamento também podem não possuir paciente; portanto, não se deve excluir indiscriminadamente todos os registros sem paciente. O painel gerencial `get_reports_dashboard_for_interface` já exigia `capo_patient_is_production(ar.patient_id)` e não contabilizava este registro.
+
+**Correção aplicada diretamente no Supabase por migração** `isolate_homologation_requests_from_operational_queue`: foi acrescentado à cláusula WHERE da RPC operacional o filtro `and not (ar.patient_id is null and lower(pr.full_name) like 'homologação — %')`. A alteração preserva permissões, demais predicados, ordenação, paginação e a regra de `total_count`. Não houve exclusão, alteração de estado nem modificação dos dados da solicitação. Não foram ocultadas indiscriminadamente solicitações canceladas ou solicitações sem paciente.
+
+**Verificação no banco após aplicação:** filtro presente na função = **true**; registros preservados na tabela = **1**; registros alcançados pelo predicado operacional = **0**; registros dessa tabela contados pelo predicado do relatório de produção = **0**. O registro de homologação permanece disponível à auditoria técnica no banco. **Pendente:** atualização da tela autenticada da Gestora para confirmar a exibição `Solicitações — 0` no navegador; não se declara validação visual concluída.
