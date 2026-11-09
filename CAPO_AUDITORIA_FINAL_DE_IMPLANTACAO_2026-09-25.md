@@ -8461,3 +8461,12 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Estado:** **IMPLEMENTAÇÃO PENDENTE — AGUARDANDO MAPA OFICIAL DE DIVISÃO TERRITORIAL**. A Gestora informou que **já solicitou o mapa de divisão de território** das unidades/ESF de Pouso Alegre. Na pesquisa pública foram localizados cadastros, endereços e mapas de localização das unidades, mas não uma tabela oficial atualizada capaz de vincular com segurança todas as ruas e números às equipes/unidades de referência. O mapa oficial e/ou uma relação de abrangência por rua, faixa de numeração, bairro e microárea deverá ser analisado antes de estabelecer a regra de atribuição automática. Os contatos e responsáveis deverão ser associados à unidade, com tratamento de dados não encontrados e revisão manual.
 
 **Execução:** nenhuma mudança de interface, banco de dados, lógica de vinculação ou cadastro efetuada neste item. Aguardam-se os dados oficiais e posterior autorização **VERDE** específica para implementação e testes.
+
+
+### §28.206 — Busca Ativa do Gestor/Titular inicia na fila de Oferta Inicial (09/11/2026)
+
+**Autorização:** VERDE expresso. **Relato:** o atalho `Busca Ativa` na página inicial do Gestor/Titular abria a aba `Perda de Seguimento`, exibindo o formulário `Registrar tentativa / iniciar acompanhamento`; a Gestora determinou que o atalho abra primeiro `Pendências da Oferta Inicial`, pois as etapas já estão separadas em filas e o registro de tentativas é acessível em sua etapa correspondente.
+
+**Correção cirúrgica:** apenas em `src/features/gestor/GestorDashboard.tsx`, destino do atalho alterado de `/gestor/busca-ativa` para `/gestor/busca-ativa?tipo=oferta`; descrição atualizada para `Pendências da Oferta Inicial`. A página canônica `ActiveSearchPage` já interpreta `tipo=oferta` e mostra a lista de pendências, preservando Resgate da Oferta CAPO e Perda de Seguimento. Sem alteração da página, banco, critérios das filas ou permissões. **Commit:** `7faddbe1d6bb0518bd4a747a68d1932567c350e9`.
+
+**Validação:** inspeção de rota e estado inicial, `npm run typecheck` PASS e `npm run build` PASS (167 módulos). **Pendente:** conferir o destino do atalho no perfil autenticado após publicação, em conjunto com a verificação visual do aviso de alteração de endereço (§ pendência anteriormente investigada). Não foi executado teste de ponta a ponta autenticado nesta alteração.
