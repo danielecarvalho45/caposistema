@@ -1,5 +1,36 @@
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getRpcService } from '../../lib/supabase/rpc'
+import { capoGreeting } from './appointment-communication'
+
+type ReminderDetails = Readonly<{
+  patientName: string
+  professionalName: string
+  appointmentDate: string
+  careLocation: string
+  confirmationUrl: string
+  senderName: string
+  senderTitle: string
+}>
+
+export function appointmentReminderMessage(input: ReminderDetails, now = new Date()): string {
+  const start = new Date(input.appointmentDate)
+  if (Number.isNaN(start.getTime())) throw new Error('Data da consulta inválida.')
+  const format = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat('pt-BR', { ...options, timeZone: 'America/Sao_Paulo' }).format(start)
+  const firstName = input.patientName.trim().split(/\s+/)[0] || 'Paciente'
+  const senderName = input.senderName.trim().split(/\s+/)[0] || input.senderName.trim()
+  const senderTitle = input.senderTitle.trim()
+  return [
+    '⚠️ *Lembrete de Consulta — CAPO*', '',
+    `${capoGreeting(now)}, ${firstName}! 🌷`, '',
+    `📅 *${format({ dateStyle: 'short' })}, às ${format({ hour: '2-digit', minute: '2-digit' })}*`,
+    `👩‍⚕️ *Profissional:* ${input.professionalName}`,
+    `📍 *Local:* ${input.careLocation}`, '',
+    '🔗 *Confirme sua presença para manter o agendamento ou cancele pelo link:*',
+    input.confirmationUrl, '',
+    `*${senderName} — ${senderTitle} — CAPO*`,
+  ].join('\n')
+}
 
 export async function issueAppointmentConfirmationUrl(appointmentId: string): Promise<string> {
   const client = getSupabaseClient() as unknown as {
@@ -34,29 +65,5 @@ export async function prepareAppointmentReminder(input: {
   if (!careLocation) throw new Error('Local da consulta não cadastrado. Corrija-o antes de enviar o lembrete.')
 
   const confirmationUrl = await issueAppointmentConfirmationUrl(input.appointmentId)
-  const start = new Date(input.appointmentDate)
-  const format = (options: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat('pt-BR', { ...options, timeZone: 'America/Sao_Paulo' }).format(start)
-  const hour = Number(new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23',
-  }).format(new Date()))
-  const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
-  return [
-    `${greeting}, ${input.patientName}!`, '',
-    '*Lembrete de consulta — CAPO*',
-    'Centro de Apoio ao Paciente Oncológico', '',
-    `📅 *Data:* ${format({ dateStyle: 'short' })}`,
-    `🕒 *Horário:* ${format({ hour: '2-digit', minute: '2-digit' })}`,
-    `👩‍⚕️ *Profissional:* ${input.professionalName}`,
-    `🏥 *Especialidade:* ${input.specialtyName}`,
-    `📍 *Local:* ${careLocation}`, '',
-    'Por favor, informe se poderá comparecer:',
-    `🔗 *Confirme sua consulta aqui:* ${confirmationUrl}`, '',
-    'Na página, escolha *Vou comparecer* ou *Não poderei comparecer*.',
-    'Caso não responda, seu agendamento continuará reservado.', '',
-    '⚠️ *Importante:* Se não puder comparecer, sua resposta libera o horário e nossa equipe entrará em contato para remarcar.',
-    '', 'Obrigado(a)!', '',
-    input.senderName.toLocaleUpperCase('pt-BR'),
-    input.senderTitle.toLocaleUpperCase('pt-BR'),
-  ].join('\n')
+  return appointmentReminderMessage({ ...input, careLocation, confirmationUrl })
 }
