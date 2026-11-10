@@ -774,6 +774,89 @@
   gap: 10px;
 }
 
+.agenda-psychology-group-config {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #cbd9e4;
+  border-radius: 9px;
+  background: #f6f9fb;
+}
+
+.agenda-psychology-group-config h5 {
+  margin: 0 0 10px;
+  color: #27435e;
+}
+
+.agenda-psychology-sessions {
+  margin: 14px 0;
+  display: grid;
+  gap: 10px;
+}
+
+.agenda-psychology-sessions h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #253f56;
+}
+
+.agenda-psychology-session {
+  border: 1px solid #d2dce4;
+  border-radius: 9px;
+  padding: 12px;
+  background: #f7fafb;
+  display: grid;
+  gap: 9px;
+}
+
+.agenda-psychology-session-heading,
+.agenda-psychology-participant {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.agenda-psychology-session-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.agenda-psychology-session-heading span,
+.agenda-psychology-participant {
+  font-size: .84rem;
+}
+
+.agenda-psychology-participant {
+  padding: 7px 0;
+  border-top: 1px solid #e0e7eb;
+}
+
+.agenda-psychology-booking {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: end;
+  border-top: 1px solid #d2dce4;
+  padding-top: 10px;
+}
+
+.agenda-psychology-booking label {
+  min-width: min(100%, 230px);
+  display: grid;
+  gap: 4px;
+}
+
+.agenda-psychology-group-config .agenda-structural-grid {
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+}
+
+@media (max-width: 850px) {
+  .agenda-psychology-group-config .agenda-structural-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .agenda-structural-editor .agenda-structural-unlimited {
   grid-column: 1 / -1;
   display: flex;

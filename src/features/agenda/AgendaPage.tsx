@@ -21,6 +21,21 @@ import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
 
+type PsychologyGroupSession = {
+  group_id: string
+  name: string
+  capacity: number
+  date: string
+  start: string
+  end: string
+  participants: readonly {
+    appointment_id: string
+    patient_id: string
+    patient_name: string
+    attendance_status: string
+  }[]
+}
+
 type AgendaLoader = (
   startDate: string,
   endDate: string,
@@ -333,6 +348,7 @@ function HomeScheduleGrid({
   patientSpecialties,
   previsitContacts,
   attendanceOverrides,
+  groupSessions,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
   startDate: string
@@ -347,6 +363,7 @@ function HomeScheduleGrid({
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
   previsitContacts?: Readonly<Record<string, { result: string }>>
   attendanceOverrides?: Readonly<Record<string, string>>
+  groupSessions?: readonly PsychologyGroupSession[]
 }>) {
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
@@ -390,6 +407,9 @@ function HomeScheduleGrid({
           </thead>
           <tbody>
             {daySlots.map((slot) => {
+              const group = groupSessions?.find((item) => item.date === slot.slot_date
+                && Date.parse(item.start) === Date.parse(slot.slot_start)
+                && Date.parse(item.end) === Date.parse(slot.slot_end))
               const appointment = slot.appointment_id
                 ? appointmentById.get(slot.appointment_id)
                 : undefined
@@ -404,7 +424,7 @@ function HomeScheduleGrid({
                     ? 'Horário ocupado'
                     : '—')
               const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? 'agendado'
-              const statusLabel =
+              const statusLabel = group ? `${group.participants.length}/${group.capacity} vagas` :
                 slot.slot_status === 'livre'
                   ? 'Livre'
                   : slot.slot_status === 'bloqueado'
@@ -414,7 +434,7 @@ function HomeScheduleGrid({
                       : attendanceStatus === 'faltou'
                         ? 'Falta'
                         : 'Agendado'
-              const typeLabel =
+              const typeLabel = group ? 'Terapia em grupo' :
                 slot.slot_status === 'bloqueado' && slot.block_type
                   ? agendaBlockLabel(slot.block_type)
                   : slot.appointment_type ?? '—'
@@ -423,7 +443,7 @@ function HomeScheduleGrid({
                   <td data-label="Horário"><strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong></td>
                   <td data-label="Paciente">
                     <div className="agenda-home-patient-line">
-                      <strong>{patientName}</strong>
+                      <strong>{group ? group.name : patientName}</strong>
                       {attendanceMarker(attendanceStatus)}
                       {slot.appointment_id && previsitContacts?.[slot.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[slot.appointment_id].result)}</small>}
                       {slot.slot_status === 'agendado' &&
@@ -462,6 +482,7 @@ function HomeScheduleGrid({
                   <td data-label="Tipo">{typeLabel}</td>
                   <td data-label="Situação">{statusLabel}</td>
                   <td data-label="Ações" className="agenda-attendance-actions">
+                    {group && <a href={`#grupo-${group.group_id}-${group.date}`}>Ver participantes</a>}
                     {slot.slot_status === 'livre' && onSchedule && (
                       <button type="button" className="agenda-slot-schedule-button" onClick={() => onSchedule(slot)}>
                         Agendar
@@ -513,6 +534,9 @@ function HomeScheduleGrid({
             <div className="agenda-schedule-slots">
                 {daySlots.length === 0 && <small className="agenda-schedule-no-hours">Sem horários</small>}
                 {daySlots.map((slot) => {
+                  const group = groupSessions?.find((item) => item.date === slot.slot_date
+                    && Date.parse(item.start) === Date.parse(slot.slot_start)
+                    && Date.parse(item.end) === Date.parse(slot.slot_end))
                   const appointment = slot.appointment_id
                     ? appointmentById.get(slot.appointment_id)
                     : undefined
@@ -532,7 +556,8 @@ function HomeScheduleGrid({
                     >
                       <strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong>
                       <span className="agenda-schedule-status">
-                        {slot.slot_status === 'livre'
+                        {group ? `${group.name} · ${group.participants.length}/${group.capacity} vagas` :
+                        slot.slot_status === 'livre'
                           ? 'Livre'
                           : slot.slot_status === 'bloqueado'
                             ? 'Bloqueado'
@@ -559,7 +584,7 @@ function HomeScheduleGrid({
                         </small>
                       )}
                       {slot.slot_status === 'bloqueado' && slot.block_type && (
-                        <small>{agendaBlockLabel(slot.block_type)}</small>
+                        <small>{group ? <a href={`#grupo-${group.group_id}-${group.date}`}>Ver participantes</a> : agendaBlockLabel(slot.block_type)}</small>
                       )}
                       {slot.slot_status === 'agendado' &&
                         patientIsVisible &&
@@ -893,6 +918,17 @@ export function AgendaPage({
   const [previsitOutcomes, setPrevisitOutcomes] = useState<Readonly<Record<string, string>>>({})
   const [previsitLoadError, setPrevisitLoadError] = useState<string | null>(null)
   const [familyPsychologyCards, setFamilyPsychologyCards] = useState<readonly Record<string, unknown>[]>([])
+  const [psychologyGroupSessions, setPsychologyGroupSessions] = useState<readonly PsychologyGroupSession[]>([])
+  const [psychologyGroupError, setPsychologyGroupError] = useState('')
+  const [groupBookingId, setGroupBookingId] = useState('')
+  const [groupBookingDate, setGroupBookingDate] = useState('')
+  const [groupPatientQuery, setGroupPatientQuery] = useState('')
+  const [groupPatientId, setGroupPatientId] = useState('')
+  const [groupPatients, setGroupPatients] = useState<readonly {
+    patient_id: string; full_name: string; patient_number: string | null; cms: string | null
+  }[]>([])
+  const [groupBookingBusy, setGroupBookingBusy] = useState(false)
+  const [groupBookingFeedback, setGroupBookingFeedback] = useState('')
   const [familyRescheduleId, setFamilyRescheduleId] = useState('')
   const [familyRescheduleDate, setFamilyRescheduleDate] = useState('')
   const [familyRescheduleStart, setFamilyRescheduleStart] = useState('')
@@ -1145,6 +1181,62 @@ export function AgendaPage({
     }).catch(() => { if (active) setFamilyPsychologyCards([]) })
     return () => { active = false }
   }, [canAccess, state, startDate, endDate, professionalId])
+
+  useEffect(() => {
+    if (!canAccess || !professionalId) {
+      setPsychologyGroupSessions([])
+      setPsychologyGroupError('')
+      return
+    }
+    let active = true
+    void getRpcService().getPsychologyGroupSessions(professionalId, startDate, endDate)
+      .then((result) => {
+        if (!active) return
+        if (result.status === 'success') {
+          setPsychologyGroupSessions(result.data)
+          setPsychologyGroupError('')
+        } else {
+          setPsychologyGroupSessions([])
+          setPsychologyGroupError(result.status === 'error' ? result.error.message : '')
+        }
+      })
+    return () => { active = false }
+  }, [canAccess, professionalId, startDate, endDate, state])
+
+  async function searchGroupPatients() {
+    if (groupPatientQuery.trim().length < 2) {
+      setGroupBookingFeedback('Digite pelo menos dois caracteres do nome ou Nº CAPO.')
+      return
+    }
+    setGroupBookingBusy(true)
+    const result = await getRpcService().searchReferralPatients(groupPatientQuery.trim(), 20, 0)
+    const found = result.status === 'success' ? result.data : []
+    setGroupPatients(found)
+    setGroupPatientId(found.length === 1 ? found[0].patient_id : '')
+    setGroupBookingFeedback(result.status === 'error' ? result.error.message :
+      found.length === 0 ? 'Nenhum paciente localizado.' : '')
+    setGroupBookingBusy(false)
+  }
+
+  async function bookGroupPatient() {
+    if (!groupPatientId || !groupBookingId || !groupBookingDate || groupBookingBusy) return
+    setGroupBookingBusy(true)
+    const result = await getRpcService().bookPsychologyGroupParticipant(
+      groupBookingId, groupBookingDate, groupPatientId,
+    )
+    if (result.status === 'success' && result.data.success) {
+      setGroupBookingFeedback('Paciente agendado no grupo. Confirme o aviso da consulta pelo fluxo administrativo.')
+      setGroupBookingId('')
+      setGroupPatientId('')
+      setGroupPatientQuery('')
+      setGroupPatients([])
+      await load()
+    } else {
+      setGroupBookingFeedback(result.status === 'error'
+        ? result.error.message : 'Não foi possível confirmar o agendamento coletivo.')
+    }
+    setGroupBookingBusy(false)
+  }
 
   async function registerPrevisitContact(appointmentId: string) {
     const outcome = previsitOutcomes[appointmentId]
@@ -2780,7 +2872,97 @@ export function AgendaPage({
               busyAppointmentId={busyAppointmentId}
               patientSpecialties={patientSpecialties}
               previsitContacts={previsitContacts}
+              groupSessions={psychologyGroupSessions}
             />
+          )}
+
+          {professionalId && psychologyGroupSessions.length > 0 && (
+            <section className="agenda-psychology-sessions" aria-label="Terapia em grupo na agenda oficial">
+              <h3>Atendimentos em grupo — Psicologia</h3>
+              {psychologyGroupSessions.map((session) => {
+                const occupied = session.participants.length
+                const canBook = !isProfessional && roleCodes.some((code) =>
+                  ['administrador', 'administrativo_operacional'].includes(code))
+                const selected = groupBookingId === session.group_id && groupBookingDate === session.date
+                return (
+                  <article id={`grupo-${session.group_id}-${session.date}`} key={`${session.group_id}:${session.date}`} className="agenda-psychology-session">
+                    <div className="agenda-psychology-session-heading">
+                      <div>
+                        <strong>{session.name}</strong>
+                        <span>{session.date.split('-').reverse().join('/')} · {slotClock(session.start)}–{slotClock(session.end)}</span>
+                      </div>
+                      <strong>{occupied}/{session.capacity} vagas</strong>
+                    </div>
+                    {session.participants.length === 0 && <p>Nenhum paciente agendado neste grupo.</p>}
+                    {session.participants.map((participant) => (
+                      <div className="agenda-psychology-participant" key={participant.appointment_id}>
+                        <span><strong>{participant.patient_name}</strong> · {participant.attendance_status}</span>
+                        {canRegisterAttendance && participant.attendance_status === 'agendado' && (
+                          <span className="agenda-home-patient-actions">
+                            <button type="button" className="agenda-attendance-confirm"
+                              disabled={busyAppointmentId !== null}
+                              onClick={() => void updateAttendance(participant.appointment_id, 'confirmado')}>Confirmar</button>
+                            <button type="button" className="agenda-attendance-absence"
+                              disabled={busyAppointmentId !== null}
+                              onClick={() => void updateAttendance(participant.appointment_id, 'faltou')}>Falta</button>
+                          </span>
+                        )}
+                        {canBook && (
+                          <button type="button" disabled={busyAppointmentId !== null}
+                            onClick={() => prepareCancellation(participant.appointment_id)}>Cancelar</button>
+                        )}
+                      </div>
+                    ))}
+                    {canBook && (
+                      <button type="button" disabled={occupied >= session.capacity || groupBookingBusy}
+                        onClick={() => {
+                          setGroupBookingId(session.group_id)
+                          setGroupBookingDate(session.date)
+                          setGroupPatientQuery('')
+                          setGroupPatientId('')
+                          setGroupPatients([])
+                          setGroupBookingFeedback('')
+                        }}>
+                        {occupied >= session.capacity ? 'Grupo completo' : `Agendar paciente · ${session.capacity - occupied} vagas`}
+                      </button>
+                    )}
+                    {selected && (
+                      <div className="agenda-psychology-booking">
+                        <label>Paciente (nome ou Nº CAPO)
+                          <input value={groupPatientQuery} onChange={(event) => {
+                            setGroupPatientQuery(event.target.value)
+                            setGroupPatientId('')
+                            setGroupPatients([])
+                          }} />
+                        </label>
+                        <button type="button" disabled={groupBookingBusy} onClick={() => void searchGroupPatients()}>Buscar</button>
+                        {groupPatients.length > 0 && (
+                          <label>Selecione o cadastro correto
+                            <select value={groupPatientId} onChange={(event) => setGroupPatientId(event.target.value)}>
+                              <option value="">Selecionar paciente</option>
+                              {groupPatients.map((patient) => (
+                                <option key={patient.patient_id} value={patient.patient_id}>
+                                  {patient.full_name} · CAPO {patient.patient_number ?? '—'} · CMS {patient.cms ?? '—'}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
+                        <button type="button" disabled={!groupPatientId || groupBookingBusy}
+                          onClick={() => void bookGroupPatient()}>
+                          {groupBookingBusy ? 'Salvando…' : 'Confirmar vaga no grupo'}
+                        </button>
+                        <button type="button" onClick={() => setGroupBookingId('')}>Voltar</button>
+                      </div>
+                    )}
+                  </article>
+                )
+              })}
+              {groupBookingFeedback && <p role="status">{groupBookingFeedback}</p>}
+            </section>
+          )}
+          {professionalId && psychologyGroupError && (
+            <p role="alert">Não foi possível consultar os grupos: {psychologyGroupError}</p>
           )}
 
           {!professionalId && state.status === 'loading' && <p>Carregando agenda…</p>}

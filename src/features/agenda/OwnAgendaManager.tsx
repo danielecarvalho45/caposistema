@@ -906,7 +906,7 @@ export function OwnAgendaManager({
                 <option value="mista">Mista — individual e grupo</option>
                 <option value="grupo">Somente grupo</option>
               </select>
-              {groupMode !== 'individual' && <small>Preencha os dados do grupo nesta configuração e salve o período coletivo depois de salvar o padrão semanal.</small>}
+              {groupMode !== 'individual' && <small>Configure separadamente os horários individuais e o período do grupo, com a quantidade máxima de vagas.</small>}
             </label>
           )}
           {enablePsychologyGroup && groupContext?.status === 'error' && (
@@ -965,15 +965,15 @@ export function OwnAgendaManager({
               />
             </label></>}
             <label>
-              Horário inicial
+              {groupMode === 'mista' && psychologyEligible ? 'Turno completo — início' : 'Horário inicial'}
               <input type="time" value={structuralStartTime} onChange={(event) => { setStructuralStartTime(event.target.value); if (groupMode === 'grupo') setGroupStartTime(event.target.value) }} />
             </label>
             <label>
-              Horário final
+              {groupMode === 'mista' && psychologyEligible ? 'Turno completo — fim' : 'Horário final'}
               <input type="time" value={structuralEndTime} onChange={(event) => { setStructuralEndTime(event.target.value); if (groupMode === 'grupo') setGroupEndTime(event.target.value) }} />
             </label>
             <label>
-              Duração do atendimento (minutos)
+              {groupMode === 'mista' && psychologyEligible ? 'Consultas individuais — duração (minutos)' : 'Duração do atendimento (minutos)'}
               <input
                 type="number"
                 min="1"
@@ -985,6 +985,30 @@ export function OwnAgendaManager({
               />
             </label>
           </div>
+
+          {psychologyEligible && groupMode !== 'individual' && (
+            <section className="agenda-psychology-group-config" aria-label="Configuração do período coletivo">
+              {groupMode === 'mista' && (
+                <p className="agenda-structural-hint">Atendimentos individuais ficam disponíveis no turno informado, exceto no período reservado para o grupo. Exemplo: turno 08:10–17:00, grupo 15:00–17:00 → individuais até 15:00.</p>
+              )}
+              <h5>Atendimento em grupo — período e vagas</h5>
+              <div className="agenda-structural-grid">
+                <label>Nome do grupo
+                  <input value={groupName} maxLength={120} onChange={(event) => setGroupName(event.target.value)} placeholder="Nome da terapia em grupo" />
+                </label>
+                <label>Quantidade de vagas
+                  <input type="number" min="1" max="100" step="1" value={groupCapacity} onChange={(event) => setGroupCapacity(event.target.value)} />
+                </label>
+                <label>Grupo — horário inicial
+                  <input type="time" value={groupStartTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupStartTime(event.target.value)} />
+                </label>
+                <label>Grupo — horário final
+                  <input type="time" value={groupEndTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupEndTime(event.target.value)} />
+                </label>
+              </div>
+              <small>O grupo ocupa um período único; os pacientes são agendados individualmente até a capacidade indicada, na agenda oficial.</small>
+            </section>
+          )}
 
           <fieldset className="agenda-structural-weekdays">
             <legend>Dias da semana</legend>
@@ -1130,20 +1154,6 @@ export function OwnAgendaManager({
               </div>
               {groupMode !== 'individual' && (
                 <>
-                  <div className="agenda-recurring-grid">
-                    <label>Nome do grupo
-                      <input value={groupName} maxLength={120} onChange={(event) => setGroupName(event.target.value)} placeholder="Nome da terapia em grupo" />
-                    </label>
-                    <label>Quantidade de participantes
-                      <input type="number" min="1" max="100" step="1" value={groupCapacity} onChange={(event) => setGroupCapacity(event.target.value)} />
-                    </label>
-                    <label>Início
-                      <input type="time" value={groupStartTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupStartTime(event.target.value)} />
-                    </label>
-                    <label>Fim
-                      <input type="time" value={groupEndTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupEndTime(event.target.value)} />
-                    </label>
-                  </div>
                   <fieldset className="agenda-structural-weekdays">
                     <legend>Dias do grupo dentro deste padrão</legend>
                     {[
@@ -1163,7 +1173,7 @@ export function OwnAgendaManager({
                     onClick={() => void saveGroupSchedule()}>
                     {groupBusy ? 'Salvando…' : 'Adicionar período coletivo ao padrão'}
                   </button>
-                  <p className="agenda-structural-hint">O período coletivo ocupa a agenda oficial e não permite consultas individuais simultâneas. A inclusão e confirmação dos participantes serão realizadas em etapa própria.</p>
+                  <p className="agenda-structural-hint">O período coletivo ocupa a agenda oficial e impede consultas individuais simultâneas. Após salvar, inclua participantes pela agenda do profissional.</p>
                 </>
               )}
               {groups.filter((item) => stringValue(item.config_id) === structuralConfigId).length > 0 && (

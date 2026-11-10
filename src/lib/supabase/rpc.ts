@@ -3530,6 +3530,37 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_professional_id: professionalId },
         parse: (value) => value,
       }),
+    getPsychologyGroupSessions: (professionalId: string, startDate: string, endDate: string) =>
+      execute({
+        transport,
+        operation: 'get_psychology_group_sessions_for_interface',
+        args: {
+          p_professional_id: professionalId,
+          p_start_date: startDate,
+          p_end_date: endDate,
+        },
+        parse: (value) => value as readonly {
+          group_id: string
+          name: string
+          capacity: number
+          date: string
+          start: string
+          end: string
+          participants: readonly {
+            appointment_id: string
+            patient_id: string
+            patient_name: string
+            attendance_status: string
+          }[]
+        }[],
+      }),
+    bookPsychologyGroupParticipant: (groupId: string, date: string, patientId: string) =>
+      execute({
+        transport,
+        operation: 'book_psychology_group_participant_for_interface',
+        args: { p_group_id: groupId, p_date: date, p_patient_id: patientId },
+        parse: (value) => value as { success: boolean; appointment_id: string; group_id: string },
+      }),
     createPsychologyGroupSchedule: (input: {
       configId: string
       weekdays: readonly number[]
