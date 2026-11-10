@@ -216,6 +216,26 @@
   width: 100%;
 }
 
+.gestor-agenda-management .agenda-own-management button.agenda-own-action-card {
+  min-height: 42px;
+  padding: 8px 9px;
+  border-color: #d4dfe5;
+  background: #f8faf9;
+  color: #365365;
+  font-weight: 600;
+}
+
+.gestor-agenda-management .agenda-own-management button.agenda-own-action-card:hover:not(:disabled) {
+  border-color: #9cb8b4;
+  background: #eef5f2;
+}
+
+.gestor-agenda-management .agenda-own-management button.agenda-own-action-card[aria-pressed='true'] {
+  border-color: #83a9a2;
+  background: #e5f2ed;
+  color: #365365;
+}
+
 .gestor-agenda-management .agenda-structural-grid {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
@@ -270,7 +290,7 @@
   }
 
   .gestor-agenda-management .agenda-own-action-card {
-    min-height: 88px;
+    min-height: 42px;
   }
 
   .gestor-agenda-management .agenda-recurring-row {

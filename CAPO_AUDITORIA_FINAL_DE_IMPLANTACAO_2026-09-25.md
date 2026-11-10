@@ -8654,3 +8654,11 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção aplicada no Supabase:** migração `20261110185731_capo_search_ignore_accents`. Alterada exclusivamente a função interna `capo_name_matches_terms(text,text)`, usada pelas três RPCs já adequadas no §28.222. Agora compara letras comuns independentemente de acentos (á, à, â, ã, ä; é, è, ê, ë; í; ó; ú; ç; ñ), além de maiúsculas/minúsculas, e mantém busca por palavras não consecutivas. Não modifica cadastros, dados salvos, resultados originais, separação de paciente/familiar, permissões ou exigências de autenticação. Nº CAPO e CMS continuam com busca exata nas respectivas RPCs.
 
 **Verificação:** casos SQL de nome com/sem acento, caixa alta e termos parciais PASS; nome sem correspondência rejeitado; função sem EXECUTE direto para `authenticated`; migração aplicada e verificada no histórico. **Pendente:** testar pela interface autenticada a consulta do cadastro real usando nome sem acento e conferir a listagem, sem criar novos registros.
+
+### §28.225 — Botões discretos nos ajustes temporários de agenda (10/11/2026)
+
+**Autorização:** VERDE da Gestora. A apresentação anterior ainda usava cartões altos e destaque azul forte nas ações de bloqueio/alteração temporária. Foi solicitado manter os botões com ícones, reduzir tamanho/destaque e não introduzir rolagem.
+
+**Correção cirúrgica:** `OwnAgendaManager.tsx` mantém ícone e nome das ações, com descrição acessível na dica do botão; remove o texto explicativo visível que ampliava o cartão. `agenda-page.css` reduz altura, espaço e tipografia, adotando tons suaves inclusive na seleção/hover, sem rolagem horizontal; `gestor.css` neutraliza o azul forte específico da tela do Gestor, preservando a mesma aparência compartilhada dos perfis. Não muda permissões, tipos de ação, gravação, bloqueios, consultas ou banco.
+
+**Verificação:** build Vite PASS; `git diff --check` PASS. Os quatro testes antigos de `OwnAgendaManager.test.tsx` falham antes das asserções porque montam o componente sem `AccessProvider` (erro `useAccessFlow deve ser usado dentro de AccessProvider`), portanto não validam esta alteração visual. **Pendente:** corrigir esse invólucro de teste em tarefa própria e homologar visualmente em desktop/celular nas interfaces profissional e Gestor.

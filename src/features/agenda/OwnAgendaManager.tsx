@@ -1065,6 +1065,7 @@ export function OwnAgendaManager({
                 type="button"
                 className="agenda-own-action-card"
                 aria-label={action.label}
+                title={action.description}
                 aria-pressed={entryType === action.value}
                 disabled={configurations.length === 0 || busy}
                 onClick={() => {
@@ -1075,7 +1076,6 @@ export function OwnAgendaManager({
               >
                 <span className="agenda-own-action-icon" aria-hidden="true">{action.icon}</span>
                 <strong>{action.label}</strong>
-                <small>{action.description}</small>
               </button>
             ))}
         </div>
