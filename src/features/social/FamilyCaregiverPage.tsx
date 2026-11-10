@@ -437,7 +437,7 @@ export function FamilyCaregiverPage({
           {context?.can_admin_correct && (
             <div className="family-caregiver-search">
               <label>
-                Buscar familiar existente
+                Buscar familiar existente por nome, Nº CAPO ou CMS
                 <input
                   value={familyQuery}
                   onChange={(event) => setFamilyQuery(event.target.value)}
