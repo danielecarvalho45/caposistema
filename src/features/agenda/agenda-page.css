@@ -1650,3 +1650,34 @@
   white-space: normal;
   overflow-wrap: break-word;
 }
+
+/* Horário livre na semana/mês usa o mesmo cartão vertical do bloqueado.
+   Sobrescreve a grade horizontal geral definida com :has() acima. */
+.agenda-schedule-grid--week .agenda-schedule-slot.is-livre:has(.agenda-slot-schedule-button),
+.agenda-schedule-grid--month .agenda-schedule-slot.is-livre:has(.agenda-slot-schedule-button) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 5px;
+}
+
+.agenda-schedule-grid--week .agenda-schedule-slot.is-livre > strong,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-livre > strong,
+.agenda-schedule-grid--week .agenda-schedule-slot.is-livre > .agenda-schedule-status,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-livre > .agenda-schedule-status,
+.agenda-schedule-grid--week .agenda-schedule-slot.is-livre > .agenda-slot-schedule-button,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-livre > .agenda-slot-schedule-button {
+  grid-column: 1;
+  grid-row: auto;
+  justify-self: stretch;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.agenda-schedule-grid--week .agenda-schedule-slot.is-livre > .agenda-slot-schedule-button,
+.agenda-schedule-grid--month .agenda-schedule-slot.is-livre > .agenda-slot-schedule-button {
+  width: 100%;
+  writing-mode: horizontal-tb;
+  overflow-wrap: normal;
+  white-space: normal;
+}

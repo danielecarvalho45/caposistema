@@ -8636,3 +8636,13 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Migração aplicada:** `20261110182928_capo_search_name_terms_family_identifiers`. Função interna `capo_name_matches_terms` confere todas as palavras digitadas, mesmo separadas por termos intermediários, sem flexibilizar os filtros de visibilidade, autenticação, papéis ou isolamento de homologação. Foram ajustadas cirurgicamente as três RPCs existentes: `search_patients_for_interface`, `search_patients_for_professional_interface` e `search_family_members_for_interface`. A busca de familiar também reconhece igualdade de `family_members.capo_number` ou `cms`. A função auxiliar não tem execução concedida a `anon` ou `authenticated` diretamente; as RPCs autorizadas permanecem responsáveis pelo contexto. Nenhum registro de paciente/familiar foi modificado. Texto indicativo do campo de pesquisa de familiar atualizado.
 
 **Verificação:** definição das três RPCs conferida no Supabase; casos de nomes completos e parciais deram os resultados esperados, incluindo não correspondência, sem consulta ou divulgação de identidades reais; permissões da função auxiliar confirmadas; build Vite PASS. **Pendente:** teste de busca autenticado com nomes e identificadores reais no perfil operacional, além de confirmar ordenação e visibilidade entre contas de produção e manuteste.
+
+### §28.223 — Cartão vertical dos horários livres na agenda semanal/mensal (10/11/2026)
+
+**Autorização:** VERDE da Gestora após captura mostrando horários livres com o botão `Agendar` comprimido verticalmente ao lado dos cartões, diferentemente do padrão organizado dos horários bloqueados.
+
+**Causa:** a regra genérica `.agenda-schedule-slot.is-livre:has(.agenda-slot-schedule-button)` com três colunas tinha especificidade superior à regra posterior de uma coluna da grade semanal/mensal. A grade geral ficou horizontal mesmo em colunas estreitas, provocando recorte e letras empilhadas do botão.
+
+**Correção cirúrgica:** apenas `src/features/agenda/agenda-page.css`, com sobrescrita específica para cartões livres nas visões semana e mês. Horário, estado `Livre` e botão `Agendar` passam a ocupar linhas próprias dentro de uma única coluna, com largura controlada. Cartões bloqueados/agendados, ação de agendar, RPCs, permissões e os registros permanecem inalterados. O ajuste vale aos componentes compartilhados entre perfis.
+
+**Verificação:** build Vite PASS. **Pendente:** homologação visual no desktop e celular com sete colunas, filtros profissionais e Gestor/AO; sem teste autenticado nem alteração de dados reais.
