@@ -8646,3 +8646,11 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção cirúrgica:** apenas `src/features/agenda/agenda-page.css`, com sobrescrita específica para cartões livres nas visões semana e mês. Horário, estado `Livre` e botão `Agendar` passam a ocupar linhas próprias dentro de uma única coluna, com largura controlada. Cartões bloqueados/agendados, ação de agendar, RPCs, permissões e os registros permanecem inalterados. O ajuste vale aos componentes compartilhados entre perfis.
 
 **Verificação:** build Vite PASS. **Pendente:** homologação visual no desktop e celular com sete colunas, filtros profissionais e Gestor/AO; sem teste autenticado nem alteração de dados reais.
+
+### §28.224 — Busca de pacientes e familiares sem distinção de acento (10/11/2026)
+
+**Autorização:** VERDE da Gestora. A Especificação Estrutural da Interface, item 3.2, estabelece interface simples e centrada no trabalho real. Ocorrência real: consulta de paciente com nome acentuado não localizável ao digitar sem acento, apesar do cadastro ativo. Manter grafia original dos nomes e apresentar todos os resultados correspondentes sem expor dados de homologação por padrão.
+
+**Correção aplicada no Supabase:** migração `20261110185731_capo_search_ignore_accents`. Alterada exclusivamente a função interna `capo_name_matches_terms(text,text)`, usada pelas três RPCs já adequadas no §28.222. Agora compara letras comuns independentemente de acentos (á, à, â, ã, ä; é, è, ê, ë; í; ó; ú; ç; ñ), além de maiúsculas/minúsculas, e mantém busca por palavras não consecutivas. Não modifica cadastros, dados salvos, resultados originais, separação de paciente/familiar, permissões ou exigências de autenticação. Nº CAPO e CMS continuam com busca exata nas respectivas RPCs.
+
+**Verificação:** casos SQL de nome com/sem acento, caixa alta e termos parciais PASS; nome sem correspondência rejeitado; função sem EXECUTE direto para `authenticated`; migração aplicada e verificada no histórico. **Pendente:** testar pela interface autenticada a consulta do cadastro real usando nome sem acento e conferir a listagem, sem criar novos registros.
