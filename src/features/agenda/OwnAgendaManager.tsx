@@ -88,6 +88,7 @@ type Props = Readonly<{
   intro?: string
   allowEmergencySlot?: boolean
   allowStructuralEdit?: boolean
+  enablePsychologyGroup?: boolean
 }>
 
 type PendingConfirmation = Readonly<{
@@ -183,6 +184,7 @@ export function OwnAgendaManager({
   intro = 'Você pode flexibilizar temporariamente sua própria agenda sem depender do Administrativo: ajustar café/almoço, reunião, atividade interna, relatório, bloquear períodos e alterar provisoriamente o horário em uma data específica. Alterações permanentes de jornada, turno, carga ou horário seguem Coordenação → anuência → efetivação administrativa.',
   allowEmergencySlot = false,
   allowStructuralEdit = false,
+  enablePsychologyGroup = false,
 }: Props) {
   const { accessContext } = useAccessFlow()
   const rpc = useMemo(() => getRpcService(), [])
@@ -218,6 +220,7 @@ export function OwnAgendaManager({
   const [structuralExpectedUpdatedAt, setStructuralExpectedUpdatedAt] = useState('')
   const [structuralStartDate, setStructuralStartDate] = useState('')
   const [structuralEndDate, setStructuralEndDate] = useState('')
+  const [structuralUnlimited, setStructuralUnlimited] = useState(true)
   const [structuralStartTime, setStructuralStartTime] = useState('')
   const [structuralEndTime, setStructuralEndTime] = useState('')
   const [structuralDuration, setStructuralDuration] = useState('')
@@ -244,7 +247,7 @@ export function OwnAgendaManager({
   const [groupFeedback, setGroupFeedback] = useState<string | null>(null)
 
   const groups = groupContext?.status === 'success' ? rows(groupContext.data, 'groups') : []
-  const psychologyEligible = groupContext?.status === 'success' && record(groupContext.data)?.eligible === true
+  const psychologyEligible = enablePsychologyGroup || (groupContext?.status === 'success' && record(groupContext.data)?.eligible === true)
 
   const configurations =
     configuration?.status === 'success'
@@ -288,6 +291,7 @@ export function OwnAgendaManager({
           setStructuralExpectedUpdatedAt(stringValue(activeConfig.updated_at))
           setStructuralStartDate(stringValue(activeConfig.start_date))
           setStructuralEndDate(stringValue(activeConfig.end_date))
+          setStructuralUnlimited(!stringValue(activeConfig.end_date))
           setStructuralStartTime(timeHHMM(activeConfig.start_time))
           setStructuralEndTime(timeHHMM(activeConfig.end_time))
           setStructuralDuration(String(numberValue(activeConfig.appointment_duration_minutes, 0) || ''))
@@ -304,6 +308,7 @@ export function OwnAgendaManager({
           setStructuralExpectedUpdatedAt('')
           setStructuralStartDate(local)
           setStructuralEndDate('')
+          setStructuralUnlimited(true)
           setStructuralStartTime('')
           setStructuralEndTime('')
           setStructuralDuration('')
@@ -452,6 +457,7 @@ export function OwnAgendaManager({
     setStructuralExpectedUpdatedAt('')
     setStructuralStartDate(local)
     setStructuralEndDate('')
+    setStructuralUnlimited(true)
     setStructuralStartTime('')
     setStructuralEndTime('')
     setStructuralDuration('')
@@ -481,6 +487,7 @@ export function OwnAgendaManager({
     setStructuralExpectedUpdatedAt(stringValue(selected.updated_at))
     setStructuralStartDate(stringValue(selected.start_date))
     setStructuralEndDate(stringValue(selected.end_date))
+    setStructuralUnlimited(!stringValue(selected.end_date))
     setStructuralStartTime(timeHHMM(selected.start_time))
     setStructuralEndTime(timeHHMM(selected.end_time))
     setStructuralDuration(String(numberValue(selected.appointment_duration_minutes, 0) || ''))
@@ -657,7 +664,7 @@ export function OwnAgendaManager({
 
   async function saveStructuralConfiguration() {
     if (
-      structuralEndDate &&
+      !structuralUnlimited && structuralEndDate &&
       !dateRangeIncludesSelectedWeekdays(
         structuralStartDate,
         structuralEndDate,
@@ -689,7 +696,7 @@ export function OwnAgendaManager({
       configId: structuralConfigId || null,
       professionalId,
       startDate: structuralStartDate,
-      endDate: structuralEndDate || null,
+      endDate: structuralUnlimited ? null : structuralEndDate || null,
       startTime: structuralStartTime,
       endTime: structuralEndTime,
       durationMinutes: Number(structuralDuration),
@@ -738,6 +745,7 @@ export function OwnAgendaManager({
         setStructuralExpectedUpdatedAt(stringValue(savedConfig.updated_at))
         setStructuralStartDate(stringValue(savedConfig.start_date))
         setStructuralEndDate(stringValue(savedConfig.end_date))
+        setStructuralUnlimited(!stringValue(savedConfig.end_date))
         setStructuralStartTime(timeHHMM(savedConfig.start_time))
         setStructuralEndTime(timeHHMM(savedConfig.end_time))
         setStructuralDuration(String(numberValue(savedConfig.appointment_duration_minutes, 0) || ''))
@@ -882,6 +890,29 @@ export function OwnAgendaManager({
             </div>
           </div>
 
+          {psychologyEligible && (
+            <label>
+              Tipo de agenda — Psicologia
+              <select value={groupMode} onChange={(event) => {
+                const mode = event.target.value as 'individual' | 'mista' | 'grupo'
+                setGroupMode(mode)
+                setGroupFeedback(null)
+                if (mode === 'grupo') {
+                  setGroupStartTime(structuralStartTime)
+                  setGroupEndTime(structuralEndTime)
+                }
+              }}>
+                <option value="individual">Individual</option>
+                <option value="mista">Mista — individual e grupo</option>
+                <option value="grupo">Somente grupo</option>
+              </select>
+              {groupMode !== 'individual' && <small>Preencha os dados do grupo nesta configuração e salve o período coletivo depois de salvar o padrão semanal.</small>}
+            </label>
+          )}
+          {enablePsychologyGroup && groupContext?.status === 'error' && (
+            <p role="alert">Não foi possível consultar os grupos de Psicologia: {groupContext.error.message}</p>
+          )}
+
           <div className="agenda-structural-pattern-picker">
             <label>
               Padrão semanal
@@ -913,7 +944,14 @@ export function OwnAgendaManager({
           </p>
 
           <div className="agenda-structural-grid">
-            <label>
+            <label className="agenda-structural-unlimited">
+              <input type="checkbox" checked={structuralUnlimited} onChange={(event) => {
+                setStructuralUnlimited(event.target.checked)
+                if (event.target.checked) setStructuralEndDate('')
+              }} />
+              Agenda recorrente sem prazo de término (início automático no cadastro)
+            </label>
+            {!structuralUnlimited && <><label>
               Início da vigência
               <input type="date" value={structuralStartDate} onChange={(event) => setStructuralStartDate(event.target.value)} />
             </label>
@@ -925,14 +963,14 @@ export function OwnAgendaManager({
                 value={structuralEndDate}
                 onChange={(event) => setStructuralEndDate(event.target.value)}
               />
-            </label>
+            </label></>}
             <label>
               Horário inicial
-              <input type="time" value={structuralStartTime} onChange={(event) => setStructuralStartTime(event.target.value)} />
+              <input type="time" value={structuralStartTime} onChange={(event) => { setStructuralStartTime(event.target.value); if (groupMode === 'grupo') setGroupStartTime(event.target.value) }} />
             </label>
             <label>
               Horário final
-              <input type="time" value={structuralEndTime} onChange={(event) => setStructuralEndTime(event.target.value)} />
+              <input type="time" value={structuralEndTime} onChange={(event) => { setStructuralEndTime(event.target.value); if (groupMode === 'grupo') setGroupEndTime(event.target.value) }} />
             </label>
             <label>
               Duração do atendimento (minutos)
@@ -1090,21 +1128,6 @@ export function OwnAgendaManager({
                   <p>Escolha como configurar este padrão. A agenda já cadastrada não muda até salvar uma nova configuração.</p>
                 </div>
               </div>
-              <label>
-                Modalidade
-                <select value={groupMode} onChange={(event) => {
-                  const mode = event.target.value as 'individual' | 'mista' | 'grupo'
-                  setGroupMode(mode)
-                  if (mode === 'grupo') {
-                    setGroupStartTime(structuralStartTime)
-                    setGroupEndTime(structuralEndTime)
-                  }
-                }}>
-                  <option value="individual">Atendimento individual</option>
-                  <option value="mista">Agenda mista: individual e grupo</option>
-                  <option value="grupo">Somente grupo neste padrão</option>
-                </select>
-              </label>
               {groupMode !== 'individual' && (
                 <>
                   <div className="agenda-recurring-grid">

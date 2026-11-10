@@ -580,7 +580,7 @@ export function GestorTeamPage({
     {mode === 'equipe' && (
       <div className="gestor-team-tabs" role="tablist" aria-label="Equipe e agendas">
         <button type="button" role="tab" aria-selected={teamTab === 'cadastro'} onClick={() => setTeamTab('cadastro')}>Equipe</button>
-        <button type="button" role="tab" aria-selected={teamTab === 'agenda'} onClick={() => setTeamTab('agenda')}>Gestão de Agenda</button>
+        <button type="button" role="tab" aria-selected={teamTab === 'agenda'} onClick={() => { setTeamTab('agenda'); setQuery(''); setStatus('ativo'); setShowInactiveSearch(false); void reload('', 'ativo') }}>Gestão de Agenda</button>
       </div>
     )}
 
@@ -590,9 +590,9 @@ export function GestorTeamPage({
           <h3>{mode === 'administracao' ? 'Profissionais e contas' : 'Equipe'}</h3>
           {mode === 'administracao' && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Novo profissional</button>}
         </div>
-        <div className="gestor-search-row"><input aria-label="Buscar equipe" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou usuário" /><button type="button" onClick={() => void reload()}>Buscar</button><button type="button" aria-label={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} title={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} onClick={() => { const next = showInactiveSearch ? 'ativo' : 'inativo'; setShowInactiveSearch(!showInactiveSearch); setStatus(next); setQuery(''); setSelected(null); void reload('', next) }}>⌕</button></div>
-        {showInactiveSearch && <label>Buscar profissionais inativos <select aria-label="Situação da equipe" value={status} onChange={(event) => setStatus(event.target.value)}><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></label>}
-        {loading ? <p role="status">Carregando equipe...</p> : team.length === 0 ? <p>Nenhum profissional retornado.</p> : <ul className="gestor-result-list">{team.map((member) => <li key={member.professionalId}><button type="button" className={selected?.professionalId === member.professionalId ? 'is-selected' : ''} onClick={() => chooseMember(member)}><strong>{member.fullName}</strong><small>{member.functionTitle ?? 'Sem função informada'} · {member.active ? 'Ativo' : 'Inativo'}{mode === 'administracao' && !member.userAccountId ? ' · Sem conta de acesso' : ''}</small></button></li>)}</ul>}
+        {(mode === 'administracao' || teamTab !== 'agenda') && <div className="gestor-search-row"><input aria-label="Buscar equipe" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou usuário" /><button type="button" onClick={() => void reload()}>Buscar</button><button type="button" aria-label={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} title={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} onClick={() => { const next = showInactiveSearch ? 'ativo' : 'inativo'; setShowInactiveSearch(!showInactiveSearch); setStatus(next); setQuery(''); setSelected(null); void reload('', next) }}>⌕</button></div>}
+        {(mode === 'administracao' || teamTab !== 'agenda') && showInactiveSearch && <label>Buscar profissionais inativos <select aria-label="Situação da equipe" value={status} onChange={(event) => setStatus(event.target.value)}><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></label>}
+        {loading ? <p role="status">Carregando equipe...</p> : team.length === 0 ? <p>Nenhum profissional retornado.</p> : <ul className={mode === 'equipe' && teamTab === 'agenda' ? 'gestor-result-list gestor-result-list-compact' : 'gestor-result-list'}>{team.map((member) => <li key={member.professionalId}><button type="button" className={selected?.professionalId === member.professionalId ? 'is-selected' : ''} onClick={() => chooseMember(member)}><strong>{member.fullName}</strong><small>{member.functionTitle ?? 'Sem função informada'} · {member.active ? 'Ativo' : 'Inativo'}{mode === 'administracao' && !member.userAccountId ? ' · Sem conta de acesso' : ''}</small></button></li>)}</ul>}
       </article>
 
       {mode === 'administracao' ? (
@@ -625,6 +625,7 @@ export function GestorTeamPage({
               intro="O Gestor/Titular organiza diretamente a agenda do serviço. Ajuste a configuração-base quando o horário real do profissional mudar e use as ações temporárias somente para situações pontuais."
               allowEmergencySlot
               allowStructuralEdit
+              enablePsychologyGroup={Boolean(selected.functionTitle?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog') || specialties.some((specialty) => specialty.label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog') && selectedCodes(selected.profile.specialty_ids).includes(specialty.id)))}
             />
           ) : (
             <div>

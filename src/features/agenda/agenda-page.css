@@ -774,6 +774,19 @@
   gap: 10px;
 }
 
+.agenda-structural-editor .agenda-structural-unlimited {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+}
+.agenda-structural-editor .agenda-structural-unlimited input[type='checkbox'] {
+  width: auto;
+  min-height: 0;
+  flex: none;
+}
+
 .agenda-structural-editor label {
   display: grid;
   gap: 5px;

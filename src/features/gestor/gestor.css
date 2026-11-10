@@ -216,6 +216,22 @@
   width: 100%;
 }
 
+/* Lista lateral compacta apenas na gestão das agendas. */
+.gestor-result-list-compact { gap: 3px; margin-top: 8px; }
+.gestor-result-list-compact li button {
+  padding: 7px 9px;
+  border-color: transparent;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.gestor-result-list-compact li button small { margin-top: 2px; font-size: 9px; }
+.gestor-result-list-compact li button.is-selected {
+  border-color: #b7d3cc;
+  background: #eaf4f0;
+  color: #214f4c;
+}
+
 .gestor-agenda-management .agenda-own-management button.agenda-own-action-card {
   min-height: 42px;
   padding: 8px 9px;
