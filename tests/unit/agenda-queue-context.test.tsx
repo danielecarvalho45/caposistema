@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -8,8 +8,12 @@ import type { AccessContext } from '../../src/types/access'
 const rpc = vi.hoisted(() => ({
   getSchedulingCatalog: vi.fn(), getAvailableAppointmentSlots: vi.fn(),
   getAgendaScheduleGrid: vi.fn(), createAppointment: vi.fn(),
+  getAppointmentCareLocation: vi.fn(),
   updateAppointmentAttendance: vi.fn(),
   searchReferralPatients: vi.fn(), addPatientToWaitingList: vi.fn(),
+}))
+vi.mock('../../src/lib/supabase/client', () => ({
+  getSupabaseClient: () => ({ rpc: async () => ({ data: [], error: null }) }),
 }))
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => ({ ...(await importOriginal<typeof import('../../src/lib/supabase/rpc')>()), getRpcService: () => rpc }))
 afterEach(() => { cleanup(); vi.clearAllMocks() })
@@ -51,6 +55,7 @@ it('abre o agendamento com o paciente da consulta mesmo antes de escolher especi
     roles: [{ code: 'administrador' }],
     primary_context: { code: 'administrador' },
     professional_id: null,
+    real_identity: { full_name: 'Administrativo CAPO', function_title: 'Administrativo' },
   } as unknown as AccessContext
 
   render(
@@ -75,7 +80,8 @@ it('abre o agendamento com o paciente da consulta mesmo antes de escolher especi
 
 
 it('permite iniciar e concluir agendamento clicando no horário livre de paciente já cadastrado', async () => {
-  const slotStart = '2026-10-01T12:00:00.000Z'
+  rpc.getAppointmentCareLocation.mockResolvedValue({ status: 'success', data: { care_location: 'CAPO — Unidade Central' } })
+  const slotStart = '2026-11-17T12:00:00.000Z'
   rpc.getSchedulingCatalog.mockResolvedValue({
     status: 'success',
     data: [{
@@ -89,10 +95,10 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
     status: 'success',
     data: [{
       professional_id: 'p1',
-      slot_date: '2026-10-01',
+      slot_date: '2026-11-17',
       slot_time: '09:00:00',
       slot_start: slotStart,
-      slot_end: '2026-10-01T12:30:00.000Z',
+      slot_end: '2026-11-17T12:30:00.000Z',
       duration_minutes: 30,
     }],
   })
@@ -101,10 +107,10 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
     data: [{
       professional_id: 'p1',
       professional_name: 'Profissional autorizado',
-      slot_date: '2026-10-01',
+      slot_date: '2026-11-17',
       weekday: 4,
       slot_start: slotStart,
-      slot_end: '2026-10-01T12:30:00.000Z',
+      slot_end: '2026-11-17T12:30:00.000Z',
       duration_minutes: 30,
       slot_status: 'livre',
       appointment_id: null,
@@ -128,6 +134,7 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
     roles: [{ code: 'administrador' }],
     primary_context: { code: 'administrador' },
     professional_id: null,
+    real_identity: { full_name: 'Administrativo CAPO', function_title: 'Administrativo' },
   } as unknown as AccessContext
   const user = userEvent.setup()
 
@@ -139,6 +146,8 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
         patientName: 'Paciente já cadastrado',
         specialtyId: 's1',
         professionalId: 'p1',
+        slotDate: '2026-11-17',
+        slotStart,
         origin: 'patient_record',
       },
     }]}>
@@ -150,13 +159,8 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
   )
 
   expect(await screen.findByDisplayValue('Paciente já cadastrado')).toBeVisible()
-  const scheduleTable = await screen.findByRole('table')
-  expect(within(scheduleTable).getByRole('columnheader', { name: 'Horário' })).toBeVisible()
-  expect(within(scheduleTable).getByRole('columnheader', { name: 'Paciente' })).toBeVisible()
-  expect(within(scheduleTable).getByRole('columnheader', { name: 'Especialidades' })).toBeVisible()
-  expect(within(scheduleTable).getByRole('columnheader', { name: 'Ações' })).toBeVisible()
-  const freeSlotButton = await within(scheduleTable).findByRole('button', { name: 'Agendar' })
-  await user.click(freeSlotButton)
+  fireEvent.change(screen.getByLabelText('Data *'), { target: { value: '2026-11-17' } })
+  await user.click(await screen.findByText('09:00:00'))
 
   await user.selectOptions(screen.getByLabelText('Tipo *'), 'Primeiro atendimento na especialidade')
   const confirm = screen.getByRole('button', { name: 'Confirmar agendamento' })
@@ -171,6 +175,13 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
     generalNotes: null,
     operationalOrigin: 'cadastro_paciente',
   })
+  expect(await screen.findByRole('button', { name: 'Agendar outra especialidade' })).toBeVisible()
+  expect(screen.getByDisplayValue('Paciente já cadastrado')).toBeVisible()
+  expect(confirm).toBeDisabled()
+  await user.click(screen.getByRole('button', { name: 'Agendar outra especialidade' }))
+  expect(screen.getByDisplayValue('Paciente já cadastrado')).toBeVisible()
+  expect(screen.getByLabelText('Especialidade *')).toHaveValue('')
+  expect(screen.queryByRole('button', { name: 'Agendar outra especialidade' })).not.toBeInTheDocument()
 })
 
 

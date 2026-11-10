@@ -842,6 +842,7 @@ export function AgendaPage({
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
+  const [awaitingNextAppointmentChoice, setAwaitingNextAppointmentChoice] = useState(false)
   const [queueInclusionBusy, setQueueInclusionBusy] = useState(false)
   const [lastScheduledContact, setLastScheduledContact] = useState<Readonly<{
     patientId: string
@@ -1295,6 +1296,7 @@ export function AgendaPage({
   }
 
   async function createAppointment() {
+    if (awaitingNextAppointmentChoice) return
     if (!appointmentPatientId || !selectedSpecialtyId || !selectedProfessionalId || !validSlotStart || !appointmentType) {
       setAppointmentFeedback('Selecione paciente, especialidade, profissional, horário e tipo de atendimento.')
       return
@@ -1373,14 +1375,17 @@ export function AgendaPage({
       setAppointmentFeedback(locationWarning
         ? 'Agendamento criado, mas o local de atendimento não foi confirmado. Cadastre o endereço do profissional antes de enviar o WhatsApp.'
         : 'Agendamento criado. Agenda recarregada do banco.')
-      setAppointmentPatientId('')
-      setAppointmentPatientQuery('')
-      setAppointmentPatients([])
-      setSelectedSpecialtyId('')
-      setSelectedSlotStart('')
-      setAppointmentType('')
-      setMovementKind('')
-      setAppointmentNotes('')
+      setAwaitingNextAppointmentChoice(!isProfessional)
+      if (isProfessional) {
+        setAppointmentPatientId('')
+        setAppointmentPatientQuery('')
+        setAppointmentPatients([])
+        setSelectedSpecialtyId('')
+        setSelectedSlotStart('')
+        setAppointmentType('')
+        setMovementKind('')
+        setAppointmentNotes('')
+      }
       await load()
     } else if (result.status === 'error') {
       setAppointmentFeedback(result.error.message)
@@ -1781,6 +1786,7 @@ export function AgendaPage({
 
     setShowScheduleForm(true)
     setShowRescheduleForm(false)
+    setAwaitingNextAppointmentChoice(false)
     setAppointmentPatientId(patientId)
     setAppointmentPatientQuery(patientName)
     setPrefillWaitingListId(waitingListId)
@@ -2043,6 +2049,7 @@ export function AgendaPage({
                 onClick={() => {
                   setShowScheduleForm((current) => !current)
                   setShowRescheduleForm(false)
+                  setAwaitingNextAppointmentChoice(false)
                   setMovementKind('')
                   setLastScheduledContact(null)
                 }}
@@ -2059,6 +2066,7 @@ export function AgendaPage({
               <button type="button" aria-expanded={showRescheduleForm} onClick={() => {
                 setShowRescheduleForm((current) => !current)
                 setShowScheduleForm(false)
+                setAwaitingNextAppointmentChoice(false)
                 setMovementKind('')
                 setLastRescheduledContact(null)
               }}>Remarcar</button>
@@ -2081,7 +2089,7 @@ export function AgendaPage({
                 Paciente *
                 <input
                   type="search"
-                  readOnly={isProfessional}
+                  readOnly={isProfessional || awaitingNextAppointmentChoice}
                   placeholder="Nome, Nº CAPO ou CMS"
                   value={appointmentPatientQuery}
                   onChange={(event) => {
@@ -2102,6 +2110,7 @@ export function AgendaPage({
                   <button
                     type="button"
                     className="agenda-patient-search-button"
+                    disabled={awaitingNextAppointmentChoice}
                     onClick={() => void searchAppointmentPatients()}
                   >
                     Buscar paciente
@@ -2287,9 +2296,40 @@ export function AgendaPage({
               </label>
             </div>
             <div className="agenda-form-actions">
-              <button type="button" disabled={!appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType} onClick={() => void createAppointment()}>
+              <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType} onClick={() => void createAppointment()}>
                 Confirmar agendamento
               </button>
+              {!isProfessional && awaitingNextAppointmentChoice && (
+                <>
+                  <button type="button" onClick={() => {
+                    setAwaitingNextAppointmentChoice(false)
+                    setSelectedSpecialtyId('')
+                    setSelectedProfessionalId('')
+                    setSelectedSlotStart('')
+                    setSlotResult(null)
+                    setAppointmentType('')
+                    setMovementKind('')
+                    setAppointmentNotes('')
+                    setLastScheduledContact(null)
+                    setAppointmentFeedback('Paciente mantido. Escolha a próxima especialidade, profissional e horário.')
+                  }}>Agendar outra especialidade</button>
+                  <button type="button" onClick={() => {
+                    setAwaitingNextAppointmentChoice(false)
+                    setAppointmentPatientId('')
+                    setAppointmentPatientQuery('')
+                    setAppointmentPatients([])
+                    setSelectedSpecialtyId('')
+                    setSelectedProfessionalId('')
+                    setSelectedSlotStart('')
+                    setAppointmentType('')
+                    setMovementKind('')
+                    setAppointmentNotes('')
+                    setLastScheduledContact(null)
+                    setAppointmentFeedback(null)
+                    setShowScheduleForm(false)
+                  }}>Finalizar agendamentos</button>
+                </>
+              )}
             </div>
             {appointmentFeedback && <p className="agenda-contract-note" role="status">{appointmentFeedback}</p>}
             {!isProfessional && lastScheduledContact && (

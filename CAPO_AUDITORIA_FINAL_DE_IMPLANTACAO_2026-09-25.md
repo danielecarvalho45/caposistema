@@ -8612,3 +8612,11 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Texto de remanejamento:** avisa com acolhimento e pedido de desculpas que, por força maior, a consulta da data anterior precisou mudar; destaca nova data, horário e local e utiliza o cabeçalho de atenção. Retorno e remarcação possuem modelos próprios. Agendamento inicial mantém o modelo anterior.
 
 **Verificação:** build Vite PASS e cinco testes direcionados PASS (comunicação, seleção de movimentação e botão de retorno). Dois testes antigos do arquivo de avisos prévios ficaram fora do filtro desta execução; a suíte de tipagem integral possui erros preexistentes. **Pendente:** homologação autenticada dos três caminhos, inclusive WhatsApp, permissões, familiares/cuidadores e persistência efetiva dos motivos em produção. Nenhum paciente real foi alterado neste trabalho.
+
+### §28.220 — Agendamentos sucessivos do mesmo paciente após cadastro (10/11/2026)
+
+**Autorização VERDE:** permitir agendar uma ou várias especialidades para o mesmo paciente, sem repetir a busca após cada consulta. Preservar as regras de cadastro novo (Oferta CAPO com aceite expresso anterior ao agendamento) e preexistente (vínculo histórico válido sem nova Oferta Inicial).
+
+**Alteração cirúrgica:** em `AgendaPage.tsx`, após confirmação da criação no banco, o formulário administrativo mantém identificador, nome e seleção do paciente e apresenta `Agendar outra especialidade` e `Finalizar agendamentos`. Enquanto aguarda a escolha, a confirmação de novo agendamento fica desabilitada, evitando repetição por clique. Continuar limpa somente especialidade, profissional, vaga, tipo e observações e mantém o paciente; finalizar libera também o paciente e encerra o formulário. Cada consulta é criada individualmente pela RPC vigente, com horário e mensagem WhatsApp próprios. O fluxo de retorno profissional não foi modificado. Não houve mudança no banco ou nas regras de oferta.
+
+**Verificação:** build Vite PASS e teste dirigido PASS do caminho cadastro → agendamento → manutenção do paciente → nova especialidade. **Pendente:** homologação autenticada do fluxo de cadastro novo após aceite, cadastro preexistente, duas especialidades reais, comunicação e finalização. Nenhum cadastro ou agendamento real foi criado nos testes.
