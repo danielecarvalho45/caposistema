@@ -11,6 +11,10 @@ const rpc = vi.hoisted(() => ({
   setAgendaConfigurationStatus: vi.fn(),
   createAgendaBlock: vi.fn(),
   createAgendaException: vi.fn(),
+  getAgendaBlockAffected: vi.fn(),
+  getAvailableAppointmentSlots: vi.fn(),
+  rescheduleAppointment: vi.fn(),
+  rescheduleFamilyPsychologyAppointment: vi.fn(),
 }))
 
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => ({
@@ -152,5 +156,80 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     expect(
       screen.getByRole('option', { name: /Qua, Qui, Sex · 08:00–17:00 · Ativo/ }),
     ).toBeVisible()
+  })
+})
+
+describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', () => {
+  const affected = [{
+    appointment_id: 'appointment-1',
+    appointment_kind: 'paciente',
+    person_id: 'patient-1',
+    person_name: 'Paciente agendado',
+    professional_id: 'doctor-id',
+    appointment_date: '2026-11-11T13:00:00Z',
+    appointment_end: '2026-11-11T13:30:00Z',
+  }]
+
+  beforeEach(() => {
+    rpc.getAgendaConfiguration.mockResolvedValue({
+      status: 'success', data: { configurations: [{ ...mondayTuesday, config_id: 'doctor-config' }] },
+    })
+    rpc.createAgendaBlock.mockResolvedValue({
+      status: 'success',
+      data: { success: false, requires_remanejamento: true, affected_appointments: 1 },
+    })
+    rpc.getAgendaBlockAffected.mockResolvedValue({ status: 'success', data: affected })
+  })
+
+  afterEach(() => { cleanup(); vi.clearAllMocks() })
+
+  async function requestBlock() {
+    await screen.findByLabelText('Configuração')
+    await waitFor(() => expect(within(screen.getByLabelText('Configuração')).getByRole('option', { name: /Seg, Ter · 08:00–11:00/ })).toBeVisible())
+    fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
+    fireEvent.change(screen.getByLabelText('Configuração'), { target: { value: 'doctor-config' } })
+    fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2026-11-11' } })
+    fireEvent.change(screen.getAllByLabelText('Início').at(-1)!, { target: { value: '08:00' } })
+    fireEvent.change(screen.getAllByLabelText('Fim').at(-1)!, { target: { value: '09:00' } })
+    fireEvent.change(screen.getByLabelText('Justificativa operacional'), { target: { value: 'Compromisso médico' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar alteração temporária' }))
+    await screen.findByText(/Paciente agendado/)
+  }
+
+  it('recusa o bloqueio e mostra ao médico a pendência sem permitir remarcação administrativa', async () => {
+    render(<OwnAgendaManager professionalId="doctor-id" />)
+    await requestBlock()
+    expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(1)
+    expect(rpc.getAgendaBlockAffected).toHaveBeenCalledWith('doctor-config', '2026-11-11', '08:00', '09:00')
+    expect(screen.getByText(/Solicite ao Administrativo/)).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Remanejar esta consulta' })).not.toBeInTheDocument()
+  })
+
+  it('exige uma remarcação confirmada antes de permitir nova tentativa de bloqueio', async () => {
+    rpc.getAvailableAppointmentSlots.mockResolvedValue({
+      status: 'success', data: [{ slot_start: '2026-11-12T13:00:00Z', slot_time: '10:00' }],
+    })
+    rpc.rescheduleAppointment.mockResolvedValue({ status: 'success', data: { new_appointment_id: 'appointment-2' } })
+    rpc.getAgendaBlockAffected
+      .mockResolvedValueOnce({ status: 'success', data: affected })
+      .mockResolvedValue({ status: 'success', data: [] })
+    rpc.createAgendaBlock
+      .mockResolvedValueOnce({ status: 'success', data: { success: false, requires_remanejamento: true } })
+      .mockResolvedValue({ status: 'success', data: { success: true, block_id: 'block-1' } })
+
+    render(<OwnAgendaManager professionalId="doctor-id" allowStructuralEdit />)
+    await requestBlock()
+    expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Remanejar esta consulta' }))
+    fireEvent.change(screen.getByLabelText('Nova data'), { target: { value: '2026-11-12' } })
+    await screen.findByRole('option', { name: '10:00' })
+    fireEvent.change(screen.getByLabelText('Horário livre'), { target: { value: '2026-11-12T13:00:00Z' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar remarcação' }))
+    await waitFor(() => expect(rpc.rescheduleAppointment).toHaveBeenCalledWith(expect.objectContaining({
+      appointmentId: 'appointment-1', origin: 'bloqueio_agenda',
+    })))
+    expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar alteração temporária' }))
+    await waitFor(() => expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(2))
   })
 })
