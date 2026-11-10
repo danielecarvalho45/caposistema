@@ -3,6 +3,9 @@ import {
   getRpcService,
   type AsyncState,
 } from '../../lib/supabase/rpc'
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { movementWhatsAppMessage } from './appointment-communication'
+import { useAccessFlow } from '../access/access-context'
 
 type Row = Readonly<Record<string, unknown>>
 
@@ -181,6 +184,7 @@ export function OwnAgendaManager({
   allowEmergencySlot = false,
   allowStructuralEdit = false,
 }: Props) {
+  const { accessContext } = useAccessFlow()
   const rpc = useMemo(() => getRpcService(), [])
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
   const [configId, setConfigId] = useState('')
@@ -200,6 +204,13 @@ export function OwnAgendaManager({
   const [remanejamentoReason, setRemanejamentoReason] = useState('')
   const [remanejamentoSlots, setRemanejamentoSlots] = useState<readonly Row[]>([])
   const [remanejamentoBusy, setRemanejamentoBusy] = useState(false)
+  const [remanejamentoContact, setRemanejamentoContact] = useState<Readonly<{
+    patientId: string
+    patientName: string
+    oldStart: string
+    newStart: string
+    careLocation: string
+  }> | null>(null)
   const [busy, setBusy] = useState(false)
   const [pendingConfirmation, setPendingConfirmation] =
     useState<PendingConfirmation | null>(null)
@@ -345,6 +356,18 @@ export function OwnAgendaManager({
           newNotes: '',
         })
     if (result.status === 'success') {
+      const response = record(result.data)
+      const newId = stringValue(response?.new_appointment_id)
+      const locationResult = newId ? await rpc.getAppointmentCareLocation(newId) : null
+      const location = locationResult?.status === 'success' ? record(locationResult.data) : null
+      const careLocation = stringValue(location?.care_location).trim()
+      setRemanejamentoContact(stringValue(appointment.appointment_kind) === 'paciente' && careLocation ? {
+        patientId: stringValue(appointment.person_id),
+        patientName: stringValue(appointment.person_name),
+        oldStart: stringValue(appointment.appointment_date),
+        newStart: remanejamentoStart,
+        careLocation,
+      } : null)
       setFeedback('Consulta remarcada e histórico preservado. Confira as demais pendências antes de bloquear.')
       setRemanejamentoId('')
       setRemanejamentoStart('')
@@ -1169,6 +1192,19 @@ export function OwnAgendaManager({
               <a href="/agenda" className="agenda-slot-schedule-button">Abrir agenda oficial</a>
               <button type="button" disabled={affectedLoading} onClick={() => void refreshAffectedAppointments()}>Atualizar pendências</button>
             </section>
+          )}
+          {remanejamentoContact && (
+            <p>
+              <PatientWhatsAppButton
+                patientId={remanejamentoContact.patientId}
+                label="💬 WhatsApp de remanejamento"
+                message={movementWhatsAppMessage('remanejamento', {
+                  ...remanejamentoContact,
+                  senderName: accessContext?.real_identity.full_name?.trim() || 'Equipe CAPO',
+                  senderTitle: accessContext?.real_identity.function_title?.trim() || 'CAPO',
+                })}
+              />
+            </p>
           )}
 
           {pendingConfirmation ? (

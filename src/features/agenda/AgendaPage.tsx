@@ -12,6 +12,7 @@ import {
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { movementWhatsAppMessage, type CommunicationContact } from './appointment-communication'
 import { prepareAppointmentReminder } from './appointment-confirmation-link'
 import { isVisibleOnAgenda } from './agenda-visibility'
 import { getSupabaseClient } from '../../lib/supabase/client'
@@ -849,6 +850,12 @@ export function AgendaPage({
     specialtyName: string
     careLocation: string
     slotStart: string
+    isReturn: boolean
+  }> | null>(null)
+  const [lastRescheduledContact, setLastRescheduledContact] = useState<Readonly<{
+    patientId: string
+    kind: 'remarcacao' | 'remanejamento'
+    contact: Omit<CommunicationContact, 'senderName' | 'senderTitle'>
   }> | null>(null)
   const [prefillWaitingListId, setPrefillWaitingListId] = useState('')
   const [prefillRenewalId, setPrefillRenewalId] = useState('')
@@ -858,6 +865,7 @@ export function AgendaPage({
   const [cancelReason, setCancelReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
   const [showRescheduleForm, setShowRescheduleForm] = useState(false)
+  const [movementKind, setMovementKind] = useState<'' | 'remarcacao' | 'remanejamento' | 'retorno'>('')
   const [reschedulableResult, setReschedulableResult] = useState<{ key: string; rows: readonly ReschedulableAppointment[] } | null>(null)
   const [selectedReschedulableId, setSelectedReschedulableId] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
@@ -1165,9 +1173,30 @@ export function AgendaPage({
     setAppointmentPatientQuery(appointment.patient_name)
     setSelectedProfessionalId(appointment.professional_id)
     setSelectedReschedulableId(appointment.appointment_id)
+    setMovementKind('')
+    setLastRescheduledContact(null)
     setRescheduleOrigin('manual')
     setRescheduleReason('')
     setRescheduleTargetDate(dateInputValue(new Date()))
+    setAppointmentFeedback(null)
+  }
+
+  function prepareAdministrativeReturn(appointment: AgendaAppointment) {
+    if (isProfessional) return
+    const matching = catalogRows.filter((row) => row.professional_id === appointment.professional_id)
+    const specialty = matching.find((row) => row.specialty_name === appointment.specialty_name)
+      ?? (matching.length === 1 ? matching[0] : null)
+    setShowRescheduleForm(false)
+    setShowScheduleForm(true)
+    setMovementKind('retorno')
+    setAppointmentPatientId(appointment.patient_id)
+    setAppointmentPatientQuery(appointment.patient_name)
+    setSelectedProfessionalId(appointment.professional_id)
+    setSelectedSpecialtyId(specialty?.specialty_id ?? '')
+    setAppointmentType('Retorno')
+    setAppointmentOrigin('retorno_administrativo')
+    setSelectedSlotStart('')
+    setLastScheduledContact(null)
     setAppointmentFeedback(null)
   }
 
@@ -1256,6 +1285,7 @@ export function AgendaPage({
     )
 
     setShowRescheduleForm(false)
+    setMovementKind('')
     setShowScheduleForm(true)
     setSelectedProfessionalId(slot.professional_id)
     if (catalogRow) setSelectedSpecialtyId(catalogRow.specialty_id)
@@ -1305,6 +1335,7 @@ export function AgendaPage({
           specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? 'Especialidade não informada',
           careLocation,
           slotStart: validSlotStart,
+          isReturn: appointmentType === 'Retorno',
         } : null)
         if (!careLocation) locationWarning = true
       }
@@ -1348,6 +1379,7 @@ export function AgendaPage({
       setSelectedSpecialtyId('')
       setSelectedSlotStart('')
       setAppointmentType('')
+      setMovementKind('')
       setAppointmentNotes('')
       await load()
     } else if (result.status === 'error') {
@@ -1370,6 +1402,7 @@ export function AgendaPage({
       return
     }
     setShowRescheduleForm(false)
+    setMovementKind('retorno')
     setShowScheduleForm(true)
     setAppointmentPatientId(appointment.patient_id)
     setAppointmentPatientQuery(appointment.patient_name)
@@ -1386,21 +1419,44 @@ export function AgendaPage({
       setAppointmentFeedback('Remarcações de consultas pertencem ao fluxo Administrativo.')
       return
     }
-    if (!validReschedulableId || !rescheduleProfessionalId || !validRescheduleSlotStart) {
-      setAppointmentFeedback('Selecione o agendamento e o novo horário.')
+    if (!['remarcacao', 'remanejamento'].includes(movementKind) || !validReschedulableId || !rescheduleProfessionalId || !validRescheduleSlotStart) {
+      setAppointmentFeedback('Selecione o tipo de movimentação, o agendamento e o novo horário.')
       return
     }
+    const previous = reschedulableAppointments.find((item) => item.appointment_id === validReschedulableId)
+    const patientId = appointmentPatientId
+    const newSlotStart = validRescheduleSlotStart
+    setLastRescheduledContact(null)
     setAppointmentFeedback('Remarcando agendamento no banco…')
     const result = await getRpcService().rescheduleAppointment({
       appointmentId: validReschedulableId,
       newProfessionalId: rescheduleProfessionalId,
       newSlotStart: validRescheduleSlotStart,
       reason: rescheduleReason.trim(),
-      origin: isProfessional ? 'manual' : rescheduleOrigin.trim() || 'manual',
+      origin: movementKind === 'remanejamento' ? 'alteracao_agenda'
+        : rescheduleOrigin === 'faltoso' ? 'faltoso' : 'manual',
       newNotes: rescheduleNotes.trim(),
     })
     if (result.status === 'success') {
-      setAppointmentFeedback('Agendamento remarcado. Agenda recarregada do banco.')
+      const response = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+        ? result.data as Record<string, unknown> : null
+      const newAppointmentId = typeof response?.new_appointment_id === 'string' ? response.new_appointment_id : ''
+      const locationResult = newAppointmentId ? await getRpcService().getAppointmentCareLocation(newAppointmentId) : null
+      const locationData = locationResult?.status === 'success' && locationResult.data &&
+        typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
+        ? locationResult.data as Record<string, unknown> : null
+      const careLocation = typeof locationData?.care_location === 'string' ? locationData.care_location.trim() : ''
+      if (previous && careLocation) {
+        setLastRescheduledContact({
+          patientId,
+          kind: movementKind === 'remanejamento' ? 'remanejamento' : 'remarcacao',
+          contact: { patientName: previous.patient_name, oldStart: previous.appointment_date,
+            newStart: newSlotStart, careLocation },
+        })
+      }
+      setAppointmentFeedback(careLocation
+        ? 'Movimentação registrada. Confira a mensagem de WhatsApp antes de enviar.'
+        : 'Movimentação registrada, mas o endereço da nova consulta não foi confirmado. Corrija o endereço antes de avisar.')
       setShowRescheduleForm(false)
       setSelectedReschedulableId('')
       setRescheduleReason('')
@@ -1984,7 +2040,12 @@ export function AgendaPage({
                 type="button"
                 className="agenda-action-primary"
                 aria-expanded={showScheduleForm}
-                onClick={() => setShowScheduleForm((current) => !current)}
+                onClick={() => {
+                  setShowScheduleForm((current) => !current)
+                  setShowRescheduleForm(false)
+                  setMovementKind('')
+                  setLastScheduledContact(null)
+                }}
               >
                 Agendar
               </button>
@@ -1995,7 +2056,12 @@ export function AgendaPage({
               >
                 Consultar
               </button>
-              <button type="button" aria-expanded={showRescheduleForm} onClick={() => setShowRescheduleForm((current) => !current)}>Remarcar</button>
+              <button type="button" aria-expanded={showRescheduleForm} onClick={() => {
+                setShowRescheduleForm((current) => !current)
+                setShowScheduleForm(false)
+                setMovementKind('')
+                setLastRescheduledContact(null)
+              }}>Remarcar</button>
             </div>
           </>
         )}
@@ -2005,7 +2071,7 @@ export function AgendaPage({
             <div className="agenda-section-heading">
               <div>
                 <p className="eyebrow">Atendimento e Acompanhamento</p>
-                <h3 id="schedule-title">{isProfessional ? 'Agendar retorno' : 'Novo Agendamento'}</h3>
+                <h3 id="schedule-title">{isProfessional || movementKind === 'retorno' ? 'Agendar retorno' : 'Novo Agendamento'}</h3>
               </div>
             </div>
             {!isProfessional && schedulingCatalog.status === 'error' && <p role="alert">{schedulingCatalog.error.message}</p>}
@@ -2201,7 +2267,7 @@ export function AgendaPage({
               ) : (
                 <label>
                   Tipo *
-                  <select value={appointmentType} onChange={(event) => setAppointmentType(event.target.value)}>
+                  <select value={appointmentType} disabled={movementKind === 'retorno'} onChange={(event) => setAppointmentType(event.target.value)}>
                     <option value="">Selecionar</option>
                     <option>Primeiro atendimento no CAPO</option>
                     <option>Primeiro atendimento na especialidade</option>
@@ -2229,8 +2295,17 @@ export function AgendaPage({
             {!isProfessional && lastScheduledContact && (
               <PatientWhatsAppButton
                 patientId={lastScheduledContact.patientId}
-                label="💬 Avisar paciente pelo WhatsApp"
-                message={appointmentNoticeMessage({
+                label={lastScheduledContact.isReturn ? '💬 WhatsApp de retorno' : '💬 Avisar paciente pelo WhatsApp'}
+                message={lastScheduledContact.isReturn ? movementWhatsAppMessage('retorno', {
+                  patientName: lastScheduledContact.patientName,
+                  newStart: lastScheduledContact.slotStart,
+                  careLocation: lastScheduledContact.careLocation,
+                  senderName: accessContext.real_identity.full_name?.trim()
+                    || accessContext.full_name?.trim() || accessContext.username,
+                  senderTitle: accessContext.function_title?.trim()
+                    || accessContext.real_identity.function_title?.trim()
+                    || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+                }) : appointmentNoticeMessage({
                   ...lastScheduledContact,
                   senderName: accessContext.real_identity.full_name?.trim()
                     || accessContext.full_name?.trim()
@@ -2257,6 +2332,25 @@ export function AgendaPage({
               </h3>
             </div>
             <div className="agenda-form-grid">
+              <label>
+                Tipo de movimentação *
+                <select value={movementKind} onChange={(event) => {
+                  const choice = event.target.value as typeof movementKind
+                  if (choice === 'retorno') {
+                    const original = visibleAppointments.find((item) => item.appointment_id === validReschedulableId)
+                    if (original) prepareAdministrativeReturn(original)
+                    else setAppointmentFeedback('Selecione o agendamento original antes de marcar um retorno.')
+                    return
+                  }
+                  setMovementKind(choice)
+                  setAppointmentFeedback(null)
+                }}>
+                  <option value="">Selecionar tipo</option>
+                  <option value="remarcacao">Remarcação solicitada pelo paciente</option>
+                  <option value="remanejamento">Remanejamento pelo CAPO / bloqueio de agenda</option>
+                  <option value="retorno">Retorno — nova consulta</option>
+                </select>
+              </label>
               <label>
                 Agendamento
                 <select value={validReschedulableId} onChange={(event) => setSelectedReschedulableId(event.target.value)} disabled={reschedulableAppointments.length === 0}>
@@ -2302,8 +2396,8 @@ export function AgendaPage({
               </label>
               {!isProfessional && (
                 <label>
-                  Origem
-                  <input value={rescheduleOrigin} onChange={(event) => setRescheduleOrigin(event.target.value)} />
+                  Origem registrada
+                  <input readOnly value={movementKind === 'remanejamento' ? 'alteracao_agenda' : rescheduleOrigin === 'faltoso' ? 'faltoso' : 'manual'} />
                 </label>
               )}
               <label className="agenda-form-wide">
@@ -2312,8 +2406,28 @@ export function AgendaPage({
               </label>
             </div>
             <div className="agenda-form-actions">
-              <button type="button" disabled={!validReschedulableId || !validRescheduleSlotStart} onClick={() => void rescheduleAppointment()}>Aplicar remarcação</button>
+              <button type="button" disabled={!movementKind || movementKind === 'retorno' || !validReschedulableId || !validRescheduleSlotStart} onClick={() => void rescheduleAppointment()}>
+                {movementKind === 'remanejamento' ? 'Aplicar remanejamento' : 'Aplicar remarcação'}
+              </button>
             </div>
+          </section>
+        )}
+
+        {!isProfessional && lastRescheduledContact && (
+          <section className="agenda-schedule-form" aria-label="Comunicação após movimentação">
+            <p>Consulta atualizada no banco. Confira a mensagem antes de enviar.</p>
+            <PatientWhatsAppButton
+              patientId={lastRescheduledContact.patientId}
+              label={lastRescheduledContact.kind === 'remanejamento' ? '💬 WhatsApp de remanejamento' : '💬 WhatsApp de reagendamento'}
+              message={movementWhatsAppMessage(lastRescheduledContact.kind, {
+                ...lastRescheduledContact.contact,
+                senderName: accessContext.real_identity.full_name?.trim()
+                  || accessContext.full_name?.trim() || accessContext.username,
+                senderTitle: accessContext.function_title?.trim()
+                  || accessContext.real_identity.function_title?.trim()
+                  || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+              })}
+            />
           </section>
         )}
 
@@ -2475,6 +2589,7 @@ export function AgendaPage({
                             >{(contact?.result === 'avisado' || contact?.result === 'confirmou') && !previsitOutcomes[item.appointment_id]
                               ? '✓ Aviso registrado' : '✓ Registrar aviso'}</button>
                             <button type="button" onClick={() => preparePrevisitReschedule(item)}>↻ Remarcar</button>
+                            <button type="button" onClick={() => prepareAdministrativeReturn(item)}>📅 Retorno</button>
                             <button type="button" onClick={() => prepareCancellation(item.appointment_id)}>✕ Cancelar</button>
                           </td>
                         )}

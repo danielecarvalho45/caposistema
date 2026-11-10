@@ -11,6 +11,12 @@ const rpc = vi.hoisted(() => ({
   getAppointmentPrevisitContacts: vi.fn(),
   registerAppointmentPrevisitContact: vi.fn(),
   getPatientContact: vi.fn(),
+  getReschedulableAppointments: vi.fn(),
+  getAvailableAppointmentSlots: vi.fn(),
+}))
+
+vi.mock('../../src/lib/supabase/client', () => ({
+  getSupabaseClient: () => ({ rpc: async () => ({ data: [], error: null }) }),
 }))
 
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => ({
@@ -105,4 +111,32 @@ it('informa ao profissional o aviso administrativo como indicador distinto da pr
   expect(await screen.findByText('💬 Avisado previamente')).toBeVisible()
   expect(screen.queryByRole('region', { name: 'Avisos prévios das consultas' })).not.toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /Registrar aviso/ })).not.toBeInTheDocument()
+})
+
+it('distingue remarcação, remanejamento e retorno antes de salvar', async () => {
+  rpc.getAgendaScheduleGrid.mockResolvedValue({ status: 'success', data: [] })
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'success', data: [{
+    specialty_id: 'psychology-id', specialty_name: 'Psicologia',
+    professional_id: 'professional-1', professional_name: 'Profissional CAPO',
+  }] })
+  rpc.getAppointmentPrevisitContacts.mockResolvedValue({ status: 'success', data: { items: [] } })
+  rpc.getReschedulableAppointments.mockResolvedValue({ status: 'success', data: [{
+    appointment_id: 'appointment-1', patient_id: 'patient-1',
+    patient_name: 'Paciente da consulta', appointment_date: patientAppointment.appointment_date,
+  }] })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'success', data: [] })
+  const user = userEvent.setup()
+  render(<MemoryRouter><AgendaPage accessContext={administrativeContext}
+    loadAgenda={async () => ({ status: 'success', data: [patientAppointment] })} /></MemoryRouter>)
+  const panel = await screen.findByRole('region', { name: 'Avisos prévios das consultas' })
+  await user.click(within(panel).getByRole('button', { name: /Remarcar/ }))
+  expect(await screen.findByLabelText('Tipo de movimentação *')).toBeVisible()
+  const movement = screen.getByLabelText('Tipo de movimentação *')
+  expect(within(movement).getByRole('option', { name: 'Remarcação solicitada pelo paciente' })).toBeVisible()
+  expect(within(movement).getByRole('option', { name: 'Remanejamento pelo CAPO / bloqueio de agenda' })).toBeVisible()
+  await user.selectOptions(movement, 'remanejamento')
+  expect(screen.getByRole('button', { name: 'Aplicar remanejamento' })).toBeDisabled()
+  await user.click(within(panel).getByRole('button', { name: /Retorno/ }))
+  expect(await screen.findByText('Retorno', { selector: 'option' })).toBeVisible()
+  expect(screen.getByText('Confirmar agendamento')).toBeDisabled()
 })
