@@ -13,6 +13,8 @@ const rpc = vi.hoisted(() => ({
   getPatientContact: vi.fn(),
   getReschedulableAppointments: vi.fn(),
   getAvailableAppointmentSlots: vi.fn(),
+  getPatientForEdit: vi.fn(),
+  getPatientAppointmentHistory: vi.fn(),
 }))
 
 vi.mock('../../src/lib/supabase/client', () => ({
@@ -54,6 +56,28 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   vi.unstubAllGlobals()
+})
+
+it('prepara nova consulta a partir da notificação sem reativar o agendamento cancelado', async () => {
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'success', data: [{
+    specialty_id: 'psychology-id', specialty_name: 'Psicologia',
+    professional_id: 'professional-1', professional_name: 'Profissional CAPO',
+  }] })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({ status: 'success', data: [] })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'empty' })
+  rpc.getPatientForEdit.mockResolvedValue({ status: 'success', data: { full_name: 'Paciente da consulta' } })
+  rpc.getPatientAppointmentHistory.mockResolvedValue({ status: 'success', data: [{
+    appointment_id: 'appointment-1', attendance_status: 'cancelado',
+    professional_name: 'Profissional CAPO', specialty_name: 'Psicologia',
+  }] })
+  render(<MemoryRouter initialEntries={[{ pathname: '/agenda', state: {
+    origin: 'patient_link_cancellation', patientId: 'patient-1', appointmentId: 'appointment-1',
+  } }]}><AgendaPage accessContext={administrativeContext}
+    loadAgenda={async () => ({ status: 'empty' })} /></MemoryRouter>)
+  expect(await screen.findByDisplayValue('Paciente da consulta')).toBeVisible()
+  expect(screen.getByLabelText('Especialidade *')).toHaveValue('psychology-id')
+  expect(screen.getByLabelText('Profissional *')).toHaveValue('professional-1')
+  expect(screen.getByText(/Consulta anterior cancelada preservada no histórico/)).toBeVisible()
 })
 
 it('registra aviso prévio sem marcar comparecimento nem iniciar atendimento', async () => {

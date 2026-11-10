@@ -113,6 +113,27 @@ describe('notifications integration', () => {
 })
 
 describe('NotificationsPage', () => {
+  it('abre novo agendamento com vínculo seguro da consulta cancelada pelo link', async () => {
+    const user = userEvent.setup()
+    const cancelled = {
+      ...notification,
+      notification_type: 'appointment_patient_reschedule',
+      title: 'Remarcação solicitada pelo paciente',
+      patient_id: 'patient-1',
+      entity_type: 'patient_appointments',
+      entity_id: 'appointment-1',
+    }
+    const service = serviceWith({ status: 'success', data: [cancelled] })
+    function Destination() {
+      const location = useLocation()
+      return <output data-testid="destination">{JSON.stringify({ pathname: location.pathname, state: location.state })}</output>
+    }
+    renderPage(<><NotificationsPage service={service} getContextHref={() => '/agenda'} /><Destination /></>)
+    await user.click(await screen.findByRole('button', { name: '📅 Agendar nova consulta' }))
+    expect(await screen.findByTestId('destination')).toHaveTextContent('patient_link_cancellation')
+    expect(screen.getByTestId('destination')).toHaveTextContent('appointment-1')
+    expect(screen.getByTestId('destination')).toHaveTextContent('patient-1')
+  })
   it('exibe estado vazio, loading e erro do contrato', async () => {
     const emptyService = serviceWith({ status: 'empty' })
     renderPage(<NotificationsPage service={emptyService} />)

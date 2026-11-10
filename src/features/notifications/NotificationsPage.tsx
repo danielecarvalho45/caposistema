@@ -110,10 +110,14 @@ export function NotificationsPage({
       setBusyId(null)
     }
     // Entrega a solicitação específica ao módulo canônico, sem criar atendimento ao ler.
+    const isPatientLinkCancellation = item.notification_type === 'appointment_patient_reschedule' &&
+      item.entity_type === 'patient_appointments' && Boolean(item.patient_id && item.entity_id)
     navigate(contextHref, {
-      state: item.entity_id && ['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
-        ? { contextId: item.entity_id }
-        : undefined,
+      state: isPatientLinkCancellation
+        ? { origin: 'patient_link_cancellation', patientId: item.patient_id, appointmentId: item.entity_id }
+        : item.entity_id && ['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
+          ? { contextId: item.entity_id }
+          : undefined,
     })
   }
 
@@ -210,7 +214,9 @@ export function NotificationsPage({
                       disabled={busy}
                       onClick={() => void openContext(item, contextHref)}
                     >
-                      {['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
+                      {item.notification_type === 'appointment_patient_reschedule' && item.entity_type === 'patient_appointments'
+                        ? '📅 Agendar nova consulta'
+                        : ['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
                         ? 'Abrir solicitação no Administrativo'
                         : 'Abrir contexto'}
                     </button>

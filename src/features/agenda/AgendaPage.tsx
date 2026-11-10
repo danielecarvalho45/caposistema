@@ -1645,6 +1645,69 @@ export function AgendaPage({
   }, [canAccess, endDate, professionalId, startDate])
 
   useEffect(() => {
+    const stateValue = location.state && typeof location.state === 'object'
+      ? location.state as Record<string, unknown> : null
+    if (isProfessional || stateValue?.origin !== 'patient_link_cancellation' ||
+      schedulingCatalog.status !== 'success') return
+    const patientId = typeof stateValue.patientId === 'string' ? stateValue.patientId : ''
+    const appointmentId = typeof stateValue.appointmentId === 'string' ? stateValue.appointmentId : ''
+    if (!patientId || !appointmentId) return
+    let active = true
+    setShowScheduleForm(true)
+    setShowRescheduleForm(false)
+    setAwaitingNextAppointmentChoice(false)
+    setAppointmentPatientId(patientId)
+    setAppointmentPatientQuery('')
+    setAppointmentPatients([])
+    setSelectedSpecialtyId('')
+    setSelectedProfessionalId('')
+    setSelectedSlotStart('')
+    setAppointmentOrigin('cancelamento_link_paciente')
+    setAppointmentFeedback('Consultando os dados da consulta cancelada para preparar um novo agendamento…')
+    void (async () => {
+      const rpc = getRpcService()
+      const [patient, history] = await Promise.all([
+        rpc.getPatientForEdit(patientId),
+        rpc.getPatientAppointmentHistory(patientId, 100, 0),
+      ])
+      if (!active) return
+      const patientRow = patient.status === 'success'
+        ? Array.isArray(patient.data) ? patient.data[0] : patient.data : null
+      const patientName = patientRow && typeof patientRow === 'object' &&
+        typeof (patientRow as Record<string, unknown>).full_name === 'string'
+        ? (patientRow as Record<string, string>).full_name : ''
+      if (!patientName || history.status !== 'success') {
+        setAppointmentPatientId('')
+        setAppointmentFeedback('Não foi possível validar o paciente e a consulta cancelada. Consulte o cadastro antes de agendar.')
+        return
+      }
+      const original = history.data.find((item) => item.appointment_id === appointmentId && item.attendance_status === 'cancelado')
+      if (!original) {
+        setAppointmentPatientId('')
+        setAppointmentFeedback('Consulta cancelada não localizada no histórico autorizado. Nenhum novo agendamento foi iniciado.')
+        return
+      }
+      const candidates = schedulingCatalogRows(schedulingCatalog.data).filter((row) =>
+        row.professional_name === original.professional_name &&
+        row.specialty_name === original.specialty_name)
+      setAppointmentPatientQuery(patientName)
+      if (candidates.length === 1) {
+        setSelectedSpecialtyId(candidates[0].specialty_id)
+        setSelectedProfessionalId(candidates[0].professional_id)
+      }
+      setAppointmentFeedback(candidates.length === 1
+        ? `Consulta anterior cancelada preservada no histórico. Escolha a nova data e o horário de ${original.specialty_name}.`
+        : 'Paciente selecionado. Escolha a especialidade e o profissional; a agenda anterior não está disponível ou não é única no catálogo atual.')
+    })().catch(() => {
+      if (active) {
+        setAppointmentPatientId('')
+        setAppointmentFeedback('Falha ao consultar os dados do cancelamento. Tente novamente pela ficha do paciente.')
+      }
+    })
+    return () => { active = false }
+  }, [isProfessional, location.state, schedulingCatalog])
+
+  useEffect(() => {
     const stateValue =
       location.state && typeof location.state === 'object'
         ? location.state as Record<string, unknown>
@@ -1668,6 +1731,7 @@ export function AgendaPage({
     const renewalId =
       typeof stateValue?.renewalId === 'string' ? stateValue.renewalId : ''
     const origin = typeof stateValue?.origin === 'string' ? stateValue.origin : ''
+    if (origin === 'patient_link_cancellation') return
     const requestedSlotDate =
       typeof stateValue?.slotDate === 'string' ? stateValue.slotDate : ''
     const requestedSlotStart =
