@@ -57,6 +57,31 @@ function transportWith(data: unknown, error: unknown = null): RpcTransport {
 }
 
 describe('camada de RPCs CAPO', () => {
+  it('encaminha consultas e reservas de terapia em grupo às RPCs oficiais', async () => {
+    const transport = vi.fn()
+      .mockResolvedValueOnce({ data: [], error: null })
+      .mockResolvedValueOnce({ data: { success: true, appointment_id: 'consulta-1', group_id: 'grupo-1' }, error: null })
+    const service = createRpcService(transport)
+
+    await service.getPsychologyGroupSessions('profissional-1', '2026-11-10', '2026-11-16')
+    await service.bookPsychologyGroupParticipant('grupo-1', '2026-11-13', 'paciente-1')
+
+    expect(transport).toHaveBeenNthCalledWith(
+      1, 'get_psychology_group_sessions_for_interface', {
+        p_professional_id: 'profissional-1',
+        p_start_date: '2026-11-10',
+        p_end_date: '2026-11-16',
+      },
+    )
+    expect(transport).toHaveBeenNthCalledWith(
+      2, 'book_psychology_group_participant_for_interface', {
+        p_group_id: 'grupo-1',
+        p_date: '2026-11-13',
+        p_patient_id: 'paciente-1',
+      },
+    )
+  })
+
   it('expõe o estado inicial loading', () => {
     expect(loadingState()).toEqual({ status: 'loading' })
   })

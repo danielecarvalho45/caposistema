@@ -4263,6 +4263,33 @@ function createSupabaseTransport(
           p_description:
             typeof args?.p_description === 'string' ? args.p_description : null,
         })
+      case 'get_psychology_group_schedule_for_interface':
+        return client.rpc(operation, {
+          p_professional_id: String(args?.p_professional_id ?? ''),
+        })
+      case 'create_psychology_group_schedule_for_interface':
+        return client.rpc(operation, {
+          p_agenda_config_id: String(args?.p_agenda_config_id ?? ''),
+          p_weekdays: Array.isArray(args?.p_weekdays)
+            ? args.p_weekdays.map(Number) : [],
+          p_start_time: String(args?.p_start_time ?? ''),
+          p_end_time: String(args?.p_end_time ?? ''),
+          p_group_name: String(args?.p_group_name ?? ''),
+          p_capacity: Number(args?.p_capacity ?? 0),
+          p_mode: String(args?.p_mode ?? ''),
+        })
+      case 'get_psychology_group_sessions_for_interface':
+        return client.rpc(operation, {
+          p_professional_id: String(args?.p_professional_id ?? ''),
+          p_start_date: String(args?.p_start_date ?? ''),
+          p_end_date: String(args?.p_end_date ?? ''),
+        })
+      case 'book_psychology_group_participant_for_interface':
+        return client.rpc(operation, {
+          p_group_id: String(args?.p_group_id ?? ''),
+          p_date: String(args?.p_date ?? ''),
+          p_patient_id: String(args?.p_patient_id ?? ''),
+        })
       case 'set_agenda_recurring_interval_status_for_interface':
         return client.rpc(operation, {
           p_block_id: String(args?.p_block_id ?? ''),

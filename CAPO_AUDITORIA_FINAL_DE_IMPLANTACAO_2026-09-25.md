@@ -8704,3 +8704,11 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Banco de produção:** migração aplicada em 10/11/2026; funções e coluna consultadas depois da implantação. A consulta de contagem confirmou **zero grupos configurados e zero participantes**; nenhuma agenda ou dado real foi criado automaticamente. Teste sem autenticação da RPC de inclusão rejeitou o acesso.
 
 **Verificação:** compilação Vite PASS; `git diff --check` PASS. Os testes históricos `tests/unit/AgendaPage.test.tsx` (7) falham por ausência de `VITE_SUPABASE_URL` no runner, e `OwnAgendaManager.test.tsx` (4) por render sem AccessProvider, erros anteriores a esta manutenção. **Pendente de homologação autenticada:** cadastrar grupo controlado, testar 1ª a Nª vaga e rejeição da vaga N+1, cancelamento/reabertura, falta/comparecimento individual, prevenção de choque e visualização responsiva em ambiente real. Sem criar dados fictícios em produção.
+
+### §28.231 — Corrigir RPCs ausentes no transporte do grupo de Psicologia (10/11/2026)
+
+**Evidência de produção:** tela da agenda mostrou `Resposta inválida de get_psychology_group_sessions_for_interface: RPC não cadastrada na camada CAPO`, junto a horários 15h–17h apresentados como livres. O banco confirma **zero períodos de grupo ativos**, logo ainda não há reserva coletiva nesse horário; preservar os horários existentes e não converter automaticamente a agenda das psicólogas.
+
+**Causa e correção:** os métodos de serviço haviam sido adicionados a `rpc.ts`, mas faltavam as entradas correspondentes no `createSupabaseTransport` (switch restritivo). Foram registrados os quatro contratos: consulta de configuração, criação de período coletivo, listagem das sessões e inclusão de participante, com os parâmetros oficiais. A alteração não modifica banco, pacientes, intervalos ou regras de ocupação.
+
+**Verificação:** build Vite PASS, suíte dirigida `tests/unit/supabase-rpc.test.ts` com 20/20 PASS, inclusive novo teste de despacho das operações de sessões e reserva. **Para que 15h–17h apareça como grupo:** configurar e salvar explicitamente o período coletivo no padrão da profissional; após gravar, será criado o bloqueio coletivo oficial que substitui a indicação Livre. Teste autenticado da gravação segue pendente.
