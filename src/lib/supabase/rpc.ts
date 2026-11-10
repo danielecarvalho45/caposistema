@@ -3523,6 +3523,35 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: (value) => value,
       }),
+    getPsychologyGroupSchedule: (professionalId: string) =>
+      execute({
+        transport,
+        operation: 'get_psychology_group_schedule_for_interface',
+        args: { p_professional_id: professionalId },
+        parse: (value) => value,
+      }),
+    createPsychologyGroupSchedule: (input: {
+      configId: string
+      weekdays: readonly number[]
+      startTime: string
+      endTime: string
+      name: string
+      capacity: number
+      mode: 'mista' | 'grupo'
+    }) => execute({
+      transport,
+      operation: 'create_psychology_group_schedule_for_interface',
+      args: {
+        p_agenda_config_id: input.configId,
+        p_weekdays: [...input.weekdays],
+        p_start_time: input.startTime,
+        p_end_time: input.endTime,
+        p_group_name: input.name,
+        p_capacity: input.capacity,
+        p_mode: input.mode,
+      },
+      parse: (value) => value,
+    }),
     setAgendaRecurringIntervalStatus: (
       blockId: string,
       isActive: boolean,

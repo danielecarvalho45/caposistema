@@ -233,6 +233,18 @@ export function OwnAgendaManager({
   const [recurringDescription, setRecurringDescription] = useState('')
   const [recurringFeedback, setRecurringFeedback] = useState<string | null>(null)
   const [recurringBusy, setRecurringBusy] = useState(false)
+  const [groupContext, setGroupContext] = useState<AsyncState<unknown> | null>(null)
+  const [groupMode, setGroupMode] = useState<'individual' | 'mista' | 'grupo'>('individual')
+  const [groupName, setGroupName] = useState('')
+  const [groupCapacity, setGroupCapacity] = useState('8')
+  const [groupStartTime, setGroupStartTime] = useState('')
+  const [groupEndTime, setGroupEndTime] = useState('')
+  const [groupWeekdays, setGroupWeekdays] = useState<number[]>([])
+  const [groupBusy, setGroupBusy] = useState(false)
+  const [groupFeedback, setGroupFeedback] = useState<string | null>(null)
+
+  const groups = groupContext?.status === 'success' ? rows(groupContext.data, 'groups') : []
+  const psychologyEligible = groupContext?.status === 'success' && record(groupContext.data)?.eligible === true
 
   const configurations =
     configuration?.status === 'success'
@@ -304,6 +316,53 @@ export function OwnAgendaManager({
       active = false
     }
   }, [allowStructuralEdit, professionalId, rpc])
+
+  useEffect(() => {
+    if (!allowStructuralEdit) return
+    let active = true
+    setGroupContext({ status: 'loading' })
+    void rpc.getPsychologyGroupSchedule(professionalId).then((result) => {
+      if (active) setGroupContext(result)
+    })
+    return () => { active = false }
+  }, [allowStructuralEdit, professionalId, rpc])
+
+  async function saveGroupSchedule() {
+    if (!structuralConfigId || !activeConfigurations.some((item) => stringValue(item.config_id) === structuralConfigId)) {
+      setGroupFeedback('Selecione e salve primeiro um padrão semanal ativo.')
+      return
+    }
+    if (groupMode === 'individual') return
+    if (groupWeekdays.length === 0 || groupWeekdays.some((day) => !structuralWeekdays.includes(day)) ||
+        !groupName.trim() || !groupStartTime || !groupEndTime || groupEndTime <= groupStartTime ||
+        !Number.isInteger(Number(groupCapacity)) || Number(groupCapacity) < 1 || Number(groupCapacity) > 100) {
+      setGroupFeedback('Informe nome, capacidade, período e dias válidos do grupo.')
+      return
+    }
+    if (groupMode === 'grupo' && (groupStartTime !== structuralStartTime || groupEndTime !== structuralEndTime)) {
+      setGroupFeedback('No modo exclusivamente em grupo, o período deve cobrir todo o turno do padrão.')
+      return
+    }
+    setGroupBusy(true)
+    setGroupFeedback(null)
+    const response = await rpc.createPsychologyGroupSchedule({
+      configId: structuralConfigId, weekdays: groupWeekdays,
+      startTime: groupStartTime, endTime: groupEndTime,
+      name: groupName.trim(), capacity: Number(groupCapacity), mode: groupMode,
+    })
+    const payload = response.status === 'success' ? record(response.data) : null
+    if (response.status !== 'success' || payload?.success !== true) {
+      setGroupFeedback(response.status === 'error' ? response.error.message : stringValue(payload?.message) || 'Não foi possível salvar o grupo.')
+    } else {
+      setGroupFeedback('Período de terapia em grupo salvo na agenda oficial. Nenhum paciente foi incluído automaticamente.')
+      setGroupName('')
+      setGroupWeekdays([])
+      const refreshed = await rpc.getPsychologyGroupSchedule(professionalId)
+      setGroupContext(refreshed)
+      await refreshConfigurationAfterRecurringChange()
+    }
+    setGroupBusy(false)
+  }
 
   function resetForm() {
     setEntryType('')
@@ -1022,6 +1081,81 @@ export function OwnAgendaManager({
 
             {recurringFeedback && <p role="status">{recurringFeedback}</p>}
           </section>
+
+          {psychologyEligible && (
+            <section className="agenda-recurring-intervals" aria-labelledby="agenda-psychology-group-title">
+              <div className="agenda-recurring-heading">
+                <div>
+                  <h5 id="agenda-psychology-group-title">Modalidade de atendimento — Psicologia</h5>
+                  <p>Escolha como configurar este padrão. A agenda já cadastrada não muda até salvar uma nova configuração.</p>
+                </div>
+              </div>
+              <label>
+                Modalidade
+                <select value={groupMode} onChange={(event) => {
+                  const mode = event.target.value as 'individual' | 'mista' | 'grupo'
+                  setGroupMode(mode)
+                  if (mode === 'grupo') {
+                    setGroupStartTime(structuralStartTime)
+                    setGroupEndTime(structuralEndTime)
+                  }
+                }}>
+                  <option value="individual">Atendimento individual</option>
+                  <option value="mista">Agenda mista: individual e grupo</option>
+                  <option value="grupo">Somente grupo neste padrão</option>
+                </select>
+              </label>
+              {groupMode !== 'individual' && (
+                <>
+                  <div className="agenda-recurring-grid">
+                    <label>Nome do grupo
+                      <input value={groupName} maxLength={120} onChange={(event) => setGroupName(event.target.value)} placeholder="Nome da terapia em grupo" />
+                    </label>
+                    <label>Quantidade de participantes
+                      <input type="number" min="1" max="100" step="1" value={groupCapacity} onChange={(event) => setGroupCapacity(event.target.value)} />
+                    </label>
+                    <label>Início
+                      <input type="time" value={groupStartTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupStartTime(event.target.value)} />
+                    </label>
+                    <label>Fim
+                      <input type="time" value={groupEndTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupEndTime(event.target.value)} />
+                    </label>
+                  </div>
+                  <fieldset className="agenda-structural-weekdays">
+                    <legend>Dias do grupo dentro deste padrão</legend>
+                    {[
+                      [1, 'Segunda'], [2, 'Terça'], [3, 'Quarta'], [4, 'Quinta'],
+                      [5, 'Sexta'], [6, 'Sábado'], [0, 'Domingo'],
+                    ].map(([weekday, label]) => (
+                      <label key={weekday}>
+                        <input type="checkbox" checked={groupWeekdays.includes(Number(weekday))}
+                          disabled={!structuralWeekdays.includes(Number(weekday)) || groupBusy}
+                          onChange={(event) => setGroupWeekdays((current) => event.target.checked
+                            ? [...current, Number(weekday)] : current.filter((day) => day !== Number(weekday)))} />
+                        {label}
+                      </label>
+                    ))}
+                  </fieldset>
+                  <button type="button" className="agenda-structural-save" disabled={groupBusy || !structuralConfigId}
+                    onClick={() => void saveGroupSchedule()}>
+                    {groupBusy ? 'Salvando…' : 'Adicionar período coletivo ao padrão'}
+                  </button>
+                  <p className="agenda-structural-hint">O período coletivo ocupa a agenda oficial e não permite consultas individuais simultâneas. A inclusão e confirmação dos participantes serão realizadas em etapa própria.</p>
+                </>
+              )}
+              {groups.filter((item) => stringValue(item.config_id) === structuralConfigId).length > 0 && (
+                <div className="agenda-recurring-list">
+                  <strong>Grupos configurados neste padrão</strong>
+                  {groups.filter((item) => stringValue(item.config_id) === structuralConfigId).map((item) => (
+                    <p key={stringValue(item.id)}>
+                      {stringValue(item.group_name)} · {weekdayLabels[numberValue(item.weekday, -1)] ?? 'Dia'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)} · {numberValue(item.capacity)} vagas
+                    </p>
+                  ))}
+                </div>
+              )}
+              {groupFeedback && <p role="status">{groupFeedback}</p>}
+            </section>
+          )}
 
           <label>
             Observação da configuração
