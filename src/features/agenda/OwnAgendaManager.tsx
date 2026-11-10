@@ -239,7 +239,10 @@ export function OwnAgendaManager({
       ? rows(configuration.data, 'configurations')
       : []
 
-  const selectedStructuralConfiguration = configurations.find(
+  // Padrões desativados continuam no histórico, mas não são opções de trabalho.
+  const activeConfigurations = configurations.filter((item) => booleanValue(item.is_active))
+
+  const selectedStructuralConfiguration = activeConfigurations.find(
     (item) => stringValue(item.config_id) === structuralConfigId,
   )
 
@@ -411,7 +414,7 @@ export function OwnAgendaManager({
     }
     setStructuralConfigId(id)
     setStructuralFeedback(null)
-    const selected = configurations.find((item) => stringValue(item.config_id) === id)
+    const selected = activeConfigurations.find((item) => stringValue(item.config_id) === id)
     if (!selected) {
       setStructuralExpectedUpdatedAt('')
       return
@@ -828,10 +831,10 @@ export function OwnAgendaManager({
                 onChange={(event) => selectStructuralConfiguration(event.target.value)}
               >
                 <option value="">Adicionar novo padrão semanal</option>
-                {configurations.map((item) => (
+                {activeConfigurations.map((item) => (
                   <option key={stringValue(item.config_id)} value={stringValue(item.config_id)}>
                     {weekdaySummary(item.weekdays) || 'Sem dias'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
-                    {booleanValue(item.is_active) ? ' · Ativo' : ' · Inativo'}
+                    {' · Ativo'}
                   </option>
                 ))}
               </select>
@@ -1044,7 +1047,7 @@ export function OwnAgendaManager({
         </section>
       )}
 
-      {configuration?.status === 'success' && configurations.length === 0 && (
+      {configuration?.status === 'success' && activeConfigurations.length === 0 && (
         <p className="agenda-own-warning" role="alert">
           Este contexto profissional não possui configuração de agenda ativa disponível.
           Os ajustes temporários só podem ser registrados depois que existir uma agenda configurada para este profissional.
@@ -1067,7 +1070,7 @@ export function OwnAgendaManager({
                 aria-label={action.label}
                 title={action.description}
                 aria-pressed={entryType === action.value}
-                disabled={configurations.length === 0 || busy}
+                disabled={activeConfigurations.length === 0 || busy}
                 onClick={() => {
                   setEntryType(action.value)
                   setPendingConfirmation(null)
@@ -1081,13 +1084,13 @@ export function OwnAgendaManager({
         </div>
       </section>
 
-      {configurations.length > 0 && (
+      {activeConfigurations.length > 0 && (
         <>
           <label>
             Configuração
             <select value={configId} onChange={(event) => setConfigId(event.target.value)}>
               <option value="">Selecionar</option>
-              {configurations.map((item) => (
+              {activeConfigurations.map((item) => (
                 <option key={stringValue(item.config_id)} value={stringValue(item.config_id)}>
                   {weekdaySummary(item.weekdays) || 'Sem dias'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
                 </option>

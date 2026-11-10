@@ -8662,3 +8662,11 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção cirúrgica:** `OwnAgendaManager.tsx` mantém ícone e nome das ações, com descrição acessível na dica do botão; remove o texto explicativo visível que ampliava o cartão. `agenda-page.css` reduz altura, espaço e tipografia, adotando tons suaves inclusive na seleção/hover, sem rolagem horizontal; `gestor.css` neutraliza o azul forte específico da tela do Gestor, preservando a mesma aparência compartilhada dos perfis. Não muda permissões, tipos de ação, gravação, bloqueios, consultas ou banco.
 
 **Verificação:** build Vite PASS; `git diff --check` PASS. Os quatro testes antigos de `OwnAgendaManager.test.tsx` falham antes das asserções porque montam o componente sem `AccessProvider` (erro `useAccessFlow deve ser usado dentro de AccessProvider`), portanto não validam esta alteração visual. **Pendente:** corrigir esse invólucro de teste em tarefa própria e homologar visualmente em desktop/celular nas interfaces profissional e Gestor.
+
+### §28.226 — Padrões inativados fora da seleção operacional (10/11/2026)
+
+**Autorização:** VERDE da Gestora para evolução do cadastro de horários profissionais, incluindo modalidade individual, mista e grupo, e retirada de horários inativados das listas de escolha.
+
+**Etapa concluída:** `OwnAgendaManager.tsx` restringe os seletores de padrões semanais e de alterações pontuais aos registros `is_active=true` recebidos da RPC existente. Quando todos os padrões estão inativos, as ações pontuais ficam indisponíveis. O histórico no banco permanece intacto; nenhuma exclusão ou mudança de estado foi feita. Build Vite PASS; validação visual autenticada pendente.
+
+**Etapa NÃO concluída — terapia em grupo:** foi constatado que o modelo atual oferece `agenda_configs`, `agenda_blocks` e `patient_appointments`, porém não há contrato homologado de grupo com nome, capacidade, participantes e comparecimento individual. A implementação completa exige proteção de conflitos entre agendas individual/grupo, vínculo de cada participante ao agendamento oficial, confirmação e falta individual por paciente, notificações e segurança por perfil. Nenhuma tabela/RPC de grupo foi criada nesta etapa e não se deve apresentar a modalidade como operacional antes da integração e homologação.
