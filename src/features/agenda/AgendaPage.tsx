@@ -2959,6 +2959,17 @@ export function AgendaPage({
                           senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
                           senderTitle: accessContext.function_title?.trim() || accessContext.real_identity.function_title?.trim() || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
                         })} />
+                      <label>Resultado do aviso
+                        <select aria-label={`Resultado do aviso para ${appointment.patient_name}`}
+                          value={previsitOutcomes[appointmentId] ?? (previsitContacts[appointmentId]?.result === 'confirmou' ? 'avisado' : previsitContacts[appointmentId]?.result ?? '')}
+                          onChange={(event) => setPrevisitOutcomes((current) => ({ ...current, [appointmentId]: event.target.value }))}>
+                          <option value="">Selecionar resultado</option>
+                          <option value="avisado">Paciente avisado</option>
+                          <option value="solicitou_cancelamento">Solicitou cancelamento</option>
+                        </select>
+                      </label>
+                      <button type="button" disabled={!previsitOutcomes[appointmentId] || previsitBusyId !== null}
+                        onClick={() => void registerPrevisitContact(appointmentId)}>Registrar aviso</button>
                       <button type="button" onClick={() => preparePrevisitReschedule(appointment)}>Remarcar</button>
                       {previsitContacts[appointmentId] && <small>{previsitIndicator(previsitContacts[appointmentId].result)}</small>}
                     </>
