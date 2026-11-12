@@ -17,6 +17,8 @@ import { prepareAppointmentReminder } from './appointment-confirmation-link'
 import { isVisibleOnAgenda } from './agenda-visibility'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getNotificationsService } from '../notifications/notifications-integration'
+import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
+import { CapoIcon } from '../../components/icons/CapoIcon'
 import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
@@ -309,21 +311,6 @@ function AppointmentTable({
 }
 
 
-function agendaBlockLabel(value: string | null) {
-  switch (value) {
-    case 'intervalo': return '☕ Intervalo / Café'
-    case 'alimentacao': return '🍽️ Almoço'
-    case 'estudo_caso': return '📚 Estudo de caso'
-    case 'atendimento_online': return '💻 Atendimentos online'
-    case 'rotina_administrativa': return '📋 Rotinas administrativas'
-    case 'reuniao': return '👥 Reunião'
-    case 'relatorio': return '📊 Relatório'
-    case 'atividade': return '📋 Atividade interna'
-    case 'bloqueio': return '⛔ Bloqueio'
-    default: return value ?? ''
-  }
-}
-
 function slotClock(value: string) {
   const date = new Date(value)
   return Number.isNaN(date.getTime())
@@ -436,7 +423,7 @@ function HomeScheduleGrid({
                         : 'Agendado'
               const typeLabel = group ? 'Terapia em grupo' :
                 slot.slot_status === 'bloqueado' && slot.block_type
-                  ? agendaBlockLabel(slot.block_type)
+                  ? <AgendaBlockIndicator type={slot.block_type} />
                   : slot.appointment_type ?? '—'
               return (
                 <tr key={`${slot.professional_id}:${slot.slot_start}`} className={`is-${slot.slot_status}`}>
@@ -584,7 +571,7 @@ function HomeScheduleGrid({
                         </small>
                       )}
                       {slot.slot_status === 'bloqueado' && slot.block_type && (
-                        <small>{group ? <a href={`#grupo-${group.group_id}-${group.date}`}>Ver participantes</a> : agendaBlockLabel(slot.block_type)}</small>
+                        <small>{group ? <a href={`#grupo-${group.group_id}-${group.date}`}>Ver participantes</a> : <AgendaBlockIndicator type={slot.block_type} />}</small>
                       )}
                       {slot.slot_status === 'agendado' &&
                         patientIsVisible &&
@@ -2384,7 +2371,7 @@ export function AgendaPage({
                                   <td>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</td>
                                   <td>{slot.slot_status === 'livre' ? (canSelect ? 'Livre' : 'Indisponível') :
                                     slot.slot_status === 'bloqueado' ? 'Bloqueado' : 'Agendado'}</td>
-                                  <td>{slot.slot_status === 'bloqueado' ? agendaBlockLabel(slot.block_type) :
+                                  <td>{slot.slot_status === 'bloqueado' ? <AgendaBlockIndicator type={slot.block_type} /> :
                                     slot.slot_status === 'agendado' ? (slot.patient_name ?? 'Horário ocupado') : '—'}</td>
                                   <td>{canSelect ? (
                                     <button
@@ -2785,8 +2772,8 @@ export function AgendaPage({
                             >{(contact?.result === 'avisado' || contact?.result === 'confirmou') && !previsitOutcomes[item.appointment_id]
                               ? '✓ Aviso registrado' : '✓ Registrar aviso'}</button>
                             <button type="button" onClick={() => preparePrevisitReschedule(item)}>↻ Remarcar</button>
-                            <button type="button" onClick={() => prepareAdministrativeReturn(item)}>📅 Retorno</button>
-                            <button type="button" onClick={() => prepareCancellation(item.appointment_id)}>✕ Cancelar</button>
+                            <button type="button" onClick={() => prepareAdministrativeReturn(item)}><CapoIcon name="calendar" /> Retorno</button>
+                            <button type="button" onClick={() => prepareCancellation(item.appointment_id)}><CapoIcon name="block" /> Cancelar</button>
                           </td>
                         )}
                       </tr>

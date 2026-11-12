@@ -7,6 +7,7 @@ import {
   type HomologationOptions,
 } from '../../lib/supabase/rpc'
 import { getProfileShortcuts } from './profile-shortcuts'
+import { CapoIcon } from '../icons/CapoIcon'
 import './profile-shortcuts.css'
 
 type HomologationService = Pick<
@@ -259,7 +260,7 @@ export function ProfileShortcuts({
 
   if (shortcuts.length === 0 && !isHomologation) {
     return <span className={`${className} profile-shortcuts-static`} title={profileLabel}>
-      <span aria-hidden="true">👤</span><span>Perfil: {profileLabel}</span>
+      <span aria-hidden="true"><CapoIcon name="person" /></span><span>Perfil: {profileLabel}</span>
     </span>
   }
 
@@ -275,7 +276,7 @@ export function ProfileShortcuts({
         if (willOpen) void loadHomologationOptions()
       }}
     >
-      <span aria-hidden="true">👤</span><span>Perfil: {profileLabel}</span><span aria-hidden="true">⌄</span>
+      <span aria-hidden="true"><CapoIcon name="person" /></span><span>Perfil: {profileLabel}</span><span aria-hidden="true">⌄</span>
     </button>
     {open && <nav id="profile-shortcuts-menu" className="profile-shortcuts-menu" aria-label={isHomologation ? 'Perfis de homologação' : 'Atalhos das funções autorizadas'}>
       {isHomologation ? (

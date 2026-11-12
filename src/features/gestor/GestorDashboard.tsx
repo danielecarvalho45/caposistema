@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState, type AgendaScheduleSlot, type BirthdayOverview } from '../../lib/supabase/rpc'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { CareLocationNotices } from '../home/CareLocationNotices'
+import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
+import { AgendaBlockIndicator, agendaBlockText } from '../../components/icons/AgendaBlockIndicator'
 
 
 type AgendaChangeRow = Readonly<Record<string, unknown>>
@@ -33,35 +35,20 @@ function agendaChangeText(row: AgendaChangeRow, ...keys: string[]) {
   return '—'
 }
 
-function agendaBlockLabel(value: string | null) {
-  switch (value) {
-    case 'intervalo': return '☕ Intervalo / Café'
-    case 'alimentacao': return '🍽️ Almoço'
-    case 'estudo_caso': return '📚 Estudo de caso'
-    case 'atendimento_online': return '💻 Atendimentos online'
-    case 'rotina_administrativa': return '📋 Rotinas administrativas'
-    case 'reuniao': return '👥 Reunião'
-    case 'relatorio': return '📊 Relatório'
-    case 'atividade': return '📋 Atividade interna'
-    case 'bloqueio': return '⛔ Bloqueio'
-    default: return value ?? ''
-  }
-}
-
 const quickAccess = [
-  ['/pacientes', '👥', 'Pacientes', 'Cadastrar e consultar', 'blue'],
-  ['/agenda', '🗓️', 'Agenda', 'Consultar agendas dos profissionais', 'green'],
-  ['/gestor/equipe', '👥', 'Equipe', 'Gerenciar profissionais', 'blue'],
-  ['/gestor/busca-ativa?tipo=oferta', '🔎', 'Busca Ativa', 'Pendências da Oferta Inicial', 'violet'],
-  ['/gestor/equipe?aba=agenda', '⏱', 'Ampliar horário', 'Abrir horário adicional na agenda', 'blue'],
-  ['/fila', '≡', 'Filas', 'Pacientes e familiares', 'mint'],
-  ['/faltosos', '◷', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
-  ['/solicitacoes', '▤', 'Solicitações', 'Analisar e encaminhar', 'purple'],
-  ['/transporte', '▰', 'Transporte', 'Providências e acompanhamento', 'yellow'],
-  ['/gestor/familiares', '👥', 'Familiares', 'Cadastro e vínculos', 'mint'],
-  ['/encerramentos', '✓', 'Encerramentos', 'Por especialidade', 'slate'],
-  ['/relatorios', '▥', 'Relatórios', 'Consultas e indicadores', 'violet'],
-] as const
+  ['/pacientes', 'people', 'Pacientes', 'Cadastrar e consultar', 'blue'],
+  ['/agenda', 'calendar', 'Agenda', 'Consultar agendas dos profissionais', 'green'],
+  ['/gestor/equipe', 'people', 'Equipe', 'Gerenciar profissionais', 'blue'],
+  ['/gestor/busca-ativa?tipo=oferta', 'search', 'Busca Ativa', 'Pendências da Oferta Inicial', 'violet'],
+  ['/gestor/equipe?aba=agenda', 'clock', 'Ampliar horário', 'Abrir horário adicional na agenda', 'blue'],
+  ['/fila', 'list', 'Filas', 'Pacientes e familiares', 'mint'],
+  ['/faltosos', 'clock', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
+  ['/solicitacoes', 'clipboard', 'Solicitações', 'Analisar e encaminhar', 'purple'],
+  ['/transporte', 'truck', 'Transporte', 'Providências e acompanhamento', 'yellow'],
+  ['/gestor/familiares', 'people', 'Familiares', 'Cadastro e vínculos', 'mint'],
+  ['/encerramentos', 'check', 'Encerramentos', 'Por especialidade', 'slate'],
+  ['/relatorios', 'chart', 'Relatórios', 'Consultas e indicadores', 'violet'],
+] as const satisfies readonly (readonly [string, CapoIconName, string, string, string])[]
 
 export function GestorDashboard() {
   const [agendaGrid, setAgendaGrid] = useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
@@ -117,7 +104,7 @@ export function GestorDashboard() {
         <div className="gestor-quick-grid">
           {quickAccess.map(([path, icon, title, note, tone]) => (
             <Link className={`gestor-quick-card gestor-quick-${tone}`} to={path} key={path}>
-              <span aria-hidden="true">{icon}</span><strong>{title}</strong><small>{note}</small>
+              <span aria-hidden="true"><CapoIcon name={icon} size={22} /></span><strong>{title}</strong><small>{note}</small>
             </Link>
           ))}
         </div>
@@ -125,7 +112,7 @@ export function GestorDashboard() {
       <section className="gestor-dashboard-grid" aria-label="Visão geral do sistema">
         <article className="gestor-panel gestor-home-agenda-grid">
           <header>
-            <h3>▣ Agenda do dia <em>— Todos os profissionais</em></h3>
+            <h3><CapoIcon name="calendar" /> Agenda do dia <em>— Todos os profissionais</em></h3>
             <span className="gestor-agenda-weekday">
               {new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }).format(new Date())}
             </span>
@@ -143,7 +130,7 @@ export function GestorDashboard() {
                     {slot.slot_status === 'livre'
                       ? 'Livre'
                       : slot.slot_status === 'bloqueado'
-                        ? `Bloqueado${slot.block_type ? ` · ${agendaBlockLabel(slot.block_type)}` : ''}`
+                        ? slot.block_type ? <><AgendaBlockIndicator type={slot.block_type} /></> : 'Bloqueado'
                         : slot.patient_name ?? 'Agendado'}
                   </small>
                   {slot.slot_status === 'livre' && (
@@ -171,7 +158,7 @@ export function GestorDashboard() {
                         slotDate: slot.slot_date,
                       }}
                     >
-                      💬 Avisar / confirmar
+                      Avisar / confirmar
                     </Link>
                   )}
                   {slot.slot_status === 'agendado' && slot.appointment_id && slot.patient_id && (
@@ -210,16 +197,16 @@ export function GestorDashboard() {
           )}
           <Link to="/agenda">Agenda geral do dia ›</Link>
         </article>
-        <aside className="gestor-side-stack"><article className="gestor-panel"><h3>🎂 Aniversariantes de hoje</h3>
+        <aside className="gestor-side-stack"><article className="gestor-panel"><h3><CapoIcon name="cake" /> Aniversariantes de hoje</h3>
           {birthdays.status === 'loading' && <p>Carregando aniversariantes…</p>}
           {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
           {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
         </article>
-        <Link className="gestor-panel" to="/gestor/timeline"><h3>◷ Atividades Recentes</h3><p>Consultar os eventos operacionais registrados.</p></Link></aside>
+        <Link className="gestor-panel" to="/gestor/timeline"><h3><CapoIcon name="clock" /> Atividades Recentes</h3><p>Consultar os eventos operacionais registrados.</p></Link></aside>
       </section>
       <section className="gestor-summary-grid" aria-label="Resumo do sistema">
-        <Link className="gestor-panel" to="/gestor/administracao"><h3>👥 Cadastro de Profissional</h3><p>Gerenciar profissionais e permissões</p><b>›</b></Link>
+        <Link className="gestor-panel" to="/gestor/administracao"><h3><CapoIcon name="people" /> Cadastro de Profissional</h3><p>Gerenciar profissionais e permissões</p><b>›</b></Link>
         <article className="gestor-panel gestor-approved-agenda-changes">
           <header>
             <div>
@@ -258,8 +245,8 @@ export function GestorDashboard() {
             ))}
           {agendaChangeFeedback && <p role="status">{agendaChangeFeedback}</p>}
         </article>
-        <Link className="gestor-panel" to="/relatorios"><h3>▥ Indicadores do Sistema</h3><p>Consultar indicadores reais no relatório gerencial</p></Link>
-        <Link className="gestor-panel" to="/tecnica"><h3>⚙ Status do Sistema</h3><p>Consultar estado técnico e integrações autorizadas.</p></Link>
+        <Link className="gestor-panel" to="/relatorios"><h3><CapoIcon name="chart" /> Indicadores do Sistema</h3><p>Consultar indicadores reais no relatório gerencial</p></Link>
+        <Link className="gestor-panel" to="/tecnica"><h3><CapoIcon name="settings" /> Status do Sistema</h3><p>Consultar estado técnico e integrações autorizadas.</p></Link>
       </section>
     </section>
   )

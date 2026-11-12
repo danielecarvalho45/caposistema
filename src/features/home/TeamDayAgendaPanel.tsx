@@ -1,20 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { AgendaScheduleSlot, AsyncState } from '../../lib/supabase/rpc'
-
-function agendaBlockLabel(value: string | null) {
-  switch (value) {
-    case 'intervalo': return '☕ Intervalo / Café'
-    case 'alimentacao': return '🍽️ Almoço'
-    case 'estudo_caso': return '📚 Estudo de caso'
-    case 'atendimento_online': return '💻 Atendimentos online'
-    case 'rotina_administrativa': return '📋 Rotinas administrativas'
-    case 'reuniao': return '👥 Reunião'
-    case 'relatorio': return '📊 Relatório'
-    case 'atividade': return '📋 Atividade interna'
-    case 'bloqueio': return '⛔ Bloqueio'
-    default: return value ?? 'Bloqueado'
-  }
-}
+import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
 
 function slotTime(value: string) {
   const date = new Date(value)
@@ -67,7 +53,7 @@ export function TeamDayAgendaPanel({
                 {slot.slot_status === 'livre'
                   ? 'Livre'
                   : slot.slot_status === 'bloqueado'
-                    ? agendaBlockLabel(slot.block_type)
+                    ? <AgendaBlockIndicator type={slot.block_type} />
                     : slot.patient_name ?? 'Horário ocupado'}
               </span>
 

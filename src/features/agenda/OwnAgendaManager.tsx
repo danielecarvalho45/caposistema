@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
 import {
   getRpcService,
   type AsyncState,
@@ -108,11 +109,11 @@ const weekdayLabels: Readonly<Record<number, string>> = {
 }
 
 const recurringAgendaTypes = [
-  { value: 'intervalo', label: '☕ Intervalo / Café' },
-  { value: 'alimentacao', label: '🍽️ Almoço' },
-  { value: 'estudo_caso', label: '📚 Estudo de caso' },
-  { value: 'atendimento_online', label: '💻 Atendimentos online' },
-  { value: 'rotina_administrativa', label: '📋 Rotinas administrativas' },
+  { value: 'intervalo', label: 'Intervalo / Café' },
+  { value: 'alimentacao', label: 'Almoço' },
+  { value: 'estudo_caso', label: 'Estudo de caso' },
+  { value: 'atendimento_online', label: 'Atendimentos online' },
+  { value: 'rotina_administrativa', label: 'Rotinas administrativas' },
 ] as const
 
 type RecurringAgendaType = (typeof recurringAgendaTypes)[number]['value']
@@ -124,59 +125,59 @@ function recurringAgendaTypeLabel(value: unknown) {
 const managementActions = [
   {
     value: 'horario_provisorio',
-    icon: '🕒',
+    icon: 'clock',
     label: 'Alterar horário do dia',
     description: 'Mudar somente uma data, sem alterar o padrão semanal.',
   },
   {
     value: 'bloqueio',
-    icon: '⛔',
+    icon: 'block',
     label: 'Bloquear período',
     description: 'Fechar um intervalo específico da agenda.',
   },
   {
     value: 'alimentacao',
-    icon: '🍽️',
+    icon: 'meal',
     label: 'Almoço',
     description: 'Reservar temporariamente o horário de alimentação.',
   },
   {
     value: 'intervalo',
-    icon: '☕',
+    icon: 'coffee',
     label: 'Café / Intervalo',
     description: 'Reservar um intervalo temporário.',
   },
   {
     value: 'reuniao',
-    icon: '👥',
+    icon: 'people',
     label: 'Reunião',
     description: 'Bloquear horário para reunião.',
   },
   {
     value: 'atividade',
-    icon: '📋',
+    icon: 'clipboard',
     label: 'Atividade interna',
     description: 'Reservar período para atividade interna.',
   },
   {
     value: 'relatorio',
-    icon: '📊',
+    icon: 'chart',
     label: 'Relatório',
     description: 'Reservar período para elaboração de relatório.',
   },
   {
     value: 'excecao',
-    icon: '📅',
+    icon: 'calendar',
     label: 'Exceção de data',
     description: 'Registrar um bloqueio excepcional em uma data.',
   },
   {
     value: 'urgencia',
-    icon: '🚑',
+    icon: 'medical',
     label: 'Horário de urgência',
     description: 'Abrir excepcionalmente um horário adicional para atendimento de urgência.',
   },
-] as const
+] as const satisfies readonly { value: string; icon: CapoIconName; label: string; description: string }[]
 
 export function OwnAgendaManager({
   professionalId,
@@ -1244,7 +1245,7 @@ export function OwnAgendaManager({
                   setFeedback(null)
                 }}
               >
-                <span className="agenda-own-action-icon" aria-hidden="true">{action.icon}</span>
+                <span className="agenda-own-action-icon"><CapoIcon name={action.icon} size={20} /></span>
                 <strong>{action.label}</strong>
               </button>
             ))}
