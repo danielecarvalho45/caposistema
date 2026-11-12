@@ -82,6 +82,29 @@ describe('camada de RPCs CAPO', () => {
     )
   })
 
+  it('encaminha remarcação do grupo sem transformar o participante em consulta individual', async () => {
+    const transport = vi.fn().mockResolvedValue({
+      data: {
+        success: true,
+        previous_appointment_id: 'consulta-original',
+        new_appointment_id: 'nova-consulta',
+        new_appointment_start: '2026-11-20T16:30:00Z',
+      },
+      error: null,
+    })
+    const result = await createRpcService(transport).reschedulePsychologyGroupParticipant(
+      'consulta-original', '2026-11-20', '',
+    )
+    expect(transport).toHaveBeenCalledWith(
+      'reschedule_psychology_group_participant_for_interface',
+      { p_appointment_id: 'consulta-original', p_new_date: '2026-11-20', p_reason: null },
+    )
+    expect(result).toMatchObject({
+      status: 'success',
+      data: { success: true, previous_appointment_id: 'consulta-original' },
+    })
+  })
+
   it('expõe o estado inicial loading', () => {
     expect(loadingState()).toEqual({ status: 'loading' })
   })

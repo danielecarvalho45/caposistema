@@ -916,6 +916,11 @@ export function AgendaPage({
   }[]>([])
   const [groupBookingBusy, setGroupBookingBusy] = useState(false)
   const [groupBookingFeedback, setGroupBookingFeedback] = useState('')
+  const [groupRescheduleAppointmentId, setGroupRescheduleAppointmentId] = useState('')
+  const [groupRescheduleDate, setGroupRescheduleDate] = useState('')
+  const [groupRescheduleReason, setGroupRescheduleReason] = useState('')
+  const [groupRescheduleBusy, setGroupRescheduleBusy] = useState(false)
+  const [groupRescheduleFeedback, setGroupRescheduleFeedback] = useState('')
   const [familyRescheduleId, setFamilyRescheduleId] = useState('')
   const [familyRescheduleDate, setFamilyRescheduleDate] = useState('')
   const [familyRescheduleStart, setFamilyRescheduleStart] = useState('')
@@ -1223,6 +1228,74 @@ export function AgendaPage({
         ? result.error.message : 'Não foi possível confirmar o agendamento coletivo.')
     }
     setGroupBookingBusy(false)
+  }
+
+  async function prepareGroupNotice(
+    session: PsychologyGroupSession,
+    participant: PsychologyGroupSession['participants'][number],
+  ) {
+    const result = await getRpcService().getAppointmentCareLocation(participant.appointment_id)
+    const location = result.status === 'success' && result.data &&
+      typeof result.data === 'object' && !Array.isArray(result.data)
+      ? result.data as Record<string, unknown> : null
+    const careLocation = typeof location?.care_location === 'string' ? location.care_location.trim() : ''
+    if (!careLocation) throw new Error('Local do agendamento não confirmado. Confira antes de avisar.')
+    return appointmentNoticeMessage({
+      patientName: participant.patient_name,
+      specialtyName: 'Psicologia — ' + session.name,
+      slotStart: session.start, careLocation,
+      senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
+      senderTitle: accessContext.function_title?.trim() || accessContext.real_identity.function_title?.trim() ||
+        accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+    })
+  }
+
+  async function rescheduleGroupParticipant(
+    session: PsychologyGroupSession,
+    participant: PsychologyGroupSession['participants'][number],
+  ) {
+    if (groupRescheduleBusy || !groupRescheduleDate) return
+    if (groupRescheduleDate === session.date) {
+      setGroupRescheduleFeedback('Escolha uma data diferente da sessão original.')
+      return
+    }
+    setGroupRescheduleBusy(true)
+    setGroupRescheduleFeedback('')
+    setLastRescheduledContact(null)
+    try {
+      const result = await getRpcService().reschedulePsychologyGroupParticipant(
+        participant.appointment_id, groupRescheduleDate, groupRescheduleReason.trim(),
+      )
+      if (result.status !== 'success' || !result.data.success) {
+        setGroupRescheduleFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a remarcação.')
+        return
+      }
+      const locationResult = await getRpcService().getAppointmentCareLocation(result.data.new_appointment_id)
+      const location = locationResult.status === 'success' && locationResult.data &&
+        typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
+        ? locationResult.data as Record<string, unknown> : null
+      const careLocation = typeof location?.care_location === 'string' ? location.care_location.trim() : ''
+      if (careLocation) {
+        setLastRescheduledContact({
+          patientId: participant.patient_id,
+          kind: 'remarcacao',
+          contact: {
+            patientName: participant.patient_name,
+            oldStart: session.start,
+            newStart: result.data.new_appointment_start,
+            careLocation,
+          },
+        })
+      }
+      setGroupRescheduleFeedback(careLocation
+        ? 'Participante remarcado. Confira o WhatsApp de remarcação acima antes de enviar.'
+        : 'Participante remarcado. Confirme o endereço do novo atendimento antes de avisar.')
+      setGroupRescheduleAppointmentId('')
+      setGroupRescheduleReason('')
+      await loadProfessionalConsultation()
+    } finally {
+      setGroupRescheduleBusy(false)
+    }
   }
 
   async function registerPrevisitContact(appointmentId: string) {
@@ -2895,8 +2968,81 @@ export function AgendaPage({
                           </span>
                         )}
                         {canBook && (
-                          <button type="button" disabled={busyAppointmentId !== null}
-                            onClick={() => prepareCancellation(participant.appointment_id)}>Cancelar</button>
+                          <div className="agenda-psychology-participant-admin" aria-label={`Ações administrativas de ${participant.patient_name}`}>
+                            {['agendado', 'confirmado'].includes(participant.attendance_status) && (
+                              <>
+                                <PatientWhatsAppButton patientId={participant.patient_id}
+                                  label="Avisar agendamento"
+                                  prepareMessage={() => prepareGroupNotice(session, participant)} />
+                                <PatientWhatsAppButton patientId={participant.patient_id}
+                                  label="Lembrar consulta"
+                                  prepareMessage={() => prepareAppointmentReminder({
+                                    appointmentId: participant.appointment_id,
+                                    patientName: participant.patient_name,
+                                    professionalName: professionalOptions.find(([id]) => id === professionalId)?.[1] ?? 'Profissional CAPO',
+                                    specialtyName: 'Psicologia — ' + session.name,
+                                    appointmentDate: session.start,
+                                    senderName: accessContext.real_identity.full_name?.trim()
+                                      || accessContext.full_name?.trim() || accessContext.username,
+                                    senderTitle: accessContext.function_title?.trim()
+                                      || accessContext.real_identity.function_title?.trim()
+                                      || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+                                  })} />
+                                <label>Resultado do aviso
+                                  <select aria-label={`Resultado do aviso para ${participant.patient_name}`}
+                                    value={previsitOutcomes[participant.appointment_id] ?? ''}
+                                    onChange={(event) => setPrevisitOutcomes((current) =>
+                                      ({ ...current, [participant.appointment_id]: event.target.value }))}>
+                                    <option value="">Selecionar resultado</option>
+                                    <option value="avisado">Paciente avisado</option>
+                                    <option value="solicitou_cancelamento">Solicitou cancelamento</option>
+                                  </select>
+                                </label>
+                                <button type="button"
+                                  disabled={!previsitOutcomes[participant.appointment_id] || previsitBusyId !== null}
+                                  onClick={() => void registerPrevisitContact(participant.appointment_id)}>
+                                  Registrar aviso
+                                </button>
+                                {previsitContacts[participant.appointment_id] && (
+                                  <small>{previsitIndicator(previsitContacts[participant.appointment_id].result)}</small>
+                                )}
+                              </>
+                            )}
+                            {['agendado', 'confirmado', 'faltou'].includes(participant.attendance_status) && (
+                              <button type="button" disabled={groupRescheduleBusy}
+                                onClick={() => {
+                                  const next = localDate(session.date)
+                                  next.setDate(next.getDate() + 7)
+                                  setGroupRescheduleAppointmentId(participant.appointment_id)
+                                  setGroupRescheduleDate(dateInputValue(next))
+                                  setGroupRescheduleReason('')
+                                  setGroupRescheduleFeedback('')
+                                }}>Remarcar</button>
+                            )}
+                            {['agendado', 'confirmado'].includes(participant.attendance_status) && (
+                              <button type="button" disabled={busyAppointmentId !== null}
+                                onClick={() => prepareCancellation(participant.appointment_id)}>Cancelar</button>
+                            )}
+                            {groupRescheduleAppointmentId === participant.appointment_id && (
+                              <div className="agenda-psychology-booking">
+                                <p>Remarcar somente este participante para outra sessão do mesmo grupo.</p>
+                                <label>Nova data
+                                  <input type="date" min={dateInputValue(new Date())}
+                                    value={groupRescheduleDate} onChange={(event) => setGroupRescheduleDate(event.target.value)} />
+                                </label>
+                                <label>Motivo (opcional)
+                                  <input value={groupRescheduleReason}
+                                    onChange={(event) => setGroupRescheduleReason(event.target.value)} />
+                                </label>
+                                <button type="button" disabled={groupRescheduleBusy || !groupRescheduleDate}
+                                  onClick={() => void rescheduleGroupParticipant(session, participant)}>
+                                  {groupRescheduleBusy ? 'Salvando…' : 'Confirmar remarcação'}
+                                </button>
+                                <button type="button" disabled={groupRescheduleBusy}
+                                  onClick={() => setGroupRescheduleAppointmentId('')}>Voltar</button>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -2946,6 +3092,8 @@ export function AgendaPage({
                 )
               })}
               {groupBookingFeedback && <p role="status">{groupBookingFeedback}</p>}
+              {groupRescheduleFeedback && <p role="status">{groupRescheduleFeedback}</p>}
+              {previsitFeedback && <p role="status">{previsitFeedback}</p>}
             </section>
           )}
           {professionalId && psychologyGroupError && (

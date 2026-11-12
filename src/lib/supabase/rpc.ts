@@ -3554,6 +3554,16 @@ export function createRpcService(transport: RpcTransport) {
           }[]
         }[],
       }),
+    reschedulePsychologyGroupParticipant: (appointmentId: string, date: string, reason: string) =>
+      execute({
+        transport,
+        operation: 'reschedule_psychology_group_participant_for_interface',
+        args: { p_appointment_id: appointmentId, p_new_date: date, p_reason: reason || null },
+        parse: (value) => value as {
+          success: boolean; previous_appointment_id: string;
+          new_appointment_id: string; new_appointment_start: string;
+        },
+      }),
     bookPsychologyGroupParticipant: (groupId: string, date: string, patientId: string) =>
       execute({
         transport,
@@ -4283,6 +4293,12 @@ function createSupabaseTransport(
           p_professional_id: String(args?.p_professional_id ?? ''),
           p_start_date: String(args?.p_start_date ?? ''),
           p_end_date: String(args?.p_end_date ?? ''),
+        })
+      case 'reschedule_psychology_group_participant_for_interface':
+        return client.rpc(operation, {
+          p_appointment_id: String(args?.p_appointment_id ?? ''),
+          p_new_date: String(args?.p_new_date ?? ''),
+          p_reason: typeof args?.p_reason === 'string' ? args.p_reason : null,
         })
       case 'book_psychology_group_participant_for_interface':
         return client.rpc(operation, {
