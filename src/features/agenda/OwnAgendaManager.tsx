@@ -10,6 +10,10 @@ import { useAccessFlow } from '../access/access-context'
 
 type Row = Readonly<Record<string, unknown>>
 
+function validTime24(value: string) {
+  return /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(value)
+}
+
 function record(value: unknown): Row | null {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value as Row
@@ -340,9 +344,9 @@ export function OwnAgendaManager({
     }
     if (groupMode === 'individual') return
     if (groupWeekdays.length === 0 || groupWeekdays.some((day) => !structuralWeekdays.includes(day)) ||
-        !groupName.trim() || !groupStartTime || !groupEndTime || groupEndTime <= groupStartTime ||
+        !groupName.trim() || !validTime24(groupStartTime) || !validTime24(groupEndTime) || groupEndTime <= groupStartTime ||
         !Number.isInteger(Number(groupCapacity)) || Number(groupCapacity) < 1 || Number(groupCapacity) > 100) {
-      setGroupFeedback('Informe nome, capacidade, período e dias válidos do grupo.')
+      setGroupFeedback('Informe nome, vagas, dias e horários do grupo no formato 24h (HH:MM).')
       return
     }
     if (groupMode === 'grupo' && (groupStartTime !== structuralStartTime || groupEndTime !== structuralEndTime)) {
@@ -532,8 +536,8 @@ export function OwnAgendaManager({
       recurringBusy ||
       !structuralConfigId ||
       recurringWeekdays.length === 0 ||
-      !recurringStartTime ||
-      !recurringEndTime ||
+      !validTime24(recurringStartTime) ||
+      !validTime24(recurringEndTime) ||
       recurringEndTime <= recurringStartTime
     ) {
       setRecurringFeedback('Selecione os dias e informe um intervalo de horário válido.')
@@ -681,13 +685,13 @@ export function OwnAgendaManager({
     if (
       structuralBusy ||
       !structuralStartDate ||
-      !structuralStartTime ||
-      !structuralEndTime ||
+      !validTime24(structuralStartTime) ||
+      !validTime24(structuralEndTime) ||
       structuralEndTime <= structuralStartTime ||
       Number(structuralDuration) <= 0 ||
       structuralWeekdays.length === 0
     ) {
-      setStructuralFeedback('Informe vigência, dias da semana, horário inicial/final e duração válida.')
+      setStructuralFeedback('Informe vigência, dias da semana, horários válidos em 24h (HH:MM) e duração.')
       return
     }
 
@@ -762,8 +766,8 @@ export function OwnAgendaManager({
       !configId ||
       !entryType ||
       !date ||
-      !startTime ||
-      !endTime ||
+      !validTime24(startTime) ||
+      !validTime24(endTime) ||
       endTime <= startTime ||
       busy
     ) {
@@ -967,11 +971,11 @@ export function OwnAgendaManager({
             </label></>}
             <label>
               {groupMode === 'mista' && psychologyEligible ? 'Turno completo — início' : 'Horário inicial'}
-              <input type="time" value={structuralStartTime} onChange={(event) => { setStructuralStartTime(event.target.value); if (groupMode === 'grupo') setGroupStartTime(event.target.value) }} />
+              <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={structuralStartTime} onChange={(event) => { setStructuralStartTime(event.target.value); if (groupMode === 'grupo') setGroupStartTime(event.target.value) }} />
             </label>
             <label>
               {groupMode === 'mista' && psychologyEligible ? 'Turno completo — fim' : 'Horário final'}
-              <input type="time" value={structuralEndTime} onChange={(event) => { setStructuralEndTime(event.target.value); if (groupMode === 'grupo') setGroupEndTime(event.target.value) }} />
+              <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={structuralEndTime} onChange={(event) => { setStructuralEndTime(event.target.value); if (groupMode === 'grupo') setGroupEndTime(event.target.value) }} />
             </label>
             <label>
               {groupMode === 'mista' && psychologyEligible ? 'Consultas individuais — duração (minutos)' : 'Duração do atendimento (minutos)'}
@@ -1001,10 +1005,10 @@ export function OwnAgendaManager({
                   <input type="number" min="1" max="100" step="1" value={groupCapacity} onChange={(event) => setGroupCapacity(event.target.value)} />
                 </label>
                 <label>Grupo — horário inicial
-                  <input type="time" value={groupStartTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupStartTime(event.target.value)} />
+                  <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={groupStartTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupStartTime(event.target.value)} />
                 </label>
                 <label>Grupo — horário final
-                  <input type="time" value={groupEndTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupEndTime(event.target.value)} />
+                  <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={groupEndTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupEndTime(event.target.value)} />
                 </label>
               </div>
               <small>O grupo ocupa um período único; os pacientes são agendados individualmente até a capacidade indicada, na agenda oficial.</small>
@@ -1066,11 +1070,11 @@ export function OwnAgendaManager({
               </label>
               <label>
                 Início
-                <input type="time" value={recurringStartTime} onChange={(event) => setRecurringStartTime(event.target.value)} />
+                <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={recurringStartTime} onChange={(event) => setRecurringStartTime(event.target.value)} />
               </label>
               <label>
                 Fim
-                <input type="time" value={recurringEndTime} onChange={(event) => setRecurringEndTime(event.target.value)} />
+                <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={recurringEndTime} onChange={(event) => setRecurringEndTime(event.target.value)} />
               </label>
             </div>
 
@@ -1282,11 +1286,11 @@ export function OwnAgendaManager({
           </label>
           <label>
             Início
-            <input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} />
+            <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={startTime} onChange={(event) => setStartTime(event.target.value)} />
           </label>
           <label>
             Fim
-            <input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} />
+            <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={endTime} onChange={(event) => setEndTime(event.target.value)} />
           </label>
           <label>
             Justificativa operacional
