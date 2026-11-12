@@ -8750,3 +8750,5 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Telefone do familiar:** conferido o campo livre `family_members.phone`, sem índice UNIQUE nem validação frontend de exclusividade pelo número; não foi alterado o cadastro nem presumida necessidade de migration.
 
 **Limites:** os comandos completos de grupo permanecem na seção de participantes (link da grade), e o formulário de remarcação familiar permanece na lista específica abaixo da grade, embora agora acessível pelo horário. **Pendente:** teste de compilação e testes autenticados Gestor/AO, visualização em Dia/Semana/Mês, persistência do aviso, remarcação efetiva e WhatsApp, além de revisar cancelamento específico do familiar sem utilizar indevidamente a RPC de consulta de paciente. Não declarar homologação operacional concluída antes disso.
+
+**Complemento de navegação:** commit `c808fda9934da8c667bb58cd79d5da24748affe7` direciona a ação de remarcação familiar da grade à seção oficial do formulário, sem duplicá-lo.
