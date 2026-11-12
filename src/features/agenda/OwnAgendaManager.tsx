@@ -337,41 +337,62 @@ export function OwnAgendaManager({
     return () => { active = false }
   }, [allowStructuralEdit, professionalId, rpc])
 
-  async function saveGroupSchedule() {
-    if (!structuralConfigId || !activeConfigurations.some((item) => stringValue(item.config_id) === structuralConfigId)) {
-      setGroupFeedback('Selecione e salve primeiro um padrão semanal ativo.')
-      return
-    }
-    if (groupMode === 'individual') return
-    if (groupWeekdays.length === 0 || groupWeekdays.some((day) => !structuralWeekdays.includes(day)) ||
-        !groupName.trim() || !validTime24(groupStartTime) || !validTime24(groupEndTime) || groupEndTime <= groupStartTime ||
-        !Number.isInteger(Number(groupCapacity)) || Number(groupCapacity) < 1 || Number(groupCapacity) > 100) {
-      setGroupFeedback('Informe nome, vagas, dias e horários do grupo no formato 24h (HH:MM).')
-      return
+  function validateGroupConfiguration(weekdays: readonly number[]) {
+    if (groupMode === 'individual') return ''
+    if (
+      groupWeekdays.length === 0 ||
+      groupWeekdays.some((day) => !weekdays.includes(day)) ||
+      groupName.trim().length < 3 || groupName.trim().length > 120 ||
+      !validTime24(groupStartTime) || !validTime24(groupEndTime) ||
+      groupEndTime <= groupStartTime ||
+      groupStartTime < structuralStartTime || groupEndTime > structuralEndTime ||
+      !Number.isInteger(Number(groupCapacity)) ||
+      Number(groupCapacity) < 1 || Number(groupCapacity) > 100
+    ) {
+      return 'Informe nome (mínimo 3 letras), vagas, dias e horários do grupo em HH:MM dentro do turno semanal.'
     }
     if (groupMode === 'grupo' && (groupStartTime !== structuralStartTime || groupEndTime !== structuralEndTime)) {
-      setGroupFeedback('No modo exclusivamente em grupo, o período deve cobrir todo o turno do padrão.')
-      return
+      return 'No modo exclusivamente em grupo, o período deve cobrir todo o turno do padrão.'
+    }
+    return ''
+  }
+
+  async function saveGroupSchedule(savedConfigId?: string, savedWeekdays?: readonly number[]) {
+    const targetId = savedConfigId || structuralConfigId
+    const weekdays = savedWeekdays || structuralWeekdays
+    if (!targetId || (!savedConfigId && !activeConfigurations.some((item) => stringValue(item.config_id) === targetId))) {
+      setGroupFeedback('Salve o padrão semanal para habilitar a terapia em grupo.')
+      return false
+    }
+    if (groupMode === 'individual') return true
+    const validation = validateGroupConfiguration(weekdays)
+    if (validation) {
+      setGroupFeedback(validation)
+      return false
     }
     setGroupBusy(true)
     setGroupFeedback(null)
-    const response = await rpc.createPsychologyGroupSchedule({
-      configId: structuralConfigId, weekdays: groupWeekdays,
-      startTime: groupStartTime, endTime: groupEndTime,
-      name: groupName.trim(), capacity: Number(groupCapacity), mode: groupMode,
-    })
-    const payload = response.status === 'success' ? record(response.data) : null
-    if (response.status !== 'success' || payload?.success !== true) {
-      setGroupFeedback(response.status === 'error' ? response.error.message : stringValue(payload?.message) || 'Não foi possível salvar o grupo.')
-    } else {
-      setGroupFeedback('Período de terapia em grupo salvo na agenda oficial. Nenhum paciente foi incluído automaticamente.')
+    try {
+      const response = await rpc.createPsychologyGroupSchedule({
+        configId: targetId, weekdays: [...groupWeekdays],
+        startTime: groupStartTime, endTime: groupEndTime,
+        name: groupName.trim(), capacity: Number(groupCapacity), mode: groupMode,
+      })
+      const payload = response.status === 'success' ? record(response.data) : null
+      if (response.status !== 'success' || payload?.success !== true) {
+        setGroupFeedback(response.status === 'error' ? response.error.message : stringValue(payload?.message) || 'O banco não confirmou a criação do grupo.')
+        return false
+      }
+      setGroupFeedback('Período coletivo registrado na agenda oficial, com vagas configuradas.')
       setGroupName('')
       setGroupWeekdays([])
       const refreshed = await rpc.getPsychologyGroupSchedule(professionalId)
       setGroupContext(refreshed)
-      await refreshConfigurationAfterRecurringChange()
+      await refreshConfigurationAfterRecurringChange(targetId)
+      return true
+    } finally {
+      setGroupBusy(false)
     }
-    setGroupBusy(false)
   }
 
   function resetForm() {
@@ -518,13 +539,13 @@ export function OwnAgendaManager({
     )
   }
 
-  async function refreshConfigurationAfterRecurringChange() {
+  async function refreshConfigurationAfterRecurringChange(preferredId?: string) {
     const refreshed = await rpc.getAgendaConfiguration(professionalId)
     setConfiguration(refreshed)
     if (refreshed.status !== 'success') return
     const list = rows(refreshed.data, 'configurations')
     const selected =
-      list.find((item) => stringValue(item.config_id) === structuralConfigId) ??
+      list.find((item) => stringValue(item.config_id) === (preferredId || structuralConfigId)) ??
       list.find((item) => booleanValue(item.is_active))
     if (!selected) return
     setStructuralConfigId(stringValue(selected.config_id))
@@ -695,6 +716,17 @@ export function OwnAgendaManager({
       return
     }
 
+    // Quando Psicologia estiver no modo misto/coletivo, o mesmo comando salva o
+    // padrão e registra o grupo, sem exigir um segundo botão escondido.
+    if (psychologyEligible && groupMode !== 'individual') {
+      const validation = validateGroupConfiguration(structuralWeekdays)
+      if (validation) {
+        setStructuralFeedback(validation)
+        setGroupFeedback(validation)
+        return
+      }
+    }
+
     setStructuralBusy(true)
     setStructuralFeedback(null)
     const result = await rpc.saveAgendaConfiguration({
@@ -756,6 +788,16 @@ export function OwnAgendaManager({
         setStructuralDuration(String(numberValue(savedConfig.appointment_duration_minutes, 0) || ''))
         setStructuralWeekdays([...weekdayValues(savedConfig.weekdays)])
         setStructuralNotes(stringValue(savedConfig.notes))
+      }
+    }
+    if (psychologyEligible && groupMode !== 'individual') {
+      if (!savedConfigId) {
+        setStructuralFeedback('Padrão salvo, mas o banco não informou qual configuração recebeu os horários. O grupo não foi gravado.')
+      } else {
+        const groupSaved = await saveGroupSchedule(savedConfigId, structuralWeekdays)
+        setStructuralFeedback(groupSaved
+          ? 'Padrão semanal e período coletivo salvos. Confira o grupo na agenda oficial.'
+          : 'Padrão semanal salvo, mas o período coletivo NÃO foi criado. Confira a mensagem do grupo e corrija antes de agendar pacientes.')
       }
     }
     setStructuralBusy(false)
@@ -1154,7 +1196,7 @@ export function OwnAgendaManager({
               <div className="agenda-recurring-heading">
                 <div>
                   <h5 id="agenda-psychology-group-title">Modalidade de atendimento — Psicologia</h5>
-                  <p>Escolha como configurar este padrão. A agenda já cadastrada não muda até salvar uma nova configuração.</p>
+                  <p>Para criar uma agenda mista, selecione os dias do turno e os dias do grupo, preencha nome e vagas, depois clique em “Salvar padrão e período coletivo”.</p>
                 </div>
               </div>
               {groupMode !== 'individual' && (
@@ -1174,10 +1216,11 @@ export function OwnAgendaManager({
                       </label>
                     ))}
                   </fieldset>
-                  <button type="button" className="agenda-structural-save" disabled={groupBusy || !structuralConfigId}
+                  <button type="button" className="agenda-structural-save" disabled={groupBusy || structuralBusy || !structuralConfigId}
                     onClick={() => void saveGroupSchedule()}>
-                    {groupBusy ? 'Salvando…' : 'Adicionar período coletivo ao padrão'}
+                    {groupBusy ? 'Salvando…' : 'Adicionar período coletivo ao padrão existente'}
                   </button>
+                  {!structuralConfigId && <p className="agenda-structural-hint">Para um padrão novo, use o botão final “Salvar padrão e período coletivo”: ele registra os dois de uma vez.</p>}
                   <p className="agenda-structural-hint">O período coletivo ocupa a agenda oficial e impede consultas individuais simultâneas. Após salvar, inclua participantes pela agenda do profissional.</p>
                 </>
               )}
@@ -1207,7 +1250,7 @@ export function OwnAgendaManager({
 
           <div className="agenda-structural-pattern-picker">
             <button type="button" className="agenda-structural-save" disabled={structuralBusy} onClick={() => void saveStructuralConfiguration()}>
-              {structuralBusy ? 'Salvando…' : structuralConfigId ? 'Salvar alterações deste padrão' : 'Salvar novo padrão semanal'}
+              {structuralBusy ? 'Salvando…' : psychologyEligible && groupMode !== 'individual' ? 'Salvar padrão e período coletivo' : structuralConfigId ? 'Salvar alterações deste padrão' : 'Salvar novo padrão semanal'}
             </button>
             {structuralConfigId && (
               <button type="button" disabled={structuralBusy} onClick={() => void deactivateSelectedStructuralConfiguration()}>
