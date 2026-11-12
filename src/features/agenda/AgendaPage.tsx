@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   getRpcService,
@@ -336,6 +336,7 @@ function HomeScheduleGrid({
   previsitContacts,
   attendanceOverrides,
   groupSessions,
+  renderAdministrativeActions,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
   startDate: string
@@ -351,6 +352,7 @@ function HomeScheduleGrid({
   previsitContacts?: Readonly<Record<string, { result: string }>>
   attendanceOverrides?: Readonly<Record<string, string>>
   groupSessions?: readonly PsychologyGroupSession[]
+  renderAdministrativeActions?: (appointmentId: string) => ReactNode
 }>) {
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
@@ -469,7 +471,8 @@ function HomeScheduleGrid({
                   <td data-label="Tipo">{typeLabel}</td>
                   <td data-label="Situação">{statusLabel}</td>
                   <td data-label="Ações" className="agenda-attendance-actions">
-                    {group && <a href={`#grupo-${group.group_id}-${group.date}`}>Ver participantes</a>}
+                    {group && <a href={`#grupo-${group.group_id}-${group.date}`}>Ver participantes e ações administrativas</a>}
+                    {!group && slot.slot_status === 'agendado' && slot.appointment_id && renderAdministrativeActions?.(slot.appointment_id)}
                     {slot.slot_status === 'livre' && onSchedule && (
                       <button type="button" className="agenda-slot-schedule-button" onClick={() => onSchedule(slot)}>
                         Agendar
@@ -602,6 +605,7 @@ function HomeScheduleGrid({
                       {appointment && onReturn && attendanceStatus === 'confirmado' && (
                         <button type="button" className="agenda-slot-schedule-button agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${patientName}`}>Agendar retorno</button>
                       )}
+                      {!group && slot.slot_status === 'agendado' && slot.appointment_id && renderAdministrativeActions?.(slot.appointment_id)}
                       {slot.slot_status === 'agendado' && patientIsVisible && slot.appointment_id && onCancel && (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
                         <button
                           type="button"
@@ -2933,6 +2937,33 @@ export function AgendaPage({
               patientSpecialties={patientSpecialties}
               previsitContacts={previsitContacts}
               groupSessions={psychologyGroupSessions}
+              renderAdministrativeActions={!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
+                ? (appointmentId) => {
+                    const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
+                    if (family) return ['agendado', 'confirmado'].includes(String(family.attendance_status))
+                      ? <button type="button" disabled={familyRescheduleBusy} onClick={() => {
+                          setFamilyRescheduleId(appointmentId)
+                          setFamilyRescheduleSlots([])
+                          setFamilyRescheduleStart('')
+                        }}>Remarcar familiar</button> : null
+                    const appointment = state.status === 'success' ? state.data.find((item) => item.appointment_id === appointmentId) : undefined
+                    if (!appointment || !['agendado', 'confirmado'].includes(appointment.attendance_status)) return null
+                    return <>
+                      <PatientWhatsAppButton patientId={appointment.patient_id} label="Lembrar consulta"
+                        prepareMessage={() => prepareAppointmentReminder({
+                          appointmentId: appointment.appointment_id,
+                          patientName: appointment.patient_name,
+                          professionalName: appointment.professional_name,
+                          specialtyName: appointment.specialty_name ?? 'Consulta CAPO',
+                          appointmentDate: appointment.appointment_date,
+                          senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
+                          senderTitle: accessContext.function_title?.trim() || accessContext.real_identity.function_title?.trim() || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+                        })} />
+                      <button type="button" onClick={() => preparePrevisitReschedule(appointment)}>Remarcar</button>
+                      {previsitContacts[appointmentId] && <small>{previsitIndicator(previsitContacts[appointmentId].result)}</small>}
+                    </>
+                  }
+                : undefined}
             />
           )}
 
