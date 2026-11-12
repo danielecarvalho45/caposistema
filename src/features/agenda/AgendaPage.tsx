@@ -2945,6 +2945,7 @@ export function AgendaPage({
                           setFamilyRescheduleId(appointmentId)
                           setFamilyRescheduleSlots([])
                           setFamilyRescheduleStart('')
+                          document.getElementById('agenda-familiares-psicologia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                         }}>Remarcar familiar</button> : null
                     const appointment = state.status === 'success' ? state.data.find((item) => item.appointment_id === appointmentId) : undefined
                     if (!appointment || !['agendado', 'confirmado'].includes(appointment.attendance_status)) return null
@@ -3171,7 +3172,7 @@ export function AgendaPage({
               />
             )}
           {familyPsychologyCards.length > 0 && (
-            <section aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
+            <section id="agenda-familiares-psicologia" aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
               <h3>Atendimentos de familiares — Psicologia</h3>
               <div className="assistential-table-wrap">
                 <table className="assistential-table">
