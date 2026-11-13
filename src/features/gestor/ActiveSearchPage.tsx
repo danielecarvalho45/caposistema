@@ -113,9 +113,53 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
       sem_resposta: 'Sem resposta / contato não conseguido',
       recusou: 'Recusou a Oferta CAPO',
     }[initialOutcome]
+
+    // O prazo de 72 horas começa no PRIMEIRO contato da oferta, não no
+    // registro mais recente. A transferência é uma única operação no banco.
+    const patient = rows(state.status === 'success' ? state.data : null)
+      .find((item) => item.patient_id === initialPatientId)
+    const firstContact = patient && offerHistory(patient)[0]?.contact_date
+    const initialContact = typeof firstContact === 'string' ? Date.parse(firstContact) : NaN
+    const canTransferToRescue = initialOutcome === 'sem_resposta' &&
+      Number.isFinite(initialContact) && Date.now() >= initialContact + 72 * 60 * 60 * 1000
+
+    if (canTransferToRescue) {
+      const contactResult = initialNotes.trim()
+        ? `${resultText} — ${initialNotes.trim()}`
+        : resultText
+      if (contactResult.length > 500) {
+        setFeedback('O resultado e a observação do segundo contato devem ter até 500 caracteres.')
+        return
+      }
+      setBusy(true)
+      setFeedback('Registrando o segundo contato e transferindo para Resgate…')
+      const transfer = await getRpcService().registerOfferRescueContact({
+        patientId: initialPatientId,
+        contactMethod: 'whatsapp',
+        contactResult,
+        outcome: 'sem_resposta',
+      })
+      setBusy(false)
+      if (transfer.status !== 'success') {
+        setFeedback(transfer.status === 'error' ? transfer.error.message
+          : 'O banco não confirmou a transferência para Resgate.')
+        return
+      }
+      setInitialPatientId('')
+      setInitialOutcome('')
+      setInitialNotes('')
+      setInitialNextAt('')
+      setExpandedOfferPatientId('')
+      setFeedback('Segundo contato sem resposta registrado. Paciente transferido para a fila Resgate da Oferta CAPO.')
+      setMode('resgate')
+      return
+    }
+
     const nextContactAt = closed ? null : initialNextAt
       ? new Date(initialNextAt).toISOString()
-      : new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+      : new Date(initialOutcome === 'sem_resposta' && Number.isFinite(initialContact)
+          ? Math.max(Date.now() + 60000, initialContact + 72 * 60 * 60 * 1000)
+          : Date.now() + 72 * 60 * 60 * 1000).toISOString()
 
     setBusy(true)
     setFeedback('Registrando a resposta no banco…')
