@@ -1,6 +1,6 @@
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { canAccessAppRoute } from '../../app/route-access'
 import { getRpcService, type AsyncState, type PatientAppointmentHistoryRow } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
@@ -43,6 +43,7 @@ export function PatientsPage({
   accessContext,
 }: Readonly<{ accessContext: AccessContext }>) {
   const location = useLocation()
+  const navigate = useNavigate()
   const notificationPatientId = new URLSearchParams(location.search).get('patientId') ?? ''
   const [activeView, setActiveView] = useState<'register' | 'search'>('register')
   const [patientName, setPatientName] = useState('')
@@ -56,6 +57,7 @@ export function PatientsPage({
   const [patientCapoStartDate, setPatientCapoStartDate] = useState('')
   const [createdPatientAt, setCreatedPatientAt] = useState<string | null>(null)
   const [preexistingPatientId, setPreexistingPatientId] = useState<string | null>(null)
+  const [preexistingPatientReady, setPreexistingPatientReady] = useState<{ patientId: string; patientName: string; patientNumber: string | null } | null>(null)
   const [patientNotes, setPatientNotes] = useState('')
   const [duplicateMatches, setDuplicateMatches] = useState<readonly PatientDuplicateMatch[]>([])
   const [duplicateReviewKey, setDuplicateReviewKey] = useState('')
@@ -185,8 +187,44 @@ ADMINISTRATIVO DO CAPO`
     }
   }
 
+  function finalizePreexistingRegistration() {
+    if (!preexistingPatientReady) return
+    const number = preexistingPatientReady.patientNumber
+    setPatientName('')
+    setPatientBirthDate('')
+    setPatientCms('')
+    setPatientSex('')
+    setPatientPhone('')
+    setPatientPhoneSecondary('')
+    setPatientAddress('')
+    setPatientCapoStartDate('')
+    setPatientNotes('')
+    setPatientOrigin('')
+    setPreexistingPatientReady(null)
+    setPreexistingPatientId(null)
+    setCreatedPatientId(null)
+    setCreatedPatientNumber(null)
+    setCreatedPatientAt(null)
+    setCreatedPatientStatus(null)
+    setDuplicateMatches([])
+    setDuplicateReviewed(false)
+    setDuplicateReviewKey('')
+    setOfferFeedback(null)
+    setNextRegistrationReady(false)
+    setRegistrationKind('preexistente')
+    setActiveView('register')
+    setFeedback(`Cadastro ${number ? `Nº CAPO ${number}` : 'preexistente'} finalizado. Pronto para cadastrar o próximo paciente.`)
+    window.requestAnimationFrame(() => {
+      const field = document.querySelector<HTMLInputElement>(
+        '.patients-register input[placeholder="Nome completo do paciente"]',
+      )
+      field?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      field?.focus()
+    })
+  }
+
   async function createPatient() {
-    if (registrationBusy || duplicateBusy) return
+    if (registrationBusy || duplicateBusy || preexistingPatientReady) return
     if (!registrationKind) {
       setFeedback('Selecione Paciente novo ou Paciente preexistente antes de cadastrar.')
       return
@@ -249,7 +287,7 @@ ADMINISTRATIVO DO CAPO`
     })
     setRegistrationBusy(false)
     if (next.status === 'success') {
-        setCreatedPatientId(registrationKind === 'novo' ? next.data.patient_id : null)
+      setCreatedPatientId(registrationKind === 'novo' ? next.data.patient_id : null)
       setPreexistingPatientId(registrationKind === 'preexistente' ? next.data.patient_id : null)
       setCreatedPatientAt(next.data.created_at)
       setCreatedPatientNumber(next.data.patient_number)
@@ -264,8 +302,12 @@ ADMINISTRATIVO DO CAPO`
       )
       if (refreshed.status === 'success') setResult(refreshed)
       if (registrationKind === 'preexistente') {
-        setActiveView('search')
-        await openPatientEditor(next.data.patient_id)
+        // Não abrir a consulta automaticamente: a decisão cabe ao Administrativo.
+        setPreexistingPatientReady({
+          patientId: next.data.patient_id,
+          patientName: patientName.trim(),
+          patientNumber: next.data.patient_number,
+        })
       }
     } else {
       // Um erro de resposta pode acontecer após a transação ter sido confirmada.
@@ -493,6 +535,27 @@ ADMINISTRATIVO DO CAPO`
               <p>Cadastro administrativo do paciente. A Oferta CAPO permanece integrada a este mesmo fluxo.</p>
             </div>
           </div>
+          {preexistingPatientReady && (
+            <div className="patients-generated-note" role="group" aria-label="Cadastro preexistente concluído">
+              <p role="status">
+                Paciente ${preexistingPatientReady.patientName} cadastrado com sucesso.
+                Nº CAPO ${preexistingPatientReady.patientNumber ?? 'a consultar'}.
+                Escolha o próximo passo:
+              </p>
+              <div className="patients-form-actions">
+                <button type="button" onClick={() => navigate('/agenda', {
+                  state: {
+                    patientId: preexistingPatientReady.patientId,
+                    patientName: preexistingPatientReady.patientName,
+                    origin: 'patient_record',
+                  },
+                })}>Agendar agora</button>
+                <button type="button" onClick={finalizePreexistingRegistration}>
+                  Finalizar cadastro
+                </button>
+              </div>
+            </div>
+          )}
           {nextRegistrationReady && (
             <p role="status" className="patients-generated-note">
               Oferta Inicial registrada na Busca Ativa. Pronto para cadastrar o próximo paciente.
@@ -642,7 +705,7 @@ ADMINISTRATIVO DO CAPO`
             </section>
           )}
           <div className="patients-form-actions">
-            <button type="button" disabled={duplicateBusy || registrationBusy || !patientName.trim() || !patientBirthDate || (registrationKind === 'preexistente' && (!patientCapoStartDate || patientCapoStartDate >= todayInCapo))} onClick={() => void createPatient()}>{registrationBusy ? 'Salvando cadastro…' : duplicateBusy ? 'Verificando duplicidade…' : 'Cadastrar paciente'}</button>
+            <button type="button" disabled={Boolean(preexistingPatientReady) || duplicateBusy || registrationBusy || !patientName.trim() || !patientBirthDate || (registrationKind === 'preexistente' && (!patientCapoStartDate || patientCapoStartDate >= todayInCapo))} onClick={() => void createPatient()}>{registrationBusy ? 'Salvando cadastro…' : duplicateBusy ? 'Verificando duplicidade…' : 'Cadastrar paciente'}</button>
           </div>
           </>}
         </section>
