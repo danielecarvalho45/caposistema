@@ -877,7 +877,15 @@ export function AgendaPage({
   }> | null>(null)
   const [lastRescheduledContact, setLastRescheduledContact] = useState<Readonly<{
     patientId: string
+    appointmentId: string
     kind: 'remarcacao' | 'remanejamento'
+    contact: Omit<CommunicationContact, 'senderName' | 'senderTitle'>
+  }> | null>(null)
+  const [rescheduleNoticeBusy, setRescheduleNoticeBusy] = useState(false)
+  const [familyRescheduledNotice, setFamilyRescheduledNotice] = useState<Readonly<{
+    appointmentId: string
+    phone: string
+    kind: 'remarcacao'
     contact: Omit<CommunicationContact, 'senderName' | 'senderTitle'>
   }> | null>(null)
   const [prefillWaitingListId, setPrefillWaitingListId] = useState('')
@@ -1288,6 +1296,7 @@ export function AgendaPage({
       if (careLocation) {
         setLastRescheduledContact({
           patientId: participant.patient_id,
+          appointmentId: result.data.new_appointment_id,
           kind: 'remarcacao',
           contact: {
             patientName: participant.patient_name,
@@ -1615,17 +1624,20 @@ export function AgendaPage({
         typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
         ? locationResult.data as Record<string, unknown> : null
       const careLocation = typeof locationData?.care_location === 'string' ? locationData.care_location.trim() : ''
-      if (previous && careLocation) {
+      if (previous && patientId) {
         setLastRescheduledContact({
           patientId,
+          appointmentId: newAppointmentId,
           kind: movementKind === 'remanejamento' ? 'remanejamento' : 'remarcacao',
           contact: { patientName: previous.patient_name, oldStart: previous.appointment_date,
             newStart: newSlotStart, careLocation },
         })
       }
-      setAppointmentFeedback(careLocation
-        ? 'Movimentação registrada. Confira a mensagem de WhatsApp antes de enviar.'
-        : 'Movimentação registrada, mas o endereço da nova consulta não foi confirmado. Corrija o endereço antes de avisar.')
+      setAppointmentFeedback(previous && patientId
+        ? careLocation
+          ? 'Movimentação registrada. Confira o WhatsApp de alteração antes de enviar.'
+          : 'Movimentação registrada. O aviso de alteração está pendente: confirme o endereço do novo atendimento e tente preparar a mensagem novamente.'
+        : 'Movimentação registrada, mas não foi possível recuperar os dados da consulta anterior para o aviso. Consulte o histórico antes de contatar o paciente.')
       setShowRescheduleForm(false)
       setSelectedReschedulableId('')
       setRescheduleReason('')
@@ -1634,6 +1646,23 @@ export function AgendaPage({
       setSelectedRescheduleSlotStart('')
       await load()
     } else if (result.status === 'error') setAppointmentFeedback(result.error.message)
+  }
+
+  async function retryRescheduleNoticeLocation() {
+    if (!lastRescheduledContact?.appointmentId || rescheduleNoticeBusy) return
+    setRescheduleNoticeBusy(true)
+    const result = await getRpcService().getAppointmentCareLocation(lastRescheduledContact.appointmentId)
+    const record = result.status === 'success' && result.data &&
+      typeof result.data === 'object' && !Array.isArray(result.data)
+      ? result.data as Record<string, unknown> : null
+    const careLocation = typeof record?.care_location === 'string' ? record.care_location.trim() : ''
+    if (careLocation) {
+      setLastRescheduledContact((previous) => previous ? {
+        ...previous, contact: { ...previous.contact, careLocation },
+      } : null)
+      setAppointmentFeedback('Local confirmado. Confira a mensagem de alteração antes de enviar.')
+    } else setAppointmentFeedback('O endereço desta consulta ainda não está confirmado no banco. Regularize o local antes de enviar.')
+    setRescheduleNoticeBusy(false)
   }
 
   async function selectFamilyRescheduleDate(professional: string, targetDate: string) {
@@ -1696,12 +1725,31 @@ export function AgendaPage({
 
   async function applyFamilyReschedule(professional: string) {
     if (!familyRescheduleId || !familyRescheduleStart || familyRescheduleBusy || isProfessional) return
+    const previousFamily = familyPsychologyCards.find((row) => String(row.appointment_id) === familyRescheduleId)
+    const previousStart = String(previousFamily?.appointment_date ?? '')
+    const familyName = String(previousFamily?.family_name ?? '')
+    const familyPhone = String(previousFamily?.family_phone ?? '').replace(/\D/g, '')
+    const newStart = familyRescheduleStart
+    setFamilyRescheduledNotice(null)
     setFamilyRescheduleBusy(true)
     const result = await getRpcService().rescheduleFamilyPsychologyAppointment(
       familyRescheduleId, professional, familyRescheduleStart, familyRescheduleReason,
     )
     if (result.status === 'success') {
-      setAppointmentFeedback('Consulta do familiar remarcada; histórico anterior preservado.')
+      const row = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+        ? result.data as Record<string, unknown> : null
+      const newId = typeof row?.new_appointment_id === 'string' ? row.new_appointment_id : ''
+      const lookup = newId ? await getRpcService().getAppointmentCareLocation(newId) : null
+      const place = lookup?.status === 'success' && lookup.data && typeof lookup.data === 'object' && !Array.isArray(lookup.data)
+        ? lookup.data as Record<string, unknown> : null
+      const careLocation = typeof place?.care_location === 'string' ? place.care_location.trim() : ''
+      if (previousStart && familyName) {
+        setFamilyRescheduledNotice({
+          appointmentId: newId, phone: familyPhone, kind: 'remarcacao',
+          contact: { patientName: familyName, oldStart: previousStart, newStart, careLocation },
+        })
+      }
+      setAppointmentFeedback('Consulta do familiar remarcada; histórico preservado. Confira o aviso específico de remarcação antes de concluir.')
       setFamilyRescheduleId('')
       setFamilyRescheduleSlots([])
       setFamilyRescheduleStart('')
@@ -2809,19 +2857,29 @@ export function AgendaPage({
 
         {!isProfessional && lastRescheduledContact && (
           <section className="agenda-schedule-form" aria-label="Comunicação após movimentação">
-            <p>Consulta atualizada no banco. Confira a mensagem antes de enviar.</p>
-            <PatientWhatsAppButton
-              patientId={lastRescheduledContact.patientId}
-              label={lastRescheduledContact.kind === 'remanejamento' ? '💬 WhatsApp de remanejamento' : '💬 WhatsApp de reagendamento'}
-              message={movementWhatsAppMessage(lastRescheduledContact.kind, {
-                ...lastRescheduledContact.contact,
-                senderName: accessContext.real_identity.full_name?.trim()
-                  || accessContext.full_name?.trim() || accessContext.username,
-                senderTitle: accessContext.function_title?.trim()
-                  || accessContext.real_identity.function_title?.trim()
-                  || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
-              })}
-            />
+            <p>Consulta atualizada no banco. Confira o aviso de alteração antes de continuar.</p>
+            {lastRescheduledContact.contact.careLocation ? (
+              <PatientWhatsAppButton
+                patientId={lastRescheduledContact.patientId}
+                label={lastRescheduledContact.kind === 'remanejamento' ? '💬 WhatsApp de remanejamento' : '💬 WhatsApp de reagendamento'}
+                message={movementWhatsAppMessage(lastRescheduledContact.kind, {
+                  ...lastRescheduledContact.contact,
+                  senderName: accessContext.real_identity.full_name?.trim()
+                    || accessContext.full_name?.trim() || accessContext.username,
+                  senderTitle: accessContext.function_title?.trim()
+                    || accessContext.real_identity.function_title?.trim()
+                    || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+                })}
+              />
+            ) : (
+              <div role="alert">
+                <p>O endereço da nova consulta não foi confirmado. O aviso está pendente, sem envio automático.</p>
+                <button type="button" disabled={!lastRescheduledContact.appointmentId || rescheduleNoticeBusy}
+                  onClick={() => void retryRescheduleNoticeLocation()}>
+                  {rescheduleNoticeBusy ? 'Consultando endereço…' : 'Verificar endereço e preparar aviso'}
+                </button>
+              </div>
+            )}
           </section>
         )}
 
