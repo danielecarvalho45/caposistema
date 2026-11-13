@@ -26,6 +26,7 @@ export type CommunicationContact = Readonly<{
   oldStart?: string
   newStart: string
   careLocation: string
+  professionalName?: string
   senderName: string
   senderTitle: string
 }>
@@ -69,6 +70,7 @@ export function movementWhatsAppMessage(
     'Sua consulta de *retorno* no CAPO foi agendada.', '',
     `📅 *Data:* ${datePart(contact.newStart)}`,
     `🕒 *Horário:* ${timePart(contact.newStart)}`,
+    ...(contact.professionalName?.trim() ? [`👩‍⚕️ *Profissional:* ${contact.professionalName.trim()}`] : []),
     `📍 *Local:* ${contact.careLocation}`, '',
     'Estamos à disposição para ajudar no que precisar!', '', sender,
   ].join('\n')
