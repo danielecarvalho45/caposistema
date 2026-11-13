@@ -1,3 +1,4 @@
+import { CapoDateTimeInput } from '../../components/inputs/CapoDateTimeInput'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState } from '../../lib/supabase/rpc'
@@ -313,7 +314,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
             <textarea value={nextAction} onChange={(event) => setNextAction(event.target.value)} />
           </label>
           <label>Próximo contato
-            <input type="datetime-local" value={nextContactAt} onChange={(event) => setNextContactAt(event.target.value)} />
+            <CapoDateTimeInput  value={nextContactAt} onChange={(event) => setNextContactAt(event.target.value)} />
           </label>
           <label>Observação administrativa
             <textarea value={notes} onChange={(event) => setNotes(event.target.value)} />
@@ -423,7 +424,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                               </label>
                               {(initialOutcome === 'novo_contato' || initialOutcome === 'sem_resposta') && (
                                 <label>Próximo contato
-                                  <input type="datetime-local" value={initialNextAt}
+                                  <CapoDateTimeInput  value={initialNextAt}
                                     onChange={(event) => setInitialNextAt(event.target.value)} />
                                 </label>
                               )}
