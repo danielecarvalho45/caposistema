@@ -1,3 +1,4 @@
+import { CapoTimeInput } from '../../components/inputs/CapoTimeInput'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useMemo, useState } from 'react'
 import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
@@ -1014,11 +1015,11 @@ export function OwnAgendaManager({
             </label></>}
             <label>
               {groupMode === 'mista' && psychologyEligible ? 'Turno completo — início' : 'Horário inicial'}
-              <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={structuralStartTime} onChange={(event) => { setStructuralStartTime(event.target.value); if (groupMode === 'grupo') setGroupStartTime(event.target.value) }} />
+              <CapoTimeInput value={structuralStartTime} onChange={(event) => { setStructuralStartTime(event.target.value); if (groupMode === 'grupo') setGroupStartTime(event.target.value) }} />
             </label>
             <label>
               {groupMode === 'mista' && psychologyEligible ? 'Turno completo — fim' : 'Horário final'}
-              <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={structuralEndTime} onChange={(event) => { setStructuralEndTime(event.target.value); if (groupMode === 'grupo') setGroupEndTime(event.target.value) }} />
+              <CapoTimeInput value={structuralEndTime} onChange={(event) => { setStructuralEndTime(event.target.value); if (groupMode === 'grupo') setGroupEndTime(event.target.value) }} />
             </label>
             <label>
               {groupMode === 'mista' && psychologyEligible ? 'Consultas individuais — duração (minutos)' : 'Duração do atendimento (minutos)'}
@@ -1048,10 +1049,10 @@ export function OwnAgendaManager({
                   <input type="number" min="1" max="100" step="1" value={groupCapacity} onChange={(event) => setGroupCapacity(event.target.value)} />
                 </label>
                 <label>Grupo — horário inicial
-                  <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={groupStartTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupStartTime(event.target.value)} />
+                  <CapoTimeInput value={groupStartTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupStartTime(event.target.value)} />
                 </label>
                 <label>Grupo — horário final
-                  <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={groupEndTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupEndTime(event.target.value)} />
+                  <CapoTimeInput value={groupEndTime} disabled={groupMode === 'grupo'} onChange={(event) => setGroupEndTime(event.target.value)} />
                 </label>
               </div>
               <small>O grupo ocupa um período único; os pacientes são agendados individualmente até a capacidade indicada, na agenda oficial.</small>
@@ -1113,11 +1114,11 @@ export function OwnAgendaManager({
               </label>
               <label>
                 Início
-                <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={recurringStartTime} onChange={(event) => setRecurringStartTime(event.target.value)} />
+                <CapoTimeInput value={recurringStartTime} onChange={(event) => setRecurringStartTime(event.target.value)} />
               </label>
               <label>
                 Fim
-                <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={recurringEndTime} onChange={(event) => setRecurringEndTime(event.target.value)} />
+                <CapoTimeInput value={recurringEndTime} onChange={(event) => setRecurringEndTime(event.target.value)} />
               </label>
             </div>
 
@@ -1330,11 +1331,11 @@ export function OwnAgendaManager({
           </label>
           <label>
             Início
-            <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={startTime} onChange={(event) => setStartTime(event.target.value)} />
+            <CapoTimeInput value={startTime} onChange={(event) => setStartTime(event.target.value)} />
           </label>
           <label>
             Fim
-            <input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={endTime} onChange={(event) => setEndTime(event.target.value)} />
+            <CapoTimeInput value={endTime} onChange={(event) => setEndTime(event.target.value)} />
           </label>
           <label>
             Justificativa operacional
