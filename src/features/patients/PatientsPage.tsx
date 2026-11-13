@@ -538,8 +538,8 @@ ADMINISTRATIVO DO CAPO`
           {preexistingPatientReady && (
             <div className="patients-generated-note" role="group" aria-label="Cadastro preexistente concluído">
               <p role="status">
-                Paciente ${preexistingPatientReady.patientName} cadastrado com sucesso.
-                Nº CAPO ${preexistingPatientReady.patientNumber ?? 'a consultar'}.
+                Paciente {preexistingPatientReady.patientName} cadastrado com sucesso.
+                Nº CAPO {preexistingPatientReady.patientNumber ?? 'a consultar'}.
                 Escolha o próximo passo:
               </p>
               <div className="patients-form-actions">
@@ -562,7 +562,7 @@ ADMINISTRATIVO DO CAPO`
               A abertura do WhatsApp não confirma o envio da mensagem nem o aceite.
             </p>
           )}
-          <fieldset className="patients-registration-kind">
+          {!preexistingPatientReady && <fieldset className="patients-registration-kind">
             <legend>Tipo de cadastro *</legend>
             <label>
               <input type="radio" name="registration-kind" checked={registrationKind === 'novo'}
@@ -574,9 +574,9 @@ ADMINISTRATIVO DO CAPO`
                 onChange={() => { setRegistrationKind('preexistente'); setCreatedPatientId(null); setCreatedPatientNumber(null); setCreatedPatientAt(null) }} />
               Paciente preexistente — já utiliza o CAPO
             </label>
-          </fieldset>
+          </fieldset>}
           {!registrationKind && <p role="status">Selecione o tipo de cadastro para continuar.</p>}
-          {registrationKind && <>
+          {registrationKind && !preexistingPatientReady && <>
           <div className="patients-form-grid">
             <label className="patients-span-2">
               Nome completo *
