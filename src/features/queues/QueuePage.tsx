@@ -669,7 +669,7 @@ export function QueuePage({
               <option value="">Selecionar</option>
               {familySlots.map((slot, index) => (
                 <option key={rowText(slot, 'slot_start') + index} value={rowText(slot, 'slot_start')}>
-                  {new Date(rowText(slot, 'slot_start')).toLocaleString('pt-BR')}
+                  {new Date(rowText(slot, 'slot_start')).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}
                 </option>
               ))}
             </select>
