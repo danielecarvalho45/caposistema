@@ -67,7 +67,7 @@ function buildNutritionPdf(document: NutritionRecord) {
     `Autoria: ${field(document, 'author_name') ?? ''}`,
     `Registro profissional: ${field(document, 'author_registration') ?? 'Não informado'}`,
     `Revisão: ${String(document.revision_no ?? '—')}`,
-    `Gerado em: ${new Date().toLocaleString('pt-BR')}`,
+    `Gerado em: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}`,
     '',
   ]
   for (const [key, label] of labels) {
