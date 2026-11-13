@@ -8780,3 +8780,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Testes de regressão:** criado `tests/unit/capo-locale-input.test.tsx` com cenários de apresentação DD/MM/AAAA, seleção dentro dos limites, rejeição de datas impossíveis, horário 24h e mudança de dia entre fusos. Arquivos HTML legados independentes não são rotas React ativas e não foram modificados. Sem modificação de agenda profissional, pacientes, acessos, horários armazenados, Supabase ou dados reais.
 
 **Status:** commits aplicados na branch `main`; inspeção textual de substituições realizada. **Pendente de homologação:** execução real de `npm run typecheck`, `npm run build` e testes unitários (ambiente de execução do GitHub não disponível nesta sessão); teste visual no navegador e nos perfis reais Windows/Android/iOS e publicação Cloudflare. Não declarar PASS final sem esses testes.
+
+
+### §28.239 — Escolha administrativa após cadastro de paciente preexistente (13/11/2026)
+
+**Solicitação e VERDE da Titular:** após cadastrar paciente **preexistente**, não direcionar obrigatoriamente à consulta do paciente e não manter a ficha anterior preenchida. Mostrar opções **Agendar agora** e **Finalizar cadastro**, sem comprometer o cadastro de paciente novo, a Oferta Inicial ou o §28.176.
+
+**Causa identificada:** `PatientsPage.tsx`, depois de resposta de sucesso da RPC `createClassifiedPatient`, executava `setActiveView('search')` e `openPatientEditor(next.data.patient_id)` somente no caso preexistente. O registro era preservado corretamente no banco, porém não havia decisão operacional nem retorno limpo.
+
+**Correção pontual:** substituído o desvio automático por estado de conclusão com `patient_id`, nome e número CAPO efetivamente retornados. A opção **Agendar agora** navega à rota existente `/agenda` com estado `origin: 'patient_record'`, `patientId` e `patientName`, reutilizando o pré-preenchimento já existente da agenda sem nova pesquisa. A opção **Finalizar cadastro** limpa identificação, nascimento, CMS, telefones, endereço, histórico de início CAPO, origem, observações, estado de duplicidade e retorno do cadastro; mantém tipo **preexistente** selecionado e focaliza Nome completo, com confirmação do número CAPO finalizado. Enquanto a escolha está pendente, o formulário de novo cadastro fica oculto para evitar gravação acidental em duplicidade. Não gera Oferta Inicial para preexistente e não altera a rotina dos recém-cadastrados como novos.
+
+**Evidências de código:** commits `59c592f8628ecb4328acfa2e2e398df4051f279a` e `ebc39bee0e1838016eed5b49a1cb9405a9864416`. Teste de regressão acrescentado ao `tests/unit/patients-context-flow.test.tsx` no commit `d72e8cc2c31733eeb7d9bf7502c1e9d7a3a5dcc1`.
+
+**Status:** código e teste registrados em `main`. A confirmação em uso autenticado, build/typecheck e execução da suíte ainda dependem de verificação; não declarar homologação concluída. Não houve alteração de banco, dados reais ou regras de vínculo histórico.
