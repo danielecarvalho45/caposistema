@@ -325,7 +325,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
       to: endDate,
       specialty: specialtyName,
       reportType: selectedOption?.label ?? 'Visão geral',
-      issuedAt: new Date().toLocaleString('pt-BR'),
+      issuedAt: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }),
       generatedBy: accessContext.full_name?.trim() || accessContext.username,
       generatedByRole: accessContext.primary_context.code === 'administrador' ? 'Gestor/Titular' : (accessContext.primary_context.name?.trim() || accessContext.function_title?.trim() || 'Função não informada'),
       sections: [
@@ -426,7 +426,7 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
     scope: 'Profissional assistencial', from: startDate, to: endDate,
     specialty: specialtiesState.status === 'success' ? (specialtiesState.data.find((item) => item.specialty_id === selectedSpecialty)?.specialty_name ?? 'Especialidade') : 'Especialidade',
     reportType: reportSections.find(([key]) => key === selectedProfessionalReport)?.[1],
-    issuedAt: new Date().toLocaleString('pt-BR'), generatedBy: accessContext.full_name?.trim() || accessContext.username,
+    issuedAt: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false }), generatedBy: accessContext.full_name?.trim() || accessContext.username,
     generatedByRole: accessContext.function_title?.trim() || 'Profissional assistencial',
     sections: [{ title: reportSections.find(([key]) => key === selectedProfessionalReport)?.[1] ?? 'Indicadores', metrics: sectionEntries(professionalSection).map(([key, value]) => [metricLabel(key), String(value)] as const) }],
   } : null
