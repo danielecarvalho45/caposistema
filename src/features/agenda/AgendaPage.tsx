@@ -1758,6 +1758,38 @@ export function AgendaPage({
     setFamilyRescheduleBusy(false)
   }
 
+  async function retryFamilyRescheduleNoticeLocation() {
+    if (!familyRescheduledNotice?.appointmentId || rescheduleNoticeBusy) return
+    setRescheduleNoticeBusy(true)
+    const result = await getRpcService().getAppointmentCareLocation(familyRescheduledNotice.appointmentId)
+    const row = result.status === 'success' && result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+      ? result.data as Record<string, unknown> : null
+    const careLocation = typeof row?.care_location === 'string' ? row.care_location.trim() : ''
+    if (careLocation) setFamilyRescheduledNotice((old) => old ? {
+      ...old, contact: { ...old.contact, careLocation },
+    } : null)
+    else setAppointmentFeedback('O novo local do atendimento familiar ainda não está confirmado. Não envie mensagem com endereço incompleto.')
+    setRescheduleNoticeBusy(false)
+  }
+
+  function openFamilyRescheduledWhatsApp() {
+    if (!familyRescheduledNotice?.contact.careLocation) return
+    const digits = familyRescheduledNotice.phone
+    if (digits.length < 10) {
+      setAppointmentFeedback('Familiar sem telefone válido cadastrado. Confirme o contato próprio do familiar antes de avisar.')
+      return
+    }
+    const phone = digits.startsWith('55') ? digits : `55${digits}`
+    const message = movementWhatsAppMessage('remarcacao', {
+      ...familyRescheduledNotice.contact,
+      senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
+      senderTitle: accessContext.function_title?.trim() || accessContext.real_identity.function_title?.trim()
+        || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+    })
+    if (!openCapoWhatsAppTab(`https://web.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`))
+      setAppointmentFeedback('O navegador não conseguiu abrir o WhatsApp. Autorize a aba e tente novamente.')
+  }
+
   function prepareCancellation(appointmentId: string) {
     setCancelAppointmentId(appointmentId)
     setCancelReason('')
@@ -2877,6 +2909,23 @@ export function AgendaPage({
                 <button type="button" disabled={!lastRescheduledContact.appointmentId || rescheduleNoticeBusy}
                   onClick={() => void retryRescheduleNoticeLocation()}>
                   {rescheduleNoticeBusy ? 'Consultando endereço…' : 'Verificar endereço e preparar aviso'}
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {!isProfessional && familyRescheduledNotice && (
+          <section className="agenda-schedule-form" aria-label="Comunicação de remarcação familiar">
+            <p>Consulta do familiar/cuidador remarcada. Confira o aviso de alteração antes de continuar.</p>
+            {familyRescheduledNotice.contact.careLocation ? (
+              <button type="button" onClick={openFamilyRescheduledWhatsApp}>💬 WhatsApp de remarcação do familiar</button>
+            ) : (
+              <div role="alert">
+                <p>O novo endereço do atendimento familiar não foi confirmado; aviso pendente.</p>
+                <button type="button" disabled={!familyRescheduledNotice.appointmentId || rescheduleNoticeBusy}
+                  onClick={() => void retryFamilyRescheduleNoticeLocation()}>
+                  {rescheduleNoticeBusy ? 'Consultando endereço…' : 'Verificar endereço do familiar e preparar aviso'}
                 </button>
               </div>
             )}
