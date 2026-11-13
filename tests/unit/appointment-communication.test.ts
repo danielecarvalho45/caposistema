@@ -6,6 +6,7 @@ const contact = {
   oldStart: '2026-11-17T11:10:00Z',
   newStart: '2026-11-19T13:30:00Z',
   careLocation: 'Unidade informada no agendamento',
+  professionalName: 'Dra. Profissional Exemplo',
   senderName: 'Atendente CAPO',
   senderTitle: 'Auxiliar Administrativo',
 }
@@ -20,6 +21,7 @@ describe('Comunicações CAPO conforme tipo de movimentação', () => {
   it('destaca a nova consulta e pede desculpas somente no remanejamento pelo serviço', () => {
     const message = movementWhatsAppMessage('remanejamento', contact, new Date('2026-11-10T15:00:00Z'))
     expect(message).toContain('⚠️ *COMUNICADO IMPORTANTE — CAPO*')
+    expect(message).not.toContain('*Profissional:*')
     expect(message).toContain('Boa tarde!')
     expect(message).toContain('força maior')
     expect(message).toContain('17/11/2026')
@@ -31,6 +33,7 @@ describe('Comunicações CAPO conforme tipo de movimentação', () => {
   it('não atribui ao serviço uma remarcação solicitada pelo paciente', () => {
     const message = movementWhatsAppMessage('remarcacao', contact)
     expect(message).toContain('Conforme solicitado')
+    expect(message).not.toContain('*Profissional:*')
     expect(message).toContain('Data anterior')
     expect(message).not.toContain('força maior')
   })
@@ -38,6 +41,9 @@ describe('Comunicações CAPO conforme tipo de movimentação', () => {
   it('trata retorno como nova consulta, sem declarar cancelamento da anterior', () => {
     const message = movementWhatsAppMessage('retorno', contact)
     expect(message).toContain('consulta de *retorno*')
+    expect(message).toContain('👩‍⚕️ *Profissional:* Dra. Profissional Exemplo')
+    expect(message).toContain('Atendente CAPO'.toLocaleUpperCase('pt-BR'))
+    expect(message).toContain('Auxiliar Administrativo'.toLocaleUpperCase('pt-BR'))
     expect(message).not.toContain('Data anterior')
     expect(message).not.toContain('remarcada')
   })
