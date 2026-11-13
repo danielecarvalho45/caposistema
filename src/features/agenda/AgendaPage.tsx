@@ -883,7 +883,7 @@ export function AgendaPage({
   }> | null>(null)
   const [rescheduleNoticeBusy, setRescheduleNoticeBusy] = useState(false)
   const [familyRescheduledNotice, setFamilyRescheduledNotice] = useState<Readonly<{
-    appointmentId: string
+    professionalId: string
     phone: string
     kind: 'remarcacao'
     contact: Omit<CommunicationContact, 'senderName' | 'senderTitle'>
@@ -1739,13 +1739,14 @@ export function AgendaPage({
       const row = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
         ? result.data as Record<string, unknown> : null
       const newId = typeof row?.new_appointment_id === 'string' ? row.new_appointment_id : ''
-      const lookup = newId ? await getRpcService().getAppointmentCareLocation(newId) : null
+      // Agendamento familiar tem tabela própria; consultar o local real do profissional, não a RPC de paciente.
+      const lookup = await getRpcService().getProfessionalCareLocation(professional)
       const place = lookup?.status === 'success' && lookup.data && typeof lookup.data === 'object' && !Array.isArray(lookup.data)
         ? lookup.data as Record<string, unknown> : null
       const careLocation = typeof place?.care_location === 'string' ? place.care_location.trim() : ''
       if (previousStart && familyName) {
         setFamilyRescheduledNotice({
-          appointmentId: newId, phone: familyPhone, kind: 'remarcacao',
+          professionalId: professional, phone: familyPhone, kind: 'remarcacao',
           contact: { patientName: familyName, oldStart: previousStart, newStart, careLocation },
         })
       }
@@ -1759,9 +1760,9 @@ export function AgendaPage({
   }
 
   async function retryFamilyRescheduleNoticeLocation() {
-    if (!familyRescheduledNotice?.appointmentId || rescheduleNoticeBusy) return
+    if (!familyRescheduledNotice?.professionalId || rescheduleNoticeBusy) return
     setRescheduleNoticeBusy(true)
-    const result = await getRpcService().getAppointmentCareLocation(familyRescheduledNotice.appointmentId)
+    const result = await getRpcService().getProfessionalCareLocation(familyRescheduledNotice.professionalId)
     const row = result.status === 'success' && result.data && typeof result.data === 'object' && !Array.isArray(result.data)
       ? result.data as Record<string, unknown> : null
     const careLocation = typeof row?.care_location === 'string' ? row.care_location.trim() : ''
@@ -2923,7 +2924,7 @@ export function AgendaPage({
             ) : (
               <div role="alert">
                 <p>O novo endereço do atendimento familiar não foi confirmado; aviso pendente.</p>
-                <button type="button" disabled={!familyRescheduledNotice.appointmentId || rescheduleNoticeBusy}
+                <button type="button" disabled={!familyRescheduledNotice.professionalId || rescheduleNoticeBusy}
                   onClick={() => void retryFamilyRescheduleNoticeLocation()}>
                   {rescheduleNoticeBusy ? 'Consultando endereço…' : 'Verificar endereço do familiar e preparar aviso'}
                 </button>
