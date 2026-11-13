@@ -118,7 +118,7 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
     // registro mais recente. A transferência é uma única operação no banco.
     const patient = rows(state.status === 'success' ? state.data : null)
       .find((item) => item.patient_id === initialPatientId)
-    const firstContact = patient && offerHistory(patient)[0]?.contact_date
+    const firstContact = patient && (offerHistory(patient)[0]?.contact_date ?? patient.contact_date)
     const initialContact = typeof firstContact === 'string' ? Date.parse(firstContact) : NaN
     const canTransferToRescue = initialOutcome === 'sem_resposta' &&
       Number.isFinite(initialContact) && Date.now() >= initialContact + 72 * 60 * 60 * 1000
