@@ -8882,3 +8882,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 
 
 **Complemento de usabilidade (§28.245):** commit `1147fcddfa187f8ba36b54efa85d2fac247299dc` posiciona o foco visual na área de aviso após a remarcação de paciente, participante de grupo ou familiar/cuidador, inclusive depois de recarregar a Agenda. Não executa envio nem abertura automática do WhatsApp, não mexe na gravação ou histórico. A homologação visual continua pendente.
+
+
+### §28.246 — Redefinição administrativa de senha provisória em conta existente (13/11/2026)
+
+**VERDE da Titular recebido neste chat.** Escopo limitado à recuperação administrativa de credenciais já vinculadas; preservar profissionais, agendas, papéis, aceite do termo e identidades de autenticação, sem realizar redefinição de senha de usuário real durante a manutenção.
+
+**Diagnóstico:** a tela `GestorTeamPage.tsx` mostrava a senha provisória apenas para novos cadastros ou profissionais sem conta. O botão `Salvar alterações` atualizava o perfil, não a senha de uma identidade Auth existente. `create-team-member` criava nova identidade e não poderia ser usado para redefinição.
+
+**Correção versionada:** nova Edge Function `supabase/functions/reset-team-member-temporary-password/index.ts`, commit `54708d8a7135057b83c4e4dda836b20be773a121`, publicada no Supabase como versão 1 com `verify_jwt=true`. Ela valida sessão ativa e papel `administrador`, confere vínculo com `user_accounts`, preserva o ID Auth, não altera `user_term_acceptances`, exige justificativa de 10 a 500 caracteres quando houver aceite anterior, ativa `professionals.must_change_password` antes de atualizar a senha pelo Supabase Auth Admin e registra a alteração em `audit_logs` sem salvar a senha. Se a escrita em Auth falhar, mantém a trava por segurança. Não se executou a operação para nenhuma conta real nesta sessão.
+
+**Frontend:** em `src/features/gestor/GestorTeamPage.tsx` o campo de senha foi disponibilizado para contas vinculadas e foi acrescentado o botão independente `Redefinir senha provisória`; `Salvar alterações` permanece exclusivamente cadastral e `Criar acesso` continua reservado a profissionais sem conta. A troca exige confirmação e mantém motivo excepcional separado. Commits `0b3c2ab7d5809cdee1d0e36aee54e0fb98657947` e `09bd3d8498c3ef6397d6029cfc9ce80968af595a`.
+
+**Regressões:** dois testes adicionados a `tests/unit/gestor-team-page.test.tsx` para verificar que redefinição não chama criação/edição cadastral e que senha inválida não é enviada (commit `c3c33bc44e41c3b911543ce2836b46b4683ba8d6`). A clonagem local falhou por erro DNS em `github.com`; portanto **não há comprovação de execução Vitest, build, clique autenticado, publicação frontend Cloudflare ou recuperação real**.
+
+**Pendências importantes:** o primeiro acesso do CAPO ainda faz troca de senha diretamente na interface após o aceite do termo; a regra posterior de envio obrigatório do link de redefinição por e-mail não foi implementada nesta microetapa. Não declarar o fluxo completo homologado. A verificação autenticada deve confirmar as permissões administrativas, o registro de auditoria, a trava de acesso e os cenários pré/pós-aceite. Nenhum histórico, senha ou cadastro foi modificado por teste real nesta etapa.
