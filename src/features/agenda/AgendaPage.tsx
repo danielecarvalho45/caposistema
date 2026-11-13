@@ -1734,9 +1734,6 @@ export function AgendaPage({
       familyRescheduleId, professional, familyRescheduleStart, familyRescheduleReason,
     )
     if (result.status === 'success') {
-      const row = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
-        ? result.data as Record<string, unknown> : null
-      const newId = typeof row?.new_appointment_id === 'string' ? row.new_appointment_id : ''
       // Agendamento familiar tem tabela própria; consultar o local real do profissional, não a RPC de paciente.
       const lookup = await getRpcService().getProfessionalCareLocation(professional)
       const place = lookup?.status === 'success' && lookup.data && typeof lookup.data === 'object' && !Array.isArray(lookup.data)
