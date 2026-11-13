@@ -1,3 +1,4 @@
+import { capoTodayIso } from '../../lib/date/capo-locale'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -892,15 +893,15 @@ export function AgendaPage({
   const [rescheduleReason, setRescheduleReason] = useState('')
   const [rescheduleOrigin, setRescheduleOrigin] = useState('')
   const [rescheduleNotes, setRescheduleNotes] = useState('')
-  const [rescheduleTargetDate, setRescheduleTargetDate] = useState(() => dateInputValue(new Date()))
+  const [rescheduleTargetDate, setRescheduleTargetDate] = useState(() => capoTodayIso())
   const [rescheduleSlotResult, setRescheduleSlotResult] = useState<{
     key: string
     rows: readonly AvailableAppointmentSlot[]
   } | null>(null)
   const [selectedRescheduleSlotStart, setSelectedRescheduleSlotStart] = useState('')
-  const [anchorDate, setAnchorDate] = useState(() => dateInputValue(new Date()))
-  const [consultationStartDate, setConsultationStartDate] = useState(() => dateInputValue(new Date()))
-  const [consultationEndDate, setConsultationEndDate] = useState(() => dateInputValue(new Date()))
+  const [anchorDate, setAnchorDate] = useState(() => capoTodayIso())
+  const [consultationStartDate, setConsultationStartDate] = useState(() => capoTodayIso())
+  const [consultationEndDate, setConsultationEndDate] = useState(() => capoTodayIso())
   const [state, setState] =
     useState<AsyncState<readonly AgendaAppointment[]>>(loadingState)
   const [scheduleGrid, setScheduleGrid] =
@@ -1338,7 +1339,7 @@ export function AgendaPage({
     setLastRescheduledContact(null)
     setRescheduleOrigin('manual')
     setRescheduleReason('')
-    setRescheduleTargetDate(dateInputValue(new Date()))
+    setRescheduleTargetDate(capoTodayIso())
     setAppointmentFeedback(null)
   }
 
@@ -2051,7 +2052,7 @@ export function AgendaPage({
       setSelectedReschedulableId(requestedAppointmentId)
       setRescheduleOrigin('manual')
       setRescheduleReason('')
-      setRescheduleTargetDate(dateInputValue(new Date()))
+      setRescheduleTargetDate(capoTodayIso())
       setAppointmentFeedback(null)
       if (requestedSlotDate) {
         setConsultationStartDate(requestedSlotDate)
@@ -2099,7 +2100,7 @@ export function AgendaPage({
       setSelectedReschedulableId(sourceAppointmentId)
       setRescheduleOrigin('faltoso')
       setRescheduleReason('')
-      setRescheduleTargetDate(dateInputValue(new Date()))
+      setRescheduleTargetDate(capoTodayIso())
       return
     }
 
@@ -2817,7 +2818,7 @@ export function AgendaPage({
                   setScheduleGrid(loadingState())
                   setView(option)
                   if (!embeddedHome) {
-                    setConsultationRangeForView(dateInputValue(new Date()), option)
+                    setConsultationRangeForView(capoTodayIso(), option)
                   }
                 }}
               >
@@ -2847,9 +2848,9 @@ export function AgendaPage({
                 setState(loadingState())
                 setScheduleGrid(loadingState())
                 if (embeddedHome) {
-                  setAnchorDate(dateInputValue(new Date()))
+                  setAnchorDate(capoTodayIso())
                 } else {
-                  const today = dateInputValue(new Date())
+                  const today = capoTodayIso()
                   setConsultationRangeForView(today, view)
                 }
               }}
@@ -3247,7 +3248,7 @@ export function AgendaPage({
                               <div className="agenda-psychology-booking">
                                 <p>Remarcar somente este participante para outra sessão do mesmo grupo.</p>
                                 <label>Nova data
-                                  <CapoDateInput  min={dateInputValue(new Date())}
+                                  <CapoDateInput  min={capoTodayIso()}
                                     value={groupRescheduleDate} onChange={(event) => setGroupRescheduleDate(event.target.value)} />
                                 </label>
                                 <label>Motivo (opcional)
