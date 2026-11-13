@@ -12,6 +12,7 @@ import {
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import { movementWhatsAppMessage, type CommunicationContact } from './appointment-communication'
 import { prepareAppointmentReminder } from './appointment-confirmation-link'
 import { isVisibleOnAgenda } from './agenda-visibility'
@@ -1638,6 +1639,54 @@ export function AgendaPage({
     else if (result.status === 'error') setAppointmentFeedback(result.error.message)
   }
 
+  function openFamilyNotice(item: Record<string, unknown>) {
+    const clean = String(item.family_phone ?? '').replace(/\D/g, '')
+    if (clean.length < 10) {
+      setAppointmentFeedback('Cadastre um telefone válido para este familiar.')
+      return
+    }
+    const phone = clean.startsWith('55') ? clean : `55${clean}`
+    const sender = accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username
+    const title = accessContext.function_title?.trim() || accessContext.real_identity.function_title?.trim() || accessContext.primary_context.name?.trim() || 'Equipe CAPO'
+    const message = `Olá, ${String(item.family_name ?? 'Familiar')}! Lembramos seu atendimento de Psicologia com ${String(item.professional_name ?? 'profissional CAPO')} em ${formatDateTime(String(item.appointment_date))}. Por favor, confirme o recebimento.\n\n${sender} — ${title} — CAPO`
+    if (!openCapoWhatsAppTab(`https://web.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`))
+      setAppointmentFeedback('O navegador bloqueou a abertura do WhatsApp.')
+  }
+
+  async function registerFamilyPrevisitContact(item: Record<string, unknown>) {
+    const appointmentId = String(item.appointment_id)
+    const outcome = previsitOutcomes[appointmentId]
+    if (!outcome || previsitBusyId) return
+    setPrevisitBusyId(appointmentId)
+    const client = getSupabaseClient() as unknown as {
+      rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>
+    }
+    try {
+      const { data, error } = await client.rpc('register_family_psychology_previsit_contact_for_interface', {
+        p_appointment_id: appointmentId, p_result: outcome,
+      })
+      if (error || !(data && typeof data === 'object' && (data as { success?: boolean }).success)) {
+        setPrevisitFeedback(error?.message ?? 'O banco não confirmou o aviso familiar.')
+      } else {
+        setPrevisitFeedback('Aviso registrado sem modificar a presença.')
+        setFamilyPsychologyCards((current) => current.map((row) =>
+          String(row.appointment_id) === appointmentId ? { ...row, last_notice_result: outcome } : row))
+      }
+    } catch {
+      setPrevisitFeedback('Não foi possível registrar o aviso familiar.')
+    } finally {
+      setPrevisitBusyId(null)
+    }
+  }
+
+  function prepareFamilyReschedule(appointmentId: string) {
+    setFamilyRescheduleId(appointmentId)
+    setFamilyRescheduleDate('')
+    setFamilyRescheduleSlots([])
+    setFamilyRescheduleStart('')
+    setFamilyRescheduleReason('')
+  }
+
   async function applyFamilyReschedule(professional: string) {
     if (!familyRescheduleId || !familyRescheduleStart || familyRescheduleBusy || isProfessional) return
     setFamilyRescheduleBusy(true)
@@ -1670,14 +1719,30 @@ export function AgendaPage({
 
     setBusyAppointmentId(cancelAppointmentId)
     setAppointmentFeedback('Cancelando agendamento no banco...')
-    const result = await getRpcService().updateAppointmentAttendance({
-      appointmentId: cancelAppointmentId,
-      action: 'cancelado',
-      notes: '',
-      reason,
-    })
+    let cancelled = false
+    let cancellationError = ''
+    if (familyPsychologyCards.some((item) => String(item.appointment_id) === cancelAppointmentId)) {
+      const client = getSupabaseClient() as unknown as {
+        rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>
+      }
+      try {
+        const { data, error } = await client.rpc('update_family_psychology_attendance_for_interface', {
+          p_appointment_id: cancelAppointmentId, p_action: 'cancelado', p_reason: reason, p_notes: null,
+        })
+        cancelled = !error && !!data && typeof data === 'object' && (data as { success?: boolean }).success === true
+        cancellationError = error?.message ?? 'O banco não confirmou o cancelamento familiar.'
+      } catch {
+        cancellationError = 'Falha ao cancelar atendimento familiar.'
+      }
+    } else {
+      const result = await getRpcService().updateAppointmentAttendance({
+        appointmentId: cancelAppointmentId, action: 'cancelado', notes: '', reason,
+      })
+      cancelled = result.status === 'success'
+      cancellationError = result.status === 'error' ? result.error.message : 'Cancelamento não confirmado.'
+    }
 
-    if (result.status === 'success') {
+    if (cancelled) {
       setCancelAppointmentId('')
       setCancelReason('')
       setAppointmentFeedback('Agendamento cancelado. Agenda recarregada do banco.')
@@ -1685,9 +1750,7 @@ export function AgendaPage({
       else await load()
     } else {
       setAppointmentFeedback(
-        result.status === 'error'
-          ? result.error.message
-          : 'O cancelamento não retornou confirmação.',
+        cancellationError || 'O cancelamento não retornou confirmação.',
       )
     }
     setBusyAppointmentId(null)
@@ -2778,7 +2841,7 @@ export function AgendaPage({
           </strong>
         </div>
 
-        {!isProfessional && view === 'day' && state.status === 'success' && state.data.some((item) => item.attendance_status === 'agendado') && (
+        {!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role)) && view === 'day' && ((state.status === 'success' && state.data.some((item) => item.attendance_status === 'agendado')) || familyPsychologyCards.some((item) => item.attendance_status === 'agendado') || psychologyGroupSessions.some((session) => session.participants.some((person) => person.attendance_status === 'agendado'))) && (
           <section className="agenda-schedule-form" aria-label="Avisos prévios das consultas">
             <h3>Avisos prévios das consultas</h3>
             {previsitLoadError && <p role="alert">{previsitLoadError}</p>}
@@ -2790,7 +2853,7 @@ export function AgendaPage({
                   {!isProfessional && <th>Ações administrativas</th>}
                 </tr></thead>
                 <tbody>
-                  {state.data.filter((item) => item.attendance_status === 'agendado').map((item) => {
+                  {(state.status === 'success' ? state.data : []).filter((item) => item.attendance_status === 'agendado').map((item) => {
                     const contact = previsitContacts[item.appointment_id]
                     return (
                       <tr key={item.appointment_id}>
@@ -2856,6 +2919,66 @@ export function AgendaPage({
                       </tr>
                     )
                   })}
+                  {familyPsychologyCards.filter((item) => item.attendance_status === 'agendado').map((item) => {
+                    const aid = String(item.appointment_id)
+                    const notice = String(item.last_notice_result ?? '')
+                    return <tr key={aid}>
+                      <td>{formatDateTime(String(item.appointment_date))} — {String(item.professional_name ?? 'Psicologia')}</td>
+                      <td>{String(item.family_name ?? 'Familiar')} <small>Familiar/Cuidador · CAPO {String(item.family_capo_number ?? '')}</small></td>
+                      <td>{notice === 'avisado' ? '✓ Paciente avisado' : notice === 'solicitou_cancelamento' ? 'Solicitou cancelamento' : 'Ainda sem registro de contato prévio'}</td>
+                      <td className="agenda-attendance-actions">
+                        <button type="button" onClick={() => openFamilyNotice(item)}>💬 Lembrar consulta</button>
+                        <select aria-label={`Resultado do contato com ${String(item.family_name ?? 'Familiar')}`}
+                          value={previsitOutcomes[aid] ?? (notice === 'avisado' || notice === 'solicitou_cancelamento' ? notice : '')}
+                          onChange={(event) => setPrevisitOutcomes((current) => ({ ...current, [aid]: event.target.value }))}>
+                          <option value="">Resultado do contato</option>
+                          <option value="avisado">Paciente avisado</option>
+                          <option value="solicitou_cancelamento">Solicitou cancelamento</option>
+                        </select>
+                        <button type="button" disabled={!previsitOutcomes[aid] || previsitBusyId !== null}
+                          onClick={() => void registerFamilyPrevisitContact(item)}>✓ Registrar aviso</button>
+                        <button type="button" onClick={() => prepareFamilyReschedule(aid)}>↻ Remarcar</button>
+                        <button type="button" onClick={() => prepareCancellation(aid)}>Cancelar</button>
+                      </td>
+                    </tr>
+                  })}
+                  {psychologyGroupSessions.flatMap((session) => session.participants.filter((person) => person.attendance_status === 'agendado').map((person) => (
+                    <tr key={person.appointment_id}>
+                      <td>{formatDateTime(session.start)} — Psicologia / {session.name}</td>
+                      <td>{person.patient_name} <small>Terapia em grupo</small></td>
+                      <td>{previsitContacts[person.appointment_id] ? previsitIndicator(previsitContacts[person.appointment_id].result) : 'Ainda sem registro de contato prévio'}</td>
+                      <td className="agenda-attendance-actions">
+                        <PatientWhatsAppButton patientId={person.patient_id} label="💬 Lembrar consulta"
+                          prepareMessage={() => prepareAppointmentReminder({
+                            appointmentId: person.appointment_id,
+                            patientName: person.patient_name,
+                            professionalName: professionalOptions.find(([id]) => id === professionalId)?.[1] ?? 'Profissional CAPO',
+                            specialtyName: 'Psicologia — ' + session.name,
+                            appointmentDate: session.start,
+                            senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
+                            senderTitle: accessContext.function_title?.trim() || accessContext.real_identity.function_title?.trim() || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+                          })} />
+                        <select aria-label={`Resultado do contato com ${person.patient_name}`}
+                          value={previsitOutcomes[person.appointment_id] ?? ''}
+                          onChange={(event) => setPrevisitOutcomes((current) => ({ ...current, [person.appointment_id]: event.target.value }))}>
+                          <option value="">Resultado do contato</option>
+                          <option value="avisado">Paciente avisado</option>
+                          <option value="solicitou_cancelamento">Solicitou cancelamento</option>
+                        </select>
+                        <button type="button" disabled={!previsitOutcomes[person.appointment_id] || previsitBusyId !== null}
+                          onClick={() => void registerPrevisitContact(person.appointment_id)}>✓ Registrar aviso</button>
+                        <button type="button" onClick={() => {
+                          const next = localDate(session.date)
+                          next.setDate(next.getDate() + 7)
+                          setGroupRescheduleAppointmentId(person.appointment_id)
+                          setGroupRescheduleDate(dateInputValue(next))
+                          setGroupRescheduleReason('')
+                          document.getElementById(`grupo-${session.group_id}-${session.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }}>↻ Remarcar</button>
+                        <button type="button" onClick={() => prepareCancellation(person.appointment_id)}>Cancelar</button>
+                      </td>
+                    </tr>
+                  )))}
                 </tbody>
               </table>
             </div>
@@ -2942,10 +3065,7 @@ export function AgendaPage({
                     const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
                     if (family) return ['agendado', 'confirmado'].includes(String(family.attendance_status))
                       ? <button type="button" disabled={familyRescheduleBusy} onClick={() => {
-                          setFamilyRescheduleId(appointmentId)
-                          setFamilyRescheduleSlots([])
-                          setFamilyRescheduleStart('')
-                          document.getElementById('agenda-familiares-psicologia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          prepareFamilyReschedule(appointmentId)
                         }}>Remarcar familiar</button> : null
                     const appointment = state.status === 'success' ? state.data.find((item) => item.appointment_id === appointmentId) : undefined
                     if (!appointment || !['agendado', 'confirmado'].includes(appointment.attendance_status)) return null
@@ -3171,7 +3291,7 @@ export function AgendaPage({
                 previsitContacts={previsitContacts}
               />
             )}
-          {familyPsychologyCards.length > 0 && (
+          {familyPsychologyCards.length > 0 && (isProfessional || familyRescheduleId) && (
             <section id="agenda-familiares-psicologia" aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
               <h3>Atendimentos de familiares — Psicologia</h3>
               <div className="assistential-table-wrap">
