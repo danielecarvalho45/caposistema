@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -436,8 +437,8 @@ export function NoShowsPage({
                 </label>
                 <label>
                   Próximo contato
-                  <input
-                    type="date"
+                  <CapoDateInput
+                    
                     value={nextContactDate}
                     onChange={(event) => setNextContactDate(event.target.value)}
                   />
