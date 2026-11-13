@@ -44,7 +44,7 @@ export function CapoDateInput({
 
   function notify(iso: string) {
     // Compatibilidade com os handlers existentes, que consomem event.target.value.
-    onChange?.({ target: { value: iso }, currentTarget: { value: iso } } as ChangeEvent<HTMLInputElement>)
+    onChange?.({ target: { value: iso }, currentTarget: { value: iso } } as unknown as ChangeEvent<HTMLInputElement>)
   }
 
   function choose(iso: string) {
