@@ -470,7 +470,7 @@ export function GestorTeamPage({
 
   async function resetPasswordForSelected() {
     if (!selected?.userAccountId || submitting || !service.resetTemporaryPassword) return
-    if (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\\d/.test(temporaryPassword)) {
+    if (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword)) {
       setFeedback('A senha provisória deve ter pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.')
       return
     }
