@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useMemo, useState } from 'react'
 import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
 import {
@@ -1000,12 +1001,12 @@ export function OwnAgendaManager({
             </label>
             {!structuralUnlimited && <><label>
               Início da vigência
-              <input type="date" value={structuralStartDate} onChange={(event) => setStructuralStartDate(event.target.value)} />
+              <CapoDateInput  value={structuralStartDate} onChange={(event) => setStructuralStartDate(event.target.value)} />
             </label>
             <label>
               Fim da vigência
-              <input
-                type="date"
+              <CapoDateInput
+                
                 min={structuralStartDate || undefined}
                 value={structuralEndDate}
                 onChange={(event) => setStructuralEndDate(event.target.value)}
@@ -1325,7 +1326,7 @@ export function OwnAgendaManager({
 
           <label>
             Data
-            <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+            <CapoDateInput  value={date} onChange={(event) => setDate(event.target.value)} />
           </label>
           <label>
             Início
@@ -1386,7 +1387,7 @@ export function OwnAgendaManager({
                       {selected && allowStructuralEdit && (
                         <div className="agenda-form-grid">
                           <label>Nova data
-                            <input type="date" value={remanejamentoDate} onChange={(event) => void loadRemanejamentoSlots(event.target.value)} />
+                            <CapoDateInput  value={remanejamentoDate} onChange={(event) => void loadRemanejamentoSlots(event.target.value)} />
                           </label>
                           <label>Horário livre
                             <select value={remanejamentoStart} onChange={(event) => setRemanejamentoStart(event.target.value)}>
