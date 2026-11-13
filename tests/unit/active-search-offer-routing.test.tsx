@@ -109,3 +109,39 @@ it('não antecipa Resgate antes das 72 horas da primeira Oferta', async () => {
   await waitFor(() => expect(rpc.registerInitialActiveSearchAttempt).toHaveBeenCalled())
   expect(rpc.registerOfferRescueContact).not.toHaveBeenCalled()
 })
+
+
+it.each(['aceitou', 'recusou'] as const)(
+  'mantém o desfecho expresso %s na Oferta Inicial sem transferir indevidamente',
+  async (outcome) => {
+    const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    rpc.getInitialActiveSearches.mockResolvedValue({ status: 'success', data: { items: [{
+      patient_id: 'patient-outcome', patient_name: 'Paciente de decisão',
+      flow_status: 'ativo', contact_date: '2026-11-04T12:00:00.000Z',
+      history: [{ contact_date: '2026-11-04T12:00:00.000Z' }],
+    }] } })
+    rpc.registerInitialActiveSearchAttempt.mockResolvedValue({
+      status: 'success', data: { success: true, attempt_id: 'initial-decision' },
+    })
+    const context = { roles: [{ code: 'administrativo_operacional' }],
+      primary_context: { code: 'administrativo_operacional' } } as unknown as AccessContext
+    const user = userEvent.setup()
+    render(<MemoryRouter initialEntries={['/busca-ativa?tipo=oferta']}>
+      <ActiveSearchPage accessContext={context} />
+    </MemoryRouter>)
+    await user.click(await screen.findByRole('button', { name: 'Oferta CAPO' }))
+    await user.click(screen.getByRole('button', { name: 'Registrar resposta / observação' }))
+    await user.selectOptions(screen.getByLabelText('Desfecho do contato'), outcome)
+    await user.click(screen.getByRole('button', { name: 'Salvar resposta' }))
+
+    await waitFor(() => expect(rpc.registerInitialActiveSearchAttempt)
+      .toHaveBeenCalledWith(expect.objectContaining({
+        patientId: 'patient-outcome',
+        acceptedService: outcome === 'aceitou',
+        closeFlow: true,
+      })))
+    expect(rpc.registerOfferRescueContact).not.toHaveBeenCalled()
+    expect(confirmation).toHaveBeenCalled()
+    confirmation.mockRestore()
+  },
+)
