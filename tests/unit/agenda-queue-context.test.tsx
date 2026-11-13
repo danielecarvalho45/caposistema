@@ -8,7 +8,8 @@ import type { AccessContext } from '../../src/types/access'
 const rpc = vi.hoisted(() => ({
   getSchedulingCatalog: vi.fn(), getAvailableAppointmentSlots: vi.fn(),
   getAgendaScheduleGrid: vi.fn(), createAppointment: vi.fn(),
-  getAppointmentCareLocation: vi.fn(),
+  getAppointmentCareLocation: vi.fn(), getProfessionalCareLocation: vi.fn(),
+  getReschedulableAppointments: vi.fn(), rescheduleAppointment: vi.fn(),
   updateAppointmentAttendance: vi.fn(),
   searchReferralPatients: vi.fn(), addPatientToWaitingList: vi.fn(),
 }))
@@ -824,4 +825,58 @@ it('exibe aviso específico de retorno antes de liberar a conclusão administrat
   expect(await screen.findByRole('button', { name: 'Finalizar agendamentos' })).toBeVisible()
   expect(screen.getByRole('button', { name: 'Agendar outra especialidade' })).toBeVisible()
   expect(rpc.createAppointment).toHaveBeenCalledTimes(1)
+})
+
+
+it('mantém aviso de remarcação pendente sem local e habilita WhatsApp após recuperar endereço, sem duplicar consulta', async () => {
+  const user = userEvent.setup()
+  const newStart = '2026-11-17T12:00:00.000Z'
+  rpc.getSchedulingCatalog.mockResolvedValue({ status: 'success', data: [{
+    specialty_id: 's1', specialty_name: 'Clínica Geral',
+    professional_id: 'p1', professional_name: 'Profissional responsável',
+  }] })
+  rpc.getReschedulableAppointments.mockResolvedValue({ status: 'success', data: [{
+    appointment_id: 'old-a', patient_id: 'patient-1', patient_name: 'Paciente de teste',
+    professional_id: 'p1', professional_name: 'Profissional responsável',
+    appointment_date: '2026-11-16T12:00:00.000Z',
+  }] })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({ status: 'success', data: [{
+    professional_id: 'p1', slot_date: '2026-11-17', slot_time: '09:00:00',
+    slot_start: newStart, slot_end: '2026-11-17T12:30:00.000Z', duration_minutes: 30,
+  }] })
+  rpc.getAppointmentCareLocation
+    .mockResolvedValueOnce({ status: 'success', data: { care_location: null } })
+    .mockResolvedValueOnce({ status: 'success', data: { care_location: 'Unidade real cadastrada' } })
+  rpc.rescheduleAppointment.mockResolvedValue({ status: 'success', data: {
+    new_appointment_id: 'new-a',
+  } })
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+    real_identity: { full_name: 'Atendente autorizada', function_title: 'Administrativo' },
+  } as unknown as AccessContext
+
+  render(<MemoryRouter initialEntries={[{
+    pathname: '/agenda',
+    state: { origin: 'home_reschedule_appointment', patientId: 'patient-1',
+      patientName: 'Paciente de teste', professionalId: 'p1', appointmentId: 'old-a' },
+  }]}>
+    <AgendaPage accessContext={context} loadAgenda={async () => ({ status: 'empty' })} />
+  </MemoryRouter>)
+
+  expect(await screen.findByRole('heading', { name: 'Remarcação / Retorno' })).toBeVisible()
+  await user.selectOptions(screen.getByLabelText('Tipo de movimentação *'), 'remarcacao')
+  await waitFor(() => expect(screen.getByLabelText('Agendamento')).toHaveValue('old-a'))
+  fireEvent.change(screen.getByLabelText('Data do novo atendimento'), { target: { value: '2026-11-17' } })
+  await user.selectOptions(await screen.findByLabelText('Novo horário'), newStart)
+  await user.click(screen.getByRole('button', { name: 'Aplicar remarcação' }))
+
+  expect(await screen.findByRole('region', { name: 'Comunicação após movimentação' })).toBeVisible()
+  expect(screen.getByText(/aviso está pendente/i)).toBeVisible()
+  expect(screen.queryByRole('button', { name: '💬 WhatsApp de reagendamento' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Verificar endereço e preparar aviso' }))
+  expect(await screen.findByRole('button', { name: '💬 WhatsApp de reagendamento' })).toBeVisible()
+  expect(rpc.rescheduleAppointment).toHaveBeenCalledTimes(1)
+  expect(rpc.getAppointmentCareLocation).toHaveBeenCalledWith('new-a')
 })
