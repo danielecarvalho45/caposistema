@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import {
   loadingState,
@@ -398,16 +399,16 @@ export function AssistentialPage({
             <div className="assistential-filters">
               <label>
                 De
-                <input
-                  type="date"
+                <CapoDateInput
+                  
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
                 />
               </label>
               <label>
                 Até
-                <input
-                  type="date"
+                <CapoDateInput
+                  
                   value={endDate}
                   min={startDate}
                   onChange={(event) => setEndDate(event.target.value)}
