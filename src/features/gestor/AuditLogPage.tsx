@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useState } from 'react'
 import { AsyncStateView } from '../../components/feedback/AsyncStateView'
 import { getRpcService, type AsyncState } from '../../lib/supabase/rpc'
@@ -113,8 +114,8 @@ export function AuditLogPage({ service = getRpcService() }: Readonly<{ service?:
       </header>
       <article className="gestor-panel">
         <form className="gestor-audit-filters" onSubmit={(event) => void load(event)}>
-          <label>De<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label>
-          <label>Até<input type="date" min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label>
+          <label>De<CapoDateInput  value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label>
+          <label>Até<CapoDateInput  min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label>
           <label>Área / Módulo
             <select value={entityName} onChange={(event) => setEntityName(event.target.value)}>
               <option value="">Todas as áreas</option>
