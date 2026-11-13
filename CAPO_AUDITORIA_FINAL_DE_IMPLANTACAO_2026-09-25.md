@@ -8851,3 +8851,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Regressão versionada:** `tests/unit/agenda-queue-context.test.tsx` ganhou teste que agenda `Retorno` a partir do contexto `patient_record`, confirma gravação e aviso do WhatsApp antes de liberar as ações finais; protege a manutenção de primeira consulta já existente. Commit `d2214368cb22b4a217e971e71d7844ca12694bb9`.
 
 **Verificação e limitações:** inspeção do código `main` confirmou a etapa e o bloqueio de ações até conferência, com o teste registrado. Não houve alteração SQL, dados de pacientes, envio de WhatsApp ou alteração do componente compartilhado. O ambiente de execução não resolveu `github.com` para clonagem, impedindo executar os testes Vitest e o build; também não há comprovação de deploy Cloudflare nem homologação real nesta sessão. Portanto **correção versionada, homologação operacional pendente**.
+
+
+### §28.244 — WhatsApp de retorno: identificação do profissional da consulta (13/11/2026)
+
+**Autorização:** VERDE da Titular após apresentação de mensagem real de retorno sem identificação do profissional assistencial. Corrigir cirurgicamente apenas esse campo; preservar a assinatura do Auxiliar Administrativo (pessoa que agendou), o nome do paciente, a data, a hora, o local real, o WhatsApp de primeira consulta, as mensagens de remarcação/remanejamento e os lembretes.
+
+**Causa verificada:** `AgendaPage.tsx` já recuperava `professionalName` do catálogo e o armazenava em `lastScheduledContact`, mas não repassava esse dado nos dois acionadores de `movementWhatsAppMessage('retorno', ...)`. A função `appointment-communication.ts` não tinha campo de profissional nem imprimia essa informação na mensagem de retorno. Não havia motivo para alterar RPC, Supabase ou `PatientWhatsAppButton`.
+
+**Correção frontend:** `CommunicationContact` passa a aceitar o campo opcional `professionalName` (opcional para preservar todos os chamadores existentes). Somente a opção `retorno` em `movementWhatsAppMessage` imprime `👩‍⚕️ *Profissional:* [nome real]` entre horário e local, quando o nome foi fornecido. `AgendaPage.tsx` repassa `lastScheduledContact.professionalName` tanto no aviso obrigatório imediatamente após agendar quanto no botão de retorno que fica disponível após conferência. A identificação de quem realizou o agendamento permanece na assinatura independente.
+
+**Commits:** mensagem `47d2f2d7adcfbb8fbcaf9d540219c02b39382830`; chamadas da Agenda `302e4665fd5b53e1c3d494fb9551c82f66a2dfe3`; regressões `0250b28b0db7a46180524d7b714396600db90453` em `tests/unit/appointment-communication.test.ts`, verificando o nome do profissional e a assinatura do Administrativo, sem incluí-lo indevidamente nas mensagens de remarcação/remanejamento.
+
+**Preservação e validação:** alteração restrita a dois arquivos do frontend e um teste; nenhum dado real ou SQL alterado e nenhuma mensagem enviada. Inspeção estática dos pontos de chamada e dos contratos existente. Teste automatizado, build de produção, Cloudflare Pages e clique autenticado ainda não executados/comprovados nesta sessão. **Não declarar homologação operacional antes dessas etapas.**
