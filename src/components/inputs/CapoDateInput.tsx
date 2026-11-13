@@ -33,9 +33,12 @@ export function CapoDateInput({
   const [expanded, setExpanded] = useState(false)
   const [month, setMonth] = useState(() => {
     const d = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ''
-    const now = new Date()
-    return d ? `${d.slice(0, 7)}-01` :
-      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+    const brazilianNow = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit',
+    }).formatToParts(new Date())
+    const year = brazilianNow.find((part) => part.type === 'year')?.value
+    const month = brazilianNow.find((part) => part.type === 'month')?.value
+    return d ? `${d.slice(0, 7)}-01` : `${year}-${month}-01`
   })
   useEffect(() => setText(isoToBrazil(value)), [value])
 
@@ -103,7 +106,7 @@ export function CapoDateInput({
             if (!expanded && /^\d{4}-\d{2}-\d{2}$/.test(value))
               setMonth(value.slice(0, 7) + '-01')
             setExpanded(!expanded)
-          }}>▦</button>
+          }}>Calendário</button>
       )}
       {expanded && !disabled && !readOnly && (
         <span className="capo-date-calendar" role="group" aria-label="Calendário em português brasileiro">
