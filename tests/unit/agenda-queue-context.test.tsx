@@ -869,7 +869,8 @@ it('mantém aviso de remarcação pendente sem local e habilita WhatsApp após r
   await user.selectOptions(screen.getByLabelText('Tipo de movimentação *'), 'remarcacao')
   await waitFor(() => expect(screen.getByLabelText('Agendamento')).toHaveValue('old-a'))
   fireEvent.change(screen.getByLabelText('Data do novo atendimento'), { target: { value: '2026-11-17' } })
-  await user.selectOptions(await screen.findByLabelText('Novo horário'), newStart)
+  await waitFor(() => expect(screen.getByRole('option', { name: '09:00:00' })).toBeInTheDocument())
+  await user.selectOptions(screen.getByLabelText('Novo horário'), newStart)
   await user.click(screen.getByRole('button', { name: 'Aplicar remarcação' }))
 
   expect(await screen.findByRole('region', { name: 'Comunicação após movimentação' })).toBeVisible()
