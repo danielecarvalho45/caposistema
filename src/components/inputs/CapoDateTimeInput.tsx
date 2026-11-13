@@ -20,11 +20,11 @@ export function CapoDateTimeInput({ value, onChange, disabled, readOnly, require
   }, [value])
   function emit(day: string, hour: string) {
     if (!day || !/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(hour)) {
-      onChange({ target: { value: '' }, currentTarget: { value: '' } } as ChangeEvent<HTMLInputElement>)
+      onChange({ target: { value: '' }, currentTarget: { value: '' } } as unknown as ChangeEvent<HTMLInputElement>)
       return
     }
     const iso = `${day}T${hour}`
-    onChange({ target: { value: iso }, currentTarget: { value: iso } } as ChangeEvent<HTMLInputElement>)
+    onChange({ target: { value: iso }, currentTarget: { value: iso } } as unknown as ChangeEvent<HTMLInputElement>)
   }
   return (
     <span className="capo-date-time-input">
