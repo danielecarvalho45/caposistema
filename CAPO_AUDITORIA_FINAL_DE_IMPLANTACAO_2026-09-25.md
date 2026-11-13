@@ -8767,3 +8767,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Commits:** frontend `fdab581d3c0ae4fd565ec7f186dc18038da9afd8`, `6164f7c54454304fd7d6e635c4d8d647bee589b6`, `828e5bf01a67057d6589dc474f770ed24d30ed99`; migration `a34eeb2b1b837094a279cfb009a7c6c39aa9f85f`.
 
 **Estado:** código e migration na `main`, banco migrado e controles básicos conferidos. **Ainda não homologado:** compilação/testes automatizados locais e interface autenticada da Scheilla/Administrativo em Cloudflare, comportamento dos botões em todas as vistas, continuidade específica do atendimento familiar após confirmação, retorno administrativo familiar, mensagens completas com endereço e contato em produção. Esses pontos não devem ser considerados PASS sem verificação. Não modificar função antiga de retorno por analogia nem inventar confirmação por link para família.
+
+
+### §28.238 — Padronização nacional de calendários e horários CAPO independente do equipamento (13/11/2026)
+
+**Autorização:** VERDE da Gestora/Titular. Divergência: navegadores/dispositivos com região americana exibem calendários no formato americano e controles de horário AM/PM. Padrão obrigatório do CAPO: data DD/MM/AAAA, relógio 24h HH:MM, linguagem pt-BR e fuso America/Sao_Paulo, sem dependência da regionalização do equipamento.
+
+**Alteração cirúrgica:** criados `src/components/inputs/CapoDateInput.tsx`, `CapoDateTimeInput.tsx` e CSS compartilhado, substituindo inputs nativos de data e data/hora nas telas React atuais: Agenda Geral/profissional, gestão e mudanças da agenda, Gestor/Equipe, cadastro e edição de paciente, Familiar/Cuidador, óbito, filas, faltosos, relatórios, auditoria, suporte técnico, perfil assistencial e Busca Ativa. Controle apresenta datas brasileiras, meses em português e semana começando segunda-feira; valida calendário real e limites de data antes de emitir valor. Hora é texto HH:MM validado para 00:00–23:59. Os handlers existentes continuam recebendo datas ISO (AAAA-MM-DD) ou data/hora local (AAAA-MM-DDTHH:MM), preservando os contratos de RPC e o banco, que não foram alterados.
+
+**Fuso:** criada função `capoTodayIso` em `src/lib/date/capo-locale.ts` para ancorar as datas de hoje e limites essenciais na data civil de Brasília, inclusive Agenda e registro de óbito. Outras exibições de timestamp em agenda, fila, relatórios, transporte, odontologia, nutrição e renovação de receita foram fixadas em `pt-BR` e `America/Sao_Paulo` com 24 horas. `index.html` já continha `lang=pt-BR` e `translate=no`, preservados.
+
+**Testes de regressão:** criado `tests/unit/capo-locale-input.test.tsx` com cenários de apresentação DD/MM/AAAA, seleção dentro dos limites, rejeição de datas impossíveis, horário 24h e mudança de dia entre fusos. Arquivos HTML legados independentes não são rotas React ativas e não foram modificados. Sem modificação de agenda profissional, pacientes, acessos, horários armazenados, Supabase ou dados reais.
+
+**Status:** commits aplicados na branch `main`; inspeção textual de substituições realizada. **Pendente de homologação:** execução real de `npm run typecheck`, `npm run build` e testes unitários (ambiente de execução do GitHub não disponível nesta sessão); teste visual no navegador e nos perfis reais Windows/Android/iOS e publicação Cloudflare. Não declarar PASS final sem esses testes.
