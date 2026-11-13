@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
 import {
   getRpcService,
@@ -647,7 +648,7 @@ export function QueuePage({
 
         <label>
           Data da vaga
-          <input type="date" value={familySlotDate} onChange={(event) => {
+          <CapoDateInput  value={familySlotDate} onChange={(event) => {
             setFamilySlotDate(event.target.value)
             setFamilySlots([])
             setFamilySlotStart('')
