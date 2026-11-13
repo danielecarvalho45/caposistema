@@ -864,6 +864,7 @@ export function AgendaPage({
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
   const [awaitingNextAppointmentChoice, setAwaitingNextAppointmentChoice] = useState(false)
+  const [returnNoticeAcknowledged, setReturnNoticeAcknowledged] = useState(false)
   const [queueInclusionBusy, setQueueInclusionBusy] = useState(false)
   const [lastScheduledContact, setLastScheduledContact] = useState<Readonly<{
     patientId: string
@@ -1472,6 +1473,8 @@ export function AgendaPage({
       operationalOrigin: appointmentOrigin.trim() || null,
     })
     if (result.status === 'success') {
+      // O retorno administrativo deve apresentar o aviso antes de permitir concluir a operação.
+      if (!isProfessional && appointmentType === 'Retorno') setReturnNoticeAcknowledged(false)
       let locationWarning = false
       const resultRecord =
         result.data && typeof result.data === 'object' && !Array.isArray(result.data)
@@ -2619,7 +2622,36 @@ export function AgendaPage({
               <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType} onClick={() => void createAppointment()}>
                 Confirmar agendamento
               </button>
-              {!isProfessional && awaitingNextAppointmentChoice && (
+              {!isProfessional && awaitingNextAppointmentChoice && appointmentType === 'Retorno' && !returnNoticeAcknowledged && (
+                <div className="agenda-contract-note" role="group" aria-label="Aviso obrigatório de retorno agendado">
+                  <strong>Retorno agendado — avisar paciente antes de continuar</strong>
+                  {lastScheduledContact ? (
+                    <>
+                      <p>Confira a mensagem de retorno e abra o WhatsApp para enviá-la manualmente.</p>
+                      <PatientWhatsAppButton
+                        patientId={lastScheduledContact.patientId}
+                        label="💬 WhatsApp — Retorno agendado"
+                        message={movementWhatsAppMessage('retorno', {
+                          patientName: lastScheduledContact.patientName,
+                          newStart: lastScheduledContact.slotStart,
+                          careLocation: lastScheduledContact.careLocation,
+                          senderName: accessContext.real_identity.full_name?.trim()
+                            || accessContext.full_name?.trim() || accessContext.username,
+                          senderTitle: accessContext.function_title?.trim()
+                            || accessContext.real_identity.function_title?.trim()
+                            || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+                        })}
+                      />
+                      <button type="button" onClick={() => setReturnNoticeAcknowledged(true)}>
+                        Aviso de retorno conferido — continuar
+                      </button>
+                    </>
+                  ) : (
+                    <p role="alert">O retorno foi agendado, mas o local da consulta não foi confirmado. Corrija o endereço do profissional para preparar o aviso de retorno; nenhum WhatsApp foi enviado.</p>
+                  )}
+                </div>
+              )}
+              {!isProfessional && awaitingNextAppointmentChoice && (appointmentType !== 'Retorno' || returnNoticeAcknowledged) && (
                 <>
                   <button type="button" onClick={() => {
                     setAwaitingNextAppointmentChoice(false)
@@ -2652,7 +2684,7 @@ export function AgendaPage({
               )}
             </div>
             {appointmentFeedback && <p className="agenda-contract-note" role="status">{appointmentFeedback}</p>}
-            {!isProfessional && lastScheduledContact && (
+            {!isProfessional && lastScheduledContact && (appointmentType !== 'Retorno' || returnNoticeAcknowledged) && (
               <PatientWhatsAppButton
                 patientId={lastScheduledContact.patientId}
                 label={lastScheduledContact.isReturn ? '💬 WhatsApp de retorno' : '💬 Avisar paciente pelo WhatsApp'}
