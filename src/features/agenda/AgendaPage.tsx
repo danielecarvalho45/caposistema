@@ -1646,6 +1646,12 @@ export function AgendaPage({
     } else if (result.status === 'error') setAppointmentFeedback(result.error.message)
   }
 
+  useEffect(() => {
+    const id = familyRescheduledNotice ? 'agenda-family-movement-notice'
+      : lastRescheduledContact ? 'agenda-movement-notice' : ''
+    if (id) document.getElementById(id)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+  }, [lastRescheduledContact, familyRescheduledNotice])
+
   async function retryRescheduleNoticeLocation() {
     if (!lastRescheduledContact?.appointmentId || rescheduleNoticeBusy) return
     setRescheduleNoticeBusy(true)
@@ -2884,7 +2890,7 @@ export function AgendaPage({
         )}
 
         {!isProfessional && lastRescheduledContact && (
-          <section className="agenda-schedule-form" aria-label="Comunicação após movimentação">
+          <section id="agenda-movement-notice" className="agenda-schedule-form" aria-label="Comunicação após movimentação">
             <p>Consulta atualizada no banco. Confira o aviso de alteração antes de continuar.</p>
             {lastRescheduledContact.contact.careLocation ? (
               <PatientWhatsAppButton
@@ -2912,7 +2918,7 @@ export function AgendaPage({
         )}
 
         {!isProfessional && familyRescheduledNotice && (
-          <section className="agenda-schedule-form" aria-label="Comunicação de remarcação familiar">
+          <section id="agenda-family-movement-notice" className="agenda-schedule-form" aria-label="Comunicação de remarcação familiar">
             <p>Consulta do familiar/cuidador remarcada. Confira o aviso de alteração antes de continuar.</p>
             {familyRescheduledNotice.contact.careLocation ? (
               <button type="button" onClick={openFamilyRescheduledWhatsApp}>💬 WhatsApp de remarcação do familiar</button>
