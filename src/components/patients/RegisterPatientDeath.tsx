@@ -1,3 +1,4 @@
+import { CapoTimeInput } from '../inputs/CapoTimeInput'
 import { capoTodayIso } from '../../lib/date/capo-locale'
 import { CapoDateInput } from '../inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
@@ -111,7 +112,7 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
     {open && !deceased && <fieldset>
       <legend>Registro autorizado de óbito — {patientName}</legend>
       <label>Data do óbito<CapoDateInput  max={capoTodayIso()} value={date} onChange={(event) => setDate(event.target.value)} /></label>
-      <label>Horário, quando conhecido<input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={time} onChange={(event) => setTime(event.target.value)} /></label>
+      <label>Horário, quando conhecido<CapoTimeInput value={time} onChange={(event) => setTime(event.target.value)} /></label>
       <label>Origem da informação<select value={source} onChange={(event) => setSource(event.target.value as DeathSource)}>
         <option value="family_caregiver">Familiar / cuidador</option>
         <option value="health_service">Serviço de saúde</option>
