@@ -319,3 +319,33 @@ it('abre WhatsApp com comunicação de consulta pré-preenchida e envio manual',
     vi.unstubAllGlobals()
   }
 })
+
+
+it('oferece Agendar agora ou Finalizar cadastro após salvar preexistente, sem abrir consulta', async () => {
+  rpc.createClassifiedPatient.mockResolvedValue({ status: 'success', data: {
+    patient_id: 'preexisting-unit', patient_number: '351', status: 'ativo',
+    created_at: '2026-11-13T14:00:00.000Z',
+  } })
+  rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [] })
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByLabelText('Paciente preexistente — já utiliza o CAPO'))
+  await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Paciente Prévio CAPO')
+  fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '01/01/1980' } })
+  fireEvent.change(screen.getByLabelText('Data em que começou a utilizar o CAPO *'), {
+    target: { value: '01/09/2026' },
+  })
+  await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
+  expect(rpc.createClassifiedPatient).toHaveBeenCalledWith(expect.objectContaining({
+    registrationKind: 'preexistente', historicalCapoStartDate: '2026-09-01',
+  }))
+  expect(await screen.findByRole('button', { name: 'Agendar agora' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Finalizar cadastro' })).toBeVisible()
+  expect(screen.queryByPlaceholderText('Nome, CMS ou Nº CAPO exato')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Cadastrar paciente' })).not.toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Finalizar cadastro' }))
+  expect(screen.getByPlaceholderText('Nome completo do paciente')).toHaveValue('')
+  expect(screen.getByLabelText('Paciente preexistente — já utiliza o CAPO')).toBeChecked()
+  expect(screen.getByRole('button', { name: 'Cadastrar paciente' })).toBeDisabled()
+  expect(rpc.createClassifiedPatient).toHaveBeenCalledTimes(1)
+})
