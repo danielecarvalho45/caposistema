@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { canAccessAppRoute } from '../../app/route-access'
@@ -531,7 +532,7 @@ ADMINISTRATIVO DO CAPO`
             </label>
             <label>
               Data de nascimento *
-              <input type="date" value={patientBirthDate} onChange={(event) => {
+              <CapoDateInput  value={patientBirthDate} onChange={(event) => {
                 setPatientBirthDate(event.target.value)
                 setDuplicateMatches([])
                 setDuplicateReviewed(false)
@@ -594,7 +595,7 @@ ADMINISTRATIVO DO CAPO`
             {registrationKind === 'preexistente' ? (
               <label>
                 Data em que começou a utilizar o CAPO *
-                <input type="date" required max={todayInCapo} value={patientCapoStartDate}
+                <CapoDateInput  required max={todayInCapo} value={patientCapoStartDate}
                   onChange={(event) => setPatientCapoStartDate(event.target.value)} />
               </label>
             ) : (
@@ -779,8 +780,8 @@ ADMINISTRATIVO DO CAPO`
               />
             </label>
             <label>Data de nascimento
-              <input
-                type="date"
+              <CapoDateInput
+                
                 value={editForm.birth_date ?? ''}
                 readOnly={!canEditPatient}
                 onChange={(event) => setEditForm({ ...editForm, birth_date: event.target.value })}
@@ -828,8 +829,8 @@ ADMINISTRATIVO DO CAPO`
               />
             </label>
             <label>Entrada no CAPO
-              <input
-                type="date"
+              <CapoDateInput
+                
                 value={editForm.capo_start_date ?? ''}
                 readOnly={!canEditPatient}
                 onChange={(event) => setEditForm({ ...editForm, capo_start_date: event.target.value })}
