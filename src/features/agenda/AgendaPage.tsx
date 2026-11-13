@@ -337,6 +337,7 @@ function HomeScheduleGrid({
   previsitContacts,
   attendanceOverrides,
   groupSessions,
+  familyAppointments,
   renderAdministrativeActions,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
@@ -353,6 +354,7 @@ function HomeScheduleGrid({
   previsitContacts?: Readonly<Record<string, { result: string }>>
   attendanceOverrides?: Readonly<Record<string, string>>
   groupSessions?: readonly PsychologyGroupSession[]
+  familyAppointments?: readonly Record<string, unknown>[]
   renderAdministrativeActions?: (appointmentId: string) => ReactNode
 }>) {
   const appointmentById = new Map(
@@ -405,7 +407,7 @@ function HomeScheduleGrid({
                 : undefined
               const visiblePatientId = appointment?.patient_id ?? slot.patient_id
               const visiblePatientName = appointment?.patient_name ?? slot.patient_name
-              const patientIsVisible = Boolean(visiblePatientId && visiblePatientName)
+              const patientIsVisible = Boolean(visiblePatientName && (visiblePatientId || familyAppointments?.some((item) => String(item.appointment_id) === slot.appointment_id)))
               const patientName =
                 visiblePatientName ??
                 (appointment?.patient_number
@@ -413,7 +415,7 @@ function HomeScheduleGrid({
                   : slot.slot_status === 'agendado'
                     ? 'Horário ocupado'
                     : '—')
-              const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? 'agendado'
+              const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? String(familyAppointments?.find((item) => String(item.appointment_id) === slot.appointment_id)?.attendance_status ?? 'agendado')
               const statusLabel = group ? `${group.participants.length}/${group.capacity} vagas` :
                 slot.slot_status === 'livre'
                   ? 'Livre'
@@ -533,8 +535,8 @@ function HomeScheduleGrid({
                     : undefined
                   const visiblePatientId = appointment?.patient_id ?? slot.patient_id
                   const visiblePatientName = appointment?.patient_name ?? slot.patient_name
-                  const patientIsVisible = Boolean(visiblePatientId && visiblePatientName)
-                  const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? 'agendado'
+                  const patientIsVisible = Boolean(visiblePatientName && (visiblePatientId || familyAppointments?.some((item) => String(item.appointment_id) === slot.appointment_id)))
+                  const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? String(familyAppointments?.find((item) => String(item.appointment_id) === slot.appointment_id)?.attendance_status ?? 'agendado')
                   const patientName =
                     visiblePatientName ??
                     (appointment?.patient_number
@@ -1760,6 +1762,39 @@ export function AgendaPage({
     if (busyAppointmentId) return
     setBusyAppointmentId(appointmentId)
     setAppointmentFeedback('Atualizando atendimento no banco...')
+    // Familiar tem identificador e função de atendimento próprios.
+    // Nunca encaminhar o ID familiar à RPC de paciente, nem abrir a ficha oncológica de origem.
+    const familyAppointment = familyPsychologyCards.find((item) =>
+      String(item.appointment_id) === appointmentId)
+    if (familyAppointment) {
+      const client = getSupabaseClient() as unknown as {
+        rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>
+      }
+      try {
+        const { data, error } = await client.rpc('update_family_psychology_attendance_for_interface', {
+          p_appointment_id: appointmentId, p_action: action,
+          p_reason: attendanceReason.trim() || null, p_notes: attendanceNotes.trim() || null,
+        })
+        if (error || !(data && typeof data === 'object' && (data as { success?: boolean }).success)) {
+          setAppointmentFeedback(error?.message ?? 'O banco não confirmou o atendimento familiar.')
+        } else {
+          setAttendanceOverrides((current) => ({ ...current, [appointmentId]: action }))
+          setFamilyPsychologyCards((current) => current.map((item) =>
+            String(item.appointment_id) === appointmentId ? { ...item, attendance_status: action } : item))
+          setAttendanceNotes('')
+          setAttendanceReason('')
+          setAppointmentFeedback(action === 'faltou'
+            ? 'Falta familiar registrada. Atendimento permanece vinculado ao familiar.'
+            : 'Presença do familiar registrada. Não abrir ficha do paciente de origem.')
+          await load()
+        }
+      } catch {
+        setAppointmentFeedback('Falha de comunicação ao registrar atendimento do familiar.')
+      } finally {
+        setBusyAppointmentId(null)
+      }
+      return
+    }
     const result = await getRpcService().updateAppointmentAttendance({
       appointmentId,
       action,
@@ -3080,6 +3115,7 @@ export function AgendaPage({
               patientSpecialties={patientSpecialties}
               previsitContacts={previsitContacts}
               groupSessions={psychologyGroupSessions}
+              familyAppointments={familyPsychologyCards}
               renderAdministrativeActions={!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
                 ? (appointmentId) => {
                     const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
