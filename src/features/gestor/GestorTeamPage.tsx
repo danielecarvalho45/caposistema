@@ -26,6 +26,7 @@ export type TeamManagementService = Readonly<{
   getContext: (query: string | null, status: string | null, limit: number, offset: number) => Promise<AsyncState<unknown>>
   create: (input: TeamMemberProfileInput, temporaryPassword: string, initiallyActive?: boolean, inactiveReason?: string, existingProfessionalId?: string) => Promise<AsyncState<unknown>>
   update: (professionalId: string, input: TeamMemberProfileInput) => Promise<AsyncState<unknown>>
+  resetTemporaryPassword?: (professionalId: string, temporaryPassword: string, reason: string) => Promise<AsyncState<unknown>>
   setActive: (professionalId: string, active: boolean, reason: string) => Promise<AsyncState<unknown>>
   setPrimaryContext: (userAccountId: string, roleCode: string) => Promise<AsyncState<unknown>>
   getCapabilities: (professionalId: string) => Promise<AsyncState<unknown>>
@@ -54,6 +55,22 @@ export function createTeamManagementService(): TeamManagementService {
         return { status: 'success', data }
       } catch (error) {
         return { status: 'error', error: normalizeSupabaseError('create-team-member', error) }
+      }
+    },
+    resetTemporaryPassword: async (professionalId, temporaryPassword, reason) => {
+      try {
+        const { data, error } = await getSupabaseClient().functions.invoke('reset-team-member-temporary-password', {
+          body: { professionalId, temporaryPassword, reason },
+        })
+        if (error) {
+          const body = 'context' in error && error.context instanceof Response
+            ? await error.context.json().catch(() => null) as { error?: string } | null
+            : null
+          throw new Error(body?.error ?? error.message)
+        }
+        return { status: 'success', data }
+      } catch (error) {
+        return { status: 'error', error: normalizeSupabaseError('reset-team-member-temporary-password', error) }
       }
     },
     update: async (professionalId, input) => {
@@ -218,6 +235,7 @@ export function GestorTeamPage({
   const [careLocation, setCareLocation] = useState('')
   const [careLocationLoading, setCareLocationLoading] = useState(false)
   const [temporaryPassword, setTemporaryPassword] = useState('')
+  const [passwordResetReason, setPasswordResetReason] = useState('')
   const [initiallyActive, setInitiallyActive] = useState(true)
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('')
@@ -350,6 +368,8 @@ export function GestorTeamPage({
     setCapabilities([])
     setCapabilitiesStatus('loading')
     setSelected(member)
+    setTemporaryPassword('')
+    setPasswordResetReason('')
     setProfile(memberInput(member))
     setActiveReason(text(member.profile, 'deactivation_reason') ?? '')
     setFeedback(null)
@@ -443,6 +463,30 @@ export function GestorTeamPage({
       setActiveReason('')
       await reload()
       setFeedback('Profissional cadastrado com conta de acesso criada.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function resetPasswordForSelected() {
+    if (!selected?.userAccountId || submitting || !service.resetTemporaryPassword) return
+    if (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\\d/.test(temporaryPassword)) {
+      setFeedback('A senha provisória deve ter pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.')
+      return
+    }
+    if (!window.confirm('Redefinir a senha deste profissional? O acesso exigirá a troca da senha, sem apagar o aceite do termo.')) return
+    setSubmitting(true)
+    setFeedback(null)
+    try {
+      const result = await service.resetTemporaryPassword(selected.professionalId, temporaryPassword, passwordResetReason)
+      if (result.status !== 'success') {
+        setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.')
+        return
+      }
+      setTemporaryPassword('')
+      setPasswordResetReason('')
+      await reload()
+      setFeedback('Senha provisória atualizada no Auth. A troca obrigatória foi ativada e a ação registrada na auditoria.')
     } finally {
       setSubmitting(false)
     }
@@ -600,7 +644,20 @@ export function GestorTeamPage({
       <form className="gestor-panel gestor-team-form" onSubmit={(event) => void saveProfile(event)}>
         <div className="gestor-team-heading"><h3>{selected ? 'Editar profissional' : 'Cadastrar profissional'}</h3>{selected && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Cancelar edição</button>}</div>
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
-        {(!selected || !selected.userAccountId) && <label>Conta de acesso: senha provisória<input type="password" autoComplete="new-password" required={!selected} value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>{selected ? 'Preencha somente quando quiser criar a conta de acesso deste profissional.' : 'Critérios: mínimo de 8 caracteres, com letra maiúscula, letra minúscula e número. No primeiro acesso, o profissional deverá criar outra senha válida. O e-mail informado abaixo será usado na conta.'}</small></label>}
+        <label>Conta de acesso: senha provisória<input type="password" autoComplete="new-password" required={!selected} value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>{selected?.userAccountId
+          ? 'Esta senha só será utilizada ao clicar em Redefinir senha provisória; Salvar alterações não modifica a senha.'
+          : 'Critérios: mínimo de 8 caracteres, com letra maiúscula, letra minúscula e número. Profissionais sem conta usam Criar acesso.'}</small></label>
+        {selected?.userAccountId && <div>
+          <label>Justificativa de recuperação excepcional (obrigatória após aceite do termo)
+            <textarea rows={2} maxLength={500} value={passwordResetReason}
+              onChange={(event) => setPasswordResetReason(event.target.value)}
+              placeholder="Informe a justificativa quando houver aceite já registrado" />
+          </label>
+          <button type="button" disabled={submitting || !temporaryPassword || !service.resetTemporaryPassword}
+            onClick={() => void resetPasswordForSelected()}>
+            {submitting ? 'Processando…' : 'Redefinir senha provisória'}
+          </button>
+        </div>}
         {!selected && <fieldset><legend>Situação inicial do profissional e do acesso</legend><label className="gestor-check"><input type="checkbox" checked={initiallyActive} onChange={(event) => setInitiallyActive(event.target.checked)} />Ativo após o cadastro</label>{!initiallyActive && <label>Motivo da inativação<input value={activeReason} onChange={(event) => setActiveReason(event.target.value)} required minLength={5} maxLength={500} /></label>}</fieldset>}
         <div className="gestor-field-grid"><label>Função<input value={profile.functionTitle ?? ''} onChange={(event) => setProfile({ ...profile, functionTitle: nullable(event.target.value) })} /></label><label>Usuário<input value={profile.username ?? ''} onChange={(event) => setProfile({ ...profile, username: nullable(event.target.value) })} /></label><label>E-mail de recuperação<input type="email" value={profile.recoveryEmail ?? ''} onChange={(event) => setProfile({ ...profile, recoveryEmail: nullable(event.target.value) })} /></label><label>Telefone<input value={profile.phone ?? ''} onChange={(event) => setProfile({ ...profile, phone: nullable(event.target.value) })} /></label><label>Data de nascimento<CapoDateInput  value={profile.birthDate ?? ''} onChange={(event) => setProfile({ ...profile, birthDate: nullable(event.target.value) })} /></label><label>Registro profissional<input value={profile.professionalRegistration ?? ''} onChange={(event) => setProfile({ ...profile, professionalRegistration: nullable(event.target.value) })} /></label><label>Responsabilidade administrativa<input value={profile.administrativeResponsibility ?? ''} onChange={(event) => setProfile({ ...profile, administrativeResponsibility: nullable(event.target.value) })} /></label><label>Especialidade principal<select value={profile.primarySpecialtyId ?? ''} onChange={(event) => setProfile({ ...profile, primarySpecialtyId: nullable(event.target.value) })}><option value="">Não definida</option>{specialties.filter((specialty) => profile.specialtyIds.includes(specialty.id)).map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.label}</option>)}</select></label></div>
         <label>Local de atendimento (endereço que aparecerá no WhatsApp)
