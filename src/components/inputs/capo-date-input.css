@@ -63,3 +63,15 @@
 @media (max-width: 600px) {
   .capo-date-calendar { left: 0; width: min(19rem, 90vw); }
 }
+
+.capo-date-time-input {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-width: 100%;
+}
+.capo-date-time-input > input {
+  width: 5.5rem;
+  min-width: 5.5rem;
+}
