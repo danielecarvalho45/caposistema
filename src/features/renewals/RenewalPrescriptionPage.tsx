@@ -399,7 +399,7 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
                     <p>
                       Consulta vinculada:{' '}
                       {operationalContext.consult_appointment_date
-                        ? new Date(String(operationalContext.consult_appointment_date)).toLocaleString('pt-BR')
+                        ? new Date(String(operationalContext.consult_appointment_date)).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
                         : 'agendamento confirmado'}
                     </p>
                   ) : (
