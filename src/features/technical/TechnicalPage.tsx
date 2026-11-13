@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
 import {
   loadingState,
@@ -355,16 +356,16 @@ export function TechnicalPage({
         <div className="technical-period">
           <label>
             De
-            <input
-              type="date"
+            <CapoDateInput
+              
               value={startDate}
               onChange={(event) => setStartDate(event.target.value)}
             />
           </label>
           <label>
             Até
-            <input
-              type="date"
+            <CapoDateInput
+              
               min={startDate}
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
