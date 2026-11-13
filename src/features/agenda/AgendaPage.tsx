@@ -1293,22 +1293,20 @@ export function AgendaPage({
         typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
         ? locationResult.data as Record<string, unknown> : null
       const careLocation = typeof location?.care_location === 'string' ? location.care_location.trim() : ''
-      if (careLocation) {
-        setLastRescheduledContact({
-          patientId: participant.patient_id,
-          appointmentId: result.data.new_appointment_id,
-          kind: 'remarcacao',
-          contact: {
-            patientName: participant.patient_name,
-            oldStart: session.start,
-            newStart: result.data.new_appointment_start,
-            careLocation,
-          },
-        })
-      }
+      setLastRescheduledContact({
+        patientId: participant.patient_id,
+        appointmentId: result.data.new_appointment_id,
+        kind: 'remarcacao',
+        contact: {
+          patientName: participant.patient_name,
+          oldStart: session.start,
+          newStart: result.data.new_appointment_start,
+          careLocation,
+        },
+      })
       setGroupRescheduleFeedback(careLocation
-        ? 'Participante remarcado. Confira o WhatsApp de remarcação acima antes de enviar.'
-        : 'Participante remarcado. Confirme o endereço do novo atendimento antes de avisar.')
+        ? 'Participante remarcado. Confira o aviso de remarcação antes de enviar.'
+        : 'Participante remarcado. Aviso de alteração pendente; confirme o endereço no painel de comunicação antes de enviar.')
       setGroupRescheduleAppointmentId('')
       setGroupRescheduleReason('')
       await loadProfessionalConsultation()
