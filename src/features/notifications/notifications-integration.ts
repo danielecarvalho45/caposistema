@@ -100,7 +100,10 @@ function parseNotifications(value: unknown): readonly Notification[] {
   if (!Array.isArray(value)) {
     throw contractError(operation, 'lista de notificações esperada.')
   }
+  // Defesa da interface para respostas desatualizadas: a fila ativa nunca mostra resolvidas.
+  // O backend já filtra antes de contar/paginar; esta barreira não substitui essa regra.
   return value.map((item) => parseNotification(item, operation))
+    .filter((item) => item.resolved_at === null)
 }
 
 function parseAction(value: unknown): NotificationActionResult {
