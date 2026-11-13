@@ -2720,7 +2720,7 @@ export function AgendaPage({
                         ? 'Nenhum retorno elegível nesta data'
                         : 'Selecione paciente e profissional'}
                   </option>
-                  {reschedulableAppointments.map((item) => <option key={item.appointment_id} value={item.appointment_id}>{item.patient_name} · {new Date(item.appointment_date).toLocaleString('pt-BR')}</option>)}
+                  {reschedulableAppointments.map((item) => <option key={item.appointment_id} value={item.appointment_id}>{item.patient_name} · {new Date(item.appointment_date).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}</option>)}
                 </select>
               </label>
               <label>
