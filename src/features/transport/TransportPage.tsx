@@ -311,7 +311,7 @@ export function TransportPage({ accessContext }: Props) {
     const notes = field(request, 'transport_notes') ?? 'Necessidade de transporte registrada no CAPO.'
     const appointmentDate = field(request, 'appointment_date')
     const appointmentLabel = appointmentDate
-      ? new Date(appointmentDate).toLocaleString('pt-BR')
+      ? new Date(appointmentDate).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
       : null
     const blob = buildTransportPdfBlob({
       patientName: patientName || field(patient, 'full_name') || 'Paciente',
@@ -534,7 +534,7 @@ export function TransportPage({ accessContext }: Props) {
               {appointments.map((appointment, index) => (
                 <option key={field(appointment, 'appointment_id', 'id') ?? index} value={field(appointment, 'appointment_id', 'id') ?? ''}>
                   {field(appointment, 'appointment_date')
-                    ? new Date(field(appointment, 'appointment_date') ?? '').toLocaleString('pt-BR')
+                    ? new Date(field(appointment, 'appointment_date') ?? '').toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
                     : 'Atendimento'} · {field(appointment, 'professional_name') ?? 'Profissional'}
                 </option>
               ))}
