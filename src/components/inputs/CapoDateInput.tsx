@@ -1,4 +1,5 @@
-import { useEffect, useState, type ChangeEvent, type InputHTMLAttributes } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type InputHTMLAttributes } from 'react'
+import { capoDateToIso, maskCapoDate } from './capo-input-mask'
 import './capo-date-input.css'
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'defaultValue' | 'onChange' | 'min' | 'max'> & {
@@ -9,27 +10,16 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'def
 }
 
 function isoToBrazil(value: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
-  return match ? `${match[3]}/${match[2]}/${match[1]}` : ''
-}
-
-function brazilToIso(value: string): string | null {
-  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value)
-  if (!match) return null
-  const [, dd, mm, yyyy] = match
-  const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd))
-  return d.getFullYear() === Number(yyyy) && d.getMonth() === Number(mm) - 1 &&
-    d.getDate() === Number(dd) ? `${yyyy}-${mm}-${dd}` : null
-}
-
-function daysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate()
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? maskCapoDate(value) : ''
 }
 
 export function CapoDateInput({
-  value, onChange, min, max, disabled, readOnly, className, onBlur, ...rest
+  value, onChange, min, max, disabled, readOnly, className, onBlur, onKeyDown, ...rest
 }: Props) {
   const [text, setText] = useState(() => isoToBrazil(value))
+  // Evita que a confirmação do pai apague a digitação parcial quando o ISO
+  // anterior precisa ser invalidado (ex.: editar uma data já preenchida).
+  const selfEmittedValue = useRef<string | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [month, setMonth] = useState(() => {
     const d = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : ''
@@ -40,11 +30,31 @@ export function CapoDateInput({
     const month = brazilianNow.find((part) => part.type === 'month')?.value
     return d ? `${d.slice(0, 7)}-01` : `${year}-${month}-01`
   })
-  useEffect(() => setText(isoToBrazil(value)), [value])
+
+  useEffect(() => {
+    if (selfEmittedValue.current === value) {
+      selfEmittedValue.current = null
+      return
+    }
+    setText(isoToBrazil(value))
+  }, [value])
 
   function notify(iso: string) {
-    // Compatibilidade com os handlers existentes, que consomem event.target.value.
+    selfEmittedValue.current = iso
+    // O contrato das páginas CAPO continua sendo event.target.value em ISO.
     onChange?.({ target: { value: iso }, currentTarget: { value: iso } } as unknown as ChangeEvent<HTMLInputElement>)
+  }
+
+  function input(raw: string) {
+    const masked = maskCapoDate(raw)
+    setText(masked)
+    const iso = capoDateToIso(masked)
+    if (iso && (!min || iso >= min) && (!max || iso <= max)) {
+      notify(iso)
+    } else if (value) {
+      // Não deixar um valor antigo válido ser enviado quando o campo foi editado.
+      notify('')
+    }
   }
 
   function choose(iso: string) {
@@ -55,15 +65,15 @@ export function CapoDateInput({
   }
 
   function monthStep(direction: number) {
-    const [y, m] = month.split('-').map(Number)
-    const d = new Date(y, m - 1 + direction, 1)
-    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`)
+    const [year, monthNumber] = month.split('-').map(Number)
+    const date = new Date(year, monthNumber - 1 + direction, 1)
+    setMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`)
   }
 
   const [year, monthNumber] = month.split('-').map(Number)
   const monthIndex = monthNumber - 1
   const firstWeekday = (new Date(year, monthIndex, 1).getDay() + 6) % 7
-  const dayCount = daysInMonth(year, monthIndex)
+  const dayCount = new Date(year, monthIndex + 1, 0).getDate()
   const monthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
     .format(new Date(year, monthIndex, 1))
 
@@ -81,19 +91,26 @@ export function CapoDateInput({
         value={text}
         disabled={disabled}
         readOnly={readOnly}
-        onChange={(event) => {
-          const entered = event.target.value
-          setText(entered)
-          if (!entered) notify('')
-          else {
-            const iso = brazilToIso(entered)
-            if (iso && (!min || iso >= min) && (!max || iso <= max)) notify(iso)
+        onChange={(event) => input(event.target.value)}
+        onKeyDown={(event) => {
+          // Backspace sobre a barra remove o último dígito, não prende o cursor.
+          if (event.key === 'Backspace' && !disabled && !readOnly) {
+            const field = event.currentTarget
+            const cursor = field.selectionStart
+            if (cursor !== null && cursor === field.selectionEnd && cursor > 0 &&
+                field.value[cursor - 1] === '/') {
+              event.preventDefault()
+              const digitsBefore = field.value.slice(0, cursor - 1).replace(/\D/g, '')
+              const digitsAfter = field.value.slice(cursor).replace(/\D/g, '')
+              input(digitsBefore.slice(0, -1) + digitsAfter)
+            }
           }
+          onKeyDown?.(event)
         }}
         onBlur={(event) => {
-          if (text !== isoToBrazil(value)) {
-            const iso = brazilToIso(text)
-            if (!iso || (min && iso < min) || (max && iso > max)) setText(isoToBrazil(value))
+          const iso = capoDateToIso(text)
+          if (!iso || (min && iso < min) || (max && iso > max)) {
+            setText(isoToBrazil(value))
           }
           onBlur?.(event)
         }}
@@ -116,7 +133,7 @@ export function CapoDateInput({
             <button type="button" onClick={() => monthStep(1)} aria-label="Próximo mês">›</button>
           </span>
           <span className="capo-date-days">
-            {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((d) => <small key={d}>{d}</small>)}
+            {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => <small key={day}>{day}</small>)}
             {Array.from({ length: firstWeekday }, (_, index) => <span key={`empty-${index}`} />)}
             {Array.from({ length: dayCount }, (_, index) => {
               const day = index + 1
