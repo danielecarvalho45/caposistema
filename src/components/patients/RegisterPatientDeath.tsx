@@ -1,3 +1,4 @@
+import { capoTodayIso } from '../../lib/date/capo-locale'
 import { CapoDateInput } from '../inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
 import { getRpcService } from '../../lib/supabase/rpc'
@@ -109,7 +110,7 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
 
     {open && !deceased && <fieldset>
       <legend>Registro autorizado de óbito — {patientName}</legend>
-      <label>Data do óbito<CapoDateInput  max={new Date().toISOString().slice(0, 10)} value={date} onChange={(event) => setDate(event.target.value)} /></label>
+      <label>Data do óbito<CapoDateInput  max={capoTodayIso()} value={date} onChange={(event) => setDate(event.target.value)} /></label>
       <label>Horário, quando conhecido<input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={time} onChange={(event) => setTime(event.target.value)} /></label>
       <label>Origem da informação<select value={source} onChange={(event) => setSource(event.target.value as DeathSource)}>
         <option value="family_caregiver">Familiar / cuidador</option>
@@ -118,7 +119,7 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
         <option value="other_authorized_institution">Outra instituição autorizada</option>
       </select></label>
       <label>Observação administrativa<textarea maxLength={500} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
-      <button type="button" disabled={busy || !date || date > new Date().toISOString().slice(0, 10)} onClick={() => void register()}>
+      <button type="button" disabled={busy || !date || date > capoTodayIso()} onClick={() => void register()}>
         {busy ? 'Registrando…' : 'Confirmar registro de óbito'}
       </button>
     </fieldset>}
