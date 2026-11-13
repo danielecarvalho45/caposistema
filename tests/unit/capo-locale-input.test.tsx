@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { CapoDateInput } from '../../src/components/inputs/CapoDateInput'
 import { CapoDateTimeInput } from '../../src/components/inputs/CapoDateTimeInput'
+import { CapoTimeInput } from '../../src/components/inputs/CapoTimeInput'
 import { capoTodayIso } from '../../src/lib/date/capo-locale'
 import { capoDateToIso, maskCapoDate, maskCapoTime, validCapoTime } from '../../src/components/inputs/capo-input-mask'
 
@@ -99,6 +100,45 @@ describe('Máscaras brasileiras sem impedir digitação ou colagem', () => {
     expect(screen.getByRole('textbox', { name: 'Horário em 24 horas' })).toHaveValue('23:59')
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
       target: { value: '2026-11-13T23:59' },
+    }))
+  })
+})
+
+describe('Horários na configuração da agenda', () => {
+  it('aceita HHMM digitado e insere automaticamente o separador de hora e minuto', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<CapoTimeInput value="" onChange={onChange} />)
+    const field = screen.getByRole('textbox')
+    await user.type(field, '0945')
+    expect(field).toHaveValue('09:45')
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      target: { value: '09:45' },
+    }))
+  })
+
+  it('aceita colar HH:MM sem alterar o valor de domínio', () => {
+    const onChange = vi.fn()
+    render(<CapoTimeInput value="" onChange={onChange} />)
+    const field = screen.getByRole('textbox')
+    fireEvent.change(field, { target: { value: '17:38' } })
+    expect(field).toHaveValue('17:38')
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      target: { value: '17:38' },
+    }))
+  })
+
+  it('possibilita selecionar horas e todos os minutos', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<CapoTimeInput value="" onChange={onChange} />)
+    await user.click(screen.getByRole('button', { name: 'Escolher horário em 24 horas' }))
+    await user.selectOptions(screen.getByLabelText('Hora'), '21')
+    await user.selectOptions(screen.getByLabelText('Minuto'), '37')
+    await user.click(screen.getByRole('button', { name: 'Aplicar horário' }))
+    expect(screen.getByRole('textbox')).toHaveValue('21:37')
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+      target: { value: '21:37' },
     }))
   })
 })
