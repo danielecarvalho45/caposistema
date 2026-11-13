@@ -718,3 +718,110 @@ it('abre o formulário de retorno para consulta confirmada na semana profissiona
   expect(within(returnGrid).getByRole('button', { name: 'Selecionado' })).toHaveAttribute('aria-pressed', 'true')
   expect(screen.getByRole('button', { name: 'Confirmar agendamento' })).toBeEnabled()
 })
+
+
+it('exibe aviso específico de retorno antes de liberar a conclusão administrativa do agendamento', async () => {
+  rpc.getAppointmentCareLocation.mockResolvedValue({ status: 'success', data: { care_location: 'CAPO — Unidade Central' } })
+  const slotStart = '2026-11-17T12:00:00.000Z'
+  rpc.getSchedulingCatalog.mockResolvedValue({
+    status: 'success',
+    data: [{
+      specialty_id: 's1',
+      specialty_name: 'Clínica Geral',
+      professional_id: 'p1',
+      professional_name: 'Profissional autorizado',
+    }],
+  })
+  rpc.getAvailableAppointmentSlots.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'p1',
+      slot_date: '2026-11-17',
+      slot_time: '09:00:00',
+      slot_start: slotStart,
+      slot_end: '2026-11-17T12:30:00.000Z',
+      duration_minutes: 30,
+    }],
+  })
+  rpc.getAgendaScheduleGrid.mockResolvedValue({
+    status: 'success',
+    data: [{
+      professional_id: 'p1',
+      professional_name: 'Profissional autorizado',
+      slot_date: '2026-11-17',
+      weekday: 4,
+      slot_start: slotStart,
+      slot_end: '2026-11-17T12:30:00.000Z',
+      duration_minutes: 30,
+      slot_status: 'livre',
+      appointment_id: null,
+      patient_id: null,
+      patient_name: null,
+      appointment_type: null,
+      block_type: null,
+    }],
+  })
+  rpc.createAppointment.mockResolvedValue({
+    status: 'success',
+    data: {
+      appointment_id: 'appointment-1',
+      patient_id: 'patient-1',
+      professional_id: 'p1',
+      appointment_date: slotStart,
+    },
+  })
+
+  const context = {
+    roles: [{ code: 'administrador' }],
+    primary_context: { code: 'administrador' },
+    professional_id: null,
+    real_identity: { full_name: 'Administrativo CAPO', function_title: 'Administrativo' },
+  } as unknown as AccessContext
+  const user = userEvent.setup()
+
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: '/agenda',
+      state: {
+        patientId: 'patient-1',
+        patientName: 'Paciente já cadastrado',
+        specialtyId: 's1',
+        professionalId: 'p1',
+        slotDate: '2026-11-17',
+        slotStart,
+        origin: 'patient_record',
+      },
+    }]}>
+      <AgendaPage
+        accessContext={context}
+        loadAgenda={async () => ({ status: 'empty' })}
+      />
+    </MemoryRouter>,
+  )
+
+  expect(await screen.findByDisplayValue('Paciente já cadastrado')).toBeVisible()
+  fireEvent.change(screen.getByLabelText('Data *'), { target: { value: '2026-11-17' } })
+  await user.click(await screen.findByText('09:00:00'))
+
+  await user.selectOptions(screen.getByLabelText('Tipo *'), 'Retorno')
+  const confirm = screen.getByRole('button', { name: 'Confirmar agendamento' })
+  expect(confirm).toBeEnabled()
+  await user.click(confirm)
+
+  expect(rpc.createAppointment).toHaveBeenCalledWith({
+    patientId: 'patient-1',
+    professionalId: 'p1',
+    slotStart,
+    appointmentType: 'Retorno',
+    generalNotes: null,
+    operationalOrigin: 'cadastro_paciente',
+  })
+  const notice = await screen.findByRole('group', { name: 'Aviso obrigatório de retorno agendado' })
+  expect(within(notice).getByRole('button', { name: '💬 WhatsApp — Retorno agendado' })).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Finalizar agendamentos' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Agendar outra especialidade' })).not.toBeInTheDocument()
+  await user.click(within(notice).getByRole('button', { name: 'Aviso de retorno conferido — continuar' }))
+  expect(await screen.findByRole('button', { name: 'Finalizar agendamentos' })).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Agendar outra especialidade' })).toBeVisible()
+  expect(rpc.createAppointment).toHaveBeenCalledTimes(1)
+})
