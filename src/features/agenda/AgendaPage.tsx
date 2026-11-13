@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
@@ -2310,8 +2311,8 @@ export function AgendaPage({
             )}
             <label>
               Data inicial
-              <input
-                type="date"
+              <CapoDateInput
+                
                 required
                 value={consultationStartDate}
                 onChange={(event) => {
@@ -2329,8 +2330,8 @@ export function AgendaPage({
             </label>
             <label>
               Data final
-              <input
-                type="date"
+              <CapoDateInput
+                
                 required
                 min={consultationStartDate || undefined}
                 value={consultationEndDate}
@@ -2518,7 +2519,7 @@ export function AgendaPage({
               )}
               <label>
                 Data *
-                <input type="date" value={anchorDate} onChange={(event) => setAnchorDate(event.target.value)} />
+                <CapoDateInput  value={anchorDate} onChange={(event) => setAnchorDate(event.target.value)} />
               </label>
               {isProfessional ? (
                 <div className="agenda-form-wide agenda-return-grid" aria-label="Agenda do profissional para retorno">
@@ -2724,8 +2725,8 @@ export function AgendaPage({
               </label>
               <label>
                 Data do novo atendimento
-                <input
-                  type="date"
+                <CapoDateInput
+                  
                   value={rescheduleTargetDate}
                   onChange={(event) => setRescheduleTargetDate(event.target.value)}
                 />
@@ -2977,7 +2978,7 @@ export function AgendaPage({
                         {familyRescheduleId === aid && (
                           <div className="agenda-form-grid" aria-label={`Remarcar consulta de ${String(item.family_name ?? 'familiar')}`}>
                             <label>Nova data
-                              <input type="date" value={familyRescheduleDate}
+                              <CapoDateInput  value={familyRescheduleDate}
                                 onChange={(event) => void selectFamilyRescheduleDate(String(item.professional_id), event.target.value)} />
                             </label>
                             <label>Novo horário
@@ -3246,7 +3247,7 @@ export function AgendaPage({
                               <div className="agenda-psychology-booking">
                                 <p>Remarcar somente este participante para outra sessão do mesmo grupo.</p>
                                 <label>Nova data
-                                  <input type="date" min={dateInputValue(new Date())}
+                                  <CapoDateInput  min={dateInputValue(new Date())}
                                     value={groupRescheduleDate} onChange={(event) => setGroupRescheduleDate(event.target.value)} />
                                 </label>
                                 <label>Motivo (opcional)
@@ -3380,7 +3381,7 @@ export function AgendaPage({
                             {familyRescheduleId === String(item.appointment_id) && (
                               <div className="agenda-form-grid">
                                 <label>Nova data
-                                  <input type="date" value={familyRescheduleDate} onChange={(event) => void selectFamilyRescheduleDate(String(item.professional_id), event.target.value)} />
+                                  <CapoDateInput  value={familyRescheduleDate} onChange={(event) => void selectFamilyRescheduleDate(String(item.professional_id), event.target.value)} />
                                 </label>
                                 <label>Novo horário
                                   <select value={familyRescheduleStart} onChange={(event) => setFamilyRescheduleStart(event.target.value)}>
