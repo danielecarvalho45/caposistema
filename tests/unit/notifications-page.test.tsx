@@ -270,3 +270,53 @@ describe('NotificationsPage', () => {
   })
 
 })
+
+
+describe('CAPO — notificações resolvidas não permanecem na fila ativa', () => {
+  it('descarta respostas antigas que contêm resolved_at, mesmo no filtro Todas', async () => {
+    const resolved = {
+      ...notification,
+      notification_id: 'notification-resolvida',
+      resolved_at: '2026-11-13T14:00:00Z',
+      read_at: '2026-11-13T14:00:00Z',
+      total_count: 1,
+    }
+    const transport = vi.fn().mockResolvedValue({ data: [resolved], error: null })
+    const service = createNotificationsService(transport)
+    const response = await service.getNotifications(false, 20, 0)
+    expect(response.status).toBe('empty')
+    expect(transport).toHaveBeenCalledWith('get_my_notifications_for_interface', {
+      p_only_unread: false, p_limit: 20, p_offset: 0,
+    })
+  })
+
+  it('preserva a notificação apenas lida, enquanto não estiver resolvida', async () => {
+    const read = {
+      ...notification,
+      read_at: '2026-11-13T14:00:00Z',
+      resolved_at: null,
+    }
+    const transport = vi.fn().mockResolvedValue({ data: [read], error: null })
+    const service = createNotificationsService(transport)
+    const response = await service.getNotifications(false, 20, 0)
+    expect(response.status).toBe('success')
+    if (response.status === 'success') {
+      expect(response.data).toHaveLength(1)
+      expect(response.data[0].notification_id).toBe(read.notification_id)
+    }
+  })
+
+  it('só conserva ativas ao misturar resolvidas e pendentes na resposta', async () => {
+    const resolved = {
+      ...notification, notification_id: 'resolvida',
+      resolved_at: '2026-11-13T14:00:00Z',
+    }
+    const transport = vi.fn().mockResolvedValue({ data: [resolved, notification], error: null })
+    const service = createNotificationsService(transport)
+    const result = await service.getNotifications(false, 20, 0)
+    expect(result.status).toBe('success')
+    if (result.status === 'success') {
+      expect(result.data.map((item) => item.notification_id)).toEqual(['notification-id'])
+    }
+  })
+})
