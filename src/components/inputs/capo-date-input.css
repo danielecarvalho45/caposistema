@@ -75,3 +75,46 @@
   width: 5.5rem;
   min-width: 5.5rem;
 }
+
+.capo-time-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  position: relative;
+}
+.capo-time-input > input { width: 5.5rem; min-width: 5.5rem; }
+.capo-time-trigger {
+  border: 1px solid #9baec5;
+  color: #154c84;
+  background: white;
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+}
+.capo-time-picker {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 81;
+  display: flex;
+  align-items: end;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  width: min(19rem, 92vw);
+  padding: 0.75rem;
+  border: 1px solid #b7c7d8;
+  border-radius: 0.6rem;
+  background: #fff;
+  box-shadow: 0 6px 22px #142a3e2b;
+  color: #20344a;
+}
+.capo-time-picker label { display: flex; flex-direction: column; gap: 0.25rem; }
+.capo-time-picker select { min-width: 4rem; }
+.capo-time-picker button {
+  background: #f4f7fa;
+  border: 1px solid #d7dfe7;
+  border-radius: 0.3rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+}
