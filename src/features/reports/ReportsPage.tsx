@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useState } from 'react'
 import {
   loadingState,
@@ -354,11 +355,11 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
           <div className="reports-filters">
             <label>
               De
-              <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
+              <CapoDateInput  value={startDate} onChange={(event) => setStartDate(event.target.value)} />
             </label>
             <label>
               Até
-              <input type="date" min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+              <CapoDateInput  min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} />
             </label>
             <label>
               Especialidade
@@ -484,16 +485,16 @@ function AuthorizedReportsPage({ accessContext, integration }: Readonly<{
             <div className="reports-filters">
               <label>
                 De
-                <input
-                  type="date"
+                <CapoDateInput
+                  
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
                 />
               </label>
               <label>
                 Ate
-                <input
-                  type="date"
+                <CapoDateInput
+                  
                   value={endDate}
                   min={startDate}
                   onChange={(event) => setEndDate(event.target.value)}
