@@ -1,3 +1,4 @@
+import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useBackToPreviousFunction } from '../../lib/navigation/back'
@@ -414,11 +415,11 @@ export function FamilyCaregiverPage({
                           : field === 'address'
                             ? 'Endereço'
                             : field}
-                <input
-                  type={field === 'birth_date' ? 'date' : 'text'}
-                  value={form[field] ?? ''}
-                  onChange={(event) => setField(field, event.target.value)}
-                />
+                {field === 'birth_date'
+                  ? <CapoDateInput value={form.birth_date ?? ''}
+                      onChange={(event) => setField('birth_date', event.target.value)} />
+                  : <input type="text" value={form[field] ?? ''}
+                      onChange={(event) => setField(field, event.target.value)} />}
               </label>
             ))}
             <label>
