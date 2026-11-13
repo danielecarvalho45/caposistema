@@ -2633,6 +2633,7 @@ export function AgendaPage({
                         label="💬 WhatsApp — Retorno agendado"
                         message={movementWhatsAppMessage('retorno', {
                           patientName: lastScheduledContact.patientName,
+                          professionalName: lastScheduledContact.professionalName,
                           newStart: lastScheduledContact.slotStart,
                           careLocation: lastScheduledContact.careLocation,
                           senderName: accessContext.real_identity.full_name?.trim()
@@ -2690,6 +2691,7 @@ export function AgendaPage({
                 label={lastScheduledContact.isReturn ? '💬 WhatsApp de retorno' : '💬 Avisar paciente pelo WhatsApp'}
                 message={lastScheduledContact.isReturn ? movementWhatsAppMessage('retorno', {
                   patientName: lastScheduledContact.patientName,
+                  professionalName: lastScheduledContact.professionalName,
                   newStart: lastScheduledContact.slotStart,
                   careLocation: lastScheduledContact.careLocation,
                   senderName: accessContext.real_identity.full_name?.trim()
