@@ -11,8 +11,13 @@ type Props = {
 
 export function CapoDateTimeInput({ value, onChange, disabled, readOnly, required }: Props) {
   const [time, setTime] = useState(() => value.slice(11, 16))
-  useEffect(() => setTime(value.slice(11, 16)), [value])
-  const date = /^\d{4}-\d{2}-\d{2}T/.test(value) ? value.slice(0, 10) : ''
+  const [date, setDate] = useState(() => /^\d{4}-\d{2}-\d{2}T/.test(value) ? value.slice(0, 10) : '')
+  useEffect(() => {
+    if (value) {
+      setTime(value.slice(11, 16))
+      setDate(value.slice(0, 10))
+    }
+  }, [value])
   function emit(day: string, hour: string) {
     if (!day || !/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(hour)) {
       if (!day && !hour) onChange({ target: { value: '' }, currentTarget: { value: '' } } as ChangeEvent<HTMLInputElement>)
@@ -24,7 +29,10 @@ export function CapoDateTimeInput({ value, onChange, disabled, readOnly, require
   return (
     <span className="capo-date-time-input">
       <CapoDateInput value={date} disabled={disabled} readOnly={readOnly} required={required}
-        onChange={(event) => emit(event.target.value, time)} />
+        onChange={(event) => {
+          setDate(event.target.value)
+          emit(event.target.value, time)
+        }} />
       <input type="text" inputMode="numeric" autoComplete="off" placeholder="HH:MM"
         pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5}
         aria-label="Horário em 24 horas" value={time}
