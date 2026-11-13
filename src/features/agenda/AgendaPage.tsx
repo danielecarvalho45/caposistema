@@ -2939,6 +2939,26 @@ export function AgendaPage({
                           onClick={() => void registerFamilyPrevisitContact(item)}>✓ Registrar aviso</button>
                         <button type="button" onClick={() => prepareFamilyReschedule(aid)}>↻ Remarcar</button>
                         <button type="button" onClick={() => prepareCancellation(aid)}>Cancelar</button>
+                        {familyRescheduleId === aid && (
+                          <div className="agenda-form-grid" aria-label={`Remarcar consulta de ${String(item.family_name ?? 'familiar')}`}>
+                            <label>Nova data
+                              <input type="date" value={familyRescheduleDate}
+                                onChange={(event) => void selectFamilyRescheduleDate(String(item.professional_id), event.target.value)} />
+                            </label>
+                            <label>Novo horário
+                              <select value={familyRescheduleStart} onChange={(event) => setFamilyRescheduleStart(event.target.value)}>
+                                <option value="">Selecionar horário</option>
+                                {familyRescheduleSlots.map((slot) => <option key={slot.slot_start} value={slot.slot_start}>{slot.slot_time}</option>)}
+                              </select>
+                            </label>
+                            <label>Motivo (opcional)
+                              <input value={familyRescheduleReason} maxLength={500}
+                                onChange={(event) => setFamilyRescheduleReason(event.target.value)} />
+                            </label>
+                            <button type="button" disabled={!familyRescheduleStart || familyRescheduleBusy}
+                              onClick={() => void applyFamilyReschedule(String(item.professional_id))}>Confirmar remarcação</button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   })}
@@ -3291,7 +3311,7 @@ export function AgendaPage({
                 previsitContacts={previsitContacts}
               />
             )}
-          {familyPsychologyCards.length > 0 && (isProfessional || familyRescheduleId) && (
+          {familyPsychologyCards.length > 0 && (isProfessional || (familyRescheduleId && view !== 'day')) && (
             <section id="agenda-familiares-psicologia" aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
               <h3>Atendimentos de familiares — Psicologia</h3>
               <div className="assistential-table-wrap">
