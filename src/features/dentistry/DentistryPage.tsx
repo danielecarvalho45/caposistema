@@ -99,7 +99,7 @@ function buildDentistryOfficialPdf(
     '',
     `Médico Clínico: ${referral.requesting_professional_name}`,
     `CRM: ${professionalRegistration ?? 'Não informado'}`,
-    `Data da emissão: ${generatedAt.toLocaleString('pt-BR')}`,
+    `Data da emissão: ${generatedAt.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}`,
   ].flatMap((line) => dentistryPdfWrap(line))
 
   return buildCapoDocumentPdf(lines, { fontSize: 10, lineHeight: 14, linesPerPage: 40, generatedBy: referral.requesting_professional_name, generatedByRole: 'Médico Clínico Geral', generatedAt })
