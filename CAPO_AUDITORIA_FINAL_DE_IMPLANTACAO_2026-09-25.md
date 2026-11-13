@@ -8793,3 +8793,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Evidências de código:** commits `59c592f8628ecb4328acfa2e2e398df4051f279a` e `ebc39bee0e1838016eed5b49a1cb9405a9864416`. Teste de regressão acrescentado ao `tests/unit/patients-context-flow.test.tsx` no commit `d72e8cc2c31733eeb7d9bf7502c1e9d7a3a5dcc1`.
 
 **Status:** código e teste registrados em `main`. A confirmação em uso autenticado, build/typecheck e execução da suíte ainda dependem de verificação; não declarar homologação concluída. Não houve alteração de banco, dados reais ou regras de vínculo histórico.
+
+
+### §28.240 — Máscaras flexíveis de data e horário (13/11/2026)
+
+**Solicitação aprovada — VERDE da Titular:** tornar os separadores de data `DD/MM/AAAA` e horário `HH:MM` automáticos, sem impedir que o Administrativo digite somente números, cole valores completos com ou sem separadores ou selecione pelo calendário/controle de hora. Regra operacional: flexibilidade, agilidade e comportamento idêntico em dispositivos com idioma/região diferentes. Preservar §28.238, configurações de agenda e horários do banco.
+
+**Implementação cirúrgica:** criados `src/components/inputs/capo-input-mask.ts` e `CapoTimeInput.tsx` com rotinas compartilhadas de formatação progressiva e validação. `CapoDateInput.tsx` passou a inserir `/` automaticamente após dia e mês, aceitar valores `DDMMAAAA`, `DD/MM/AAAA` e ISO `AAAA-MM-DD` por digitação/colagem e manter o calendário brasileiro de seleção. Rejeita dias impossíveis e respeita `min/max`; continua retornando o valor ISO aos formulários, sem converter formatos persistidos no banco. Digitação incompleta não reaproveita indevidamente valor ISO anterior. Tecla Backspace nos separadores tratada para evitar cursor preso.
+
+`CapoTimeInput.tsx` e `CapoDateTimeInput.tsx` passam a permitir entrada `HHMM` e `HH:MM` com `:` automático e validação de 00:00–23:59, além de seleção opcional de horas 00–23 e minutos 00–59, sem impor intervalos rígidos. Campos existentes de horários em `OwnAgendaManager.tsx` (formulação recorrente, mista, grupo e bloqueios), `AgendaChangeRequestPage.tsx` e `RegisterPatientDeath.tsx` foram trocados pelo componente compartilhado, preservando callbacks, valores `HH:MM` e contratos funcionais. Estilos responsivos adicionados ao CSS do componente.
+
+**Evidência de implementação:** commits `0d442190080a875e552d095fd92bbcff7f4da1b7`, `69f06249f952e4bdf04e34c90a0b5172dc4cc8db`, `7334fb84ccb593d485292d6e733c77f1898363e1`, `8eb32f8145842bea79cef54952ea92322e789e65`, `916a70ec8c0fd82a4d0400832fb2e451a32ebd16`, `0a3201a5da7d282d2b6920926ff99af59e620004`, `5084333756589190e846085d64db3a2da4f8e1a4`, `0ff3e7cc103e46ad4c3b2f96b07dae19a2c23a19`. Casos de regressão incluídos em `tests/unit/capo-locale-input.test.tsx`, commits `7333d6608e80ba3d85df7a828aae9e21e43db849` e `8bfdf076abcf2a97cbad0b3abc284ebdaffae6d6`.
+
+**Status:** atualizações versionadas na `main`, sem execução SQL, alteração de cadastro, agenda ou documento mestre anterior. **Aguardando homologação:** execução real de lint/typecheck/build/testes, publicação Cloudflare e testes visuais/autenticados com digitação, colagem e seleção em diversos navegadores. Não declarar homologação até confirmação.
