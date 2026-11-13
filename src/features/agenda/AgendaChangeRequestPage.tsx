@@ -1,3 +1,4 @@
+import { CapoTimeInput } from '../../components/inputs/CapoTimeInput'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
@@ -159,8 +160,8 @@ export function AgendaChangeRequestPage({ accessContext, service = getRpcService
           <div className="home-profile-grid">
             <label>Data inicial<CapoDateInput  value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label>
             <label>Data final<CapoDateInput  min={startDate} value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label>
-            <label>Horário inicial<input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
-            <label>Horário final<input type="text" inputMode="numeric" placeholder="HH:MM" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" maxLength={5} autoComplete="off" spellCheck={false} value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
+            <label>Horário inicial<CapoTimeInput value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
+            <label>Horário final<CapoTimeInput value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
             <label>Duração da consulta (minutos)<input type="number" min="1" step="1" value={durationMinutes} onChange={(event) => setDurationMinutes(event.target.value)} /></label>
           </div>
           <fieldset>
