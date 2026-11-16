@@ -253,7 +253,7 @@ export function QueuePage({
   }
 
   function familyPhone(raw: string) {
-    const digits = raw.replace(/\\D/g, '')
+    const digits = raw.replace(/\D/g, '')
     const national = digits.startsWith('55') && digits.length >= 12 ? digits.slice(2) : digits
     return /^[1-9][0-9]{9,10}$/.test(national) ? `55${national}` : ''
   }
@@ -301,7 +301,7 @@ export function QueuePage({
       `👩‍⚕️ *Profissional:* ${professionalName ? rowText(professionalName, 'professional_name') : 'Psicologia'}`,
       `📍 *Local:* ${careLocation}`, '',
       'Estamos à disposição!', '', `${sender} — ${title} — CAPO`,
-    ].join('\\n')
+    ].join('\n')
     const notice = { phone, message }
     setFamilyNewAppointmentNotice(notice)
     openFamilyAppointmentWhatsApp(notice)
