@@ -399,7 +399,7 @@ describe('entrada única CAPO', () => {
       'usuario',
       '111111',
     )
-    expect(authApi.updatePassword).toHaveBeenCalledWith('Capo2026')
+    expect(authApi.updatePassword).toHaveBeenCalledWith('Capo2026', expect.any(String))
     expect(rpcService.completeFirstAccess).toHaveBeenCalled()
   })
 
