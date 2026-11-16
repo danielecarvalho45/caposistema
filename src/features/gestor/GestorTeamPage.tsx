@@ -404,9 +404,18 @@ export function GestorTeamPage({
     if (!profile.recoveryEmail?.trim()) { setFeedback('Informe o e-mail.'); return }
     if ((!selected || selected.userAccountId) && !profile.roleCodes.length) { setFeedback('Selecione pelo menos um papel de acesso.'); return }
     if (profile.isProfessional && !profile.specialtyIds.length) { setFeedback('Selecione ou cadastre pelo menos uma especialidade.'); return }
-    if (!selected && (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword))) {
+    if ((!selected || temporaryPassword.length > 0) && (temporaryPassword.length < 8 || temporaryPassword.length > 128 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword))) {
       setFeedback('A senha provisória deve ter pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.')
       return
+    }
+    if (selected && temporaryPassword && !selected.userAccountId && !profile.roleCodes.length) {
+      setFeedback('Para criar acesso, selecione pelo menos um papel de acesso.'); return
+    }
+    if (selected?.userAccountId && temporaryPassword && !service.resetTemporaryPassword) {
+      setFeedback('O serviço de gravação de senha está indisponível; nenhuma alteração foi enviada.'); return
+    }
+    if (selected && !selected.userAccountId && temporaryPassword && !selected.active && activeReason.trim().length < 5) {
+      setFeedback('Informe o motivo da inativação com pelo menos 5 caracteres.'); return
     }
     if (!selected && !initiallyActive && activeReason.trim().length < 5) {
       setFeedback('Informe o motivo da inativação com pelo menos 5 caracteres.'); return
@@ -414,8 +423,11 @@ export function GestorTeamPage({
 
     setSubmitting(true)
     try {
+      const createsExistingAccess = Boolean(selected && !selected.userAccountId && temporaryPassword)
       const result = selected
-        ? await service.update(selected.professionalId, profile)
+        ? createsExistingAccess
+          ? await service.create(profile, temporaryPassword, selected.active, activeReason, selected.professionalId)
+          : await service.update(selected.professionalId, profile)
         : await service.create(profile, temporaryPassword, initiallyActive, activeReason)
       if (result.status !== 'success') {
         setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.')
@@ -449,10 +461,35 @@ export function GestorTeamPage({
       }
 
       if (selected) {
+        if (selected.userAccountId && temporaryPassword) {
+          const credential = await service.resetTemporaryPassword!(
+            selected.professionalId, temporaryPassword, passwordResetReason,
+          )
+          const confirmation = credential.status === 'success' && credential.data &&
+            typeof credential.data === 'object' && !Array.isArray(credential.data)
+            ? credential.data as Record<string, unknown> : null
+          if (credential.status !== 'success' || confirmation?.ok !== true) {
+            await reload()
+            setFeedback('Os dados cadastrais foram salvos, mas a senha provisória NÃO foi confirmada no Supabase Auth. ' +
+              (errorMessage(credential) ?? 'Verifique o serviço de credenciais e tente novamente.'))
+            return
+          }
+          setTemporaryPassword('')
+          setPasswordResetReason('')
+          await reload()
+          setFeedback('Cadastro atualizado e senha provisória salva no Supabase Auth. O profissional deverá trocar a senha no primeiro acesso.')
+          return
+        }
+        if (createsExistingAccess) {
+          setTemporaryPassword('')
+          await reload()
+          setFeedback('Conta de acesso criada e vinculada ao profissional existente com senha provisória salva.')
+          return
+        }
         await reload()
         setFeedback(selected.userAccountId
-          ? 'Profissional atualizado.'
-          : 'Cadastro do profissional atualizado. Para liberar o acesso, informe papéis e senha provisória e clique em Criar acesso.')
+          ? 'Profissional atualizado. Senha existente preservada.'
+          : 'Cadastro do profissional atualizado. Para criar acesso, preencha uma senha provisória e salve.')
         return
       }
 
@@ -645,8 +682,8 @@ export function GestorTeamPage({
         <div className="gestor-team-heading"><h3>{selected ? 'Editar profissional' : 'Cadastrar profissional'}</h3>{selected && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Cancelar edição</button>}</div>
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
         <label>Conta de acesso: senha provisória<input type="password" autoComplete="new-password" required={!selected} value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>{selected?.userAccountId
-          ? 'Esta senha só será utilizada ao clicar em Redefinir senha provisória; Salvar alterações não modifica a senha.'
-          : 'Critérios: mínimo de 8 caracteres, com letra maiúscula, letra minúscula e número. Profissionais sem conta usam Criar acesso.'}</small></label>
+          ? 'Se preencher a senha, Salvar alterações também a gravará no Supabase Auth. Se deixar em branco, a senha atual será preservada.'
+          : 'Senha de 8 a 128 caracteres, com maiúscula, minúscula e número. Ao salvar com uma senha, o acesso será criado e vinculado sem duplicar o cadastro.'}</small></label>
         {selected?.userAccountId && <div>
           <label>Justificativa de recuperação excepcional (obrigatória após aceite do termo)
             <textarea rows={2} maxLength={500} value={passwordResetReason}
