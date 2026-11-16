@@ -171,9 +171,9 @@ export function SocialHomeVisits({
       {(!administrative || target) && (
         <>
           <div className="agenda-operation-heading">
-            <label>Data <CapoDateInput value={date} onChange={setDate} /></label>
-            <label>Início <CapoTimeInput value={startTime} onChange={setStartTime} /></label>
-            <label>Fim <CapoTimeInput value={endTime} onChange={setEndTime} /></label>
+            <label>Data <CapoDateInput value={date} onChange={(event) => setDate(event.target.value)} /></label>
+            <label>Início <CapoTimeInput value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
+            <label>Fim <CapoTimeInput value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
           </div>
           <label>Observação operacional (opcional)
             <textarea rows={2} maxLength={800} value={description} onChange={(event) => setDescription(event.target.value)} />
@@ -215,7 +215,7 @@ export function SocialHomeVisits({
                     </label>
                   )}
                   <label>Horário previsto (opcional)
-                    <CapoTimeInput value={visitTime} onChange={setVisitTime} />
+                    <CapoTimeInput value={visitTime} onChange={(event) => setVisitTime(event.target.value)} />
                   </label>
                   <button type="button" disabled={busy || !selected} onClick={() => void changePatient(visit.block_id, selected, 'add')}>Vincular paciente</button>
                 </div>
