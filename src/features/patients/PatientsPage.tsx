@@ -891,7 +891,7 @@ ADMINISTRATIVO DO CAPO`
               ))}
             </div>
           )}
-          {result.status === 'success' && result.data.length > 1 && (
+          {result.status === 'success' && (result.data.length > 1 || familyResults.length > 0) && (
             <div className="patients-search-results">
               {result.data.map((patient) => (
                 <button
