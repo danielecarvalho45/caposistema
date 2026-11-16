@@ -9,6 +9,8 @@ import {
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { movementWhatsAppMessage } from './appointment-communication'
 import { useAccessFlow } from '../access/access-context'
+import { SocialHomeVisits } from './SocialHomeVisits'
+import { resolveProfessionalScreenKind } from '../professional/professional-screen'
 
 type Row = Readonly<Record<string, unknown>>
 
@@ -1270,6 +1272,9 @@ export function OwnAgendaManager({
           Os ajustes temporários só podem ser registrados depois que existir uma agenda configurada para este profissional.
         </p>
       )}
+
+      {accessContext && resolveProfessionalScreenKind(accessContext) === 'assistencia_social' &&
+        <SocialHomeVisits professionalId={professionalId} />}
 
       <section className="agenda-pointual-actions" aria-labelledby="agenda-pointual-actions-title">
         <div className="agenda-operation-heading">
