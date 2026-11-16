@@ -146,3 +146,14 @@ A leitura exige sessão/termo e escopo autorizado do paciente. Para profissionai
 **Separação obrigatória:** a nova sinalização não utiliza nem modifica `clinical_records.medical_discharge`, `handle_medical_discharge()`, vulnerabilidade social/nutricional, fila ou encerramentos. O fluxo de alta médica efetiva permanece independente e inalterado.
 
 **Interface compartilhada:** `PatientDischargeProximityIndicator` apresenta Verde/Em acompanhamento, Amarelo/Atenção e Vermelho/Alta próxima. Clínica Geral recebe controles de alteração; Nutrição, Assistência Social e demais profissionais assistenciais recebem leitura no contexto do paciente autorizado.
+
+
+## Adendo técnico de manutenção — 16/11/2026 — Pesquisa de Familiar/Cuidador no menu Pacientes
+
+**Regra homologada mantida:** Familiar/Cuidador possui identificador CAPO próprio em `family_members`, vínculo em `patient_family_links` e porta de entrada pela Psicologia. Não é transformado em registro de `patients` e não utiliza o `patient_id` da pessoa oncológica como identidade própria.
+
+**Implementação aditiva:** RPC somente de leitura `public.search_family_caregivers_in_patient_search_for_interface(p_query text,p_limit integer default 20)` retorna `family_member_id,full_name,capo_number,cms,source_patient_id,source_patient_name`, limitada a vínculos ativos, termo aceito, conta autenticada ativa, isolamento de homologação e escopo funcional. Gestor, AO e Coordenação consultam no escopo institucional; profissional autorizado somente quando há acompanhamento social ativo do paciente de origem ou agendamento familiar com o próprio profissional. Negado `anon`; `authenticated` requer as verificações internas.
+
+**Frontend:** `PatientsPage.tsx` combina a lista de pacientes e a de familiares na interface do menu Pacientes, exibindo tipo e Nº CAPO/CMS distintos, sem inserir familiar no contrato `search_patients_for_interface`. O botão de vínculo é exibido apenas a perfis autorizados à rota `/familiar-cuidador`. Nenhuma mudança nos contratos de agenda, fila ou prontuário.
+
+**Evidência SQL:** função criada e privilégio conferido; 5 vínculos ativos com Nº CAPO próprio antes/depois da alteração. `capo_construction_log`: `FAMILY-SEARCH-20261116` (completed para etapa SQL). **Homologação browser/build/Vitest pendente**, não confundir com implantação concluída em produção.
