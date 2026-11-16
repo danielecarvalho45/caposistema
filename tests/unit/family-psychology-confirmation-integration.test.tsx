@@ -44,7 +44,7 @@ describe('Familiar/Cuidador: link sem modificar o contrato do paciente comum', (
       { p_appointment_id: 'consulta-familiar' },
     )
     expect(message).toContain('/confirmar-consulta?f=1&t=' + token)
-    expect(message).toContain('Vou comparecer' === 'Nao usado' ? '' : 'Confirme sua presença')
+    expect(message).toContain('Confirme sua presença')
     expect(message).toContain('Local cadastrado no CAPO')
   })
 
