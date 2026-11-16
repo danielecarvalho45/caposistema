@@ -9,7 +9,7 @@ import {
 } from '../closures/closures-integration'
 import './social-page.css'
 import '../../styles/quick-access.css'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
@@ -29,6 +29,7 @@ export function SocialPage({
   integration?: ReturnType<typeof createClosuresIntegration>
   loadSpecialties?: typeof defaultSpecialtiesLoader
 }>) {
+  const location = useLocation()
   const [socialSpecialtyFor, setSocialSpecialtyFor] = useState<string | null>(null)
   const [social, setSocial] =
     useState<AsyncState<readonly SocialFollowup[]>>(loadingState)
@@ -109,8 +110,58 @@ export function SocialPage({
           setVulnerabilityLevel(value)
         }
       })
-    globalThis.document.getElementById('acompanhamento-social')?.scrollIntoView?.({ block: 'start' })
   }
+
+  // A seção só existe no DOM depois que o paciente confirmado é selecionado.
+  useEffect(() => {
+    if (!selectedAppointment) return
+    globalThis.document.getElementById('acompanhamento-social')?.scrollIntoView?.({ block: 'start' })
+  }, [selectedAppointment])
+
+  // A confirmação na rota /agenda entra nesta tela com apenas o ID da consulta.
+  // Revalidar o agendamento no backend impede confiar em nomes/IDs vindos da navegação.
+  useEffect(() => {
+    if (mode !== 'followup' || !canOperateSocial) return
+    const routeState = location.state && typeof location.state === 'object'
+      ? location.state as Record<string, unknown>
+      : null
+    const appointmentId = routeState?.confirmedAppointmentId
+    if (typeof appointmentId !== 'string' || !appointmentId) return
+
+    let active = true
+    void getRpcService().getProfessionalAppointmentContext(appointmentId).then((result) => {
+      if (!active) return
+      if (result.status !== 'success') {
+        setFeedback(result.status === 'error'
+          ? result.error.message
+          : 'Não foi possível abrir o atendimento confirmado.')
+        return
+      }
+      const appointment = result.data
+      if (appointment.attendance_status !== 'confirmado') {
+        setFeedback('Confirme a presença na agenda antes de iniciar o acompanhamento social.')
+        return
+      }
+      openConfirmedPatient({
+        appointment_id: appointment.appointment_id,
+        patient_id: appointment.patient_id,
+        patient_name: appointment.patient_name,
+        patient_number: appointment.patient_number,
+        professional_id: appointment.professional_id,
+        professional_name: appointment.professional_name,
+        specialty_name: appointment.specialty_name,
+        appointment_date: appointment.appointment_date,
+        appointment_end: appointment.appointment_end,
+        appointment_type: appointment.appointment_type,
+        attendance_status: appointment.attendance_status,
+        general_notes: null,
+        rescheduled_from_id: null,
+        reschedule_reason: null,
+        reschedule_origin: null,
+      })
+    })
+    return () => { active = false }
+  }, [mode, canOperateSocial, location.state])
 
   async function saveVulnerability() {
     if (!selectedAppointment || busy) return
@@ -195,7 +246,7 @@ export function SocialPage({
         </>
       )}
 
-      {mode !== 'home' && (
+      {(mode !== 'home' || selectedAppointment !== null) && (
       <section
         id="acompanhamento-social"
         className="social-modules social-followups"
