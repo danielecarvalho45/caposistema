@@ -12,6 +12,9 @@ import type { ReferralPatient } from '../../lib/supabase/rpc'
 import { Link, useLocation } from 'react-router-dom'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import './queue-page.css'
+import { getSupabaseClient } from '../../lib/supabase/client'
+import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
+import { capoGreeting } from '../agenda/appointment-communication'
 
 type PendingItemsLoader = () => Promise<AsyncState<readonly PendingItem[]>>
 
@@ -77,6 +80,9 @@ export function QueuePage({
     useState<AsyncState<unknown>>(loadingState)
   const [psychologists, setPsychologists] = useState<readonly Record<string, unknown>[]>([])
   const [familyProfessionalId, setFamilyProfessionalId] = useState('')
+  const [familyEligibleProfessionalIds, setFamilyEligibleProfessionalIds] = useState<readonly string[] | null>(null)
+  const [familyEligibilityLoading, setFamilyEligibilityLoading] = useState(false)
+  const [familyNewAppointmentNotice, setFamilyNewAppointmentNotice] = useState<{ phone: string; message: string } | null>(null)
   const [familySlotDate, setFamilySlotDate] = useState('')
   const [familySlots, setFamilySlots] = useState<readonly Record<string, unknown>[]>([])
   const [familySlotStart, setFamilySlotStart] = useState('')
@@ -220,6 +226,87 @@ export function QueuePage({
     return () => { active = false }
   }, [isAdministrativeOperational, isProfessionalQueue, loadPendingItems])
 
+  async function chooseFamilyForScheduling(waitingListId: string, familyName: string) {
+    setSelectedFamilyWaitingId(waitingListId)
+    setFamilyProfessionalId('')
+    setFamilySlots([])
+    setFamilySlotStart('')
+    setFamilyCandidates([])
+    setFamilyEligibleProfessionalIds(null)
+    setFamilyNewAppointmentNotice(null)
+    setFamilyEligibilityLoading(true)
+    setFamilyFeedback(null)
+    try {
+      const { data, error } = await getSupabaseClient().rpc(
+        'get_family_eligible_psychologists_for_interface',
+        { p_waiting_list_id: waitingListId },
+      )
+      if (error) throw error
+      if (!Array.isArray(data)) throw new Error('O banco não confirmou os profissionais elegíveis.')
+      setFamilyEligibleProfessionalIds(data.map((item) => String((item as { professional_id: unknown }).professional_id)))
+      setFamilyFeedback(`Familiar selecionado: ${familyName}. Escolha um dos psicólogos disponíveis e consulte a agenda.`)
+    } catch (error) {
+      setFamilyFeedback(error instanceof Error ? error.message : 'Não foi possível conferir a compatibilidade psicológica.')
+    } finally {
+      setFamilyEligibilityLoading(false)
+    }
+  }
+
+  function familyPhone(raw: string) {
+    const digits = raw.replace(/\\D/g, '')
+    const national = digits.startsWith('55') && digits.length >= 12 ? digits.slice(2) : digits
+    return /^[1-9][0-9]{9,10}$/.test(national) ? `55${national}` : ''
+  }
+
+  function openFamilyAppointmentWhatsApp(notice: { phone: string; message: string }) {
+    if (!openCapoWhatsAppTab(`https://web.whatsapp.com/send?phone=${encodeURIComponent(notice.phone)}&text=${encodeURIComponent(notice.message)}`)) {
+      setFamilyFeedback('Agendamento salvo. O navegador bloqueou a abertura do WhatsApp; use o botão para abrir a mensagem.')
+    }
+  }
+
+  async function prepareFamilyAppointmentWhatsApp(
+    candidate: Record<string, unknown>,
+    professionalId: string,
+    slotStart: string,
+  ) {
+    const phone = familyPhone(rowText(candidate, 'family_phone'))
+    if (!phone) {
+      setFamilyFeedback('Consulta agendada. Informe um telefone válido para o Familiar/Cuidador antes do envio pelo WhatsApp.')
+      return
+    }
+    const locationResult = await getRpcService().getProfessionalCareLocation(professionalId)
+    const locationData = locationResult.status === 'success' && locationResult.data &&
+      typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
+      ? locationResult.data as Record<string, unknown> : null
+    const careLocation = typeof locationData?.care_location === 'string' ? locationData.care_location.trim() : ''
+    if (!careLocation) {
+      setFamilyFeedback('Consulta agendada. Local de atendimento não confirmado; corrija o endereço para preparar o aviso.')
+      return
+    }
+    const when = new Date(slotStart)
+    const format = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(
+      'pt-BR', { timeZone: 'America/Sao_Paulo', ...options },
+    ).format(when)
+    const professionalName = psychologists.find((item) => rowText(item, 'professional_id') === professionalId)
+    const sender = accessContext.real_identity.full_name?.trim()
+      || accessContext.full_name?.trim() || accessContext.username
+    const title = accessContext.function_title?.trim()
+      || accessContext.real_identity.function_title?.trim()
+      || accessContext.primary_context.name?.trim() || 'Equipe CAPO'
+    const message = [
+      `${capoGreeting()}, ${rowText(candidate, 'family_name')}! 💙`, '',
+      'Sua consulta de *Psicologia* no CAPO foi agendada.', '',
+      `📅 *Data:* ${format({ dateStyle: 'short' })}`,
+      `🕒 *Horário:* ${format({ hour: '2-digit', minute: '2-digit' })}`,
+      `👩‍⚕️ *Profissional:* ${professionalName ? rowText(professionalName, 'professional_name') : 'Psicologia'}`,
+      `📍 *Local:* ${careLocation}`, '',
+      'Estamos à disposição!', '', `${sender} — ${title} — CAPO`,
+    ].join('\\n')
+    const notice = { phone, message }
+    setFamilyNewAppointmentNotice(notice)
+    openFamilyAppointmentWhatsApp(notice)
+  }
+
   async function loadFamilySlots() {
     if (!familyProfessionalId || !familySlotDate) return
     setFamilyBusy(true)
@@ -292,7 +379,8 @@ export function QueuePage({
       generalNotes: familyNotes.trim() || null,
     })
     if (result.status === 'success') {
-      setFamilyFeedback('Consulta de Psicologia agendada com sucesso. O familiar saiu da fila ativa e o registro foi preservado.')
+      setFamilyFeedback('Consulta de Psicologia agendada. Aviso pelo WhatsApp disponível.')
+      void prepareFamilyAppointmentWhatsApp(first, familyProfessionalId, familySlotStart)
       setFamilyCandidates([])
       setFamilySlotStart('')
       setSelectedFamilyWaitingId('')
@@ -315,6 +403,9 @@ export function QueuePage({
     })
     if (result.status === 'success') {
       setFamilyFeedback('Atendimento do familiar agendado e retirado da fila ativa.')
+      const candidate = familyCandidates.find((item) => rowText(item, 'waiting_list_id') === waitingListId)
+      if (candidate) void prepareFamilyAppointmentWhatsApp(candidate, familyProfessionalId, familySlotStart)
+      else setFamilyFeedback('Consulta registrada; confira o telefone do familiar antes de preparar o WhatsApp.')
       setFamilyCandidates([])
       setFamilySlotStart('')
       setFamilyNotes('')
@@ -587,9 +678,7 @@ export function QueuePage({
                     <td>
                       {canScheduleFamily ? (
                         <button type="button" className="queue-family-name-button" onClick={() => {
-                          setSelectedFamilyWaitingId(rowText(row, 'waiting_list_id'))
-                          setFamilyCandidates([])
-                          setFamilyFeedback(`Familiar selecionado: ${rowText(row, 'family_name')}. Escolha psicólogo, data e vaga abaixo; o CAPO verificará a prioridade e a incompatibilidade profissional.`)
+                          void chooseFamilyForScheduling(rowText(row, 'waiting_list_id'), rowText(row, 'family_name'))
                         }}>{rowText(row, 'family_name')}</button>
                       ) : rowText(row, 'family_name')}
                     </td>
@@ -624,21 +713,22 @@ export function QueuePage({
         <div className="queue-heading">
           <div>
             <h3>Cruzar vaga com próximo familiar elegível</h3>
-            <p>O CAPO exclui automaticamente o psicólogo que acompanha o paciente vinculado e respeita prioridade e ordem da fila.</p>
-            {selectedFamilyWaitingId && <p role="status">Familiar selecionado na lista. A confirmação do agendamento respeitará a ordem de elegibilidade retornada pelo banco.</p>}
+            <p>Selecione primeiro o familiar; o CAPO cruzará seu vínculo com o paciente para mostrar somente psicólogos elegíveis.</p>
+            {familyEligibilityLoading && <p role="status">Verificando psicólogos elegíveis…</p>}
+            {selectedFamilyWaitingId && familyEligibleProfessionalIds && <p role="status">O psicólogo do paciente vinculado não aparece nas opções; a prioridade da fila continuará sendo validada no agendamento.</p>}
           </div>
         </div>
 
         <label>
           Psicólogo
-          <select value={familyProfessionalId} onChange={(event) => {
+          <select value={familyProfessionalId} disabled={!selectedFamilyWaitingId || !familyEligibleProfessionalIds || familyEligibilityLoading} onChange={(event) => {
             setFamilyProfessionalId(event.target.value)
             setFamilySlots([])
             setFamilySlotStart('')
             setFamilyCandidates([])
           }}>
             <option value="">Selecionar</option>
-            {psychologists.map((row, index) => (
+            {psychologists.filter((row) => familyEligibleProfessionalIds?.includes(rowText(row, 'professional_id'))).map((row, index) => (
               <option key={rowText(row, 'professional_id') + index} value={rowText(row, 'professional_id')}>
                 {rowText(row, 'professional_name')}
               </option>
@@ -659,6 +749,11 @@ export function QueuePage({
           Buscar vagas
         </button>
 
+        {familyNewAppointmentNotice && (
+          <button type="button" onClick={() => openFamilyAppointmentWhatsApp(familyNewAppointmentNotice)}>
+            💬 Abrir aviso de agendamento no WhatsApp
+          </button>
+        )}
         {familySlots.length > 0 && (
           <label>
             Vaga
