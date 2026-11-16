@@ -445,6 +445,9 @@ function HomeScheduleGrid({
                   <td data-label="Paciente">
                     <div className="agenda-home-patient-line">
                       <strong>{group ? group.name : patientName}</strong>
+                      {familyCard && <small>Familiar/Cuidador · CAPO {String(familyCard.family_capo_number ?? 'Pendente')} · CMS {String(familyCard.family_cms ?? 'Não informado')}</small>}
+                      {familyCard?.source_patient_deceased === true && <small>Paciente vinculado em óbito · {String(familyCard.source_patient_death_date ?? '').split('-').reverse().join('/')}</small>}
+                      {familyCard?.confirmation_decision === 'comparecera' && <small>✓ Confirmado antecipadamente pelo link</small>}
                       {attendanceMarker(attendanceStatus)}
                       {slot.appointment_id && previsitContacts?.[slot.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[slot.appointment_id].result)}</small>}
                       {slot.slot_status === 'agendado' &&
@@ -546,7 +549,8 @@ function HomeScheduleGrid({
                   const visiblePatientId = appointment?.patient_id ?? slot.patient_id
                   const visiblePatientName = appointment?.patient_name ?? slot.patient_name
                   const patientIsVisible = Boolean(visiblePatientName && (visiblePatientId || familyAppointments?.some((item) => String(item.appointment_id) === slot.appointment_id)))
-                  const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? String(familyAppointments?.find((item) => String(item.appointment_id) === slot.appointment_id)?.attendance_status ?? 'agendado')
+                  const familyCard = familyAppointments?.find((item) => String(item.appointment_id) === slot.appointment_id)
+                  const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? String(familyCard?.attendance_status ?? 'agendado')
                   const patientName =
                     visiblePatientName ??
                     (appointment?.patient_number
@@ -566,6 +570,9 @@ function HomeScheduleGrid({
                             ? 'Bloqueado'
                             : patientName}
                       </span>
+                      {familyCard && <small>Familiar/Cuidador · CAPO {String(familyCard.family_capo_number ?? 'Pendente')} · CMS {String(familyCard.family_cms ?? 'Não informado')}</small>}
+                      {familyCard?.source_patient_deceased === true && <small>Paciente vinculado em óbito · {String(familyCard.source_patient_death_date ?? '').split('-').reverse().join('/')}</small>}
+                      {familyCard?.confirmation_decision === 'comparecera' && <small>✓ Confirmado antecipadamente pelo link</small>}
                       {slot.slot_status === 'livre' && onSchedule && (
                         <button
                           type="button"
@@ -934,6 +941,7 @@ export function AgendaPage({
   const [previsitOutcomes, setPrevisitOutcomes] = useState<Readonly<Record<string, string>>>({})
   const [previsitLoadError, setPrevisitLoadError] = useState<string | null>(null)
   const [familyPsychologyCards, setFamilyPsychologyCards] = useState<readonly Record<string, unknown>[]>([])
+  const [familyAgendaError, setFamilyAgendaError] = useState('')
   const [psychologyGroupSessions, setPsychologyGroupSessions] = useState<readonly PsychologyGroupSession[]>([])
   const [psychologyGroupError, setPsychologyGroupError] = useState('')
   const [groupBookingId, setGroupBookingId] = useState('')
@@ -1192,14 +1200,26 @@ export function AgendaPage({
     const rpcClient = getSupabaseClient() as unknown as {
       rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>
     }
+    setFamilyPsychologyCards([])
+    setFamilyAgendaError('')
     void rpcClient.rpc('get_family_psychology_agenda_cards_for_interface', {
       p_start_date: startDate, p_end_date: endDate, p_professional_id: professionalId || null,
     }).then(({ data, error }) => {
       if (!active) return
-      setFamilyPsychologyCards(!error && Array.isArray(data)
-        ? data.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
-        : [])
-    }).catch(() => { if (active) setFamilyPsychologyCards([]) })
+      if (error || !Array.isArray(data)) {
+        setFamilyAgendaError(error && typeof error === 'object' && 'message' in error
+          ? String(error.message) : 'Não foi possível consultar a agenda de familiares.')
+        setFamilyPsychologyCards([])
+        return
+      }
+      setFamilyPsychologyCards(data.filter((item): item is Record<string, unknown> =>
+        !!item && typeof item === 'object' && !Array.isArray(item)))
+    }).catch(() => {
+      if (active) {
+        setFamilyAgendaError('Não foi possível consultar a agenda de familiares. Tente novamente.')
+        setFamilyPsychologyCards([])
+      }
+    })
     return () => { active = false }
   }, [canAccess, state, startDate, endDate, professionalId])
 
@@ -3525,6 +3545,7 @@ export function AgendaPage({
               {previsitFeedback && <p role="status">{previsitFeedback}</p>}
             </section>
           )}
+          {familyAgendaError && <p className="assistential-error" role="alert">Falha ao consultar familiares: {familyAgendaError}</p>}
           {professionalId && psychologyGroupError && (
             <p role="alert">Não foi possível consultar os grupos: {psychologyGroupError}</p>
           )}
@@ -3557,7 +3578,7 @@ export function AgendaPage({
                 previsitContacts={previsitContacts}
               />
             )}
-          {familyPsychologyCards.length > 0 && (isProfessional || (familyRescheduleId && view !== 'day')) && (
+          {familyPsychologyCards.length > 0 && ((isProfessional && scheduleGrid.status !== 'success') || (familyRescheduleId && view !== 'day')) && (
             <section id="agenda-familiares-psicologia" aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
               <h3>Atendimentos de familiares — Psicologia</h3>
               <div className="assistential-table-wrap">
