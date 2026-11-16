@@ -1347,6 +1347,17 @@ export type Database = {
         }
         Returns: Json
       }
+      search_family_caregivers_in_patient_search_for_interface: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: {
+          family_member_id: string
+          full_name: string
+          capo_number: string | null
+          cms: string | null
+          source_patient_id: string
+          source_patient_name: string
+        }[]
+      }
       search_family_members_for_interface: {
         Args: { p_query: string; p_limit: number }
         Returns: {
