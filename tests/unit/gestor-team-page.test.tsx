@@ -440,6 +440,7 @@ describe('GestorTeamPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Profissional ativo/ }))
     fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/),
       { target: { value: 'NovaSenha2026' } })
+    expect(screen.getByRole('button', { name: 'Salvar alterações' })).toHaveAttribute('formnovalidate')
     const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true)
     try {
       fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
