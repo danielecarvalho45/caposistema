@@ -12,7 +12,7 @@ const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body)
 const uuid = (value: unknown): value is string =>
   typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 const validPassword = (value: string) =>
-  value.length >= 8 && value.length <= 128 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /\d/.test(value)
+  value.length >= 12 && value.length <= 128 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9\s]/.test(value)
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -30,7 +30,7 @@ Deno.serve(async (request) => {
   const password = typeof body?.temporaryPassword === 'string' ? body.temporaryPassword : ''
   const reason = typeof body?.reason === 'string' ? body.reason.trim() : ''
   if (!uuid(professionalId) || !validPassword(password) || reason.length > 500) {
-    return reply({ error: 'Informe um profissional válido e senha de 8 a 128 caracteres (maiúscula, minúscula e número).' }, 400)
+    return reply({ error: 'Informe um profissional válido e senha de 12 a 128 caracteres (maiúscula, minúscula, número e símbolo).' }, 400)
   }
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
