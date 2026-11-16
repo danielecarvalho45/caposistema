@@ -538,14 +538,17 @@ export function GestorTeamPage({
     setFeedback(null)
     try {
       const result = await service.resetTemporaryPassword(selected.professionalId, temporaryPassword, passwordResetReason)
-      if (result.status !== 'success') {
-        setFeedback(errorMessage(result) ?? 'A operação não retornou resultado.')
+      const confirmation = result.status === 'success' && result.data &&
+        typeof result.data === 'object' && !Array.isArray(result.data)
+        ? result.data as Record<string, unknown> : null
+      if (result.status !== 'success' || confirmation?.ok !== true) {
+        setFeedback(errorMessage(result) ?? 'Não foi possível confirmar a gravação da senha no Supabase Auth.')
         return
       }
       setTemporaryPassword('')
       setPasswordResetReason('')
       await reload()
-      setFeedback('Senha provisória atualizada no Auth. A troca obrigatória foi ativada e a ação registrada na auditoria.')
+      setFeedback('Senha provisória salva no Supabase Auth. A troca obrigatória foi ativada e a ação registrada na auditoria.')
     } finally {
       setSubmitting(false)
     }
