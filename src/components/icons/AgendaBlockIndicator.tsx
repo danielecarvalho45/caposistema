@@ -10,6 +10,7 @@ const blockTypes: Readonly<Record<string, { label: string; icon: CapoIconName }>
   relatorio: { label: 'Relatório', icon: 'chart' },
   atividade: { label: 'Atividade interna', icon: 'clipboard' },
   bloqueio: { label: 'Bloqueio', icon: 'block' },
+  visita_domiciliar: { label: 'Visita Domiciliar', icon: 'truck' },
 }
 export function agendaBlockText(value: string | null): string {
   return (value && blockTypes[value]?.label) || value || 'Bloqueado'
