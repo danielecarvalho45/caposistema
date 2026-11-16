@@ -22,6 +22,11 @@ const rpc = vi.hoisted(() => ({
   correctPatientDeath: vi.fn(),
 }))
 
+const familySearchRpc = vi.hoisted(() => vi.fn())
+vi.mock('../../src/lib/supabase/client', () => ({
+  getSupabaseClient: () => ({ rpc: familySearchRpc }),
+}))
+
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../src/lib/supabase/rpc')>()),
   getRpcService: () => rpc,
@@ -45,6 +50,7 @@ const context = {
 } as unknown as AccessContext
 
 beforeEach(() => {
+  familySearchRpc.mockResolvedValue({ data: [], error: null })
   rpc.getInitialActiveSearches.mockResolvedValue({ status: 'success', data: { items: [] } })
   rpc.checkPatientDuplicates.mockResolvedValue({ status: 'success', data: [] })
 })
@@ -146,6 +152,36 @@ it('exige conferência explícita antes de cadastrar nome semelhante com mesma d
   await user.click(screen.getByLabelText('Conferi os cadastros: são pessoas diferentes.'))
   await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
   expect(rpc.createClassifiedPatient).toHaveBeenCalledTimes(1)
+})
+
+
+it('localiza Familiar/Cuidador na busca de pacientes sem confundir o ID do familiar com o paciente de origem', async () => {
+  rpc.searchReferralPatients.mockResolvedValue({ status: 'empty' })
+  familySearchRpc.mockResolvedValue({
+    data: [{
+      family_member_id: 'family-id',
+      full_name: 'Familiar cadastrado',
+      capo_number: 'F-14',
+      cms: '999111',
+      source_patient_id: 'origin-patient-id',
+      source_patient_name: 'Paciente vinculado',
+    }],
+    error: null,
+  })
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByRole('button', { name: 'Consultar' }))
+  await user.type(screen.getByPlaceholderText('Nome, CMS ou Nº CAPO exato'), 'Familiar')
+  await user.click(screen.getByRole('button', { name: 'Buscar' }))
+  expect(await screen.findByText('Familiar cadastrado — Familiar/Cuidador')).toBeVisible()
+  expect(screen.getByText('Nº CAPO F-14 · CMS 999111')).toBeVisible()
+  const link = screen.getByRole('link', { name: 'Consultar vínculo familiar' })
+  expect(link).toHaveAttribute('href', '/familiar-cuidador')
+  expect(familySearchRpc).toHaveBeenCalledWith(
+    'search_family_caregivers_in_patient_search_for_interface',
+    { p_query: 'Familiar', p_limit: 20 },
+  )
+  expect(rpc.getPatientForEdit).not.toHaveBeenCalled()
 })
 
 it('abre o cadastro completo e mantém as ações no paciente consultado', async () => {
