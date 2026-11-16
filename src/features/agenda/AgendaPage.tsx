@@ -13,6 +13,7 @@ import {
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
+import { SocialHomeVisits } from './SocialHomeVisits'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import { movementWhatsAppMessage, type CommunicationContact } from './appointment-communication'
@@ -2351,6 +2352,9 @@ export function AgendaPage({
 
   return (
     <section className={embeddedHome ? 'assistential-page agenda-home-embedded' : 'assistential-page'} aria-labelledby="agenda-title">
+      {!embeddedHome && !isProfessional &&
+        roleCodes.some((role) => role === 'administrador' || role === 'administrativo_operacional') &&
+        <SocialHomeVisits administrative />}
       <div className={embeddedHome ? 'assistential-card agenda-home-card' : 'assistential-card'}>
         <div className="assistential-heading">
           <div>
