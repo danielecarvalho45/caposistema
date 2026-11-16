@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { effectiveProfessionalSpecialtyName, normalizeProfessionalSpecialty } from '../professional/professional-screen'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, loadingState, type AgendaAppointment, type AsyncState } from '../../lib/supabase/rpc'
 import { AgendaPage } from '../agenda/AgendaPage'
@@ -39,7 +40,17 @@ export function SocialPage({
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const eligibleForSocial = accessContext.is_active && Boolean(accessContext.professional_id) && accessContext.roles.some((role) => role.code === 'profissional')
-  const canOperateSocial = eligibleForSocial && socialSpecialtyFor === accessContext.professional_id
+  // O contexto de acesso já traz a especialidade autorizada pelo backend.
+  // Não bloquear a Home por uma segunda consulta assíncrona: profissionais recém-criados
+  // devem herdar a mesma estrutura social, sem depender de identidade individual.
+  const socialSpecialtyInContext =
+    normalizeProfessionalSpecialty(effectiveProfessionalSpecialtyName(accessContext)) === 'assistencia social' ||
+    (accessContext.specialties ?? []).some(
+      (specialty) => normalizeProfessionalSpecialty(specialty.specialty_name) === 'assistencia social',
+    )
+  const canOperateSocial =
+    eligibleForSocial &&
+    (socialSpecialtyInContext || socialSpecialtyFor === accessContext.professional_id)
 
   useEffect(() => {
     if (!eligibleForSocial || !accessContext.professional_id) return
