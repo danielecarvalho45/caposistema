@@ -127,7 +127,9 @@ export function SocialHomeVisits({
     }
     setBusy(true)
     try {
-      const result = await getRpcService().searchReferralPatients(query.trim(), 20, 0)
+      const result = administrative
+        ? await getRpcService().searchReferralPatients(query.trim(), 20, 0)
+        : await getRpcService().searchProfessionalPatients(query.trim(), 20, 0)
       if (result.status === 'error') throw result.error
       setCandidates(result.status === 'success' ? [...result.data] : [])
       if (result.status === 'empty') setFeedback('Nenhum paciente localizado.')
