@@ -112,12 +112,16 @@ export function NotificationsPage({
     // Entrega a solicitação específica ao módulo canônico, sem criar atendimento ao ler.
     const isPatientLinkCancellation = item.notification_type === 'appointment_patient_reschedule' &&
       item.entity_type === 'patient_appointments' && Boolean(item.patient_id && item.entity_id)
+    const isFamilyLinkCancellation = item.notification_type === 'appointment_patient_reschedule' &&
+      item.entity_type === 'family_psychology_appointments' && Boolean(item.entity_id)
     navigate(contextHref, {
       state: isPatientLinkCancellation
         ? { origin: 'patient_link_cancellation', patientId: item.patient_id, appointmentId: item.entity_id }
-        : item.entity_id && ['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
-          ? { contextId: item.entity_id }
-          : undefined,
+        : isFamilyLinkCancellation
+          ? { origin: 'family_link_cancellation', appointmentId: item.entity_id }
+          : item.entity_id && ['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
+            ? { contextId: item.entity_id }
+            : undefined,
     })
   }
 
@@ -214,7 +218,7 @@ export function NotificationsPage({
                       disabled={busy}
                       onClick={() => void openContext(item, contextHref)}
                     >
-                      {item.notification_type === 'appointment_patient_reschedule' && item.entity_type === 'patient_appointments'
+                      {item.notification_type === 'appointment_patient_reschedule' && ['patient_appointments','family_psychology_appointments'].includes(item.entity_type ?? '')
                         ? '📅 Agendar nova consulta'
                         : ['administrative_request', 'administrative_requests'].includes(item.entity_type ?? '')
                         ? 'Abrir solicitação no Administrativo'
