@@ -25,11 +25,11 @@ export function validateAccessContext(
 }
 
 export function validateSupabasePassword(password: string): string | null {
-  if (password.length < 8) {
-    return 'A senha deve ter pelo menos 8 caracteres.'
+  if (password.length < 12) {
+    return 'A senha deve ter pelo menos 12 caracteres.'
   }
-  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
-    return 'A senha deve conter pelo menos uma letra minúscula, uma letra maiúscula e um número.'
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9\s]/.test(password)) {
+    return 'A senha deve conter pelo menos uma letra minúscula, uma letra maiúscula, um número e um símbolo.'
   }
   return null
 }
