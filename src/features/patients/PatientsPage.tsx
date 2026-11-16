@@ -6,7 +6,17 @@ import { getRpcService, type AsyncState, type PatientAppointmentHistoryRow } fro
 import type { AccessContext } from '../../types/access'
 import { RegisterPatientDeath } from '../../components/patients/RegisterPatientDeath'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
+import { getSupabaseClient } from '../../lib/supabase/client'
 import './patients-page.css'
+
+type FamilySearchRow = Readonly<{
+  family_member_id: string
+  full_name: string
+  capo_number: string | null
+  cms: string | null
+  source_patient_id: string
+  source_patient_name: string
+}>
 
 type PatientDuplicateMatch = Readonly<{ patient_id: string; patient_number: string | null; full_name: string; birth_date: string; match_type: 'exato' | 'semelhante' }>
 
@@ -95,6 +105,9 @@ export function PatientsPage({
     cms: string | null
   }[]>>(emptyState)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [familyResults, setFamilyResults] = useState<readonly FamilySearchRow[]>([])
+  const [familySearchError, setFamilySearchError] = useState<string | null>(null)
+  const [familySearchBusy, setFamilySearchBusy] = useState(false)
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Record<string, string>>({})
   const [editBusy, setEditBusy] = useState(false)
@@ -358,6 +371,8 @@ ADMINISTRATIVO DO CAPO`
     setEditingPatientId(null)
     setExistingOfferAvailable(false)
     setOfferFeedback(null)
+    setFamilyResults([])
+    setFamilySearchError(null)
     if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
       setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       setResult(emptyState)
@@ -365,12 +380,36 @@ ADMINISTRATIVO DO CAPO`
     }
 
     setFeedback(null)
-    const next = canUpdatePhoneAsProfessional
-      ? await getRpcService().searchProfessionalPatients(cleanQuery, 20, 0)
-      : await getRpcService().searchReferralPatients(cleanQuery, 20, 0)
+    setFamilySearchBusy(true)
+    // A identidade do familiar não é um patient_id: busca separada com escopo
+    // próprio no banco, para não comprometer agenda ou ficha do paciente de origem.
+    const familyPromise = getSupabaseClient().rpc(
+      'search_family_caregivers_in_patient_search_for_interface',
+      { p_query: cleanQuery, p_limit: 20 },
+    ).then(({ data, error }) => {
+      if (error) throw error
+      if (!Array.isArray(data)) throw new Error('Resposta inválida da busca de familiares.')
+      return data.filter((row): row is FamilySearchRow =>
+        Boolean(row) && typeof row === 'object' &&
+        typeof row.family_member_id === 'string' &&
+        typeof row.full_name === 'string' &&
+        typeof row.source_patient_id === 'string')
+    })
+    const patientPromise = canUpdatePhoneAsProfessional
+      ? getRpcService().searchProfessionalPatients(cleanQuery, 20, 0)
+      : getRpcService().searchReferralPatients(cleanQuery, 20, 0)
+    const [patientResponse, familyResponse] = await Promise.allSettled([patientPromise, familyPromise])
+    const next = patientResponse.status === 'fulfilled'
+      ? patientResponse.value : { status: 'error' as const, error: new Error('Falha ao pesquisar pacientes.') }
+    const matchingFamilies = familyResponse.status === 'fulfilled' ? familyResponse.value : []
+    setFamilyResults(matchingFamilies)
+    setFamilySearchBusy(false)
+    if (familyResponse.status === 'rejected') {
+      setFamilySearchError('Não foi possível consultar familiares neste perfil.')
+    }
     setResult(next.status === 'success' ? next : { status: 'empty' })
 
-    if (next.status === 'success' && next.data.length === 1) {
+    if (next.status === 'success' && next.data.length === 1 && matchingFamilies.length === 0) {
       await openPatientEditor(next.data[0].patient_id)
     } else if (next.status === 'error') {
       setFeedback(next.error.message)
@@ -816,18 +855,42 @@ ADMINISTRATIVO DO CAPO`
           <div>
             <p className="eyebrow">Resultado</p>
             <h2 id="patients-results-title">
-              {result.status === 'success' && result.data.length > 1
-                ? 'Selecione o paciente'
-                : 'Paciente localizado'}
+              {familyResults.length > 0
+                ? 'Pacientes e familiares localizados'
+                : result.status === 'success' && result.data.length > 1
+                  ? 'Selecione o paciente'
+                  : 'Paciente localizado'}
             </h2>
           </div>
 
-          {result.status === 'loading' && <p>Buscando pacientes…</p>}
-          {result.status === 'empty' && <p>Nenhum paciente encontrado.</p>}
-          {result.status === 'success' && result.data.length === 0 && (
-            <p>Nenhum paciente encontrado.</p>
-          )}
+          {(result.status === 'loading' || familySearchBusy) && <p>Buscando pacientes e familiares…</p>}
+          {!familySearchBusy && familyResults.length === 0 &&
+            (result.status === 'empty' || (result.status === 'success' && result.data.length === 0)) && (
+              <p>Nenhum paciente ou familiar localizado.</p>
+            )}
+          {familySearchError && <p role="status">{familySearchError}</p>}
 
+          {familyResults.length > 0 && (
+            <div className="patients-search-results" aria-label="Familiares e cuidadores localizados">
+              {familyResults.map((family) => (
+                <div key={family.family_member_id} className="patients-search-family">
+                  <strong>{family.full_name} — Familiar/Cuidador</strong>
+                  <span>
+                    Nº CAPO {family.capo_number || '—'}
+                    {family.cms ? ` · CMS ${family.cms}` : ''}
+                  </span>
+                  <small>Vinculado a: {family.source_patient_name}</small>
+                  {canAccessAppRoute(accessContext, '/familiar-cuidador') && (
+                    <Link to="/familiar-cuidador" state={{
+                      patientId: family.source_patient_id,
+                      patientName: family.source_patient_name,
+                      familyMemberId: family.family_member_id,
+                    }}>Consultar vínculo familiar</Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           {result.status === 'success' && result.data.length > 1 && (
             <div className="patients-search-results">
               {result.data.map((patient) => (
