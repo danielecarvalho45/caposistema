@@ -8925,3 +8925,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Regressão:** teste unitário verifica `password → text → password`, preservação do conteúdo e ausência de chamadas ao serviço de redefinição ao alternar. Commit `9b224adc443f4fa76ef89667ad234cfbf11a9a1f`.
 
 **Estado:** versionado em `main`; execução Vitest, publicação Cloudflare e homologação em navegador **ainda não comprovadas**. Não houve alteração de senhas, identidades Auth ou dados clínicos.
+
+
+### §28.249 — Manutenção cirúrgica: salvar apenas senha provisória sem bloqueio cadastral (16/11/2026)
+
+**Autorização:** VERDE expresso da Titular, com instrução de não desfazer nada previamente testado. Problema relatado: ao usar **Salvar alterações** para uma conta profissional já vinculada, a senha digitada ainda não era gravada.
+
+**Diagnóstico confirmado no código:** `saveProfile()` verificava carregamento de endereço, nome, função, usuário, e-mail, papéis e especialidade, além de executar `service.update()`, **antes** de chamar a rotina de Auth; qualquer bloqueio anterior impedia a atualização da senha, ainda que somente o campo da senha fosse alterado. Consultas anteriores de auditoria não encontraram registros de redefinição administrativa efetivamente concluída; causa específica na interface de produção ainda exige homologação.
+
+**Correção mínima e isolada:** quando existe conta vinculada, senha provisória foi preenchida e os demais campos não mudaram em relação ao registro selecionado (`JSON.stringify(profile) === JSON.stringify(memberInput(selected))`), `Salvar alterações` direciona diretamente a `resetPasswordForSelected()` **antes de qualquer validação cadastral ou consulta de endereço**. O botão `submit` usa `formNoValidate` exclusivamente nesse cenário, para que o navegador não bloqueie a ação por campos do cadastro, e ignora `careLocationLoading` nesse mesmo cenário. Qualquer alteração de outros dados **continua no fluxo anterior**, preservando suas validações e salvamento. A função de senha continua exigindo confirmação do Gestor, regras de força, sessão administrativa e `ok=true` explícito do backend antes de exibir mensagem de sucesso; em caso de erro não limpa a senha digitada nem informa gravação confirmada.
+
+**Arquivos alterados:** somente `src/features/gestor/GestorTeamPage.tsx` (commits `572620e4d40fe0b60393695c5b26eb748b414127`, `398fe788d065439acb634f2d94cbfe1d7e112cc3`, `5d051d093c6f02ed11314851b9df5465ed31f44d`) e `tests/unit/gestor-team-page.test.tsx` (commits `3065721362ae052118486f81841c09d844766a23`, `2ae8a5179be7f0242ed594d249663d9610950649`). Nenhuma migração, política RLS, Edge Function, senha real ou dado operacional foi alterado.
+
+**Verificação:** conferidos por leitura de `main` o desvio antecipado antes das validações, preservação do fluxo cadastral tradicional, exigência de `ok=true`, e controle `formNoValidate` restrito. Testes ajustados para assegurar que salvar somente senha não chama `service.update()` e não informa sucesso sem `ok=true`. **Execução do Vitest, deploy do frontend e login real não foram comprovados nesta sessão.** Não declarar homologação de produção.
