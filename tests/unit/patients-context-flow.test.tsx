@@ -67,6 +67,27 @@ it('exige escolher novo ou preexistente e valida a data histórica antes do cada
   expect(rpc.createClassifiedPatient).not.toHaveBeenCalled()
 })
 
+it('bloqueia cadastro novo sem telefone e aceita telefone alternativo válido', async () => {
+  const user = userEvent.setup()
+  rpc.createClassifiedPatient.mockResolvedValue({ status: 'success', data: {
+    patient_id: 'contact-unit', patient_number: '103', status: 'ativo',
+    created_at: '2026-11-16T14:00:00.000Z',
+  } })
+  rpc.searchReferralPatients.mockResolvedValue({ status: 'success', data: [] })
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByLabelText('Paciente novo'))
+  await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Paciente para validar contato')
+  fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '1980-01-01' } })
+  await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
+  expect(await screen.findByText('Informe um telefone válido do paciente antes de salvar o cadastro.')).toBeVisible()
+  expect(rpc.createClassifiedPatient).not.toHaveBeenCalled()
+  await user.type(screen.getByPlaceholderText('Telefone alternativo'), '35999999999')
+  await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
+  expect(rpc.createClassifiedPatient).toHaveBeenCalledWith(expect.objectContaining({
+    phone: null, phoneSecondary: '35999999999',
+  }))
+})
+
 it('cadastra paciente novo pela operação classificada e só então mostra a Oferta CAPO', async () => {
   rpc.createClassifiedPatient.mockResolvedValue({ status: 'success', data: {
     patient_id: 'unit-patient', patient_number: '102', status: 'ativo',
@@ -79,6 +100,7 @@ it('cadastra paciente novo pela operação classificada e só então mostra a Of
   expect(screen.queryByRole('heading', { name: 'Oferta CAPO — primeiro contato' })).not.toBeInTheDocument()
   await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Paciente de teste unitário')
   fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '1980-01-01' } })
+  await user.type(screen.getByPlaceholderText('(35) 99999-9999'), '35999999999')
   await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
   expect(rpc.createClassifiedPatient).toHaveBeenCalledWith(expect.objectContaining({
     registrationKind: 'novo', historicalCapoStartDate: null,
@@ -96,6 +118,7 @@ it('bloqueia cadastro com nome e nascimento idênticos e permite consultar o cad
   await user.click(screen.getByLabelText('Paciente novo'))
   await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Nome repetido')
   fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '1980-01-01' } })
+  await user.type(screen.getByPlaceholderText('(35) 99999-9999'), '35999999999')
   await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
   expect(await screen.findByText(/Cadastro idêntico/)).toBeVisible()
   expect(screen.getByRole('button', { name: 'Consultar cadastro existente' })).toBeVisible()
@@ -117,6 +140,7 @@ it('exige conferência explícita antes de cadastrar nome semelhante com mesma d
   await user.click(screen.getByLabelText('Paciente novo'))
   await user.type(screen.getByPlaceholderText('Nome completo do paciente'), 'Maria Aparecida Silva')
   fireEvent.change(screen.getByLabelText('Data de nascimento *'), { target: { value: '1980-01-01' } })
+  await user.type(screen.getByPlaceholderText('(35) 99999-9999'), '35999999999')
   await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
   expect(rpc.createClassifiedPatient).not.toHaveBeenCalled()
   await user.click(screen.getByLabelText('Conferi os cadastros: são pessoas diferentes.'))
@@ -335,6 +359,7 @@ it('oferece Agendar agora ou Finalizar cadastro após salvar preexistente, sem a
   fireEvent.change(screen.getByLabelText('Data em que começou a utilizar o CAPO *'), {
     target: { value: '01/09/2026' },
   })
+  await user.type(screen.getByPlaceholderText('(35) 99999-9999'), '35999999999')
   await user.click(screen.getByRole('button', { name: 'Cadastrar paciente' }))
   expect(rpc.createClassifiedPatient).toHaveBeenCalledWith(expect.objectContaining({
     registrationKind: 'preexistente', historicalCapoStartDate: '2026-09-01',
