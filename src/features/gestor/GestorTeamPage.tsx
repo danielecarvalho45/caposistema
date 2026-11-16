@@ -396,6 +396,14 @@ export function GestorTeamPage({
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting) return
+    // Uma senha digitada isoladamente é gravada diretamente no Auth, sem depender
+    // das validações cadastrais nem da consulta do endereço de atendimento.
+    // Quando outros campos mudaram, mantém o fluxo cadastral anterior.
+    if (selected?.userAccountId && temporaryPassword &&
+        JSON.stringify(profile) === JSON.stringify(memberInput(selected))) {
+      await resetPasswordForSelected()
+      return
+    }
     if (careLocationLoading) {
       setFeedback('Aguarde a consulta do endereço salvo antes de alterar o cadastro.')
       return
