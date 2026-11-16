@@ -95,6 +95,30 @@ describe('Visita Domiciliar na agenda oficial', () => {
     expect(screen.queryByText('Programação em aberto — sem pacientes')).not.toBeInTheDocument()
   })
 
+  it('registra o resultado da visita e exige justificativa ao cancelar', async () => {
+    backend.rpc.mockImplementation(async (_name: string, args: { p_action?: string }) => ({
+      data: args.p_action === 'list' ? {
+        success: true, visits: [{ ...block, patients: [{
+          patient_id: 'patient-1', patient_name: 'Paciente de teste', patient_number: '1',
+          visit_time: '08:10', status: 'programada',
+        }] }],
+      } : { success: true },
+      error: null,
+    }))
+    const user = userEvent.setup()
+    render(<SocialHomeVisits professionalId="professional-1" />)
+    await user.click(await screen.findByRole('button', { name: 'Registrar resultado' }))
+    await user.selectOptions(screen.getByLabelText('Situação da visita'), 'cancelada')
+    await user.click(screen.getByRole('button', { name: 'Salvar resultado da visita' }))
+    expect(await screen.findByText('Informe a justificativa com pelo menos cinco caracteres.')).toBeVisible()
+    await user.type(screen.getByLabelText('Justificativa'), 'Visita cancelada por motivo operacional')
+    await user.click(screen.getByRole('button', { name: 'Salvar resultado da visita' }))
+    await waitFor(() => expect(backend.rpc).toHaveBeenCalledWith(
+      'set_social_home_visit_outcome_for_interface',
+      expect.objectContaining({ p_status: 'cancelada', p_patient_id: 'patient-1' }),
+    ))
+  })
+
   it('o Administrativo seleciona a assistente social sem usar tela paralela', async () => {
     backend.rpc.mockImplementation(async (_name: string, args: { p_action: string }) => ({
       data: args.p_action === 'professionals'
