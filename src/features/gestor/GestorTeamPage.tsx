@@ -490,9 +490,12 @@ export function GestorTeamPage({
           return
         }
         if (createsExistingAccess) {
+          setSelected(null)
+          setProfile(blankProfile())
           setTemporaryPassword('')
+          setPasswordResetReason('')
           await reload()
-          setFeedback('Conta de acesso criada e vinculada ao profissional existente com senha provisória salva.')
+          setFeedback('Conta de acesso criada e vinculada ao profissional existente com senha provisória salva. Selecione o profissional novamente para consultar o vínculo.')
           return
         }
         await reload()
