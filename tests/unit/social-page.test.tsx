@@ -87,9 +87,23 @@ describe('SocialPage', () => {
     expect(screen.queryByText('Nenhum registro encontrado.')).not.toBeInTheDocument()
   })
 
-  it('não abre a área social para profissional de outra especialidade', async () => {
-    const loadSpecialties = vi.fn().mockResolvedValue({ status: 'success', data: [{ specialty_id: 'other-id', specialty_name: 'Psicologia', is_current_context: true }] })
+  it('abre a Home social usando o contexto principal autorizado sem depender de nova consulta', async () => {
+    const loadSpecialties = vi.fn().mockResolvedValue({ status: 'error', error: new Error('Consulta de especialidades indisponível') })
     render(<MemoryRouter><SocialPage accessContext={accessContext} loadSpecialties={loadSpecialties} /></MemoryRouter>)
+    expect(await screen.findByRole('heading', { name: 'Acessos rápidos' })).toBeVisible()
+    expect(screen.getByRole('link', { name: /Minha Agenda/i })).toHaveAttribute('href', '/agenda')
+    expect(screen.getByRole('heading', { name: 'Aniversariantes de hoje' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Assistência Social indisponível' })).not.toBeInTheDocument()
+  })
+
+  it('não abre a área social para profissional de outra especialidade', async () => {
+    const contextFromOtherSpecialty = {
+      ...accessContext,
+      primary_specialty_name: 'Psicologia',
+      specialties: [{ specialty_id: 'other-id', specialty_name: 'Psicologia', is_primary: true }],
+    }
+    const loadSpecialties = vi.fn().mockResolvedValue({ status: 'success', data: [{ specialty_id: 'other-id', specialty_name: 'Psicologia', is_current_context: true }] })
+    render(<MemoryRouter><SocialPage accessContext={contextFromOtherSpecialty} loadSpecialties={loadSpecialties} /></MemoryRouter>)
     expect(await screen.findByRole('heading', { name: 'Assistência Social indisponível' })).toBeVisible()
     expect(screen.queryByRole('link', { name: /Luto/ })).not.toBeInTheDocument()
   })
