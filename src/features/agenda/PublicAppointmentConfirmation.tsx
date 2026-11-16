@@ -12,7 +12,9 @@ type Details = {
 }
 
 const token = new URLSearchParams(window.location.search).get('t') ?? ''
-const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/appointment-confirmation`
+const confirmationService = new URLSearchParams(window.location.search).get('f') === '1'
+  ? 'family-appointment-confirmation' : 'appointment-confirmation'
+const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${confirmationService}`
 
 async function requestConfirmation(action: 'read' | 'respond', decision?: string) {
   const response = await fetch(endpoint, {
