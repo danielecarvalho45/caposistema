@@ -8914,3 +8914,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Frontend:** commits `f5d793ac23cd54acfeb42b9375c5004e38ce401e`, `e1807dfe0796ec01843d295c6f7eb3d2b45e83eb` e `f595d816c08327b7f7205cdc356b7f72796a784c`. Mantido botão anterior `Redefinir senha provisória` como alternativa, sem alterar responsabilidades de perfil. A Edge Function de redefinição publicada previamente permanece na versão 1 com `verify_jwt=true`, preservando justificativa excepcional após aceite e `must_change_password` sem apagar `user_term_acceptances`.
 
 **Testes escritos:** três regressões adicionadas em `tests/unit/gestor-team-page.test.tsx` (commit `a7f37a36424bcb7cffabc24c667801602467f448`): preenchimento de senha em conta existente chama redefinição e não cria outra identidade; campo vazio não redefine; profissional pré-cadastrado sem conta cria acesso vinculado ao ID original. Os testes não foram executados no ambiente local por indisponibilidade DNS do clone do GitHub. Não há homologação autenticada, publicação Cloudflare comprovada ou teste com senha profissional real. Nenhuma conta, agenda ou senha de profissional foi modificada diretamente nesta manutenção. **Estado: correção versionada no `main`, testes escritos, homologação e deploy do frontend não comprovados.**
+
+
+### §28.248 — Exibir ou ocultar senha provisória digitada no cadastro (16/11/2026)
+
+**Pedido de usabilidade:** no cadastro de profissionais do Gestor/Titular, permitir conferir visualmente a senha provisória digitada antes de salvar para detectar erro de digitação. **Não** revelar senhas previamente armazenadas: Supabase Auth mantém somente hash, não disponibiliza senha em texto.
+
+**Implementação:** em `src/features/gestor/GestorTeamPage.tsx`, campo de senha continua oculto por padrão (`type=password`) e o botão independente `Mostrar senha`/`Ocultar senha` alterna exclusivamente a visualização local do valor digitado, sem submit, sem mudar o conteúdo e sem gravá-lo em logs ou auditoria. Visibilidade retorna ao padrão oculto quando outro profissional é selecionado ou quando é acionado o cancelamento da edição. Commit `2b779217306f43b760d8609da91a3b2b7053374b`.
+
+**Regressão:** teste unitário verifica `password → text → password`, preservação do conteúdo e ausência de chamadas ao serviço de redefinição ao alternar. Commit `9b224adc443f4fa76ef89667ad234cfbf11a9a1f`.
+
+**Estado:** versionado em `main`; execução Vitest, publicação Cloudflare e homologação em navegador **ainda não comprovadas**. Não houve alteração de senhas, identidades Auth ou dados clínicos.
