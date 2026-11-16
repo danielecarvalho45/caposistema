@@ -58,12 +58,12 @@ describe('regras de acesso', () => {
   })
 
   it('valida a política de senha exigida pelo Supabase', () => {
-    expect(validateSupabasePassword('Capo2026')).toBeNull()
+    expect(validateSupabasePassword('CapoSeguro2026!')).toBeNull()
     expect(validateSupabasePassword('Capo26')).toBe(
-      'A senha deve ter pelo menos 8 caracteres.',
+      'A senha deve ter pelo menos 12 caracteres.',
     )
     expect(validateSupabasePassword('capo2026')).toBe(
-      'A senha deve conter pelo menos uma letra minúscula, uma letra maiúscula e um número.',
+      'A senha deve conter pelo menos uma letra minúscula, uma letra maiúscula, um número e um símbolo.',
     )
   })
 })
