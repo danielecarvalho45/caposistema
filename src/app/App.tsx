@@ -242,7 +242,9 @@ export function App() {
         primaryContextCode === 'profissional' &&
         (professionalScreen === 'clinico_geral' || professionalScreen === 'assistencial_padrao')
           ? (appointment) => navigate('/atuacao', { state: { confirmedAppointmentId: appointment.appointment_id } })
-          : undefined
+          : primaryContextCode === 'profissional' && professionalScreen === 'assistencia_social'
+            ? (appointment) => navigate('/assistencia-social', { state: { confirmedAppointmentId: appointment.appointment_id } })
+            : undefined
       }
     />
   ) : isManageOwnAgendaRoute ? (
