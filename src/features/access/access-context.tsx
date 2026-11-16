@@ -822,7 +822,7 @@ export function AccessProvider({
           } catch (error) {
             throw new Error('Senha atual incorreta.', { cause: error })
           }
-          await authApi.updatePassword(newPassword)
+          await authApi.updatePassword(newPassword, currentPassword)
           setLoading(
             'Senha atualizada. Finalizando o primeiro acesso com segurança…',
           )
