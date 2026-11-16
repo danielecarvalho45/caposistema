@@ -74,7 +74,7 @@ describe('solicitação administrativa do Familiar/Cuidador pelo link', () => {
     ))
     await waitFor(() => expect(onSaved).toHaveBeenCalled())
     expect(whatsAppMock).toHaveBeenCalled()
-    expect(decodeURIComponent(String(whatsAppMock.mock.calls[0][0]))).toContain('Sua consulta no CAPO foi remarcada')
+    expect(decodeURIComponent(String(whatsAppMock.mock.calls[0][0]))).toContain('sua consulta no CAPO foi remarcada')
     expect(screen.getByText(/consulta cancelada permanece no histórico/)).toBeVisible()
   })
 })
