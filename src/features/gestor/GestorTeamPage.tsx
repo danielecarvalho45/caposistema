@@ -414,8 +414,8 @@ export function GestorTeamPage({
     if (!profile.recoveryEmail?.trim()) { setFeedback('Informe o e-mail.'); return }
     if ((!selected || selected.userAccountId) && !profile.roleCodes.length) { setFeedback('Selecione pelo menos um papel de acesso.'); return }
     if (profile.isProfessional && !profile.specialtyIds.length) { setFeedback('Selecione ou cadastre pelo menos uma especialidade.'); return }
-    if ((!selected || temporaryPassword.length > 0) && (temporaryPassword.length < 8 || temporaryPassword.length > 128 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword))) {
-      setFeedback('A senha provisória deve ter pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.')
+    if ((!selected || temporaryPassword.length > 0) && (temporaryPassword.length < 12 || temporaryPassword.length > 128 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword) || !/[^A-Za-z0-9\s]/.test(temporaryPassword))) {
+      setFeedback('A senha provisória deve ter de 12 a 128 caracteres, incluindo maiúscula, minúscula, número e símbolo.')
       return
     }
     if (selected && temporaryPassword && !selected.userAccountId && !profile.roleCodes.length) {
@@ -529,8 +529,8 @@ export function GestorTeamPage({
 
   async function resetPasswordForSelected() {
     if (!selected?.userAccountId || submitting || !service.resetTemporaryPassword) return
-    if (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword)) {
-      setFeedback('A senha provisória deve ter pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.')
+    if (temporaryPassword.length < 12 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword) || !/[^A-Za-z0-9\s]/.test(temporaryPassword)) {
+      setFeedback('A senha provisória deve ter de 12 a 128 caracteres, incluindo maiúscula, minúscula, número e símbolo.')
       return
     }
     if (!window.confirm('Redefinir a senha deste profissional? O acesso exigirá a troca da senha, sem apagar o aceite do termo.')) return
@@ -562,8 +562,8 @@ export function GestorTeamPage({
     if (!profile.recoveryEmail?.trim()) { setFeedback('Informe o e-mail.'); return }
     if (!profile.roleCodes.length) { setFeedback('Selecione pelo menos um papel de acesso.'); return }
     if (profile.isProfessional && !profile.specialtyIds.length) { setFeedback('Selecione ou cadastre pelo menos uma especialidade.'); return }
-    if (temporaryPassword.length < 8 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword)) {
-      setFeedback('A senha provisória deve ter pelo menos 8 caracteres, com uma letra maiúscula, uma minúscula e um número.')
+    if (temporaryPassword.length < 12 || !/[a-z]/.test(temporaryPassword) || !/[A-Z]/.test(temporaryPassword) || !/\d/.test(temporaryPassword) || !/[^A-Za-z0-9\s]/.test(temporaryPassword)) {
+      setFeedback('A senha provisória deve ter de 12 a 128 caracteres, incluindo maiúscula, minúscula, número e símbolo.')
       return
     }
     if (!selected.active && activeReason.trim().length < 5) {
