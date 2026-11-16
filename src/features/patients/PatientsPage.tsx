@@ -39,6 +39,21 @@ function patientWhatsAppHref(phone: string | undefined) {
   return `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalized)}`
 }
 
+function validPatientPhone(value: string | null | undefined): boolean {
+  const digits = (value ?? '').replace(/\D/g, '')
+  return digits.length === 10 || digits.length === 11 ||
+    (digits.startsWith('55') && (digits.length === 12 || digits.length === 13))
+}
+
+function patientContactValidation(primary: string | null | undefined, secondary: string | null | undefined): string | null {
+  const main = (primary ?? '').trim()
+  const alternate = (secondary ?? '').trim()
+  if (!main && !alternate) return 'Informe um telefone válido do paciente antes de salvar o cadastro.'
+  if (main && !validPatientPhone(main)) return 'Telefone principal inválido. Informe DDD e número (10 ou 11 dígitos).'
+  if (alternate && !validPatientPhone(alternate)) return 'Telefone alternativo inválido. Informe DDD e número (10 ou 11 dígitos).'
+  return null
+}
+
 export function PatientsPage({
   accessContext,
 }: Readonly<{ accessContext: AccessContext }>) {
@@ -241,6 +256,11 @@ ADMINISTRATIVO DO CAPO`
     }
     if (!patientName.trim() || !patientBirthDate) {
       setFeedback('Informe nome completo e data de nascimento.')
+      return
+    }
+    const contactError = patientContactValidation(patientPhone, patientPhoneSecondary)
+    if (contactError) {
+      setFeedback(contactError)
       return
     }
     const duplicateKey = `${patientName.trim().toLowerCase().replace(/\s+/g, ' ')}|${patientBirthDate}`
@@ -451,6 +471,11 @@ ADMINISTRATIVO DO CAPO`
       setFeedback('Informe nome completo e data de nascimento válidos.')
       return
     }
+    const contactError = patientContactValidation(editForm.phone, editForm.phone_secondary)
+    if (contactError) {
+      setFeedback(contactError)
+      return
+    }
     setEditBusy(true)
     const next = await getRpcService().updatePatient({
       patientId: editingPatientId,
@@ -477,6 +502,10 @@ ADMINISTRATIVO DO CAPO`
 
   async function saveProfessionalPhone() {
     if (!editingPatientId || editBusy || !canUpdatePhoneAsProfessional) return
+    if (!validPatientPhone(editForm.phone)) {
+      setFeedback('Informe um telefone válido com DDD antes de atualizar o cadastro.')
+      return
+    }
     setEditBusy(true)
     const result = await getRpcService().updatePatientPhoneByProfessional(
       editingPatientId, editForm.phone ?? '',
@@ -639,7 +668,7 @@ ADMINISTRATIVO DO CAPO`
               </select>
             </label>
             <label>
-              Telefone / WhatsApp
+              Telefone / WhatsApp (obrigatório se não houver alternativo)
               <input
                 type="tel"
                 placeholder="(35) 99999-9999"
@@ -648,7 +677,7 @@ ADMINISTRATIVO DO CAPO`
               />
             </label>
             <label>
-              Telefone alternativo do paciente
+              Telefone alternativo do paciente (obrigatório se não houver principal)
               <input type="tel" placeholder="Telefone alternativo" value={patientPhoneSecondary} onChange={(event) => setPatientPhoneSecondary(event.target.value)} />
             </label>
             <label className="patients-span-2">
@@ -870,14 +899,14 @@ ADMINISTRATIVO DO CAPO`
                 onChange={(event) => setEditForm({ ...editForm, sex: event.target.value })}
               />
             </label>
-            <label>Telefone / WhatsApp
+            <label>Telefone / WhatsApp (obrigatório se não houver alternativo)
               <input
                 value={editForm.phone ?? ''}
                 readOnly={!canEditPatient && !canUpdatePhoneAsProfessional}
                 onChange={(event) => setEditForm({ ...editForm, phone: event.target.value })}
               />
             </label>
-            <label>Telefone alternativo
+            <label>Telefone alternativo (obrigatório se não houver principal)
               <input
                 value={editForm.phone_secondary ?? ''}
                 readOnly={!canEditPatient}
