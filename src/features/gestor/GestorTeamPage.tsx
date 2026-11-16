@@ -235,6 +235,7 @@ export function GestorTeamPage({
   const [careLocation, setCareLocation] = useState('')
   const [careLocationLoading, setCareLocationLoading] = useState(false)
   const [temporaryPassword, setTemporaryPassword] = useState('')
+  const [showTemporaryPassword, setShowTemporaryPassword] = useState(false)
   const [passwordResetReason, setPasswordResetReason] = useState('')
   const [initiallyActive, setInitiallyActive] = useState(true)
   const [query, setQuery] = useState('')
@@ -368,6 +369,7 @@ export function GestorTeamPage({
     setCapabilities([])
     setCapabilitiesStatus('loading')
     setSelected(member)
+    setShowTemporaryPassword(false)
     setTemporaryPassword('')
     setPasswordResetReason('')
     setProfile(memberInput(member))
@@ -682,7 +684,7 @@ export function GestorTeamPage({
       <article className="gestor-panel gestor-team-list">
         <div className="gestor-team-heading">
           <h3>{mode === 'administracao' ? 'Profissionais e contas' : 'Equipe'}</h3>
-          {mode === 'administracao' && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Novo profissional</button>}
+          {mode === 'administracao' && <button type="button" onClick={() => { setSelected(null); setShowTemporaryPassword(false); setTemporaryPassword(''); setProfile(blankProfile()) }}>Novo profissional</button>}
         </div>
         {(mode === 'administracao' || teamTab !== 'agenda') && <div className="gestor-search-row"><input aria-label="Buscar equipe" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome ou usuário" /><button type="button" onClick={() => void reload()}>Buscar</button><button type="button" aria-label={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} title={showInactiveSearch ? 'Voltar à lista de ativos' : 'Buscar profissionais inativos'} onClick={() => { const next = showInactiveSearch ? 'ativo' : 'inativo'; setShowInactiveSearch(!showInactiveSearch); setStatus(next); setQuery(''); setSelected(null); void reload('', next) }}>⌕</button></div>}
         {(mode === 'administracao' || teamTab !== 'agenda') && showInactiveSearch && <label>Buscar profissionais inativos <select aria-label="Situação da equipe" value={status} onChange={(event) => setStatus(event.target.value)}><option value="ativo">Ativos</option><option value="inativo">Inativos</option></select></label>}
@@ -693,7 +695,14 @@ export function GestorTeamPage({
       <form className="gestor-panel gestor-team-form" onSubmit={(event) => void saveProfile(event)}>
         <div className="gestor-team-heading"><h3>{selected ? 'Editar profissional' : 'Cadastrar profissional'}</h3>{selected && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Cancelar edição</button>}</div>
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
-        <label>Conta de acesso: senha provisória<input type="password" autoComplete="new-password" required={!selected} value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} /><small>{selected?.userAccountId
+        <label>Conta de acesso: senha provisória
+          <input type={showTemporaryPassword ? 'text' : 'password'} autoComplete="new-password"
+            required={!selected} value={temporaryPassword}
+            onChange={(event) => setTemporaryPassword(event.target.value)} />
+          <button type="button" aria-label={showTemporaryPassword ? 'Ocultar senha provisória' : 'Mostrar senha provisória'}
+            aria-pressed={showTemporaryPassword} onClick={() => setShowTemporaryPassword((visible) => !visible)}>
+            {showTemporaryPassword ? 'Ocultar senha' : 'Mostrar senha'}
+          </button><small>{selected?.userAccountId
           ? 'Se preencher a senha, Salvar alterações também a gravará no Supabase Auth. Se deixar em branco, a senha atual será preservada.'
           : 'Senha de 8 a 128 caracteres, com maiúscula, minúscula e número. Ao salvar com uma senha, o acesso será criado e vinculado sem duplicar o cadastro.'}</small></label>
         {selected?.userAccountId && <div>
