@@ -14,10 +14,14 @@ export function FamilyPsychologyReturnAction({
   family,
   accessContext,
   onSaved,
+  onNotice,
+  onFeedback,
 }: Readonly<{
   family: Family
   accessContext: AccessContext
   onSaved: () => void
+  onNotice?: (notice: { phone: string; text: string }) => void
+  onFeedback?: (message: string) => void
 }>) {
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState('')
@@ -57,6 +61,7 @@ export function FamilyPsychologyReturnAction({
     if (!slot || busy) return
     setBusy(true)
     setFeedback('')
+    let created = false
     try {
       const { data, error } = await getSupabaseClient().rpc('create_family_psychology_return_for_interface', {
         p_previous_appointment_id: appointmentId,
@@ -67,13 +72,14 @@ export function FamilyPsychologyReturnAction({
         || (data as { success?: boolean }).success !== true) {
         throw new Error('O banco não confirmou o retorno.')
       }
+      created = true
       setFeedback('Retorno registrado na mesma agenda da Psicologia.')
       setOpen(false)
-      onSaved()
       const rawPhone = value(family, 'family_phone').replace(/\D/g, '')
       const national = rawPhone.startsWith('55') && rawPhone.length >= 12 ? rawPhone.slice(2) : rawPhone
       if (!/^[1-9][0-9]{9,10}$/.test(national)) {
         setFeedback('Retorno salvo. Confira o telefone do familiar para enviar o WhatsApp.')
+        onFeedback?.('Retorno salvo. Confira o telefone do familiar antes de avisar.')
         return
       }
       const locationResult = await getRpcService().getProfessionalCareLocation(professionalId)
@@ -83,6 +89,7 @@ export function FamilyPsychologyReturnAction({
       const address = typeof location?.care_location === 'string' ? location.care_location.trim() : ''
       if (!address) {
         setFeedback('Retorno salvo. Confira o endereço do atendimento para preparar o WhatsApp.')
+        onFeedback?.('Retorno salvo. Confira o endereço do atendimento antes de avisar.')
         return
       }
       const sender = accessContext.real_identity.full_name?.trim()
@@ -100,10 +107,14 @@ export function FamilyPsychologyReturnAction({
       })
       const prepared = { phone: '55' + national, text }
       setNotice(prepared)
+      onNotice?.(prepared)
       openNotice(prepared)
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Falha no agendamento do retorno.')
-    } finally { setBusy(false) }
+    } finally {
+      if (created) onSaved()
+      setBusy(false)
+    }
   }
 
   return <span className="agenda-family-return-action">
