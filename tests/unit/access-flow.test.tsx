@@ -386,7 +386,7 @@ describe('entrada única CAPO', () => {
       name: 'Alterar senha do primeiro acesso',
     })
     await user.type(screen.getByLabelText('Senha atual'), '111111')
-    await user.type(screen.getByLabelText('Nova senha'), 'Capo2026')
+    await user.type(screen.getByLabelText('Nova senha'), 'CapoSeguro2026!')
     await user.click(
       screen.getByRole('button', { name: 'Concluir primeiro acesso' }),
     )
@@ -399,7 +399,7 @@ describe('entrada única CAPO', () => {
       'usuario',
       '111111',
     )
-    expect(authApi.updatePassword).toHaveBeenCalledWith('Capo2026', expect.any(String))
+    expect(authApi.updatePassword).toHaveBeenCalledWith('CapoSeguro2026!', expect.any(String))
     expect(rpcService.completeFirstAccess).toHaveBeenCalled()
   })
 
@@ -429,7 +429,7 @@ describe('entrada única CAPO', () => {
       name: 'Alterar senha do primeiro acesso',
     })
     await user.type(screen.getByLabelText('Senha atual'), '111111')
-    await user.type(screen.getByLabelText('Nova senha'), 'Capo2026')
+    await user.type(screen.getByLabelText('Nova senha'), 'CapoSeguro2026!')
     await user.click(
       screen.getByRole('button', { name: 'Concluir primeiro acesso' }),
     )
