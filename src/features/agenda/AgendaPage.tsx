@@ -432,10 +432,13 @@ function HomeScheduleGrid({
                       : attendanceStatus === 'faltou'
                         ? 'Falta'
                         : 'Agendado'
+              const familyCard = familyAppointments?.find((item) => String(item.appointment_id) === slot.appointment_id)
               const typeLabel = group ? 'Terapia em grupo' :
                 slot.slot_status === 'bloqueado' && slot.block_type
                   ? <AgendaBlockIndicator type={slot.block_type} />
-                  : slot.appointment_type ?? '—'
+                  : familyCard?.appointment_kind === 'retorno'
+                    ? 'Retorno — Familiar/Cuidador — Psicologia'
+                    : slot.appointment_type ?? '—'
               return (
                 <tr key={`${slot.professional_id}:${slot.slot_start}`} className={`is-${slot.slot_status}`}>
                   <td data-label="Horário"><strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong></td>
@@ -574,7 +577,9 @@ function HomeScheduleGrid({
                       )}
                       {slot.slot_status === 'agendado' && (slot.appointment_type || attendanceStatus !== 'agendado' || (slot.appointment_id && previsitContacts?.[slot.appointment_id])) && (
                         <small className="agenda-schedule-details">
-                          {slot.appointment_type && <span>{slot.appointment_type}</span>}
+                          {slot.appointment_type && <span>{familyAppointments?.some((family) =>
+                            String(family.appointment_id) === slot.appointment_id && family.appointment_kind === 'retorno')
+                            ? 'Retorno — Familiar/Cuidador — Psicologia' : slot.appointment_type}</span>}
                           {attendanceMarker(attendanceStatus)}
                           {slot.appointment_id && previsitContacts?.[slot.appointment_id] && (
                             <span className="agenda-previsit-indicator" title="Aviso administrativo prévio; não representa presença">
@@ -3142,7 +3147,11 @@ export function AgendaPage({
                     return <tr key={aid}>
                       <td>{formatDateTime(String(item.appointment_date))} — {String(item.professional_name ?? 'Psicologia')}</td>
                       <td>{String(item.family_name ?? 'Familiar')} <small>Familiar/Cuidador · CAPO {String(item.family_capo_number ?? '')}</small></td>
-                      <td>{notice === 'avisado' ? '✓ Paciente avisado' : notice === 'solicitou_cancelamento' ? 'Solicitou cancelamento' : 'Ainda sem registro de contato prévio'}</td>
+                      <td>{item.confirmation_decision === 'comparecera'
+                        ? '✓ Presença confirmada pelo link'
+                        : notice === 'avisado' ? '✓ Paciente avisado'
+                        : notice === 'solicitou_cancelamento' ? 'Solicitou cancelamento'
+                        : 'Ainda sem registro de contato prévio'}</td>
                       <td className="agenda-attendance-actions">
                         <button type="button" onClick={() => openFamilyNotice(item)}>💬 Lembrar consulta</button>
                         <select aria-label={`Resultado do contato com ${String(item.family_name ?? 'Familiar')}`}
