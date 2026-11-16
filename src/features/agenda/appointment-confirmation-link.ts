@@ -47,6 +47,34 @@ export async function issueAppointmentConfirmationUrl(appointmentId: string): Pr
   return `${window.location.origin}/confirmar-consulta?t=${encodeURIComponent(value.token)}`
 }
 
+// O familiar usa a mesma mensagem e tela pública, mas o token identifica
+// exclusivamente family_psychology_appointments; nunca o paciente de origem.
+export async function prepareFamilyPsychologyReminder(input: {
+  appointmentId: string
+  patientName: string
+  professionalName: string
+  appointmentDate: string
+  careLocation: string
+  senderName: string
+  senderTitle: string
+}): Promise<string> {
+  if (!input.careLocation.trim()) {
+    throw new Error('Local da Psicologia não cadastrado. Confira antes de avisar o familiar.')
+  }
+  const { data, error } = await getSupabaseClient().rpc(
+    'issue_family_psychology_confirmation_link_for_interface',
+    { p_appointment_id: input.appointmentId },
+  )
+  if (error) throw new Error(error.message ?? 'Não foi possível preparar o link do familiar.')
+  const value = data && typeof data === 'object' && !Array.isArray(data)
+    ? data as Record<string, unknown> : null
+  if (typeof value?.token !== 'string' || !/^[0-9a-f]{64}$/.test(value.token)) {
+    throw new Error('O CAPO não retornou um link de confirmação válido para o familiar.')
+  }
+  const confirmationUrl = `${window.location.origin}/confirmar-consulta?f=1&t=${encodeURIComponent(value.token)}`
+  return appointmentReminderMessage({ ...input, confirmationUrl })
+}
+
 export async function prepareAppointmentReminder(input: {
   appointmentId: string
   patientName: string
