@@ -17,7 +17,7 @@ import { SocialHomeVisits } from './SocialHomeVisits'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import { movementWhatsAppMessage, type CommunicationContact } from './appointment-communication'
-import { prepareAppointmentReminder } from './appointment-confirmation-link'
+import { prepareAppointmentReminder, prepareFamilyPsychologyReminder } from './appointment-confirmation-link'
 import { isVisibleOnAgenda } from './agenda-visibility'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getNotificationsService } from '../notifications/notifications-integration'
@@ -1680,18 +1680,46 @@ export function AgendaPage({
     else if (result.status === 'error') setAppointmentFeedback(result.error.message)
   }
 
-  function openFamilyNotice(item: Record<string, unknown>) {
-    const clean = String(item.family_phone ?? '').replace(/\D/g, '')
-    if (clean.length < 10) {
+  async function openFamilyNotice(item: Record<string, unknown>) {
+    const digits = String(item.family_phone ?? '').replace(/\D/g, '')
+    const national = digits.startsWith('55') && digits.length >= 12 ? digits.slice(2) : digits
+    if (!/^[1-9][0-9]{9,10}$/.test(national)) {
       setAppointmentFeedback('Cadastre um telefone válido para este familiar.')
       return
     }
-    const phone = clean.startsWith('55') ? clean : `55${clean}`
-    const sender = accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username
-    const title = accessContext.function_title?.trim() || accessContext.real_identity.function_title?.trim() || accessContext.primary_context.name?.trim() || 'Equipe CAPO'
-    const message = `Olá, ${String(item.family_name ?? 'Familiar')}! Lembramos seu atendimento de Psicologia com ${String(item.professional_name ?? 'profissional CAPO')} em ${formatDateTime(String(item.appointment_date))}. Por favor, confirme o recebimento.\n\n${sender} — ${title} — CAPO`
-    if (!openCapoWhatsAppTab(`https://web.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`))
-      setAppointmentFeedback('O navegador bloqueou a abertura do WhatsApp.')
+    const phone = `55${national}`
+    setAppointmentFeedback(null)
+    try {
+      const locationResult = await getRpcService().getProfessionalCareLocation(String(item.professional_id))
+      if (locationResult.status !== 'success') {
+        throw new Error(locationResult.status === 'error'
+          ? locationResult.error.message : 'Endereço da Psicologia não confirmado.')
+      }
+      const location = locationResult.data && typeof locationResult.data === 'object'
+        && !Array.isArray(locationResult.data)
+        ? locationResult.data as Record<string, unknown> : null
+      const careLocation = typeof location?.care_location === 'string' ? location.care_location.trim() : ''
+      const message = await prepareFamilyPsychologyReminder({
+        appointmentId: String(item.appointment_id),
+        patientName: String(item.family_name ?? 'Familiar'),
+        professionalName: String(item.professional_name ?? 'Psicologia'),
+        appointmentDate: String(item.appointment_date),
+        careLocation,
+        senderName: accessContext.real_identity.full_name?.trim()
+          || accessContext.full_name?.trim() || accessContext.username,
+        senderTitle: accessContext.function_title?.trim()
+          || accessContext.real_identity.function_title?.trim()
+          || accessContext.primary_context.name?.trim() || 'Equipe CAPO',
+      })
+      const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`
+      if (!openCapoWhatsAppTab(url)) {
+        setAppointmentFeedback('O WhatsApp não abriu. Autorize pop-ups e tente novamente; a mensagem não foi enviada automaticamente.')
+      } else {
+        setAppointmentFeedback('WhatsApp aberto com o link individual de confirmação. Confira e envie manualmente.')
+      }
+    } catch (error) {
+      setAppointmentFeedback(error instanceof Error ? error.message : 'Não foi possível preparar o link do familiar.')
+    }
   }
 
   async function registerFamilyPrevisitContact(item: Record<string, unknown>) {
@@ -3269,9 +3297,21 @@ export function AgendaPage({
                 ? (appointmentId) => {
                     const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
                     if (family) return ['agendado', 'confirmado'].includes(String(family.attendance_status))
-                      ? <button type="button" disabled={familyRescheduleBusy} onClick={() => {
-                          prepareFamilyReschedule(appointmentId)
-                        }}>Remarcar familiar</button> : null
+                      ? <>
+                          <button type="button" onClick={() => void openFamilyNotice(family)}>Lembrar consulta com link</button>
+                          <label>Resultado do aviso
+                            <select value={previsitOutcomes[appointmentId] ?? String(family.last_notice_result ?? '')}
+                              onChange={(event) => setPrevisitOutcomes((current) => ({ ...current, [appointmentId]: event.target.value }))}>
+                              <option value="">Selecionar resultado</option>
+                              <option value="avisado">Paciente avisado</option>
+                              <option value="solicitou_cancelamento">Solicitou cancelamento</option>
+                            </select>
+                          </label>
+                          <button type="button" disabled={!previsitOutcomes[appointmentId] || previsitBusyId !== null}
+                            onClick={() => void registerFamilyPrevisitContact(family)}>Registrar aviso</button>
+                          <button type="button" disabled={familyRescheduleBusy} onClick={() => prepareFamilyReschedule(appointmentId)}>Remarcar familiar</button>
+                          <button type="button" onClick={() => prepareCancellation(appointmentId)}>Cancelar</button>
+                        </> : null
                     const appointment = state.status === 'success' ? state.data.find((item) => item.appointment_id === appointmentId) : undefined
                     if (!appointment || !['agendado', 'confirmado'].includes(appointment.attendance_status)) return null
                     return <>
