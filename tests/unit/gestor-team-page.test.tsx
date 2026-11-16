@@ -416,4 +416,97 @@ describe('GestorTeamPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent('uma letra maiúscula, uma minúscula e um número')
   })
 
+  it('ao salvar cadastro com senha preenchida redefine a senha na conta Auth existente', async () => {
+    const professionalId = 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0'
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const update = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
+    const create = vi.fn(async () => ({ status: 'success' as const, data: { success: true } }))
+    const resetTemporaryPassword = vi.fn(async () => ({
+      status: 'success' as const, data: { ok: true, mustChangePassword: true },
+    }))
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success', data: {
+        team: [{ professional_id: professionalId, user_account_id: '76898c6a-90fc-4300-ac09-f5430814eaea',
+          full_name: 'Profissional ativo', function_title: 'Atendimento', username: 'profissional.ativo',
+          recovery_email: 'pessoa@exemplo.org', status: 'ativo', is_professional: false,
+          roles: [{ code: 'profissional' }] }],
+        roles: [{ code: 'profissional', name: 'Profissional' }], specialties: [],
+      } }),
+      update, create, resetTemporaryPassword, setActive: success,
+      getCapabilities: success, setPrimaryContext: success, setCapability: success,
+      removeCapability: success, setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional ativo/ }))
+    fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/),
+      { target: { value: 'NovaSenha2026' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+    await waitFor(() => expect(update).toHaveBeenCalledWith(professionalId, expect.any(Object)))
+    await waitFor(() => expect(resetTemporaryPassword).toHaveBeenCalledWith(
+      professionalId, 'NovaSenha2026', '',
+    ))
+    expect(create).not.toHaveBeenCalled()
+    expect(await screen.findByRole('status')).toHaveTextContent('senha provisória salva no Supabase Auth')
+    expect(screen.getByLabelText(/Conta de acesso: senha provisória/)).toHaveValue('')
+  })
+
+  it('ao salvar sem senha preserva credencial de uma conta existente', async () => {
+    const professionalId = 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0'
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const update = vi.fn(async () => ({ status: 'success' as const, data: {} }))
+    const resetTemporaryPassword = vi.fn(async () => ({
+      status: 'success' as const, data: { ok: true },
+    }))
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success', data: {
+        team: [{ professional_id: professionalId, user_account_id: '76898c6a-90fc-4300-ac09-f5430814eaea',
+          full_name: 'Profissional ativo', function_title: 'Atendimento', username: 'profissional.ativo',
+          recovery_email: 'pessoa@exemplo.org', status: 'ativo', is_professional: false,
+          roles: [{ code: 'profissional' }] }],
+        roles: [{ code: 'profissional', name: 'Profissional' }], specialties: [],
+      } }),
+      update, create: success, resetTemporaryPassword, setActive: success,
+      getCapabilities: success, setPrimaryContext: success, setCapability: success,
+      removeCapability: success, setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional ativo/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+    await waitFor(() => expect(update).toHaveBeenCalledTimes(1))
+    expect(resetTemporaryPassword).not.toHaveBeenCalled()
+    expect(await screen.findByRole('status')).toHaveTextContent('Senha existente preservada')
+  })
+
+  it('salvar com senha em profissional pré-cadastrado cria o vínculo de acesso sem duplicar profissional', async () => {
+    const professionalId = 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0'
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const create = vi.fn(async () => ({ status: 'success' as const, data: {
+      professional_id: professionalId, user_account_id: '76898c6a-90fc-4300-ac09-f5430814eaea',
+    } }))
+    const update = vi.fn(async () => ({ status: 'success' as const, data: {} }))
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success', data: {
+        team: [{ professional_id: professionalId,
+          full_name: 'Profissional pré-cadastrado', function_title: 'Atendimento', username: 'profissional.pre',
+          recovery_email: 'pessoa@exemplo.org', status: 'ativo', is_professional: false,
+          roles: [{ code: 'profissional' }] }],
+        roles: [{ code: 'profissional', name: 'Profissional' }], specialties: [],
+      } }),
+      create, update, setActive: success, getCapabilities: success,
+      setPrimaryContext: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional pré-cadastrado/ }))
+    fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/),
+      { target: { value: 'NovaSenha2026' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+    await waitFor(() => expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'profissional.pre' }),
+      'NovaSenha2026', true, '', professionalId,
+    ))
+    expect(update).not.toHaveBeenCalled()
+    expect(await screen.findByRole('status')).toHaveTextContent('Conta de acesso criada e vinculada')
+  })
+
 })
