@@ -434,6 +434,25 @@ export function GestorTeamPage({
         return
       }
 
+      let passwordSaved = false
+      if (selected?.userAccountId && temporaryPassword) {
+        const credential = await service.resetTemporaryPassword!(
+          selected.professionalId, temporaryPassword, passwordResetReason,
+        )
+        const confirmation = credential.status === 'success' && credential.data &&
+          typeof credential.data === 'object' && !Array.isArray(credential.data)
+          ? credential.data as Record<string, unknown> : null
+        if (credential.status !== 'success' || confirmation?.ok !== true) {
+          await reload()
+          setFeedback('Os dados cadastrais foram salvos, mas a senha provisória NÃO foi confirmada no Supabase Auth. ' +
+            (errorMessage(credential) ?? 'Verifique o serviço de credenciais e tente novamente.'))
+          return
+        }
+        passwordSaved = true
+        setTemporaryPassword('')
+        setPasswordResetReason('')
+      }
+
       const createdRecord = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
         ? result.data as Record<string, unknown> : null
       const professionalId = selected?.professionalId ??
@@ -442,7 +461,9 @@ export function GestorTeamPage({
         const savedLocation = await getRpcService().setProfessionalCareLocation(professionalId, nullable(careLocation))
         if (savedLocation.status !== 'success') {
           await reload()
-          setFeedback('Cadastro profissional salvo, mas o endereço NÃO foi gravado. Os dados foram mantidos para nova tentativa.')
+          setFeedback(passwordSaved
+            ? 'Cadastro e senha provisória salvos no Auth, mas o endereço NÃO foi gravado. Corrija o endereço separadamente.'
+            : 'Cadastro profissional salvo, mas o endereço NÃO foi gravado. Os dados foram mantidos para nova tentativa.')
           return
         }
         const verifiedLocation = await getRpcService().getProfessionalCareLocation(professionalId)
@@ -451,7 +472,9 @@ export function GestorTeamPage({
           ? (verifiedLocation.data as Record<string, unknown>).care_location : undefined
         if (stored !== nullable(careLocation)) {
           await reload()
-          setFeedback('Cadastro salvo, mas não foi possível confirmar o endereço no banco. Confira antes de agendar.')
+          setFeedback(passwordSaved
+            ? 'Cadastro e senha provisória salvos no Auth, mas não foi possível confirmar o endereço no banco. Confira antes de agendar.'
+            : 'Cadastro salvo, mas não foi possível confirmar o endereço no banco. Confira antes de agendar.')
           return
         }
       } else if (careLocation.trim()) {
@@ -461,21 +484,7 @@ export function GestorTeamPage({
       }
 
       if (selected) {
-        if (selected.userAccountId && temporaryPassword) {
-          const credential = await service.resetTemporaryPassword!(
-            selected.professionalId, temporaryPassword, passwordResetReason,
-          )
-          const confirmation = credential.status === 'success' && credential.data &&
-            typeof credential.data === 'object' && !Array.isArray(credential.data)
-            ? credential.data as Record<string, unknown> : null
-          if (credential.status !== 'success' || confirmation?.ok !== true) {
-            await reload()
-            setFeedback('Os dados cadastrais foram salvos, mas a senha provisória NÃO foi confirmada no Supabase Auth. ' +
-              (errorMessage(credential) ?? 'Verifique o serviço de credenciais e tente novamente.'))
-            return
-          }
-          setTemporaryPassword('')
-          setPasswordResetReason('')
+        if (passwordSaved) {
           await reload()
           setFeedback('Cadastro atualizado e senha provisória salva no Supabase Auth. O profissional deverá trocar a senha no primeiro acesso.')
           return
