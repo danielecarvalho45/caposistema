@@ -8,7 +8,7 @@ import type { AccessContext } from '../../src/types/access'
 const rpc = vi.hoisted(() => ({
   getSchedulingCatalog: vi.fn(), getAvailableAppointmentSlots: vi.fn(),
   getAgendaScheduleGrid: vi.fn(), createAppointment: vi.fn(),
-  getAppointmentCareLocation: vi.fn(), getProfessionalCareLocation: vi.fn(),
+  getAppointmentCareLocation: vi.fn(), getProfessionalCareLocation: vi.fn(), getPatientContact: vi.fn(),
   getReschedulableAppointments: vi.fn(), rescheduleAppointment: vi.fn(),
   updateAppointmentAttendance: vi.fn(),
   searchReferralPatients: vi.fn(), addPatientToWaitingList: vi.fn(),
@@ -81,6 +81,13 @@ it('abre o agendamento com o paciente da consulta mesmo antes de escolher especi
 
 
 it('permite iniciar e concluir agendamento clicando no horário livre de paciente já cadastrado', async () => {
+  const navigateWhatsApp = vi.fn()
+  const whatsAppTab = {
+    closed: false, opener: null, location: { replace: navigateWhatsApp },
+    focus: vi.fn(), close: vi.fn(),
+  }
+  const openPopup = vi.spyOn(window, 'open').mockReturnValue(whatsAppTab as unknown as Window)
+  rpc.getPatientContact.mockResolvedValue({ status: 'success', data: { phone: '(35) 99999-9999' } })
   rpc.getAppointmentCareLocation.mockResolvedValue({ status: 'success', data: { care_location: 'CAPO — Unidade Central' } })
   const slotStart = '2026-11-17T12:00:00.000Z'
   rpc.getSchedulingCatalog.mockResolvedValue({
@@ -177,6 +184,15 @@ it('permite iniciar e concluir agendamento clicando no horário livre de pacient
     operationalOrigin: 'cadastro_paciente',
   })
   expect(await screen.findByRole('button', { name: 'Agendar outra especialidade' })).toBeVisible()
+  expect(openPopup).toHaveBeenCalledWith('', 'capo_whatsapp_web')
+  expect(rpc.getPatientContact).toHaveBeenCalledWith('patient-1')
+  expect(navigateWhatsApp).toHaveBeenCalledTimes(1)
+  const url = new URL(navigateWhatsApp.mock.calls[0][0] as string)
+  expect(url.origin).toBe('https://web.whatsapp.com')
+  expect(url.searchParams.get('phone')).toBe('5535999999999')
+  expect(url.searchParams.get('text')).toContain('Paciente já cadastrado')
+  expect(url.searchParams.get('text')).toContain('Clínica Geral')
+  whatsAppTab.closed = true
   expect(screen.getByDisplayValue('Paciente já cadastrado')).toBeVisible()
   expect(confirm).toBeDisabled()
   await user.click(screen.getByRole('button', { name: 'Agendar outra especialidade' }))
