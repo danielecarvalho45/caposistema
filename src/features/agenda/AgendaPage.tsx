@@ -17,7 +17,7 @@ import { FamilyPsychologyReturnAction } from './FamilyPsychologyReturnAction'
 import { FamilyLinkRebookingAction } from './FamilyLinkRebookingAction'
 import { SocialHomeVisits } from './SocialHomeVisits'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
-import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
+import { openCapoWhatsAppTab, reserveCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import { movementWhatsAppMessage, type CommunicationContact } from './appointment-communication'
 import { prepareAppointmentReminder, prepareFamilyPsychologyReminder } from './appointment-confirmation-link'
 import { isVisibleOnAgenda } from './agenda-visibility'
@@ -1523,19 +1523,30 @@ export function AgendaPage({
       setAppointmentFeedback('Selecione paciente, especialidade, profissional, horário e tipo de atendimento.')
       return
     }
+    // A reserva precisa ocorrer no clique, antes da primeira chamada assíncrona.
+    // O WhatsApp só recebe destino/mensagem se a consulta for realmente gravada.
+    const whatsappReservation = !isProfessional ? reserveCapoWhatsAppTab() : null
     setAppointmentFeedback('Criando agendamento no banco…')
-    const result = await getRpcService().createAppointment({
+    let result: Awaited<ReturnType<ReturnType<typeof getRpcService>['createAppointment']>>
+    try {
+      result = await getRpcService().createAppointment({
       patientId: appointmentPatientId,
       professionalId: selectedProfessionalId,
       slotStart: validSlotStart,
       appointmentType,
       generalNotes: appointmentNotes.trim() || null,
       operationalOrigin: appointmentOrigin.trim() || null,
-    })
+      })
+    } catch (error) {
+      whatsappReservation?.cancel()
+      setAppointmentFeedback(error instanceof Error ? error.message : 'Não foi possível registrar o agendamento.')
+      return
+    }
     if (result.status === 'success') {
       // O retorno administrativo deve apresentar o aviso antes de permitir concluir a operação.
       if (!isProfessional && appointmentType === 'Retorno') setReturnNoticeAcknowledged(false)
       let locationWarning = false
+      let whatsappFeedback = ''
       const resultRecord =
         result.data && typeof result.data === 'object' && !Array.isArray(result.data)
           ? result.data as Record<string, unknown>
@@ -1564,6 +1575,53 @@ export function AgendaPage({
           isReturn: appointmentType === 'Retorno',
         } : null)
         if (!careLocation) locationWarning = true
+        if (careLocation) {
+          // Consultar o contato autorizado já após a gravação. A reserva feita no
+          // clique permite direcionar a aba mesmo depois das chamadas ao Supabase.
+          try {
+            const contactResult = await getRpcService().getPatientContact(appointmentPatientId)
+            const contactData = contactResult.status === 'success' && contactResult.data &&
+              typeof contactResult.data === 'object' && !Array.isArray(contactResult.data)
+              ? contactResult.data as Record<string, unknown> : null
+            const digits = typeof contactData?.phone === 'string'
+              ? contactData.phone.replace(/\D/g, '') : ''
+            if (!digits) {
+              whatsappReservation?.cancel()
+              whatsappFeedback = 'WhatsApp pendente: paciente sem telefone disponível. Verifique o cadastro e utilize o botão de aviso.'
+            } else if (!whatsappReservation) {
+              whatsappFeedback = 'O navegador bloqueou o WhatsApp. Autorize pop-ups e use o botão de aviso, sem reagendar.'
+            } else {
+              const phone = digits.startsWith('55') ? digits : `55${digits}`
+              const senderName = accessContext.real_identity.full_name?.trim()
+                || accessContext.full_name?.trim() || accessContext.username
+              const senderTitle = accessContext.function_title?.trim()
+                || accessContext.real_identity.function_title?.trim()
+                || accessContext.primary_context.name?.trim() || 'Equipe CAPO'
+              const patientName = appointmentPatientQuery
+              const message = appointmentType === 'Retorno'
+                ? movementWhatsAppMessage('retorno', {
+                  patientName, professionalName, newStart: validSlotStart,
+                  careLocation, senderName, senderTitle,
+                })
+                : appointmentNoticeMessage({
+                  patientName,
+                  specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? 'Especialidade não informada',
+                  slotStart: validSlotStart, careLocation, senderName, senderTitle,
+                })
+              const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`
+              whatsappFeedback = whatsappReservation.open(url)
+                ? 'WhatsApp aberto com o aviso preparado. Confira e envie manualmente.'
+                : 'A consulta foi salva, mas o WhatsApp não abriu. Use o botão de aviso sem reagendar.'
+            }
+          } catch {
+            whatsappReservation?.cancel()
+            whatsappFeedback = 'Consulta salva; não foi possível preparar o WhatsApp. Use o botão de aviso sem reagendar.'
+          }
+        } else {
+          whatsappReservation?.cancel()
+        }
+      } else {
+        whatsappReservation?.cancel()
       }
       if (prefillWaitingListId && appointmentId) {
         const completed = await getRpcService().completeWaitingListScheduling(
@@ -1598,7 +1656,7 @@ export function AgendaPage({
       }
       setAppointmentFeedback(locationWarning
         ? 'Agendamento criado, mas o local de atendimento não foi confirmado. Cadastre o endereço do profissional antes de enviar o WhatsApp.'
-        : 'Agendamento criado. Agenda recarregada do banco.')
+        : whatsappFeedback || 'Agendamento criado. Agenda recarregada do banco.')
       setAwaitingNextAppointmentChoice(!isProfessional)
       if (isProfessional) {
         setAppointmentPatientId('')
@@ -1611,8 +1669,10 @@ export function AgendaPage({
         setAppointmentNotes('')
       }
       await load()
-    } else if (result.status === 'error') {
-      setAppointmentFeedback(result.error.message)
+    } else {
+      whatsappReservation?.cancel()
+      if (result.status === 'error') setAppointmentFeedback(result.error.message)
+      else setAppointmentFeedback('Agendamento não confirmado no banco.')
     }
   }
 
