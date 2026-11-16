@@ -900,6 +900,7 @@ export function AgendaPage({
     contact: Omit<CommunicationContact, 'senderName' | 'senderTitle'>
   }> | null>(null)
   const [rescheduleNoticeBusy, setRescheduleNoticeBusy] = useState(false)
+  const [familyReturnNotice, setFamilyReturnNotice] = useState<{ phone: string; text: string } | null>(null)
   const [familyRescheduledNotice, setFamilyRescheduledNotice] = useState<Readonly<{
     professionalId: string
     phone: string
@@ -2979,6 +2980,16 @@ export function AgendaPage({
           </section>
         )}
 
+        {familyReturnNotice && (
+          <section className="agenda-schedule-form" aria-label="Aviso de retorno do Familiar/Cuidador">
+            <p>Retorno de Familiar/Cuidador registrado. Confira a mensagem e envie manualmente.</p>
+            <button type="button" onClick={() => {
+              const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(familyReturnNotice.phone)}&text=${encodeURIComponent(familyReturnNotice.text)}`
+              if (!openCapoWhatsAppTab(url)) setAppointmentFeedback('O navegador bloqueou o WhatsApp do retorno. Autorize a abertura e tente novamente.')
+            }}>💬 WhatsApp de retorno do Familiar/Cuidador</button>
+          </section>
+        )}
+
         {!isProfessional && familyRescheduledNotice && (
           <section id="agenda-family-movement-notice" className="agenda-schedule-form" aria-label="Comunicação de remarcação familiar">
             <p>Consulta do familiar/cuidador remarcada. Confira o aviso de alteração antes de continuar.</p>
@@ -3331,7 +3342,8 @@ export function AgendaPage({
                 const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
                 return family && (isProfessional || roleCodes.some((code) => ['administrador', 'administrativo_operacional'].includes(code)))
                   ? <FamilyPsychologyReturnAction key={appointmentId} family={family}
-                      accessContext={accessContext} onSaved={() => { void load() }} />
+                      accessContext={accessContext} onSaved={() => { void load() }}
+                      onNotice={setFamilyReturnNotice} onFeedback={setAppointmentFeedback} />
                   : null
               }}
               renderAdministrativeActions={!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
