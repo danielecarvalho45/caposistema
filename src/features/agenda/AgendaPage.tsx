@@ -1197,10 +1197,27 @@ export function AgendaPage({
     void loadPrevisitContacts()
   }, [canAccess, state, loadPrevisitContacts])
 
+  // Cartões de familiares da Psicologia: acesso geral para administração/
+  // coordenação ou acesso profissional somente com especialidade Psicologia.
+  // Não consultar essa RPC nos demais perfis (ex.: Assistência Social).
+  const canConsultFamilyPsychologyAgenda =
+    roleCodes.some((role) => ['administrador', 'administrativo_operacional', 'coordenador'].includes(role)) ||
+    (isProfessional && (
+      effectiveSpecialties.some((specialty) => specialty.specialty_name.trim().toLowerCase() === 'psicologia') ||
+      accessContext.primary_specialty_name?.trim().toLowerCase() === 'psicologia' ||
+      (accessContext.is_homologation_account &&
+        accessContext.homologation_context?.enabled &&
+        accessContext.homologation_context.specialty_name?.trim().toLowerCase() === 'psicologia')
+    ))
   // O familiar possui cadastro próprio; nunca abrimos a ficha do paciente de
   // origem como se fosse o atendimento psicológico do familiar.
   useEffect(() => {
-    if (!canAccess || (state.status !== 'success' && state.status !== 'empty')) return
+    if (!canAccess || !canConsultFamilyPsychologyAgenda ||
+      (state.status !== 'success' && state.status !== 'empty')) {
+      setFamilyPsychologyCards([])
+      setFamilyAgendaError('')
+      return
+    }
     let active = true
     const rpcClient = getSupabaseClient() as unknown as {
       rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>
@@ -1226,7 +1243,7 @@ export function AgendaPage({
       }
     })
     return () => { active = false }
-  }, [canAccess, state, startDate, endDate, professionalId])
+  }, [canAccess, canConsultFamilyPsychologyAgenda, state, startDate, endDate, professionalId])
 
   useEffect(() => {
     if (!canAccess || !professionalId) {
