@@ -740,7 +740,13 @@ export function GestorTeamPage({
         <fieldset><legend>Papéis</legend>{roles.map((role) => <label className="gestor-check" key={role.id}><input type="checkbox" checked={profile.roleCodes.includes(role.id)} onChange={(event) => toggleCodes('roleCodes', role.id, event.target.checked)} />{role.label}</label>)}</fieldset>
         <fieldset><legend>Especialidades</legend>{specialties.map((specialty) => <label className="gestor-check" key={specialty.id}><input type="checkbox" checked={profile.specialtyIds.includes(specialty.id)} onChange={(event) => toggleCodes('specialtyIds', specialty.id, event.target.checked)} />{specialty.label}</label>)}</fieldset>
         {service.createSpecialty && <div className="gestor-search-row"><label>Nova especialidade<input value={newSpecialty} onChange={(event) => setNewSpecialty(event.target.value)} placeholder="Digite uma especialidade ainda não cadastrada" /></label><button type="button" onClick={() => void addSpecialty()} disabled={!newSpecialty.trim()}>Cadastrar especialidade</button></div>}
-        <button className="gestor-primary-action" type="submit" disabled={submitting || careLocationLoading}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
+        <button className="gestor-primary-action" type="submit"
+          formNoValidate={Boolean(selected?.userAccountId && temporaryPassword &&
+            JSON.stringify(profile) === JSON.stringify(memberInput(selected)))}
+          disabled={submitting || (careLocationLoading && !(
+            selected?.userAccountId && temporaryPassword &&
+            JSON.stringify(profile) === JSON.stringify(memberInput(selected))
+          ))}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
         {selected && !selected.userAccountId && <button type="button" disabled={submitting} onClick={() => void createAccessForSelected()}>{submitting ? 'Processando…' : 'Criar acesso'}</button>}
       </form>
       ) : teamTab === 'agenda' ? (
