@@ -51,6 +51,9 @@ export function SocialHomeVisits({
   const [selected, setSelected] = useState('')
   const [visitTime, setVisitTime] = useState('')
   const [editingBlock, setEditingBlock] = useState('')
+  const [outcomeKey, setOutcomeKey] = useState('')
+  const [outcomeStatus, setOutcomeStatus] = useState('realizada')
+  const [outcomeReason, setOutcomeReason] = useState('')
 
   const call = useCallback(async (action: string, args: Record<string, unknown> = {}): Promise<Response> => {
     const { data, error } = await getSupabaseClient().rpc('manage_social_home_visits_for_interface', {
@@ -155,6 +158,31 @@ export function SocialHomeVisits({
     finally { setBusy(false) }
   }
 
+  async function saveOutcome(blockId: string, patientId: string) {
+    if (busy) return
+    if (['nao_realizada', 'cancelada'].includes(outcomeStatus) && outcomeReason.trim().length < 5) {
+      setFeedback('Informe a justificativa com pelo menos cinco caracteres.')
+      return
+    }
+    setBusy(true)
+    setFeedback('')
+    try {
+      const { data, error } = await getSupabaseClient().rpc(
+        'set_social_home_visit_outcome_for_interface', {
+          p_block_id: blockId, p_patient_id: patientId,
+          p_status: outcomeStatus, p_reason: outcomeReason.trim() || null,
+        },
+      )
+      if (error) throw error
+      if (!data || (data as Response).success !== true) throw new Error('O banco não confirmou o resultado da visita.')
+      setFeedback('Resultado da visita registrado com auditoria.')
+      setOutcomeKey('')
+      setOutcomeReason('')
+      await reload()
+    } catch (error) { setFeedback(errorText(error)) }
+    finally { setBusy(false) }
+  }
+
   return (
     <section className="agenda-pointual-actions" aria-label="Visita Domiciliar — Assistência Social">
       <h3>Visita Domiciliar — Assistência Social</h3>
@@ -190,7 +218,32 @@ export function SocialHomeVisits({
                 <div key={patient.patient_id}>
                   {patient.patient_name} {patient.patient_number ? `— CAPO ${patient.patient_number}` : ''}
                   {patient.visit_time ? ` — ${String(patient.visit_time).slice(0,5)}` : ''}
+                  <span> — Situação: {patient.status.replace(/_/g, ' ')}</span>
+                  <button type="button" disabled={busy} onClick={() => {
+                    const key = `${visit.block_id}:${patient.patient_id}`
+                    setOutcomeKey(outcomeKey === key ? '' : key)
+                    setOutcomeStatus(patient.status)
+                    setOutcomeReason('')
+                  }}>Registrar resultado</button>
                   <button type="button" disabled={busy} onClick={() => void changePatient(visit.block_id, patient.patient_id, 'remove')}>Retirar paciente</button>
+                  {outcomeKey === `${visit.block_id}:${patient.patient_id}` && (
+                    <div>
+                      <label>Situação da visita
+                        <select value={outcomeStatus} onChange={(event) => setOutcomeStatus(event.target.value)}>
+                          <option value="programada">Programada</option>
+                          <option value="realizada">Realizada</option>
+                          <option value="nao_realizada">Não realizada</option>
+                          <option value="cancelada">Cancelada</option>
+                        </select>
+                      </label>
+                      {['nao_realizada', 'cancelada'].includes(outcomeStatus) && (
+                        <label>Justificativa
+                          <textarea value={outcomeReason} onChange={(event) => setOutcomeReason(event.target.value)} />
+                        </label>
+                      )}
+                      <button type="button" disabled={busy} onClick={() => void saveOutcome(visit.block_id, patient.patient_id)}>Salvar resultado da visita</button>
+                    </div>
+                  )}
                 </div>
               ))}
               <button type="button" disabled={busy} onClick={() => { setEditingBlock(editingBlock === visit.block_id ? '' : visit.block_id); setCandidates([]); setSelected('') }}>
