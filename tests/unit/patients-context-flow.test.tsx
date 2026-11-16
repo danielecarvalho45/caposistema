@@ -184,6 +184,32 @@ it('localiza Familiar/Cuidador na busca de pacientes sem confundir o ID do famil
   expect(rpc.getPatientForEdit).not.toHaveBeenCalled()
 })
 
+it('exibe resultado misto sem selecionar o paciente como se fosse o familiar', async () => {
+  rpc.searchReferralPatients.mockResolvedValue({
+    status: 'success',
+    data: [{
+      patient_id: 'patient-real-id', full_name: 'Pessoa com nome semelhante',
+      patient_number: '25', cms: null,
+    }],
+  })
+  familySearchRpc.mockResolvedValue({
+    data: [{
+      family_member_id: 'family-real-id', full_name: 'Familiar com nome semelhante',
+      capo_number: '26', cms: null,
+      source_patient_id: 'patient-source-id',
+      source_patient_name: 'Pessoa de origem',
+    }], error: null,
+  })
+  const user = userEvent.setup()
+  render(<MemoryRouter><PatientsPage accessContext={context} /></MemoryRouter>)
+  await user.click(screen.getByRole('button', { name: 'Consultar' }))
+  await user.type(screen.getByPlaceholderText('Nome, CMS ou Nº CAPO exato'), 'semelhante')
+  await user.click(screen.getByRole('button', { name: 'Buscar' }))
+  expect(await screen.findByText('Familiar com nome semelhante — Familiar/Cuidador')).toBeVisible()
+  expect(screen.getByText('Pessoa com nome semelhante')).toBeVisible()
+  expect(rpc.getPatientForEdit).not.toHaveBeenCalled()
+})
+
 it('abre o cadastro completo e mantém as ações no paciente consultado', async () => {
   rpc.getPatientDeathContext.mockResolvedValue({
     status: 'success',
