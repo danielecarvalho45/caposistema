@@ -75,16 +75,15 @@ describe('SocialPage', () => {
     expect(
       screen.getByRole('link', { name: /Familiar \/ Cuidador/i }),
     ).toHaveAttribute('href', '/familiar-cuidador')
-    expect(screen.getByText('Faltosos seguem fluxo próprio')).toBeVisible()
+    expect(screen.queryByText('Faltosos seguem fluxo próprio')).not.toBeInTheDocument()
   })
 
-  it('encaminha ao Luto real sem simular registros de outros módulos', async () => {
+  it('mantém o acesso ao acompanhamento nos atalhos e Luto apenas na navegação lateral', async () => {
     render(<MemoryRouter><SocialPage accessContext={accessContext} loadSpecialties={loadSocialSpecialties} /></MemoryRouter>)
-    await screen.findByRole('link', { name: /Luto/ })
-
-    expect(screen.getByRole('link', { name: /Luto/ })).toHaveAttribute('href', '/luto')
+    const followup = await screen.findByRole('link', { name: /Acompanhamento Social no Serviço CAPO/i })
+    expect(followup).toHaveAttribute('href', '/assistencia-social')
+    expect(screen.queryByRole('link', { name: /^Luto$/i })).not.toBeInTheDocument()
     expect(screen.queryByText('Nenhum contrato de acompanhamento disponível.')).not.toBeInTheDocument()
-    expect(screen.queryByText('Nenhum registro encontrado.')).not.toBeInTheDocument()
   })
 
   it('abre a Home social usando o contexto principal autorizado sem depender de nova consulta', async () => {
