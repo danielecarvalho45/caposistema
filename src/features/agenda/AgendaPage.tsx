@@ -14,6 +14,7 @@ import {
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { FamilyPsychologyReturnAction } from './FamilyPsychologyReturnAction'
+import { FamilyLinkRebookingAction } from './FamilyLinkRebookingAction'
 import { SocialHomeVisits } from './SocialHomeVisits'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
@@ -995,6 +996,9 @@ export function AgendaPage({
   const navigationState = location.state && typeof location.state === 'object'
     ? location.state as Record<string, unknown>
     : null
+  const familyLinkRebookingId = navigationState?.origin === 'family_link_cancellation'
+    && typeof navigationState.appointmentId === 'string'
+    ? navigationState.appointmentId : ''
   const appointmentFromHistoryId = navigationState?.origin === 'patient_appointment_history' && typeof navigationState.appointmentId === 'string'
     ? navigationState.appointmentId
     : ''
@@ -2132,7 +2136,7 @@ export function AgendaPage({
     const renewalId =
       typeof stateValue?.renewalId === 'string' ? stateValue.renewalId : ''
     const origin = typeof stateValue?.origin === 'string' ? stateValue.origin : ''
-    if (origin === 'patient_link_cancellation') return
+    if (origin === 'patient_link_cancellation' || origin === 'family_link_cancellation') return
     const requestedSlotDate =
       typeof stateValue?.slotDate === 'string' ? stateValue.slotDate : ''
     const requestedSlotStart =
@@ -2978,6 +2982,12 @@ export function AgendaPage({
               </div>
             )}
           </section>
+        )}
+
+        {!isProfessional && familyLinkRebookingId && roleCodes.some((role) =>
+          ['administrador', 'administrativo_operacional'].includes(role)) && (
+          <FamilyLinkRebookingAction appointmentId={familyLinkRebookingId}
+            accessContext={accessContext} onSaved={() => { void load() }} />
         )}
 
         {familyReturnNotice && (
