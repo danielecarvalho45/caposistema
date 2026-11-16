@@ -440,14 +440,19 @@ describe('GestorTeamPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Profissional ativo/ }))
     fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/),
       { target: { value: 'NovaSenha2026' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
-    await waitFor(() => expect(update).toHaveBeenCalledWith(professionalId, expect.any(Object)))
-    await waitFor(() => expect(resetTemporaryPassword).toHaveBeenCalledWith(
-      professionalId, 'NovaSenha2026', '',
-    ))
-    expect(create).not.toHaveBeenCalled()
-    expect(await screen.findByRole('status')).toHaveTextContent('senha provisória salva no Supabase Auth')
-    expect(screen.getByLabelText(/Conta de acesso: senha provisória/)).toHaveValue('')
+    const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+      await waitFor(() => expect(resetTemporaryPassword).toHaveBeenCalledWith(
+        professionalId, 'NovaSenha2026', '',
+      ))
+      expect(update).not.toHaveBeenCalled()
+      expect(create).not.toHaveBeenCalled()
+      expect(await screen.findByRole('status')).toHaveTextContent('Senha provisória salva no Supabase Auth')
+      expect(screen.getByLabelText(/Conta de acesso: senha provisória/)).toHaveValue('')
+    } finally {
+      confirmation.mockRestore()
+    }
   })
 
   it('ao salvar sem senha preserva credencial de uma conta existente', async () => {
@@ -532,6 +537,38 @@ describe('GestorTeamPage', () => {
     expect(field).toHaveAttribute('type', 'password')
     expect(field).toHaveValue('SenhaTeste2026')
     expect(resetTemporaryPassword).not.toHaveBeenCalled()
+  })
+
+  it('não confirma senha salva quando a operação Auth não retorna ok', async () => {
+    const professionalId = 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0'
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const update = vi.fn(success)
+    const resetTemporaryPassword = vi.fn(async () => ({ status: 'success' as const, data: {} }))
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success', data: {
+        team: [{ professional_id: professionalId, user_account_id: '76898c6a-90fc-4300-ac09-f5430814eaea',
+          full_name: 'Profissional ativo', function_title: 'Atendimento', username: 'profissional.ativo',
+          recovery_email: 'pessoa@exemplo.org', status: 'ativo', is_professional: false,
+          roles: [{ code: 'profissional' }] }],
+        roles: [{ code: 'profissional', name: 'Profissional' }], specialties: [],
+      } }),
+      create: success, update, resetTemporaryPassword, setActive: success, getCapabilities: success,
+      setPrimaryContext: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    try {
+      render(<GestorTeamPage service={service} mode="administracao" />)
+      fireEvent.click(await screen.findByRole('button', { name: /Profissional ativo/ }))
+      fireEvent.change(screen.getByLabelText(/Conta de acesso: senha provisória/), { target: { value: 'NovaSenha2026' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Salvar alterações' }))
+      await waitFor(() => expect(resetTemporaryPassword).toHaveBeenCalledTimes(1))
+      expect(update).not.toHaveBeenCalled()
+      expect(await screen.findByRole('status')).toHaveTextContent('Não foi possível confirmar a gravação')
+      expect(screen.getByLabelText(/Conta de acesso: senha provisória/)).toHaveValue('NovaSenha2026')
+    } finally {
+      confirmation.mockRestore()
+    }
   })
 
 })
