@@ -164,7 +164,7 @@ export type AccessAuthApi = Readonly<{
   verifyUsernamePassword: (username: string, password: string) => Promise<void>
   resetPasswordForEmail: (email: string, redirectTo: string) => Promise<void>
   verifyRecoveryCode: (email: string, code: string) => Promise<void>
-  updatePassword: (password: string) => Promise<void>
+  updatePassword: (password: string, currentPassword?: string) => Promise<void>
   signOut: (scope?: 'local' | 'global') => Promise<void>
   onAuthStateChange: (
     callback: (event: AuthChangeEvent, session: Session | null) => void,
@@ -254,8 +254,11 @@ export function createAccessAuthApi(
       if (error) throw error
       if (!data.session) throw new AccessAuthError('O código não iniciou a sessão de recuperação.')
     },
-    async updatePassword(password) {
-      const { error } = await client.auth.updateUser({ password })
+    async updatePassword(password, currentPassword) {
+      const { error } = await client.auth.updateUser({
+        password,
+        ...(currentPassword ? { current_password: currentPassword } : {}),
+      })
       if (error) throw error
     },
     async signOut(scope = 'global') {
