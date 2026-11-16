@@ -13,6 +13,7 @@ import {
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
+import { FamilyPsychologyReturnAction } from './FamilyPsychologyReturnAction'
 import { SocialHomeVisits } from './SocialHomeVisits'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
@@ -342,6 +343,7 @@ function HomeScheduleGrid({
   groupSessions,
   familyAppointments,
   renderAdministrativeActions,
+  renderFamilyReturnAction,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
   startDate: string
@@ -359,6 +361,7 @@ function HomeScheduleGrid({
   groupSessions?: readonly PsychologyGroupSession[]
   familyAppointments?: readonly Record<string, unknown>[]
   renderAdministrativeActions?: (appointmentId: string) => ReactNode
+  renderFamilyReturnAction?: (appointmentId: string) => ReactNode
 }>) {
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
@@ -479,6 +482,7 @@ function HomeScheduleGrid({
                   <td data-label="Ações" className="agenda-attendance-actions">
                     {group && <a href={`#grupo-${group.group_id}-${group.date}`}>Ver participantes e ações administrativas</a>}
                     {!group && slot.slot_status === 'agendado' && slot.appointment_id && renderAdministrativeActions?.(slot.appointment_id)}
+                    {!group && slot.appointment_id && renderFamilyReturnAction?.(slot.appointment_id)}
                     {slot.slot_status === 'livre' && onSchedule && (
                       <button type="button" className="agenda-slot-schedule-button" onClick={() => onSchedule(slot)}>
                         Agendar
@@ -612,6 +616,7 @@ function HomeScheduleGrid({
                         <button type="button" className="agenda-slot-schedule-button agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)} aria-label={`Agendar retorno de ${patientName}`}>Agendar retorno</button>
                       )}
                       {!group && slot.slot_status === 'agendado' && slot.appointment_id && renderAdministrativeActions?.(slot.appointment_id)}
+                      {!group && slot.appointment_id && renderFamilyReturnAction?.(slot.appointment_id)}
                       {slot.slot_status === 'agendado' && patientIsVisible && slot.appointment_id && onCancel && (!appointment || ['agendado', 'confirmado'].includes(appointment.attendance_status)) && (
                         <button
                           type="button"
@@ -3293,6 +3298,13 @@ export function AgendaPage({
               previsitContacts={previsitContacts}
               groupSessions={psychologyGroupSessions}
               familyAppointments={familyPsychologyCards}
+              renderFamilyReturnAction={(appointmentId) => {
+                const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
+                return family && (isProfessional || roleCodes.some((code) => ['administrador', 'administrativo_operacional'].includes(code)))
+                  ? <FamilyPsychologyReturnAction key={appointmentId} family={family}
+                      accessContext={accessContext} onSaved={() => { void load() }} />
+                  : null
+              }}
               renderAdministrativeActions={!isProfessional && roleCodes.some((role) => ['administrador', 'administrativo_operacional'].includes(role))
                 ? (appointmentId) => {
                     const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
