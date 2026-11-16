@@ -509,4 +509,29 @@ describe('GestorTeamPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('Conta de acesso criada e vinculada')
   })
 
+  it('mostra e oculta apenas a senha provisória digitada, sem afetar o valor ou enviar senha', async () => {
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const resetTemporaryPassword = vi.fn(success)
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success', data: {
+        team: [], roles: [], specialties: [],
+      } }),
+      create: success, update: success, resetTemporaryPassword,
+      setActive: success, setPrimaryContext: success, getCapabilities: success,
+      setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    const field = await screen.findByLabelText(/Conta de acesso: senha provisória/)
+    expect(field).toHaveAttribute('type', 'password')
+    fireEvent.change(field, { target: { value: 'SenhaTeste2026' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar senha provisória' }))
+    expect(field).toHaveAttribute('type', 'text')
+    expect(field).toHaveValue('SenhaTeste2026')
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar senha provisória' }))
+    expect(field).toHaveAttribute('type', 'password')
+    expect(field).toHaveValue('SenhaTeste2026')
+    expect(resetTemporaryPassword).not.toHaveBeenCalled()
+  })
+
 })
