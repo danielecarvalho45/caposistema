@@ -1290,7 +1290,7 @@ export function OwnAgendaManager({
           </div>
           {showVisitBlocking && (
             <div id="configuracao-bloqueio-domiciliar">
-              <SocialHomeVisits professionalId={professionalId} mode="manage" />
+              <SocialHomeVisits professionalId={professionalId} mode="configure" />
             </div>
           )}
         </section>
