@@ -137,7 +137,7 @@ const managementActions = [
     value: 'horario_provisorio',
     icon: 'clock',
     label: 'Alterar horário do dia',
-    description: 'Mudar somente uma data, sem alterar o padrão semanal.',
+    description: 'Mudar temporariamente os horários nas datas selecionadas, sem alterar o padrão semanal.',
   },
   {
     value: 'bloqueio',
@@ -205,7 +205,7 @@ export function OwnAgendaManager({
     resolveProfessionalScreenKind(accessContext) === 'assistencia_social'
   )
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
-  const [configId, setConfigId] = useState('')
+  const [, setConfigId] = useState('')
   const [entryType, setEntryType] = useState('')
   const [showVisitBlocking, setShowVisitBlocking] = useState(false)
   useEffect(() => {
@@ -237,7 +237,7 @@ export function OwnAgendaManager({
     careLocation: string
   }> | null>(null)
   const [busy, setBusy] = useState(false)
-  const [pendingConfirmation, setPendingConfirmation] =
+  const [, setPendingConfirmation] =
     useState<PendingConfirmation | null>(null)
   const [structuralConfigId, setStructuralConfigId] = useState('')
   const [structuralExpectedUpdatedAt, setStructuralExpectedUpdatedAt] = useState('')
@@ -1258,8 +1258,8 @@ export function OwnAgendaManager({
 
       <section className="agenda-pointual-actions" aria-labelledby="agenda-pointual-actions-title">
         <div className="agenda-operation-heading">
-          <h4 id="agenda-pointual-actions-title">Ajustes pontuais de uma data</h4>
-          <p>Selecione uma ação para alterar somente uma data. O padrão semanal permanece inalterado.</p>
+          <h4 id="agenda-pointual-actions-title">Ajustes por período de datas</h4>
+          <p>Selecione uma ação, informe data inicial e final e o horário. O sistema respeita somente os dias de atendimento e mantém o padrão semanal.</p>
         </div>
         <div className="agenda-own-action-grid" aria-label="Ações temporárias da própria agenda">
           {managementActions
