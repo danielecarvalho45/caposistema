@@ -199,10 +199,18 @@ export function OwnAgendaManager({
 }: Props) {
   const { accessContext } = useAccessFlow()
   const rpc = useMemo(() => getRpcService(), [])
+  const socialHomeVisitsEligible = enableSocialHomeVisits || (
+    accessContext?.professional_id === professionalId &&
+    resolveProfessionalScreenKind(accessContext) === 'assistencia_social'
+  )
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
   const [configId, setConfigId] = useState('')
   const [entryType, setEntryType] = useState('')
   const [showVisitBlocking, setShowVisitBlocking] = useState(false)
+  useEffect(() => {
+    setShowVisitBlocking(false)
+  }, [professionalId])
+
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -1304,8 +1312,7 @@ export function OwnAgendaManager({
                 <strong>{action.label}</strong>
               </button>
             ))}
-          {(enableSocialHomeVisits || (accessContext?.professional_id === professionalId &&
-        resolveProfessionalScreenKind(accessContext) === 'assistencia_social')) && (
+          {socialHomeVisitsEligible && (
             <button
               type="button"
               className="agenda-own-action-card"
@@ -1327,8 +1334,7 @@ export function OwnAgendaManager({
             </button>
           )}
         </div>
-        {showVisitBlocking && (enableSocialHomeVisits || (accessContext?.professional_id === professionalId &&
-        resolveProfessionalScreenKind(accessContext) === 'assistencia_social')) && (
+        {showVisitBlocking && socialHomeVisitsEligible && (
           <div id="configuracao-bloqueio-domiciliar" className="agenda-own-visit-configuration">
             <SocialHomeVisits professionalId={professionalId} mode="configure" />
           </div>
