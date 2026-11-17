@@ -9195,3 +9195,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 - Testes unitários versionados: `AgendaPage.test.tsx` adaptado para NÃO esperar bloqueio na Home e mostrar agendamento de visita, commit `f00b78aa05c30de4380cbb3cfff7d81d64ee10e7`; `social-home-visits.test.tsx` testa modo `configure` sem agendamento e `schedule` sem criação duplicada, commit `bf7b651e8f9b5775508f69629dcf82e7348fd056`.
 
 **Verificação interna:** 13 invariantes estruturais foram conferidas no GitHub, **13/13 satisfeitas**, cobrindo separação das funções, busca e seleção do paciente, inclusão no bloqueio oficial, exclusividade da especialidade, ausência de horário individual e preservação dos testes. Não houve SQL de escrita, alteração de agendamento real, cadastro ou horário durante este ajuste; a separação entre profissionais reais/homologação no Supabase foi preservada. **Limite explícito:** sem checkout executável da aplicação nesta sessão, a suíte Vitest, typecheck, build, deployment Cloudflare e teste visual real não foram executados. **Estado:** código versionado e auditoria registrada; publicação/homologação visual pendentes.
+
+
+## 17/11/2026 — VERDE: botão de Bloqueio Visita Domiciliar na configuração da Natália pelo Gestor
+
+**Solicitação expressa:** corrigir primeiro o botão na configuração da agenda da Natália (Assistência Social) e manter a funcionalidade de bloqueio já programada. A investigação mais ampla da tela genérica de cadastro não faz parte desta autorização.
+
+**Diagnóstico:** Natália possui cadastro profissional ativo, conta autenticada ativa, especialidade principal `Assistência Social`, não é profissional de homologação. O componente `OwnAgendaManager` ocultava o botão ao verificar a especialidade do `accessContext` de quem acessava a configuração. Na tela Gestor/Titular, o contexto pertence ao Gestor e não ao profissional da agenda selecionada. Portanto não era defeito do registro da Natália.
+
+**Implementação cirúrgica:** adicionada prop opcional `enableSocialHomeVisits` a `OwnAgendaManager`, que permite o botão conforme a especialidade da agenda-alvo. `GestorTeamPage` passa a prop somente quando a especialidade cadastrada no profissional selecionado for Assistência Social (identificada pelo ID da especialidade e nome normalizado). Quando é a própria profissional acessando sua agenda, continua válida a checagem do contexto profissional vinculado. `SocialHomeVisits mode="configure"` e o bloqueio normal permanecem independentes, com a mesma interface, horários, proteção de remanejamento, pacientes e dados oficiais. Commits `0cc0e7063054f39347be0ee2525ab49ae6416d2e`, `ca012a10fac9dde239679d8e3d77cc59a6bc713e`.
+
+**Testes:** incluídos dois testes unitários de regressão em `tests/unit/OwnAgendaManager.test.tsx` (profissional de Assistência Social selecionado pelo Gestor exibe botão; outro profissional não exibe), commit `6c4eb2dea9598c381b49a1c6a03d7e59c135dbca`. Checagem estática 9/9 satisfeita. **Vitest, build, publicação Cloudflare e teste visual não executados nesta sessão.** Não declarar produção homologada antes de confirmá-los.
+
+**Escopo:** código e documento mestre somente, sem alterações na base Supabase, no cadastro da Natália ou em consultas. Isolamento de homologação preservado.
