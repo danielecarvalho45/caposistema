@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OwnAgendaManager } from '../../src/features/agenda/OwnAgendaManager'
 
+const backend = vi.hoisted(() => ({ rpc: vi.fn() }))
+
+vi.mock('../../src/lib/supabase/client', () => ({ getSupabaseClient: () => backend }))
+
 const rpc = vi.hoisted(() => ({
   getAgendaConfiguration: vi.fn(),
   saveAgendaConfiguration: vi.fn(),
@@ -52,6 +56,7 @@ const wednesdayFriday = {
 
 describe('OwnAgendaManager — padrões semanais flexíveis', () => {
   beforeEach(() => {
+    backend.rpc.mockResolvedValue({ data: { success: true, visits: [] }, error: null })
     rpc.getAgendaConfiguration
       .mockResolvedValueOnce({
         status: 'success',
@@ -90,15 +95,16 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
 
   it('não salva um bloqueio comum descrito como visita domiciliar', async () => {
     render(<OwnAgendaManager professionalId="natalia-id" allowStructuralEdit enableSocialHomeVisits />)
-    await screen.findByLabelText('Configuração')
+    await screen.findByRole('button', { name: 'Bloquear período' })
     fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
-    fireEvent.change(screen.getByLabelText('Configuração'), { target: { value: 'config-mon-tue' } })
-    fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2026-11-17' } })
-    fireEvent.change(screen.getAllByLabelText('Início').at(-1)!, { target: { value: '08:00' } })
-    fireEvent.change(screen.getAllByLabelText('Fim').at(-1)!, { target: { value: '09:00' } })
+    expect(screen.queryByLabelText('Configuração')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-11-17' } })
+    fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-11-17' } })
+    fireEvent.change(screen.getByLabelText('Horário inicial da alteração'), { target: { value: '08:00' } })
+    fireEvent.change(screen.getByLabelText('Horário final da alteração'), { target: { value: '09:00' } })
     fireEvent.change(screen.getByLabelText('Justificativa operacional'), { target: { value: 'VISITA DOMICILIAR' } })
     fireEvent.click(screen.getByRole('button', { name: 'Registrar alteração temporária' }))
-    expect(await screen.findByText(/O bloqueio comum não permite agendar pacientes/)).toBeVisible()
+    expect(await screen.findByText(/Bloqueios comuns permanecem separados/)).toBeVisible()
     expect(rpc.createAgendaBlock).not.toHaveBeenCalled()
   })
 
@@ -119,7 +125,7 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     expect(choices).toHaveLength(9)
     await user.click(within(pointual).getByRole('button', { name: 'Café / Intervalo' }))
     expect(within(pointual).getByRole('button', { name: 'Café / Intervalo' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByLabelText('Ação selecionada')).toHaveValue('Café / Intervalo')
+    expect(screen.getByText(/Café \/ Intervalo — a grade vigente/)).toBeVisible()
     expect(rpc.createAgendaBlock).not.toHaveBeenCalled()
   })
 
@@ -206,9 +212,10 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
     rpc.getAgendaConfiguration.mockResolvedValue({
       status: 'success', data: { configurations: [{ ...mondayTuesday, config_id: 'doctor-config' }] },
     })
-    rpc.createAgendaBlock.mockResolvedValue({
-      status: 'success',
-      data: { success: false, requires_remanejamento: true, affected_appointments: 1 },
+    backend.rpc.mockResolvedValue({
+      data: { success: false, requires_remanejamento: true, affected_appointments: 1,
+        affected_dates: [{ date: '2026-11-11', count: 1, config_id: 'doctor-config' }] },
+      error: null,
     })
     rpc.getAgendaBlockAffected.mockResolvedValue({ status: 'success', data: affected })
   })
@@ -216,13 +223,12 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
   afterEach(() => { cleanup(); vi.clearAllMocks() })
 
   async function requestBlock() {
-    await screen.findByLabelText('Configuração')
-    await waitFor(() => expect(within(screen.getByLabelText('Configuração')).getByRole('option', { name: /Seg, Ter · 08:00–11:00/ })).toBeVisible())
+    await screen.findByRole('button', { name: 'Bloquear período' })
     fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
-    fireEvent.change(screen.getByLabelText('Configuração'), { target: { value: 'doctor-config' } })
-    fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2026-11-11' } })
-    fireEvent.change(screen.getAllByLabelText('Início').at(-1)!, { target: { value: '08:00' } })
-    fireEvent.change(screen.getAllByLabelText('Fim').at(-1)!, { target: { value: '09:00' } })
+    fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-11-11' } })
+    fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-11-11' } })
+    fireEvent.change(screen.getByLabelText('Horário inicial da alteração'), { target: { value: '08:00' } })
+    fireEvent.change(screen.getByLabelText('Horário final da alteração'), { target: { value: '09:00' } })
     fireEvent.change(screen.getByLabelText('Justificativa operacional'), { target: { value: 'Compromisso médico' } })
     fireEvent.click(screen.getByRole('button', { name: 'Registrar alteração temporária' }))
     await screen.findByText(/Paciente agendado/)
@@ -231,7 +237,9 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
   it('recusa o bloqueio e mostra ao médico a pendência sem permitir remarcação administrativa', async () => {
     render(<OwnAgendaManager professionalId="doctor-id" />)
     await requestBlock()
-    expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(1)
+    expect(backend.rpc).toHaveBeenCalledWith('create_agenda_period_for_interface',
+      expect.objectContaining({ p_professional_id: 'doctor-id', p_start_date: '2026-11-11',
+        p_end_date: '2026-11-11', p_entry_type: 'bloqueio' }))
     expect(rpc.getAgendaBlockAffected).toHaveBeenCalledWith('doctor-config', '2026-11-11', '08:00', '09:00')
     expect(screen.getByText(/Solicite ao Administrativo/)).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Remanejar esta consulta' })).not.toBeInTheDocument()
@@ -245,13 +253,14 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
     rpc.getAgendaBlockAffected
       .mockResolvedValueOnce({ status: 'success', data: affected })
       .mockResolvedValue({ status: 'success', data: [] })
-    rpc.createAgendaBlock
-      .mockResolvedValueOnce({ status: 'success', data: { success: false, requires_remanejamento: true } })
-      .mockResolvedValue({ status: 'success', data: { success: true, block_id: 'block-1' } })
+    backend.rpc.mockResolvedValueOnce({
+      data: { success: false, requires_remanejamento: true,
+        affected_dates: [{ date: '2026-11-11', count: 1, config_id: 'doctor-config' }] }, error: null,
+    }).mockResolvedValue({ data: { success: true, created_count: 1 }, error: null })
 
     render(<OwnAgendaManager professionalId="doctor-id" allowStructuralEdit />)
     await requestBlock()
-    expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(1)
+    expect(backend.rpc).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: 'Remanejar esta consulta' }))
     fireEvent.change(screen.getByLabelText('Nova data'), { target: { value: '2026-11-12' } })
     await screen.findByRole('option', { name: '10:00' })
@@ -260,8 +269,38 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
     await waitFor(() => expect(rpc.rescheduleAppointment).toHaveBeenCalledWith(expect.objectContaining({
       appointmentId: 'appointment-1', origin: 'bloqueio_agenda',
     })))
-    expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(1)
+    expect(backend.rpc).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: 'Registrar alteração temporária' }))
-    await waitFor(() => expect(rpc.createAgendaBlock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(backend.rpc).toHaveBeenCalledTimes(2))
+  })
+})
+
+describe('OwnAgendaManager — intervalo de datas sem seletor de configuração', () => {
+  beforeEach(() => {
+    backend.rpc.mockResolvedValue({ data: { success: true, created_count: 4 }, error: null })
+    rpc.getAgendaConfiguration.mockResolvedValue({ status: 'success',
+      data: { configurations: [mondayTuesday, wednesdayFriday] } })
+  })
+  afterEach(() => { cleanup(); vi.clearAllMocks() })
+
+  it('envia datas e horários à RPC atômica e mantém visita domiciliar independente', async () => {
+    render(<OwnAgendaManager professionalId="professional-id" />)
+    await screen.findByRole('button', { name: 'Bloquear período' })
+    fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
+    expect(screen.queryByLabelText('Configuração')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-11-20' } })
+    fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-11-30' } })
+    fireEvent.change(screen.getByLabelText('Horário inicial da alteração'), { target: { value: '09:00' } })
+    fireEvent.change(screen.getByLabelText('Horário final da alteração'), { target: { value: '12:00' } })
+    fireEvent.change(screen.getByLabelText('Justificativa operacional'), { target: { value: 'Bloqueio programado' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar alteração temporária' }))
+    await waitFor(() => expect(backend.rpc).toHaveBeenCalledWith('create_agenda_period_for_interface',
+      expect.objectContaining({
+        p_professional_id: 'professional-id', p_start_date: '2026-11-20',
+        p_end_date: '2026-11-30', p_start_time: '09:00',
+        p_end_time: '12:00', p_entry_type: 'bloqueio',
+      })))
+    expect(rpc.createAgendaBlock).not.toHaveBeenCalled()
+    expect(await screen.findByText(/4 alteração\(ões\) registrada\(s\)/)).toBeVisible()
   })
 })
