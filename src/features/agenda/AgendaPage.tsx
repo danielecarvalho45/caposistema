@@ -1132,7 +1132,9 @@ export function AgendaPage({
   const specialtyOptions = Array.from(
     new Map(catalogRows.map((row) => [row.specialty_id, row.specialty_name])),
   )
-  const socialProfessionalSelected = !isProfessional && Boolean(selectedProfessionalId) && catalogRows.some((row) =>
+  const socialProfessionalSelected = !isProfessional &&
+    roleCodes.some((code) => code === 'administrador' || code === 'administrativo_operacional') &&
+    Boolean(selectedProfessionalId) && catalogRows.some((row) =>
     row.professional_id === selectedProfessionalId &&
     row.specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('assistencia social'))
   const professionalOptions = Array.from(
