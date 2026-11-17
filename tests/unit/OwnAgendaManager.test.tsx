@@ -76,6 +76,17 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     vi.clearAllMocks()
   })
 
+  it('mostra bloqueio domiciliar na configuração da profissional alvo selecionada pelo Gestor', async () => {
+    render(<OwnAgendaManager professionalId="natalia-id" allowStructuralEdit enableSocialHomeVisits />)
+    expect(await screen.findByRole('button', { name: 'Bloquear para Visita Domiciliar' })).toBeVisible()
+    expect(screen.getByRole('region', { name: 'Configuração de bloqueio domiciliar' })).toBeVisible()
+  })
+
+  it('não inclui bloqueio domiciliar para profissional de outra especialidade', async () => {
+    render(<OwnAgendaManager professionalId="psicologia-id" allowStructuralEdit />)
+    expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' })).not.toBeInTheDocument()
+  })
+
   it('exibe ajustes pontuais depois da configuração permanente e mantém as nove ações acessíveis', async () => {
     const user = userEvent.setup()
     render(<OwnAgendaManager professionalId="professional-id" allowStructuralEdit allowEmergencySlot />)
