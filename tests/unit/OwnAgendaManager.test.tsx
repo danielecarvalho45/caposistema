@@ -88,6 +88,20 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     expect(screen.getByRole('button', { name: 'Bloquear período' })).toBeVisible()
   })
 
+  it('não salva um bloqueio comum descrito como visita domiciliar', async () => {
+    render(<OwnAgendaManager professionalId="natalia-id" allowStructuralEdit enableSocialHomeVisits />)
+    await screen.findByLabelText('Configuração')
+    fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
+    fireEvent.change(screen.getByLabelText('Configuração'), { target: { value: 'config-mon-tue' } })
+    fireEvent.change(screen.getByLabelText('Data'), { target: { value: '2026-11-17' } })
+    fireEvent.change(screen.getAllByLabelText('Início').at(-1)!, { target: { value: '08:00' } })
+    fireEvent.change(screen.getAllByLabelText('Fim').at(-1)!, { target: { value: '09:00' } })
+    fireEvent.change(screen.getByLabelText('Justificativa operacional'), { target: { value: 'VISITA DOMICILIAR' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar alteração temporária' }))
+    expect(await screen.findByText(/O bloqueio comum não permite agendar pacientes/)).toBeVisible()
+    expect(rpc.createAgendaBlock).not.toHaveBeenCalled()
+  })
+
   it('não inclui bloqueio domiciliar para profissional de outra especialidade', async () => {
     render(<OwnAgendaManager professionalId="psicologia-id" allowStructuralEdit />)
     expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' })).not.toBeInTheDocument()
