@@ -2641,7 +2641,8 @@ export function AgendaPage({
               </div>
             )}
             {socialProfessionalSelected && socialVisitMode && !awaitingNextAppointmentChoice ? (
-              <SocialHomeVisits administrative professionalId={selectedProfessionalId} />
+              <SocialHomeVisits administrative professionalId={selectedProfessionalId}
+                preselectedPatientId={appointmentPatientId} preselectedPatientName={appointmentPatientQuery} />
             ) : (
               <>
             {!isProfessional && schedulingCatalog.status === 'error' && <p role="alert">{schedulingCatalog.error.message}</p>}
