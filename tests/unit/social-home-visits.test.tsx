@@ -72,7 +72,7 @@ describe('Visita Domiciliar na agenda oficial', () => {
     await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
     expect(backend.searchProfessionalPatients).toHaveBeenCalled()
     await user.selectOptions(screen.getByLabelText('Paciente'), 'patient-1')
-    await user.click(screen.getByRole('button', { name: 'Vincular paciente' }))
+    await user.click(screen.getByRole('button', { name: 'Agendar visita domiciliar' }))
     expect(await screen.findByText(/1 paciente\(s\) programado\(s\)/)).toBeVisible()
     expect(screen.getByText('Endereço: Rua Exemplo, 25')).toBeVisible()
     expect(screen.getByText('Telefone: 35999999999')).toBeVisible()
@@ -80,6 +80,28 @@ describe('Visita Domiciliar na agenda oficial', () => {
     const addCall = backend.rpc.mock.calls.find((call) => call[1]?.p_action === 'add')
     expect(addCall?.[1]?.p_visit_time).toBeNull()
     expect(backend.rpc.mock.calls.filter((call) => call[1]?.p_action === 'create')).toHaveLength(1)
+  })
+
+  it('agenda paciente já selecionado na visita bloqueada sem novo slot nem horário individual', async () => {
+    backend.rpc.mockImplementation(async (_name: string, args: { p_action: string }) => ({
+      data: args.p_action === 'list'
+        ? { success: true, visits: [block] }
+        : { success: true }, error: null,
+    }))
+    const user = userEvent.setup()
+    render(<SocialHomeVisits administrative professionalId="professional-1"
+      preselectedPatientId="patient-1" preselectedPatientName="Paciente de teste" />)
+    await user.click(await screen.findByRole('button', {
+      name: 'Agendar visita domiciliar de Paciente de teste neste período',
+    }))
+    await waitFor(() => expect(backend.rpc).toHaveBeenCalledWith(
+      'manage_social_home_visits_for_interface',
+      expect.objectContaining({
+        p_action: 'add', p_professional_id: 'professional-1',
+        p_patient_id: 'patient-1', p_block_id: 'block-1', p_visit_time: null,
+      }),
+    ))
+    expect(backend.rpc.mock.calls.some((call) => call[1]?.p_action === 'create')).toBe(false)
   })
 
   it('não considera bloqueio criado quando o banco exige remanejamento', async () => {
