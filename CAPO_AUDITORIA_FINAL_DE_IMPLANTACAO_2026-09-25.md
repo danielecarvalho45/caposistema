@@ -9279,3 +9279,21 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Conferência estática pós-commit:** 9/9 verificações satisfeitas por releitura dos três arquivos vigentes na branch `main`. **Não executados** Vitest, typecheck, build Cloudflare ou teste em sessão real do Ilton; não declarar homologação ou correção operacional concluída. Persistindo o mesmo erro com valores efetivamente distintos, investigar origem e texto exato antes de outra alteração.
 
 **Proteção:** nenhuma alteração de banco, credencial, conta, termo, agenda ou permissões; nenhum dado sensível lido ou exposto. Estado: CÓDIGO E TESTES VERSIONADOS; EXECUÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES.
+
+
+## 17/11/2026 — VERDE: distinguir bloqueio comum de período de Visita Domiciliar e orientar agendamento
+
+**Solicitação:** após cadastro do paciente, a opção de Visita Domiciliar não apresentava período disponível ao selecionar a profissional de Assistência Social; correção autorizada VERDE.
+
+**Evidência física:** Natália Cristina Gomes Pereira tem agenda ativa, mas nenhuma entrada ativa `agenda_blocks.block_type='visita_domiciliar'`. Existe um bloqueio comum ativo em 18/11/2026, 09:00–12:00, com `block_type='bloqueio'` e descrição `VISITA DOMICILIAR`. A RPC oficial `manage_social_home_visits_for_interface`, em `create`, grava exclusivamente `visita_domiciliar`; `list` e `add` consultam/vinculam somente esse tipo. Assim, uma descrição textual de visita em bloqueio comum não cria período disponível. Causa comprovada da ausência de períodos; não há prova de defeito na RPC. Não classificar o agendamento como concluído.
+
+**Correção cirúrgica sem alteração de banco:**
+- `src/features/agenda/OwnAgendaManager.tsx`: quando a agenda-alvo é de Assistência Social, impede gravar por meio de um ajuste comum uma descrição "visita domiciliar", apresentando orientação para usar o botão exclusivo `Bloquear para Visita Domiciliar`. Bloqueios comuns legítimos de outras finalidades e de outros perfis preservados. Commit `75282ef0f054c77475cf1a9dcff1b833e34160b6`.
+- `src/features/agenda/SocialHomeVisits.tsx`: na agenda de visitas sem blocos específicos, explica como reservar o período correto na Configuração de Agenda antes de incluir paciente e informa que bloqueios comuns não são convertidos automaticamente. Após um `create` bem-sucedido, orienta incluir pacientes pela agenda oficial sem horário individual. Commit `74dd68ab54052141053c91660844fc873ceeff8b`.
+- Testes de regressão adicionados em `tests/unit/social-home-visits.test.tsx` (ausência de bloco sem gravação) e `tests/unit/OwnAgendaManager.test.tsx` (não enviar `createAgendaBlock` quando bloqueio comum recebeu descrição de visita). Commits `495835958b256071e12b76be4ceedb7bf45ac91f` e `8906d3107a98bbc4850b7e69b23bf1c11f82b377`.
+
+**Conferência:** releitura dos quatro arquivos no GitHub `main`, 9/9 condições estáticas verificadas; não houve execução local de Vitest, build, deploy Cloudflare ou teste visual. Preservadas RPC e trava de remanejamento, `p_visit_time=null`, ausência de agenda paralela, isolamento do `manuteste` e registros reais.
+
+**Pendência operacional separada:** o bloqueio comum existente de 18/11, 09:00–12:00, permanece como estava. Não o converter automaticamente, não sobrepor outro bloqueio, nem apagar histórico. Para agendar visitas nessa mesma faixa, é necessária regularização controlada do bloqueio existente e posterior criação de período exclusivo via configuração, com verificação prévia de conflitos e remanejamento. Não declarar que esse período já está disponível.
+
+**Estado:** código/testes versionados e protegidos, publicação/homologação operacionais pendentes; banco de produção inalterado.
