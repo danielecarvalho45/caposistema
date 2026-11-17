@@ -97,6 +97,7 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     render(<OwnAgendaManager professionalId="natalia-id" allowStructuralEdit enableSocialHomeVisits />)
     await screen.findByRole('button', { name: 'Bloquear período' })
     fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
+    await screen.findByLabelText('Data inicial')
     expect(screen.queryByLabelText('Configuração')).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-11-17' } })
     fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-11-17' } })
@@ -225,6 +226,7 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
   async function requestBlock() {
     await screen.findByRole('button', { name: 'Bloquear período' })
     fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
+    await screen.findByLabelText('Data inicial')
     fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-11-11' } })
     fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-11-11' } })
     fireEvent.change(screen.getByLabelText('Horário inicial da alteração'), { target: { value: '08:00' } })
@@ -287,6 +289,7 @@ describe('OwnAgendaManager — intervalo de datas sem seletor de configuração'
     render(<OwnAgendaManager professionalId="professional-id" />)
     await screen.findByRole('button', { name: 'Bloquear período' })
     fireEvent.click(screen.getByRole('button', { name: 'Bloquear período' }))
+    await screen.findByLabelText('Data inicial')
     expect(screen.queryByLabelText('Configuração')).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Data inicial'), { target: { value: '2026-11-20' } })
     fireEvent.change(screen.getByLabelText('Data final'), { target: { value: '2026-11-30' } })
