@@ -1837,31 +1837,3 @@
 }
 
 
-/* Atalho exclusivo da Assistência Social, acessível também na Home incorporada. */
-.agenda-own-visit-access {
-  margin: var(--space-3, .75rem) 0 var(--space-4, 1rem);
-}
-.agenda-own-visit-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2, .5rem);
-  min-height: 40px;
-  padding: .55rem .95rem;
-  border: 1px solid var(--color-brand-blue);
-  border-radius: var(--radius-medium);
-  background: var(--color-brand-blue);
-  color: #fff;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.agenda-own-visit-toggle:hover { filter: brightness(.96); }
-.agenda-own-visit-toggle:focus-visible {
-  outline: 2px solid var(--color-brand-blue);
-  outline-offset: 3px;
-}
-#agenda-own-visit-block { margin-top: var(--space-3, .75rem); }
-@media (max-width: 600px) {
-  .agenda-own-visit-toggle { width: 100%; }
-}
