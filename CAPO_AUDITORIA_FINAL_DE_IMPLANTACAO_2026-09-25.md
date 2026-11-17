@@ -9221,3 +9221,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificação:** releitura do código atual e dos testes, 11/11 invariantes estáticas satisfeitas. Consulta aos runs do GitHub para commit `d5c564b...` retornou lista vazia, sem comprovação de CI. Vitest, typecheck, build e publicação Cloudflare **não foram executados/confirmados nesta sessão**, tampouco teste visual com login da Natália. Pendência de homologação na interface publicada explicitamente mantida.
 
 **Estado:** correção de localização do botão em `main` versionada, teste de regressão adicionado e regra institucional preservada. Nenhuma mudança Supabase nesta rodada.
+
+
+## 17/11/2026 — VERDE: diagnóstico de publicação GitHub → Cloudflare Pages (sem intervenção na produção)
+
+**Motivo da autorização:** a titular confirmou que não viu o botão `Bloquear para Visita Domiciliar` nem a alteração no Cloudflare e autorizou verificar publicação e corrigir eventual obstáculo.
+
+**Evidência objetiva na API GitHub Actions:** o repositório `danielecarvalho45/caposistema` contém dois workflows em `.github/workflows/`: `validate-build.yml` (push em `main`, executa `npm ci` e `npm run build` em runner Node 24.21.0) e `backup-supabase-r2.yml`. **Não há workflow de publicação Cloudflare nesse diretório**; uma eventual publicação automática dependerá da integração Git com Cloudflare Pages mantida no painel Cloudflare.
+- A execução `Validate production build` do commit `e45cc24f79c9f64c5fd2e1e4142e80a375a30708` foi marcada `failure` em 17/11/2026, run **44103509410**, job **134109559807**. Outros commits da correção também falharam.
+- API `/actions/runs?per_page=100&page=1` trouxe **100/100 execuções com falha**, datadas de 16–17/11/2026; páginas 2 e 4 igualmente não apresentaram execuções `success` na amostra. Na página 6 foi observada uma execução bem-sucedida de 17/10/2026 (run **39042764519**, `Validate production build`).
+- Nos três runs mais recentes consultados, o job `npm run build` consta `failure` após cerca de 1–2 segundos, com `steps=[]`. Assim, **não existe prova de que o npm ci nem o npm run build tenham iniciado**; falha de inicialização/infraestrutura do GitHub Actions é hipótese a investigar no banner da execução, não conclusão causal.
+- Busca pelo conteúdo público de `https://caposistema.pages.dev/` e painel Actions pelo navegador público não obteve leitura nesta sessão. **Nenhum conector de gestão Cloudflare Pages está disponível** para inspecionar o último deploy, a integração ou acionar um deploy remoto. Não afirmar que o Cloudflare recusou build ou que a versão publicada contém determinado SHA sem essa evidência.
+
+**Encaminhamento necessário:** no GitHub Actions, abrir run 44103509410 e conferir mensagem de erro no topo (especialmente permissão, orçamento/limite, faturamento ou executor não provisionado); no painel Cloudflare Pages → projeto `caposistema` → Deployments, verificar branch `main`, commit do último deploy, estado e detalhes de build, integração Git e eventual Retry deployment. **Não reiniciar builds repetidamente nem alterar secrets sem evidências**. Corrigir conforme o erro real encontrado; após restabelecimento, confirmar por SHA que o build `main` mais recente foi implantado e homologar visualmente o botão na configuração da Natália.
+
+**Estado:** verificação de GitHub realizada; problema de validação de GitHub Actions confirmado, causa específica e estado de Cloudflare não verificáveis nesta sessão. Nenhum dado Supabase, acesso, agenda ou código funcional alterado nesta etapa. Não declarar publicação concluída.
