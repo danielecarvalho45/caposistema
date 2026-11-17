@@ -2525,6 +2525,7 @@ export function AgendaPage({
                   disabled={professionalOptions.length === 0}
                   onChange={(event) => {
                     setSelectedProfessionalId(event.target.value)
+                    setSocialVisitMode(false)
                     setState(loadingState())
                     setScheduleGrid(loadingState())
                   }}
@@ -2729,6 +2730,7 @@ export function AgendaPage({
                                     onChange={(event) => {
                                       setSelectedSpecialtyId(event.target.value)
                                       setSelectedProfessionalId('')
+                                      setSocialVisitMode(false)
                                       setSelectedSlotStart('')
                                     }}
                                   >
@@ -2746,6 +2748,7 @@ export function AgendaPage({
                                     onChange={(event) => {
                                       const professionalId = event.target.value
                                       setSelectedProfessionalId(professionalId)
+                                      setSocialVisitMode(false)
                                       if (professionalId && !selectedSpecialtyId) {
                                         const row = catalogRows.find((item) => item.professional_id === professionalId)
                                         if (row) setSelectedSpecialtyId(row.specialty_id)
