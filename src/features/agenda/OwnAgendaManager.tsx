@@ -837,6 +837,13 @@ export function OwnAgendaManager({
       return
     }
 
+    // O bloqueio comum não pode receber um rótulo de visita e tornar-se
+    // indistinguível do bloqueio específico, que é necessário ao agendamento.
+    if (socialHomeVisitsEligible && /visita\\s+domiciliar/i.test(description.normalize('NFD').replace(/[\\u0300-\\u036f]/g, ''))) {
+      setFeedback('Para reservar Visita Domiciliar, use o botão próprio "Bloquear para Visita Domiciliar" nos Ajustes pontuais. O bloqueio comum não permite agendar pacientes para a visita.')
+      return
+    }
+
     setBusy(true)
     setFeedback(null)
     setNeedsRemanejamento(false)
