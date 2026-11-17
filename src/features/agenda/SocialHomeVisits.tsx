@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
@@ -44,6 +44,7 @@ export function SocialHomeVisits({
 }>) {
   const target = professionalId ?? ''
   const [visits, setVisits] = useState<Visit[]>([])
+  const listSequence = useRef(0)
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -71,16 +72,16 @@ export function SocialHomeVisits({
   }, [target, professionalId])
 
   const reload = useCallback(async () => {
-    if (!target && !professionalId) {
-      setVisits([])
-      return
-    }
+    const sequence = ++listSequence.current
+    setVisits([])
+    if (!target && !professionalId) return
     try {
       const result = await call('list')
+      if (sequence !== listSequence.current) return
       if (!result.success) throw new Error(result.message ?? 'Falha ao consultar visitas.')
       setVisits(result.visits ?? [])
     } catch (error) {
-      setFeedback(errorText(error))
+      if (sequence === listSequence.current) setFeedback(errorText(error))
     }
   }, [call, target, professionalId])
 
