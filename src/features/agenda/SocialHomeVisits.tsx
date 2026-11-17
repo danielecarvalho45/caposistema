@@ -42,7 +42,7 @@ export function SocialHomeVisits({
   administrative?: boolean
   preselectedPatientId?: string
   preselectedPatientName?: string
-  mode?: 'manage' | 'schedule'
+  mode?: 'configure' | 'manage' | 'schedule'
 }>) {
   const target = professionalId ?? ''
   const [visits, setVisits] = useState<Visit[]>([])
@@ -185,7 +185,7 @@ export function SocialHomeVisits({
         : 'Reserve o período para visitas externas na agenda oficial. Os pacientes não precisam de horário individual: o motorista organiza a rota.'}</p>
       {Boolean(target || professionalId) && (
         <>
-          {mode === 'manage' && (<>
+          {mode !== 'schedule' && (<>
           <div className="agenda-operation-heading">
             <label>Data <CapoDateInput value={date} onChange={(event) => setDate(event.target.value)} /></label>
             <label>Início <CapoTimeInput value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
@@ -243,16 +243,16 @@ export function SocialHomeVisits({
                   </>)}
                 </div>
               ))}
-              {preselectedPatientId && !visit.patients.some((patient) => patient.patient_id === preselectedPatientId) && (
+              {mode !== 'configure' && preselectedPatientId && !visit.patients.some((patient) => patient.patient_id === preselectedPatientId) && (
                 <button type="button" disabled={busy}
                   onClick={() => void changePatient(visit.block_id, preselectedPatientId, 'add')}>
                   Agendar visita domiciliar de {preselectedPatientName || 'paciente selecionado'} neste período
                 </button>
               )}
-              <button type="button" disabled={busy} onClick={() => { setEditingBlock(editingBlock === visit.block_id ? '' : visit.block_id); setCandidates([]); setSelected('') }}>
+              {mode !== 'configure' && (!preselectedPatientId || mode === 'manage') && <button type="button" disabled={busy} onClick={() => { setEditingBlock(editingBlock === visit.block_id ? '' : visit.block_id); setCandidates([]); setSelected('') }}>
                 {editingBlock === visit.block_id ? 'Fechar inclusão' : 'Adicionar pacientes'}
-              </button>
-              {editingBlock === visit.block_id && (
+              </button>}
+              {mode !== 'configure' && editingBlock === visit.block_id && (
                 <div>
                   <label>Buscar paciente CAPO
                     <input value={query} placeholder="Nome ou nº CAPO" onChange={(event) => setQuery(event.target.value)} />
