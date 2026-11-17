@@ -89,8 +89,10 @@ describe('Visita Domiciliar na agenda oficial', () => {
         : { success: true }, error: null,
     }))
     const user = userEvent.setup()
-    render(<SocialHomeVisits administrative professionalId="professional-1"
+    render(<SocialHomeVisits administrative professionalId="professional-1" mode="schedule"
       preselectedPatientId="patient-1" preselectedPatientName="Paciente de teste" />)
+    expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Horário 24h')).not.toBeInTheDocument()
     await user.click(await screen.findByRole('button', {
       name: 'Agendar visita domiciliar de Paciente de teste neste período',
     }))
