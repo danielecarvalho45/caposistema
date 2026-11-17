@@ -84,7 +84,7 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
   it('mostra bloqueio domiciliar na configuração da profissional alvo selecionada pelo Gestor', async () => {
     render(<OwnAgendaManager professionalId="natalia-id" allowStructuralEdit enableSocialHomeVisits />)
     expect(await screen.findByRole('button', { name: 'Bloquear para Visita Domiciliar' })).toBeVisible()
-    const actions = screen.getByRole('region', { name: 'Ajustes pontuais de uma data' })
+    const actions = screen.getByRole('region', { name: 'Ajustes por período de datas' })
     expect(within(actions).getAllByRole('button')).toHaveLength(10)
     const button = within(actions).getByRole('button', { name: 'Bloquear para Visita Domiciliar' })
     expect(button).toHaveAttribute('aria-expanded', 'false')
@@ -111,7 +111,7 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
   it('não inclui bloqueio domiciliar para profissional de outra especialidade', async () => {
     render(<OwnAgendaManager professionalId="psicologia-id" allowStructuralEdit />)
     expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' })).not.toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: 'Ajustes pontuais de uma data' })).getAllByRole('button')).toHaveLength(9)
+    expect(within(screen.getByRole('region', { name: 'Ajustes por período de datas' })).getAllByRole('button')).toHaveLength(9)
   })
 
   it('exibe ajustes pontuais depois da configuração permanente e mantém as nove ações acessíveis', async () => {
@@ -119,7 +119,7 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     render(<OwnAgendaManager professionalId="professional-id" allowStructuralEdit allowEmergencySlot />)
     await screen.findByRole('option', { name: /Seg, Ter · 08:00–11:00 · Ativo/ })
     const structural = screen.getByRole('region', { name: 'Configuração semanal permanente' })
-    const pointual = screen.getByRole('region', { name: 'Ajustes pontuais de uma data' })
+    const pointual = screen.getByRole('region', { name: 'Ajustes por período de datas' })
     expect(structural.compareDocumentPosition(pointual) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const choices = within(pointual).getAllByRole('button')
     expect(choices).toHaveLength(9)
