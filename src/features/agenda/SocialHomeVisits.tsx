@@ -4,8 +4,7 @@ import { getRpcService } from '../../lib/supabase/rpc'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { CapoTimeInput } from '../../components/inputs/CapoTimeInput'
 
-type Professional = { id: string; name: string }
-type VisitPatient = { patient_id: string; patient_name: string; patient_number: string | null; visit_time: string | null; status: string }
+type VisitPatient = { patient_id: string; patient_name: string; patient_number: string | null; address: string | null; phone: string | null; status: string }
 type Visit = {
   block_id: string
   date: string
@@ -21,7 +20,6 @@ type Response = {
   requires_remanejamento?: boolean
   affected_appointments?: number
   visits?: Visit[]
-  professionals?: Professional[]
   block_id?: string
 }
 
@@ -38,7 +36,6 @@ export function SocialHomeVisits({
   administrative = false,
 }: Readonly<{ professionalId?: string | null; administrative?: boolean }>) {
   const [target, setTarget] = useState(professionalId ?? '')
-  const [professionals, setProfessionals] = useState<Professional[]>([])
   const [visits, setVisits] = useState<Visit[]>([])
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('')
@@ -49,11 +46,12 @@ export function SocialHomeVisits({
   const [query, setQuery] = useState('')
   const [candidates, setCandidates] = useState<Patient[]>([])
   const [selected, setSelected] = useState('')
-  const [visitTime, setVisitTime] = useState('')
   const [editingBlock, setEditingBlock] = useState('')
   const [outcomeKey, setOutcomeKey] = useState('')
   const [outcomeStatus, setOutcomeStatus] = useState('realizada')
   const [outcomeReason, setOutcomeReason] = useState('')
+
+  useEffect(() => { setTarget(professionalId ?? '') }, [professionalId])
 
   const call = useCallback(async (action: string, args: Record<string, unknown> = {}): Promise<Response> => {
     const { data, error } = await getSupabaseClient().rpc('manage_social_home_visits_for_interface', {
@@ -80,19 +78,6 @@ export function SocialHomeVisits({
     }
   }, [call, target, professionalId])
 
-  useEffect(() => {
-    if (!administrative) return
-    let active = true
-    void getSupabaseClient().rpc('manage_social_home_visits_for_interface', {
-      p_action: 'professionals',
-    }).then(({ data, error }) => {
-      if (!active) return
-      if (error) { setFeedback(error.message); return }
-      const response = data as Response | null
-      setProfessionals(response?.professionals ?? [])
-    })
-    return () => { active = false }
-  }, [administrative])
 
   useEffect(() => { void reload() }, [reload])
 
@@ -148,11 +133,11 @@ export function SocialHomeVisits({
       const result = await call(action, {
         p_block_id: blockId,
         p_patient_id: patientId,
-        p_visit_time: action === 'add' ? visitTime || null : null,
+        p_visit_time: null,
       })
       if (!result.success) throw new Error(result.message ?? 'Não foi possível atualizar a programação.')
       setFeedback(action === 'add' ? 'Paciente adicionado à Visita Domiciliar.' : 'Paciente retirado da programação; o bloqueio permanece ativo.')
-      setSelected(''); setQuery(''); setCandidates([]); setVisitTime('')
+      setSelected(''); setQuery(''); setCandidates([])
       await reload()
     } catch (error) { setFeedback(errorText(error)) }
     finally { setBusy(false) }
@@ -186,17 +171,8 @@ export function SocialHomeVisits({
   return (
     <section className="agenda-pointual-actions" aria-label="Visita Domiciliar — Assistência Social">
       <h3>Visita Domiciliar — Assistência Social</h3>
-      <p>Bloqueie a agenda para visitas externas. <strong>Os pacientes são opcionais</strong> e podem ser vinculados ou retirados posteriormente, sem excluir o bloqueio.</p>
-      {administrative && (
-        <label>
-          Assistente social
-          <select value={target} onChange={(event) => { setTarget(event.target.value); setFeedback(''); setEditingBlock('') }}>
-            <option value="">Selecione a profissional</option>
-            {professionals.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
-        </label>
-      )}
-      {(!administrative || target) && (
+      <p>Reserve o período para visitas externas na agenda oficial. Os pacientes não precisam de horário individual: o motorista organiza a rota.</p>
+      {Boolean(target || professionalId) && (
         <>
           <div className="agenda-operation-heading">
             <label>Data <CapoDateInput value={date} onChange={(event) => setDate(event.target.value)} /></label>
@@ -215,10 +191,14 @@ export function SocialHomeVisits({
               <p>{visit.patients.length ? `${visit.patients.length} paciente(s) programado(s)` : 'Programação em aberto — sem pacientes'}</p>
               {visit.description && <p>{visit.description}</p>}
               {visit.patients.map((patient) => (
-                <div key={patient.patient_id}>
-                  {patient.patient_name} {patient.patient_number ? `— CAPO ${patient.patient_number}` : ''}
-                  {patient.visit_time ? ` — ${String(patient.visit_time).slice(0,5)}` : ''}
-                  <span> — Situação: {patient.status.replace(/_/g, ' ')}</span>
+                <div key={patient.patient_id} className="capo-visit-patient">
+                  <strong>{patient.patient_name}</strong>
+                  {patient.patient_number && <small>CAPO {patient.patient_number}</small>}
+                  <div className="capo-visit-contact">
+                    <span>Endereço: {patient.address?.trim() || 'Não informado no cadastro'}</span>
+                    <span>Telefone: {patient.phone?.trim() || 'Não informado no cadastro'}</span>
+                  </div>
+                  <small>Situação: {patient.status.replace(/_/g, ' ')}</small>
                   <button type="button" disabled={busy} onClick={() => {
                     const key = `${visit.block_id}:${patient.patient_id}`
                     setOutcomeKey(outcomeKey === key ? '' : key)
@@ -267,9 +247,6 @@ export function SocialHomeVisits({
                       </select>
                     </label>
                   )}
-                  <label>Horário previsto (opcional)
-                    <CapoTimeInput value={visitTime} onChange={(event) => setVisitTime(event.target.value)} />
-                  </label>
                   <button type="button" disabled={busy || !selected} onClick={() => void changePatient(visit.block_id, selected, 'add')}>Vincular paciente</button>
                 </div>
               )}
