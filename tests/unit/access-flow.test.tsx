@@ -387,6 +387,7 @@ describe('entrada única CAPO', () => {
     })
     await user.type(screen.getByLabelText('Senha atual'), '111111')
     await user.type(screen.getByLabelText('Nova senha'), 'CapoSeguro2026!')
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'CapoSeguro2026!')
     await user.click(
       screen.getByRole('button', { name: 'Concluir primeiro acesso' }),
     )
@@ -401,6 +402,42 @@ describe('entrada única CAPO', () => {
     )
     expect(authApi.updatePassword).toHaveBeenCalledWith('CapoSeguro2026!', expect.any(String))
     expect(rpcService.completeFirstAccess).toHaveBeenCalled()
+  })
+
+  it('impede senhas definitivas com confirmação divergente sem chamar Auth', async () => {
+    const authApi = createAuthApi({ getSession: vi.fn().mockResolvedValue(session) })
+    renderFlow(authApi, createRpcService({
+      getMyAccessContext: vi.fn().mockResolvedValue({
+        status: 'success',
+        data: { ...context, first_access_completed: false, must_change_password: true },
+      }),
+    }))
+    const user = userEvent.setup()
+    await screen.findByRole('heading', { name: 'Alterar senha do primeiro acesso' })
+    await user.type(screen.getByLabelText('Senha atual'), 'Temporaria2026!')
+    await user.type(screen.getByLabelText('Nova senha'), 'Definitiva2026!')
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'Outra2026!')
+    await user.click(screen.getByRole('button', { name: 'Concluir primeiro acesso' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('A confirmação não corresponde')
+    expect(authApi.updatePassword).not.toHaveBeenCalled()
+  })
+
+  it('identifica preenchimento repetido da senha temporária sem chamar Auth', async () => {
+    const authApi = createAuthApi({ getSession: vi.fn().mockResolvedValue(session) })
+    renderFlow(authApi, createRpcService({
+      getMyAccessContext: vi.fn().mockResolvedValue({
+        status: 'success',
+        data: { ...context, first_access_completed: false, must_change_password: true },
+      }),
+    }))
+    const user = userEvent.setup()
+    await screen.findByRole('heading', { name: 'Alterar senha do primeiro acesso' })
+    await user.type(screen.getByLabelText('Senha atual'), 'Temporaria2026!')
+    await user.type(screen.getByLabelText('Nova senha'), 'Temporaria2026!')
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'Temporaria2026!')
+    await user.click(screen.getByRole('button', { name: 'Concluir primeiro acesso' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('preenchimento automático')
+    expect(authApi.updatePassword).not.toHaveBeenCalled()
   })
 
   it('informa senha atual incorreta no primeiro acesso', async () => {
@@ -430,6 +467,7 @@ describe('entrada única CAPO', () => {
     })
     await user.type(screen.getByLabelText('Senha atual'), '111111')
     await user.type(screen.getByLabelText('Nova senha'), 'CapoSeguro2026!')
+    await user.type(screen.getByLabelText('Confirmar nova senha'), 'CapoSeguro2026!')
     await user.click(
       screen.getByRole('button', { name: 'Concluir primeiro acesso' }),
     )
