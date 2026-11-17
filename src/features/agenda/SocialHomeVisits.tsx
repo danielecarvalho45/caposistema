@@ -109,7 +109,7 @@ export function SocialHomeVisits({
           ? `${result.message ?? 'Remanejamento necessário.'} ${result.affected_appointments ?? 0} consulta(s) atingida(s). O bloqueio não foi salvo.`
           : result.message ?? 'Não foi possível bloquear o período.')
       } else {
-        setFeedback('Período bloqueado para Visita Domiciliar. Você pode adicionar pacientes agora ou posteriormente.')
+        setFeedback('Período exclusivo de Visita Domiciliar salvo. Agora os pacientes podem ser incluídos pela agenda oficial da Assistência Social, sem horário individual.')
         setDate(''); setStartTime(''); setEndTime(''); setDescription('')
         await reload()
       }
@@ -197,9 +197,9 @@ export function SocialHomeVisits({
           <button type="button" disabled={busy} onClick={() => void create()}>Bloquear para Visita Domiciliar</button>
           </>)}
           <h4>{mode === 'schedule' ? 'Períodos bloqueados para visita' : 'Visitas programadas e bloqueios existentes'}</h4>
-          {visits.length === 0 && <p>{mode === 'schedule'
-            ? 'Ainda não há período bloqueado para Visita Domiciliar nesta agenda.'
-            : 'Nenhum bloqueio de visita domiciliar neste contexto.'}</p>}
+          {visits.length === 0 && <p role="status">{mode === 'schedule'
+            ? 'Não há período de Visita Domiciliar disponível nesta agenda. Antes de incluir o paciente, abra a Configuração de Agenda da profissional e use Ajustes pontuais → Bloquear para Visita Domiciliar. Um bloqueio comum, mesmo com a descrição "Visita Domiciliar", não permite inclusão de pacientes e não será convertido automaticamente.'
+            : 'Nenhum bloqueio específico de Visita Domiciliar encontrado. Use esta ação para reservar data e período; o bloqueio comum não habilita o agendamento de visitas.'}</p>}
           {visits.map((visit) => (
             <article key={visit.block_id} className="assistential-card">
               <strong>Visita Domiciliar — {visit.date} · {String(visit.start_time).slice(0,5)}–{String(visit.end_time).slice(0,5)}</strong>
