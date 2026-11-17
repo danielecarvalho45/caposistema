@@ -9297,3 +9297,20 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Pendência operacional separada:** o bloqueio comum existente de 18/11, 09:00–12:00, permanece como estava. Não o converter automaticamente, não sobrepor outro bloqueio, nem apagar histórico. Para agendar visitas nessa mesma faixa, é necessária regularização controlada do bloqueio existente e posterior criação de período exclusivo via configuração, com verificação prévia de conflitos e remanejamento. Não declarar que esse período já está disponível.
 
 **Estado:** código/testes versionados e protegidos, publicação/homologação operacionais pendentes; banco de produção inalterado.
+
+
+## 17/11/2026 — VERDE específico: regularização de bloqueio domiciliar da Natália, sem afetar bloqueio geral
+
+**Escopo autorizado:** a Titular confirmou que havia escolhido Visita Domiciliar quando criou o bloqueio; autorizou expressamente a regularização do registro de 18/11/2026 e a manutenção da independência total das duas modalidades. A ação de bloqueio comum deve permanecer inalterada e funcional.
+
+**Causa rastreada nos logs:** o registro foi criado em 16/11/2026 às 16:18:37 UTC pela RPC geral `create_agenda_block_for_interface`, conforme log HTTP 200 e auditoria INSERT da tabela `agenda_blocks`. A descrição do registro já era `VISITA DOMICILIAR`, porém `block_type='bloqueio'`. A RPC geral aceita `bloqueio`, não `visita_domiciliar`; a RPC especial `manage_social_home_visits_for_interface` cria `visita_domiciliar`. Os logs não provam por que a tela em 16/11 encaminhou a chamada à rotina geral; não afirmar causa raiz de frontend não demonstrada.
+
+**Pré-condições verificadas no banco:** bloqueio `464d50c6-b0a2-42a2-9959-b114a8f12da3` da profissional Natália Cristina Gomes Pereira, agenda `f04e2470-f1ff-417e-b09d-45d9f59a2c6c`, em 18/11/2026, 09:00–12:00, ativo, descrição `VISITA DOMICILIAR`, inicialmente tipo `bloqueio`. A configuração ativa cobre essa data, quarta-feira (weekday 3) e faixa horária; nenhuma outra faixa de bloqueio ativo sobreposta para a profissional; zero consultas/pacientes ou familiares agendados conflitantes. Foi mantida a proteção de remanejamento.
+
+**Regularização executada no Supabase:** operação SQL transacional guardada com verificações de ID, profissional, agenda, modalidade original, data/hora, descrição, configuração vigente, dia da semana, ausência de bloqueios sobrepostos e de consultas conflitantes. Atualizado **somente** `agenda_blocks.block_type` do registro específico para `visita_domiciliar` e seu `updated_at`. Não alterados outros bloqueios, agenda geral, configuração semanal, paciente, conta, consulta, permissões nem função RPC. O `UPDATE` acionou `trg_audit_agenda_blocks`.
+
+**Pós-gravação comprovada:** a linha mantém o mesmo ID, data 18/11, 09:00–12:00, descrição `VISITA DOMICILIAR`, ativo, e agora `block_type='visita_domiciliar'`. Auditoria confirma INSERT original `bloqueio` em 16/11 e UPDATE `bloqueio → visita_domiciliar` em 17/11 às 20:52:21 UTC. Contagem de bloqueios ativos após operação: `bloqueio` comum 5, `visita_domiciliar` 1; zero pacientes vinculados ao bloco. O período passa a satisfazer o filtro de `list` e de `add` da RPC de visitas, porém a operação real de agendamento deve ser homologada na interface; não se cadastrou paciente de teste.
+
+**Proteção contra regressão:** a implementação específica existente em `SocialHomeVisits.tsx` já chama `manage_social_home_visits_for_interface` com `p_action='create'`; o bloqueio geral em `OwnAgendaManager.tsx` continua separado. Fortalecido `tests/unit/social-home-visits.test.tsx` para exigir chamada exata da RPC exclusiva, profissional, data e faixa, e ausência da RPC `create_agenda_block_for_interface` ao bloquear visita; commit `f7cc201b5a869a63b43a854173152237f1149e1e`. Permanecem as proteções preventivas de commits anteriores.
+
+**Estado:** REGULARIZAÇÃO DA LINHA E AUDITORIA CONFIRMADAS NO BANCO; TESTE DE REGRESSÃO VERSIONADO, mas execução Vitest, build, deploy Cloudflare e homologação operacional de inclusão de paciente não confirmadas. Não declarar encerramento operacional antes do teste com a agenda real da Natália.
