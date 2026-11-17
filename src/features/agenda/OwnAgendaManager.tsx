@@ -98,6 +98,7 @@ type Props = Readonly<{
   allowEmergencySlot?: boolean
   allowStructuralEdit?: boolean
   enablePsychologyGroup?: boolean
+  enableSocialHomeVisits?: boolean
 }>
 
 type PendingConfirmation = Readonly<{
@@ -194,6 +195,7 @@ export function OwnAgendaManager({
   allowEmergencySlot = false,
   allowStructuralEdit = false,
   enablePsychologyGroup = false,
+  enableSocialHomeVisits = false,
 }: Props) {
   const { accessContext } = useAccessFlow()
   const rpc = useMemo(() => getRpcService(), [])
@@ -1274,7 +1276,8 @@ export function OwnAgendaManager({
         </p>
       )}
 
-      {accessContext && resolveProfessionalScreenKind(accessContext) === 'assistencia_social' && (
+      {(enableSocialHomeVisits || (accessContext?.professional_id === professionalId &&
+        resolveProfessionalScreenKind(accessContext) === 'assistencia_social')) && (
         <section className="agenda-pointual-actions" aria-label="Configuração de bloqueio domiciliar">
           <div className="agenda-operation-heading">
             <h4>Bloqueio exclusivo — Visita Domiciliar</h4>
