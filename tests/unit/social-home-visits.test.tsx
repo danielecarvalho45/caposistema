@@ -67,6 +67,17 @@ describe('Visita Domiciliar na agenda oficial', () => {
     await user.click(screen.getByRole('button', { name: 'Bloquear para Visita Domiciliar' }))
     expect(await screen.findByText('Programação em aberto — sem pacientes')).toBeVisible()
     expect(backend.rpc.mock.calls.filter((call) => call[1]?.p_action === 'create')).toHaveLength(1)
+    expect(backend.rpc).toHaveBeenCalledWith(
+      'manage_social_home_visits_for_interface',
+      expect.objectContaining({
+        p_action: 'create',
+        p_professional_id: 'professional-1',
+        p_date: '2026-11-19',
+        p_start_time: '08:00',
+        p_end_time: '12:00',
+      }),
+    )
+    expect(backend.rpc.mock.calls.some(([name]) => name === 'create_agenda_block_for_interface')).toBe(false)
     await user.click(screen.getByRole('button', { name: 'Adicionar pacientes' }))
     await user.type(screen.getByPlaceholderText('Nome ou nº CAPO'), 'Paciente')
     await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
