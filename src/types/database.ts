@@ -1131,6 +1131,19 @@ export type Database = {
         }
         Returns: Json
       }
+      create_agenda_period_for_interface: {
+        Args: {
+          p_professional_id: string
+          p_start_date: string
+          p_end_date: string
+          p_start_time: string
+          p_end_time: string
+          p_entry_type: string
+          p_description: string
+          p_reschedule_instructions?: string | null
+        }
+        Returns: Json
+      }
       create_agenda_block_for_interface: {
         Args: {
           p_agenda_config_id: string
