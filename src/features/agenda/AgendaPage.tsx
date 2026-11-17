@@ -30,6 +30,42 @@ import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
 
+type HomeVisitPatient = Readonly<{
+  patient_id: string
+  patient_name: string
+  patient_number: string | null
+  address: string | null
+  phone: string | null
+  status: string
+}>
+type HomeVisitBlock = Readonly<{
+  block_id: string
+  date: string
+  start_time: string
+  end_time: string
+  patients: readonly HomeVisitPatient[]
+}>
+
+// Somente visualização: não cria slot de consulta, duplicidade nem atendimento.
+function HomeVisitCalendarCard({ visit }: Readonly<{ visit: HomeVisitBlock }>) {
+  return (
+    <div className="agenda-home-visit-card" aria-label={`Visita Domiciliar — ${visit.date}`}>
+      <strong>{visit.start_time.slice(0, 5)}–{visit.end_time.slice(0, 5)} · Visita Domiciliar</strong>
+      <small>{visit.patients.length} paciente(s) programado(s) · período coletivo, sem horário individual</small>
+      {visit.patients.map((patient) => (
+        <div className="agenda-home-visit-person" key={patient.patient_id}>
+          <span>{patient.patient_name}</span>
+          {patient.patient_number && <small>Nº CAPO {patient.patient_number}</small>}
+          <small>Situação: {patient.status.replace(/_/g, ' ')}</small>
+          {patient.address && <small>Endereço: {patient.address}</small>}
+          {patient.phone && <small>Telefone: {patient.phone}</small>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
 type PsychologyGroupSession = {
   group_id: string
   name: string
@@ -344,6 +380,7 @@ function HomeScheduleGrid({
   attendanceOverrides,
   groupSessions,
   familyAppointments,
+  homeVisits = [],
   renderAdministrativeActions,
   renderFamilyReturnAction,
 }: Readonly<{
@@ -362,6 +399,7 @@ function HomeScheduleGrid({
   attendanceOverrides?: Readonly<Record<string, string>>
   groupSessions?: readonly PsychologyGroupSession[]
   familyAppointments?: readonly Record<string, unknown>[]
+  homeVisits?: readonly HomeVisitBlock[]
   renderAdministrativeActions?: (appointmentId: string) => ReactNode
   renderFamilyReturnAction?: (appointmentId: string) => ReactNode
 }>) {
@@ -386,7 +424,7 @@ function HomeScheduleGrid({
     month: '2-digit',
   })
 
-  if (slots.length === 0 && view === 'day') {
+  if (slots.length === 0 && homeVisits.length === 0 && view === 'day') {
     return <p className="agenda-schedule-no-hours">Nenhum horário configurado neste período.</p>
   }
 
@@ -519,6 +557,16 @@ function HomeScheduleGrid({
                 </tr>
               )
             })}
+            {homeVisits.filter((visit) => visit.date === days[0]).map((visit) => (
+              <tr key={`home-visit:${visit.block_id}`} className="agenda-home-visit-row">
+                <td data-label="Horário">{visit.start_time.slice(0, 5)}–{visit.end_time.slice(0, 5)}</td>
+                <td data-label="Paciente"><HomeVisitCalendarCard visit={visit} /></td>
+                <td data-label="Especialidades">Assistência Social</td>
+                <td data-label="Tipo">Visita Domiciliar</td>
+                <td data-label="Situação">{visit.patients.length} paciente(s)</td>
+                <td data-label="Ações">Programação domiciliar</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -540,7 +588,10 @@ function HomeScheduleGrid({
           <article className={`agenda-schedule-day${view === 'month' && localDate(day).getMonth() !== localDate(startDate).getMonth() ? ' is-outside' : ''}`} key={day}>
             <h3>{dateFormatter.format(localDate(day))}</h3>
             <div className="agenda-schedule-slots">
-                {daySlots.length === 0 && <small className="agenda-schedule-no-hours">Sem horários</small>}
+                {daySlots.length === 0 && !homeVisits.some((visit) => visit.date === day) && <small className="agenda-schedule-no-hours">Sem horários</small>}
+                {homeVisits.filter((visit) => visit.date === day).map((visit) => (
+                  <HomeVisitCalendarCard key={visit.block_id} visit={visit} />
+                ))}
                 {daySlots.map((slot) => {
                   const group = groupSessions?.find((item) => item.date === slot.slot_date
                     && Date.parse(item.start) === Date.parse(slot.slot_start)
