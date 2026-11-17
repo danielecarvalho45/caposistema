@@ -9332,3 +9332,5 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Verificação:** releitura no GitHub `main` de código, estilos, componente de inclusão e teste: **16/16 invariantes estáticas presentes**. Não executados Vitest, typecheck, build Vite, publicação Cloudflare ou homologação autenticada na Home da Natália. Teste pendente: abrir Dia/Semana/Mês de 18/11 e confirmar paciente vinculado na programação oficial. Não modificar `get_agenda_schedule_grid_for_interface`, `create_agenda_block_for_interface`, `manage_social_home_visits_for_interface` nem dados reais.
 
 **Estado:** INTEGRAÇÃO VISUAL VERSIONADA; BANCO/ BLOQUEIOS COMUNS PRESERVADOS; PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES.
+
+**Complemento de atualização manual:** os botões `Atualizar` e `Consultar` em `AgendaPage.tsx` também acionam nova leitura das visitas no contexto autorizado, permitindo que a assistente social veja inclusões feitas pelo Administrativo sem depender de recarregar a página inteira. Commit `84df859c642e250220792b11cc80d66d43852cd5`. Nenhuma alteração no banco ou nos bloqueios comuns.
