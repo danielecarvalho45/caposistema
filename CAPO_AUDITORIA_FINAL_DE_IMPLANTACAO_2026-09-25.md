@@ -9264,3 +9264,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção aplicada por migration SQL no Supabase:** `GRANT SELECT ON TABLE public.user_term_acceptances TO service_role`; `GRANT UPDATE ON TABLE public.professionals TO service_role`; `GRANT INSERT ON TABLE public.audit_logs TO service_role`. Migration aplicada com sucesso como `repair_admin_temporary_password_reset_service_role_grants_20261117`, persistida no GitHub em `supabase/migrations/20261117170000_repair_admin_temporary_password_reset_service_role_grants.sql`, commit `36cd34b90736c526063720698f1c2edbb1ac542e`. Não concedida nenhuma permissão adicional a `anon` ou `authenticated`; nenhuma alteração de senha, agendamento, cadastro profissional ou tabela de pacientes.
 
 **Pós-migração:** consulta `has_table_privilege` confirmou os três privilégios específicos do `service_role` e ausência de leitura daquelas tabelas por `anon` e `authenticated`. **Não houve nova execução real da redefinição nem teste de login do Ilton**; o Gestor deve utilizar a interface autorizada para definir nova senha provisória, confirmar a resposta de sucesso e orientar login `ilton`, primeiro acesso e troca obrigatória. Se persistir erro, coletar mensagem de interface e logs, sem pedir senha em chat. Não registrar homologação antes do teste real.
+
+
+## 17/11/2026 — VERDE: primeiro acesso do Ilton — confirmação explícita de senha definitiva
+
+**Relato operacional:** após login com senha provisória, Ilton de Oliveira Filho tentava cadastrar senha definitiva diferente, mas recebia aviso de que seria igual à provisória. Autorização expressa VERDE para correção cirúrgica.
+
+**Evidência de diagnóstico:** no Supabase, redefinição administrativa concluída e auditada às 17:15:46 UTC, autenticação com sucesso às 17:16:33 UTC, mas `first_access_completed=false` e `must_change_password=true`. No frontend, `src/features/access/access-context.tsx` compara literalmente `newPassword === currentPassword` antes de requisitar a alteração; no componente `FirstAccessStep` os estados eram independentes. Não foi comprovado que a comparação retorna verdadeiro para valores diferentes; preenchimento automático do navegador é uma hipótese operacional. Não se atribuir causa raiz sem reprodução.
+
+**Correção pontual (somente interface):** em `src/components/auth/AccessGate.tsx`, foi criado campo separado `Confirmar nova senha`, com validação de correspondência, alerta específico quando o navegador preenche os campos de senha atual e nova com valores idênticos e orientação para conferir preenchimento automático. Conservados a comparação de diferença, autenticação da senha provisória, `auth.updateUser`, conclusão RPC e todas as regras de segurança. Commit `e2ad9cfdd52d65e06b0aeada1dbd57b16b0c95b3`.
+
+**Teste de regressão:** `tests/unit/access-flow.test.tsx` passou a confirmar a senha distinta no teste positivo e no teste de senha atual incorreta; adicionados cenários de confirmação divergente e preenchimento repetido, ambos sem invocar Auth. Commit `e1fe6fa68ba11fd5eb76674026e5cf1a61c8a016`.
+
+**Conferência estática pós-commit:** 9/9 verificações satisfeitas por releitura dos três arquivos vigentes na branch `main`. **Não executados** Vitest, typecheck, build Cloudflare ou teste em sessão real do Ilton; não declarar homologação ou correção operacional concluída. Persistindo o mesmo erro com valores efetivamente distintos, investigar origem e texto exato antes de outra alteração.
+
+**Proteção:** nenhuma alteração de banco, credencial, conta, termo, agenda ou permissões; nenhum dado sensível lido ou exposto. Estado: CÓDIGO E TESTES VERSIONADOS; EXECUÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES.
