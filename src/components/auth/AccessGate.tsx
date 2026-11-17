@@ -512,9 +512,20 @@ function FirstAccessStep() {
   const { busy, feedback, completeFirstAccess, logout } = useAccessFlow()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [localFeedback, setLocalFeedback] = useState<string | null>(null)
 
   function submit(event: FormEvent) {
     event.preventDefault()
+    if (newPassword !== confirmPassword) {
+      setLocalFeedback('A confirmação não corresponde à nova senha. Digite novamente.')
+      return
+    }
+    if (currentPassword === newPassword) {
+      setLocalFeedback('Os campos de senha atual e nova senha estão preenchidos com o mesmo valor. Confira o preenchimento automático do navegador e digite uma senha definitiva diferente.')
+      return
+    }
+    setLocalFeedback(null)
     void completeFirstAccess(currentPassword, newPassword)
   }
 
@@ -538,10 +549,20 @@ function FirstAccessStep() {
           id="firstAccessPassword1"
           label="Nova senha"
           value={newPassword}
-          onChange={setNewPassword}
+          onChange={(value) => { setNewPassword(value); setLocalFeedback(null) }}
           autoComplete="new-password"
           placeholder="Mínimo 8 caracteres"
         />
+        <PasswordInput
+          id="firstAccessPassword2"
+          label="Confirmar nova senha"
+          value={confirmPassword}
+          onChange={(value) => { setConfirmPassword(value); setLocalFeedback(null) }}
+          autoComplete="new-password"
+          placeholder="Repita a senha definitiva"
+        />
+        <p className="auth-subtitle">A senha definitiva deve ser diferente da temporária. Se o navegador preencher os campos automaticamente, revise cada um antes de concluir.</p>
+        {localFeedback && <div className="auth-alert error" role="alert">{localFeedback}</div>}
         <Feedback feedback={feedback} />
         <button
           className="auth-primary auth-full"
