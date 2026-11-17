@@ -364,7 +364,7 @@ function slotClock(value: string) {
       }).format(date)
 }
 
-function HomeScheduleGrid({
+export function HomeScheduleGrid({
   slots,
   startDate,
   endDate,
