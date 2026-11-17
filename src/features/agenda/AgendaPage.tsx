@@ -2643,7 +2643,7 @@ export function AgendaPage({
               </div>
             )}
             {socialProfessionalSelected && socialVisitMode && !awaitingNextAppointmentChoice ? (
-              <SocialHomeVisits administrative professionalId={selectedProfessionalId}
+              <SocialHomeVisits administrative professionalId={selectedProfessionalId} mode="schedule"
                 preselectedPatientId={appointmentPatientId} preselectedPatientName={appointmentPatientQuery} />
             ) : (
               <>
