@@ -2686,6 +2686,7 @@ export function AgendaPage({
               onClick={() => {
                 if (professionalId) void loadProfessionalConsultation()
                 else void load()
+                if (canReadHomeVisits) setHomeVisitRevision((current) => current + 1)
               }}
             >
               Atualizar
@@ -2720,7 +2721,10 @@ export function AgendaPage({
               <button
                 type="button"
                 disabled={!selectedProfessionalId || scheduleGrid.status === 'loading'}
-                onClick={() => void loadProfessionalConsultation()}
+                onClick={() => {
+                  void loadProfessionalConsultation()
+                  if (canReadHomeVisits) setHomeVisitRevision((current) => current + 1)
+                }}
               >
                 Consultar
               </button>
