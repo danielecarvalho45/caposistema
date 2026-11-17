@@ -82,6 +82,15 @@ describe('Visita Domiciliar na agenda oficial', () => {
     expect(backend.rpc.mock.calls.filter((call) => call[1]?.p_action === 'create')).toHaveLength(1)
   })
 
+  it('orienta sobre a ausência de período exclusivo sem criar agendamento ou converter bloqueio comum', async () => {
+    backend.rpc.mockResolvedValue({ data: { success: true, visits: [] }, error: null })
+    render(<SocialHomeVisits administrative professionalId="professional-1" mode="schedule"
+      preselectedPatientId="patient-1" preselectedPatientName="Paciente de teste" />)
+    expect(await screen.findByText(/Um bloqueio comum, mesmo com a descrição/)).toBeVisible()
+    expect(screen.queryByRole('button', { name: /Agendar visita domiciliar de/ })).not.toBeInTheDocument()
+    expect(backend.rpc.mock.calls.every((call) => call[1]?.p_action === 'list')).toBe(true)
+  })
+
   it('na configuração permite bloquear, mas não agendar pacientes no mesmo formulário', async () => {
     backend.rpc.mockImplementation(async (_name: string, args: { p_action: string }) => ({
       data: args.p_action === 'list' ? { success: true, visits: [block] } : { success: true },
