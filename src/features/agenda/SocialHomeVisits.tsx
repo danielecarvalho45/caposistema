@@ -35,7 +35,7 @@ export function SocialHomeVisits({
   professionalId = null,
   administrative = false,
 }: Readonly<{ professionalId?: string | null; administrative?: boolean }>) {
-  const [target, setTarget] = useState(professionalId ?? '')
+  const target = professionalId ?? ''
   const [visits, setVisits] = useState<Visit[]>([])
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('')
@@ -51,7 +51,6 @@ export function SocialHomeVisits({
   const [outcomeStatus, setOutcomeStatus] = useState('realizada')
   const [outcomeReason, setOutcomeReason] = useState('')
 
-  useEffect(() => { setTarget(professionalId ?? '') }, [professionalId])
 
   const call = useCallback(async (action: string, args: Record<string, unknown> = {}): Promise<Response> => {
     const { data, error } = await getSupabaseClient().rpc('manage_social_home_visits_for_interface', {
