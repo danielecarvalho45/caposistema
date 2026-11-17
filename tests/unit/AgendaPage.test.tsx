@@ -80,6 +80,31 @@ describe('AgendaPage', () => {
     vi.useRealTimers()
   })
 
+  it('exibe o botão Visita Domiciliar na Minha Agenda incorporada da Assistência Social', async () => {
+    const socialContext: AccessContext = {
+      ...accessContext,
+      function_title: 'Assistente Social',
+      primary_specialty_name: 'Assistência Social',
+      specialties: [{ specialty_id: 'social-id', specialty_name: 'Assistência Social', is_primary: true }],
+    }
+    renderWithRouter(<AgendaPage accessContext={socialContext}
+      loadAgenda={vi.fn().mockResolvedValue({ status: 'empty' })} embeddedHome />)
+
+    const action = screen.getByRole('button', { name: 'Bloquear para Visita Domiciliar' })
+    expect(action).toBeVisible()
+    expect(action).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('não mostra o botão de visita domiciliar na agenda de outras especialidades', async () => {
+    renderWithRouter(<AgendaPage accessContext={{
+      ...accessContext,
+      primary_specialty_name: 'Psicologia',
+      specialties: [{ specialty_id: 'psychology-id', specialty_name: 'Psicologia', is_primary: true }],
+    }} loadAgenda={vi.fn().mockResolvedValue({ status: 'empty' })} embeddedHome />)
+    expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' }))
+      .not.toBeInTheDocument()
+  })
+
   it('consulta os intervalos reais de dia, semana e mês', async () => {
     const loadAgenda = vi.fn().mockResolvedValue({ status: 'empty' })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
