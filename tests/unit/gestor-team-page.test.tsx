@@ -2,7 +2,46 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GestorTeamPage, type TeamManagementService } from '../../src/features/gestor/GestorTeamPage'
 
+vi.mock('../../src/features/agenda/OwnAgendaManager', () => ({
+  OwnAgendaManager: ({ professionalId, enableSocialHomeVisits }: { professionalId: string; enableSocialHomeVisits?: boolean }) => (
+    <div data-testid="gestor-target-agenda" data-professional-id={professionalId}
+      data-social-visits={String(Boolean(enableSocialHomeVisits))} />
+  ),
+}))
+
 describe('GestorTeamPage', () => {
+  it('reconhece Assistência Social na gestão de agenda a partir de specialties retornado pelo Supabase', async () => {
+    const socialId = '3533a034-b8dd-4be0-92dd-73f7cc59ccbb'
+    const otherId = 'ca39a1a5-04a1-4ecb-bcc6-15f04748ef0c'
+    const specialtyId = '00000000-0000-4000-8000-000000000001'
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success', data: {
+        team: [
+          { professional_id: socialId, full_name: 'Natália — Assistência Social', function_title: 'Asssistentesocial', status: 'ativo',
+            specialties: [{ specialty_id: specialtyId, name: 'Assistência Social', is_primary: true }] },
+          { professional_id: otherId, full_name: 'Profissional de Psicologia', function_title: 'Psicologia', status: 'ativo',
+            specialties: [{ specialty_id: '00000000-0000-4000-8000-000000000002', name: 'Psicologia', is_primary: true }] },
+        ],
+        specialties: [
+          { specialty_id: specialtyId, name: 'Assistência Social' },
+          { specialty_id: '00000000-0000-4000-8000-000000000002', name: 'Psicologia' },
+        ], roles: [],
+      } }),
+      create: success, update: success, setActive: success,
+      getCapabilities: success, setPrimaryContext: success,
+      setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} initialTab="agenda" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Natália — Assistência Social/ }))
+    expect(await screen.findByTestId('gestor-target-agenda')).toHaveAttribute('data-professional-id', socialId)
+    expect(screen.getByTestId('gestor-target-agenda')).toHaveAttribute('data-social-visits', 'true')
+    fireEvent.click(screen.getByRole('button', { name: /Profissional de Psicologia/ }))
+    expect(screen.getByTestId('gestor-target-agenda')).toHaveAttribute('data-social-visits', 'false')
+  })
+
+
   afterEach(cleanup)
   it('permite inativar o cadastro antigo mesmo sem conta de acesso', async () => {
     const success = async () => ({ status: 'success' as const, data: [] })
