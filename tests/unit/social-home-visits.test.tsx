@@ -82,6 +82,18 @@ describe('Visita Domiciliar na agenda oficial', () => {
     expect(backend.rpc.mock.calls.filter((call) => call[1]?.p_action === 'create')).toHaveLength(1)
   })
 
+  it('na configuração permite bloquear, mas não agendar pacientes no mesmo formulário', async () => {
+    backend.rpc.mockImplementation(async (_name: string, args: { p_action: string }) => ({
+      data: args.p_action === 'list' ? { success: true, visits: [block] } : { success: true },
+      error: null,
+    }))
+    render(<SocialHomeVisits professionalId="professional-1" mode="configure" />)
+    expect(screen.getByRole('button', { name: 'Bloquear para Visita Domiciliar' })).toBeVisible()
+    expect(await screen.findByText('Programação em aberto — sem pacientes')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Adicionar pacientes' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Agendar visita domiciliar' })).not.toBeInTheDocument()
+  })
+
   it('agenda paciente já selecionado na visita bloqueada sem novo slot nem horário individual', async () => {
     backend.rpc.mockImplementation(async (_name: string, args: { p_action: string }) => ({
       data: args.p_action === 'list'
