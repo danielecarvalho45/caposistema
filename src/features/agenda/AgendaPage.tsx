@@ -868,7 +868,6 @@ export function AgendaPage({
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [socialVisitMode, setSocialVisitMode] = useState(false)
-  const [showOwnVisitBlock, setShowOwnVisitBlock] = useState(false)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('')
   const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
@@ -2597,24 +2596,9 @@ export function AgendaPage({
         </div>
 
         {isSocialWorkerAgenda && (
-          <div className="agenda-own-visit-access">
-            <button
-              type="button"
-              className="agenda-own-visit-toggle"
-              aria-expanded={showOwnVisitBlock}
-              aria-controls="agenda-own-visit-block"
-              onClick={() => setShowOwnVisitBlock((current) => !current)}
-            >
-              <CapoIcon name="calendar" size={18} />
-              {showOwnVisitBlock ? 'Fechar bloqueio de Visita Domiciliar' : 'Bloquear para Visita Domiciliar'}
-            </button>
-            {showOwnVisitBlock && (
-              <div id="agenda-own-visit-block">
-                <SocialHomeVisits professionalId={professionalId} />
-              </div>
-            )}
-          </div>
+          <SocialHomeVisits professionalId={professionalId} mode="schedule" />
         )}
+
 
         {!isProfessional && (
           <>
@@ -2668,8 +2652,53 @@ export function AgendaPage({
               </div>
             )}
             {socialProfessionalSelected && socialVisitMode && !awaitingNextAppointmentChoice ? (
-              <SocialHomeVisits administrative professionalId={selectedProfessionalId} mode="schedule"
-                preselectedPatientId={appointmentPatientId} preselectedPatientName={appointmentPatientQuery} />
+              <div className="agenda-visit-appointment">
+                <div className="agenda-form-grid">
+                  <label>
+                    Paciente *
+                    <input type="search" value={appointmentPatientQuery}
+                      placeholder="Nome, Nº CAPO ou CMS"
+                      onChange={(event) => {
+                        setAppointmentPatientQuery(event.target.value)
+                        setAppointmentPatientId('')
+                        setAppointmentPatients([])
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          void searchAppointmentPatients()
+                        }
+                      }} />
+                    <button type="button" className="agenda-patient-search-button"
+                      onClick={() => void searchAppointmentPatients()}>Buscar paciente</button>
+                  </label>
+                  {appointmentPatientId && (
+                    <p className="agenda-patient-selected" role="status">
+                      <strong>{appointmentPatients.find((patient) => patient.patient_id === appointmentPatientId)?.full_name || appointmentPatientQuery}</strong>
+                    </p>
+                  )}
+                  {appointmentPatients.length > 0 && (
+                    <div className="agenda-patient-results" aria-label="Pacientes encontrados para visita">
+                      {appointmentPatients.map((patient) => (
+                        <button key={patient.patient_id} type="button"
+                          aria-pressed={appointmentPatientId === patient.patient_id}
+                          className={appointmentPatientId === patient.patient_id ? 'is-selected' : ''}
+                          onClick={() => selectAppointmentPatient(patient)}>
+                          <strong>{patient.full_name}</strong>
+                          <span>Nº CAPO {patient.patient_number ?? '—'} · CMS {patient.cms ?? '—'}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {appointmentPatientId ? (
+                  <SocialHomeVisits administrative professionalId={selectedProfessionalId} mode="schedule"
+                    preselectedPatientId={appointmentPatientId}
+                    preselectedPatientName={appointmentPatients.find((patient) => patient.patient_id === appointmentPatientId)?.full_name || appointmentPatientQuery} />
+                ) : (
+                  <p className="agenda-contract-note">Localize e selecione o paciente para consultar os períodos de visita domiciliar disponíveis.</p>
+                )}
+              </div>
             ) : (
               <>
             {!isProfessional && schedulingCatalog.status === 'error' && <p role="alert">{schedulingCatalog.error.message}</p>}
@@ -3529,9 +3558,7 @@ export function AgendaPage({
             />
           )}
 
-          {!showScheduleForm && !isProfessional && socialProfessionalSelected && (
-            <SocialHomeVisits administrative professionalId={selectedProfessionalId} />
-          )}
+
           {professionalId && psychologyGroupSessions.length > 0 && (
             <section className="agenda-psychology-sessions" aria-label="Terapia em grupo na agenda oficial">
               <h3>Atendimentos em grupo — Psicologia</h3>
