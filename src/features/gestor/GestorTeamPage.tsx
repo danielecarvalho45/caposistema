@@ -758,6 +758,9 @@ export function GestorTeamPage({
               intro="O Gestor/Titular organiza diretamente a agenda do serviço. Ajuste a configuração-base quando o horário real do profissional mudar e use as ações temporárias somente para situações pontuais."
               allowEmergencySlot
               allowStructuralEdit
+              enableSocialHomeVisits={specialties.some((specialty) =>
+                specialty.label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'assistencia social' &&
+                selectedCodes(selected.profile.specialty_ids).includes(specialty.id))}
               enablePsychologyGroup={Boolean(selected.functionTitle?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog') || specialties.some((specialty) => specialty.label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog') && selectedCodes(selected.profile.specialty_ids).includes(specialty.id)))}
             />
           ) : (
