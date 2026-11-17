@@ -11,7 +11,7 @@ vi.mock('../../src/features/agenda/OwnAgendaManager', () => ({
 
 describe('GestorTeamPage', () => {
   it('reconhece Assistência Social na gestão de agenda a partir de specialties retornado pelo Supabase', async () => {
-    const socialId = '3533a034-b8dd-4be0-92dd-73f7cc59ccbb'
+    const socialId = '00000000-0000-4000-8000-000000000003'
     const otherId = 'ca39a1a5-04a1-4ecb-bcc6-15f04748ef0c'
     const specialtyId = '00000000-0000-4000-8000-000000000001'
     const success = async () => ({ status: 'success' as const, data: [] })
