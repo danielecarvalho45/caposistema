@@ -214,7 +214,7 @@ export function OwnAgendaManager({
 
   const [date, setDate] = useState('')
   const [dateEnd, setDateEnd] = useState('')
-  const [affectedRanges, setAffectedRanges] = useState<readonly { date: string; config_id: string; count: number }[]>([])
+  const [affectedRanges, setAffectedRanges] = useState<readonly { date: string; config_id: string; count: number; start_time: string; end_time: string }[]>([])
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [description, setDescription] = useState('')
@@ -431,7 +431,7 @@ export function OwnAgendaManager({
     if (!startTime || !endTime || ranges.length === 0) return
     setAffectedLoading(true)
     const results = await Promise.all(ranges.map((item) =>
-      rpc.getAgendaBlockAffected(item.config_id, item.date, startTime, endTime)))
+      rpc.getAgendaBlockAffected(item.config_id, item.date, timeHHMM(item.start_time), timeHHMM(item.end_time))))
     const problems = results.filter((result) => result.status === 'error')
     if (problems.length > 0) {
       setFeedback('Bloqueio não aplicado: falha ao consultar todas as consultas atingidas. Confira a agenda oficial.')
@@ -883,7 +883,9 @@ export function OwnAgendaManager({
               date: stringValue(item.date),
               config_id: stringValue(item.config_id),
               count: numberValue(item.count),
-            })).filter((item) => item.date && item.config_id)
+              start_time: stringValue(item.start_time),
+              end_time: stringValue(item.end_time),
+            })).filter((item) => item.date && item.config_id && item.start_time && item.end_time)
           setAffectedRanges(ranges)
           await refreshAffectedAppointments(ranges)
         }
