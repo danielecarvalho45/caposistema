@@ -200,6 +200,7 @@ export function OwnAgendaManager({
   const [configuration, setConfiguration] = useState<AsyncState<unknown> | null>(null)
   const [configId, setConfigId] = useState('')
   const [entryType, setEntryType] = useState('')
+  const [showVisitBlocking, setShowVisitBlocking] = useState(false)
   const [date, setDate] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
@@ -1273,8 +1274,27 @@ export function OwnAgendaManager({
         </p>
       )}
 
-      {accessContext && resolveProfessionalScreenKind(accessContext) === 'assistencia_social' &&
-        <SocialHomeVisits professionalId={professionalId} />}
+      {accessContext && resolveProfessionalScreenKind(accessContext) === 'assistencia_social' && (
+        <section className="agenda-pointual-actions" aria-label="Configuração de bloqueio domiciliar">
+          <div className="agenda-operation-heading">
+            <h4>Bloqueio exclusivo — Visita Domiciliar</h4>
+            <p>Reserve a data e o período nesta configuração. O agendamento dos pacientes será feito posteriormente na agenda da profissional.</p>
+          </div>
+          <div className="agenda-own-action-grid">
+            <button type="button" className="agenda-own-action-card"
+              aria-expanded={showVisitBlocking} aria-controls="configuracao-bloqueio-domiciliar"
+              onClick={() => setShowVisitBlocking((value) => !value)}>
+              <span className="agenda-own-action-icon"><CapoIcon name="calendar" size={20} /></span>
+              <strong>{showVisitBlocking ? 'Fechar bloqueio de Visita Domiciliar' : 'Bloquear para Visita Domiciliar'}</strong>
+            </button>
+          </div>
+          {showVisitBlocking && (
+            <div id="configuracao-bloqueio-domiciliar">
+              <SocialHomeVisits professionalId={professionalId} mode="manage" />
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="agenda-pointual-actions" aria-labelledby="agenda-pointual-actions-title">
         <div className="agenda-operation-heading">
