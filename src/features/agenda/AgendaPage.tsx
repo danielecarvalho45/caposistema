@@ -3503,6 +3503,11 @@ export function AgendaPage({
           {!showScheduleForm && !isProfessional && socialProfessionalSelected && (
             <SocialHomeVisits administrative professionalId={selectedProfessionalId} />
           )}
+          {!embeddedHome && isProfessional && professionalId &&
+            effectiveSpecialties.some((item) => item.specialty_name
+              .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('assistencia social')) && (
+              <SocialHomeVisits professionalId={professionalId} />
+            )}
 
           {professionalId && psychologyGroupSessions.length > 0 && (
             <section className="agenda-psychology-sessions" aria-label="Terapia em grupo na agenda oficial">
