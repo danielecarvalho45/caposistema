@@ -1,6 +1,7 @@
 import { CapoTimeInput } from '../../components/inputs/CapoTimeInput'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useMemo, useState } from 'react'
+import { getSupabaseClient } from '../../lib/supabase/client'
 import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
 import {
   getRpcService,
@@ -212,6 +213,8 @@ export function OwnAgendaManager({
   }, [professionalId])
 
   const [date, setDate] = useState('')
+  const [dateEnd, setDateEnd] = useState('')
+  const [affectedRanges, setAffectedRanges] = useState<readonly { date: string; config_id: string; count: number }[]>([])
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [description, setDescription] = useState('')
@@ -413,6 +416,8 @@ export function OwnAgendaManager({
   function resetForm() {
     setEntryType('')
     setDate('')
+    setDateEnd('')
+    setAffectedRanges([])
     setStartTime('')
     setEndTime('')
     setDescription('')
@@ -422,17 +427,26 @@ export function OwnAgendaManager({
     setNeedsRemanejamento(false)
   }
 
-  async function refreshAffectedAppointments() {
-    if (!configId || !date || !startTime || !endTime) return
+  async function refreshAffectedAppointments(ranges = affectedRanges) {
+    if (!startTime || !endTime || ranges.length === 0) return
     setAffectedLoading(true)
-    const result = await rpc.getAgendaBlockAffected(configId, date, startTime, endTime)
-    if (result.status === 'success') {
-      setAffectedAppointments(result.data)
-    } else if (result.status === 'empty') {
-      setAffectedAppointments([])
-    } else if (result.status === 'error') {
-      setFeedback(`Bloqueio não aplicado. Não foi possível consultar a lista: ${result.error.message}`)
+    const results = await Promise.all(ranges.map((item) =>
+      rpc.getAgendaBlockAffected(item.config_id, item.date, startTime, endTime)))
+    const problems = results.filter((result) => result.status === 'error')
+    if (problems.length > 0) {
+      setFeedback('Bloqueio não aplicado: falha ao consultar todas as consultas atingidas. Confira a agenda oficial.')
+      setAffectedLoading(false)
+      return
     }
+    const unique = new Map<string, Row>()
+    for (const result of results) {
+      if (result.status !== 'success') continue
+      for (const appointment of result.data) {
+        const id = stringValue(appointment.appointment_id)
+        if (id) unique.set(id, appointment)
+      }
+    }
+    setAffectedAppointments([...unique.values()])
     setAffectedLoading(false)
   }
 
@@ -818,122 +832,73 @@ export function OwnAgendaManager({
     setStructuralBusy(false)
   }
 
-  async function submit(confirm = false) {
-    if (
-      !configId ||
-      !entryType ||
-      !date ||
-      !validTime24(startTime) ||
-      !validTime24(endTime) ||
-      endTime <= startTime ||
-      busy
-    ) {
-      setFeedback('Selecione a configuração, o tipo, a data e um período válido.')
+  async function submit() {
+    if (!entryType || !date || !dateEnd || dateEnd < date ||
+      !validTime24(startTime) || !validTime24(endTime) ||
+      endTime <= startTime || busy) {
+      setFeedback('Selecione uma ação, a data inicial e final e horários válidos de 24 horas.')
       return
     }
-
+    // Visita Domiciliar tem fluxo independente. Não aceitar rótulo ambíguo no bloqueio comum.
+    if (socialHomeVisitsEligible && /visita\\s+domiciliar/i.test(
+      description.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
+    )) {
+      setFeedback('Para Visita Domiciliar, utilize o botão próprio. Bloqueios comuns permanecem separados.')
+      return
+    }
     if (description.trim().length < 5) {
-      setFeedback('Informe uma justificativa operacional com pelo menos cinco caracteres.')
-      return
-    }
-
-    // O bloqueio comum não pode receber um rótulo de visita e tornar-se
-    // indistinguível do bloqueio específico, que é necessário ao agendamento.
-    if (socialHomeVisitsEligible && /visita\\s+domiciliar/i.test(description.normalize('NFD').replace(/[\\u0300-\\u036f]/g, ''))) {
-      setFeedback('Para reservar Visita Domiciliar, use o botão próprio "Bloquear para Visita Domiciliar" nos Ajustes pontuais. O bloqueio comum não permite agendar pacientes para a visita.')
+      setFeedback('Informe a justificativa operacional com pelo menos cinco caracteres.')
       return
     }
 
     setBusy(true)
     setFeedback(null)
+    setPendingConfirmation(null)
     setNeedsRemanejamento(false)
     setAffectedAppointments([])
-
-    if (entryType === 'excecao' || entryType === 'horario_provisorio' || entryType === 'urgencia') {
-      const result = await rpc.createAgendaException({
-        agendaConfigId: configId,
-        exceptionDate: date,
-        exceptionType:
-          entryType === 'horario_provisorio'
-            ? 'alteracao_horario'
-            : entryType === 'urgencia'
-              ? 'atendimento_extra'
-              : 'bloqueio',
-        startTime,
-        endTime,
-        description: description.trim(),
-        confirmConflict: confirm,
+    setAffectedRanges([])
+    try {
+      // RPC transacional: preflight de TODAS as datas; rollback completo em falha.
+      const { data, error } = await getSupabaseClient().rpc('create_agenda_period_for_interface', {
+        p_professional_id: professionalId,
+        p_start_date: date,
+        p_end_date: dateEnd,
+        p_start_time: startTime,
+        p_end_time: endTime,
+        p_entry_type: entryType,
+        p_description: description.trim(),
+        p_reschedule_instructions: rescheduleInstructions.trim() || null,
       })
-      if (result.status === 'success') {
-        const data = record(result.data)
-        if (data && data.success === false && data.requires_remanejamento === true) {
-          setPendingConfirmation(null)
-          setNeedsRemanejamento(true)
-          setFeedback(stringValue(data.message) || 'Remaneje as consultas afetadas antes do bloqueio.')
-          await refreshAffectedAppointments()
-        } else if (data && data.success === false && data.requires_conflict_confirmation === true) {
-          setPendingConfirmation({ overlap: false, affected: false, conflict: true })
-          setFeedback(
-            stringValue(data.message) ||
-              'Existe conflito nessa data. Confirme para registrar a exceção.',
-          )
-        } else {
-          setFeedback(
-            entryType === 'horario_provisorio'
-              ? 'Horário provisório registrado na própria agenda.'
-              : entryType === 'urgencia'
-                ? 'Horário adicional de urgência incluído na agenda.'
-                : 'Exceção temporária registrada na agenda.',
-          )
-          resetForm()
-        }
-      } else if (result.status === 'error') {
-        setFeedback(result.error.message)
+      if (error) {
+        setFeedback(`Alteração não aplicada: ${error.message}`)
+        return
       }
+      const response = record(data)
+      if (response?.success !== true) {
+        setFeedback(stringValue(response?.message) || 'Nenhuma alteração foi gravada.')
+        if (response?.requires_remanejamento === true) {
+          setNeedsRemanejamento(true)
+          const ranges = rows(response, 'affected_dates')
+            .map((item) => ({
+              date: stringValue(item.date),
+              config_id: stringValue(item.config_id),
+              count: numberValue(item.count),
+            })).filter((item) => item.date && item.config_id)
+          setAffectedRanges(ranges)
+          await refreshAffectedAppointments(ranges)
+        }
+        return
+      }
+      const count = numberValue(response.created_count)
+      resetForm()
+      setFeedback(`${count} alteração(ões) registrada(s) somente nos dias e horários vigentes do profissional. Dias sem atendimento foram ignorados.`)
+      const refreshed = await rpc.getAgendaConfiguration(professionalId)
+      setConfiguration(refreshed)
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Não foi possível concluir a alteração.')
+    } finally {
       setBusy(false)
-      return
     }
-
-    const result = await rpc.createAgendaBlock({
-      agendaConfigId: configId,
-      weekday: null,
-      specificDate: date,
-      startTime,
-      endTime,
-      blockType: entryType,
-      description: description.trim(),
-      confirmOverlap: confirm,
-      confirmAffected: confirm,
-      rescheduleInstructions: rescheduleInstructions.trim(),
-    })
-
-    if (result.status === 'success') {
-      const data = record(result.data)
-      if (data && data.success === false) {
-        if (data.requires_remanejamento === true) {
-          setPendingConfirmation(null)
-          setNeedsRemanejamento(true)
-          setFeedback(stringValue(data.message) || 'Remaneje as consultas afetadas antes do bloqueio.')
-          await refreshAffectedAppointments()
-          setBusy(false)
-          return
-        }
-        const overlap = data.requires_overlap_confirmation === true
-        const affected = data.requires_affected_confirmation === true
-        setPendingConfirmation({ overlap, affected, conflict: false })
-        setFeedback(
-          stringValue(data.message) ||
-            'A operação exige confirmação adicional antes de ser registrada.',
-        )
-      } else {
-        setFeedback('Alteração temporária registrada na agenda.')
-        resetForm()
-      }
-    } else if (result.status === 'error') {
-      setFeedback(result.error.message)
-    }
-
-    setBusy(false)
   }
 
   return (
@@ -1350,38 +1315,30 @@ export function OwnAgendaManager({
 
       {activeConfigurations.length > 0 && !showVisitBlocking && (
         <>
+          <p className="agenda-contract-note">
+            {managementActions.find((action) => action.value === entryType)?.label ??
+              'Selecione uma ação acima.'} — a grade vigente será identificada automaticamente.
+            Somente os dias e horários em que o profissional atende serão considerados.
+          </p>
           <label>
-            Configuração
-            <select value={configId} onChange={(event) => setConfigId(event.target.value)}>
-              <option value="">Selecionar</option>
-              {activeConfigurations.map((item) => (
-                <option key={stringValue(item.config_id)} value={stringValue(item.config_id)}>
-                  {weekdaySummary(item.weekdays) || 'Sem dias'} · {timeHHMM(item.start_time)}–{timeHHMM(item.end_time)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Ação selecionada
-            <input
-              readOnly
-              value={
-                managementActions.find((action) => action.value === entryType)?.label ?? 'Selecione uma ação acima'
-              }
-            />
-          </label>
-
-          <label>
-            Data
-            <CapoDateInput  value={date} onChange={(event) => setDate(event.target.value)} />
+            Data inicial
+            <CapoDateInput value={date} onChange={(event) => {
+              const next = event.target.value
+              setDate(next)
+              if (!dateEnd || dateEnd < next) setDateEnd(next)
+            }} />
           </label>
           <label>
-            Início
+            Data final
+            <CapoDateInput value={dateEnd} min={date || undefined}
+              onChange={(event) => setDateEnd(event.target.value)} />
+          </label>
+          <label>
+            Horário inicial da alteração
             <CapoTimeInput value={startTime} onChange={(event) => setStartTime(event.target.value)} />
           </label>
           <label>
-            Fim
+            Horário final da alteração
             <CapoTimeInput value={endTime} onChange={(event) => setEndTime(event.target.value)} />
           </label>
           <label>
@@ -1474,23 +1431,10 @@ export function OwnAgendaManager({
             </p>
           )}
 
-          {pendingConfirmation ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void submit(true)}
-            >
-              Confirmar alteração temporária
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void submit(false)}
-            >
-              Registrar alteração temporária
-            </button>
-          )}
+          <button type="button" disabled={busy || !entryType}
+            onClick={() => void submit()}>
+            {busy ? 'Verificando todas as datas…' : 'Registrar alteração temporária'}
+          </button>
         </>
       )}
     </section>
