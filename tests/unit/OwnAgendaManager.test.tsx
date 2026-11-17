@@ -79,12 +79,19 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
   it('mostra bloqueio domiciliar na configuração da profissional alvo selecionada pelo Gestor', async () => {
     render(<OwnAgendaManager professionalId="natalia-id" allowStructuralEdit enableSocialHomeVisits />)
     expect(await screen.findByRole('button', { name: 'Bloquear para Visita Domiciliar' })).toBeVisible()
-    expect(screen.getByRole('region', { name: 'Configuração de bloqueio domiciliar' })).toBeVisible()
+    const actions = screen.getByRole('region', { name: 'Ajustes pontuais de uma data' })
+    expect(within(actions).getAllByRole('button')).toHaveLength(10)
+    const button = within(actions).getByRole('button', { name: 'Bloquear para Visita Domiciliar' })
+    expect(button).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(button)
+    expect(within(actions).getByRole('heading', { name: 'Bloqueio — Visita Domiciliar' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Bloquear período' })).toBeVisible()
   })
 
   it('não inclui bloqueio domiciliar para profissional de outra especialidade', async () => {
     render(<OwnAgendaManager professionalId="psicologia-id" allowStructuralEdit />)
     expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Ajustes pontuais de uma data' })).getAllByRole('button')).toHaveLength(9)
   })
 
   it('exibe ajustes pontuais depois da configuração permanente e mantém as nove ações acessíveis', async () => {
