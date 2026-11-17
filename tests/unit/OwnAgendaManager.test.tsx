@@ -214,7 +214,7 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
     })
     backend.rpc.mockResolvedValue({
       data: { success: false, requires_remanejamento: true, affected_appointments: 1,
-        affected_dates: [{ date: '2026-11-11', count: 1, config_id: 'doctor-config' }] },
+        affected_dates: [{ date: '2026-11-11', count: 1, config_id: 'doctor-config', start_time: '08:00', end_time: '09:00' }] },
       error: null,
     })
     rpc.getAgendaBlockAffected.mockResolvedValue({ status: 'success', data: affected })
@@ -255,7 +255,7 @@ describe('OwnAgendaManager — bloqueio médico condicionado ao remanejamento', 
       .mockResolvedValue({ status: 'success', data: [] })
     backend.rpc.mockResolvedValueOnce({
       data: { success: false, requires_remanejamento: true,
-        affected_dates: [{ date: '2026-11-11', count: 1, config_id: 'doctor-config' }] }, error: null,
+        affected_dates: [{ date: '2026-11-11', count: 1, config_id: 'doctor-config', start_time: '08:00', end_time: '09:00' }] }, error: null,
     }).mockResolvedValue({ data: { success: true, created_count: 1 }, error: null })
 
     render(<OwnAgendaManager professionalId="doctor-id" allowStructuralEdit />)
