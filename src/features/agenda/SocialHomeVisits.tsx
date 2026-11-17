@@ -34,7 +34,14 @@ function errorText(error: unknown) {
 export function SocialHomeVisits({
   professionalId = null,
   administrative = false,
-}: Readonly<{ professionalId?: string | null; administrative?: boolean }>) {
+  preselectedPatientId = '',
+  preselectedPatientName = '',
+}: Readonly<{
+  professionalId?: string | null
+  administrative?: boolean
+  preselectedPatientId?: string
+  preselectedPatientName?: string
+}>) {
   const target = professionalId ?? ''
   const [visits, setVisits] = useState<Visit[]>([])
   const [date, setDate] = useState('')
@@ -225,6 +232,12 @@ export function SocialHomeVisits({
                   )}
                 </div>
               ))}
+              {preselectedPatientId && !visit.patients.some((patient) => patient.patient_id === preselectedPatientId) && (
+                <button type="button" disabled={busy}
+                  onClick={() => void changePatient(visit.block_id, preselectedPatientId, 'add')}>
+                  Agendar visita domiciliar de {preselectedPatientName || 'paciente selecionado'} neste período
+                </button>
+              )}
               <button type="button" disabled={busy} onClick={() => { setEditingBlock(editingBlock === visit.block_id ? '' : visit.block_id); setCandidates([]); setSelected('') }}>
                 {editingBlock === visit.block_id ? 'Fechar inclusão' : 'Adicionar pacientes'}
               </button>
@@ -246,7 +259,7 @@ export function SocialHomeVisits({
                       </select>
                     </label>
                   )}
-                  <button type="button" disabled={busy || !selected} onClick={() => void changePatient(visit.block_id, selected, 'add')}>Vincular paciente</button>
+                  <button type="button" disabled={busy || !selected} onClick={() => void changePatient(visit.block_id, selected, 'add')}>Agendar visita domiciliar</button>
                 </div>
               )}
             </article>
