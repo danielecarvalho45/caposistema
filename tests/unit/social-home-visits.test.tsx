@@ -51,7 +51,7 @@ describe('Visita Domiciliar na agenda oficial', () => {
       if (args.p_action === 'list') return {
         data: { success: true, visits: created ? [{ ...block, patients: patientAdded ? [{
           patient_id: 'patient-1', patient_name: 'Paciente de teste',
-          patient_number: '1', visit_time: null, status: 'programada',
+          patient_number: '1', address: 'Rua Exemplo, 25', phone: '35999999999', status: 'programada',
         }] : [] }] : [] }, error: null,
       }
       if (args.p_action === 'create') { created = true; return { data: { success: true, block_id: 'block-1' }, error: null } }
@@ -74,6 +74,11 @@ describe('Visita Domiciliar na agenda oficial', () => {
     await user.selectOptions(screen.getByLabelText('Paciente'), 'patient-1')
     await user.click(screen.getByRole('button', { name: 'Vincular paciente' }))
     expect(await screen.findByText(/1 paciente\(s\) programado\(s\)/)).toBeVisible()
+    expect(screen.getByText('Endereço: Rua Exemplo, 25')).toBeVisible()
+    expect(screen.getByText('Telefone: 35999999999')).toBeVisible()
+    expect(screen.queryByText(/Horário previsto/)).not.toBeInTheDocument()
+    const addCall = backend.rpc.mock.calls.find((call) => call[1]?.p_action === 'add')
+    expect(addCall?.[1]?.p_visit_time).toBeNull()
     expect(backend.rpc.mock.calls.filter((call) => call[1]?.p_action === 'create')).toHaveLength(1)
   })
 
@@ -100,7 +105,7 @@ describe('Visita Domiciliar na agenda oficial', () => {
       data: args.p_action === 'list' ? {
         success: true, visits: [{ ...block, patients: [{
           patient_id: 'patient-1', patient_name: 'Paciente de teste', patient_number: '1',
-          visit_time: '08:10', status: 'programada',
+          address: 'Rua Exemplo, 25', phone: '35999999999', status: 'programada',
         }] }],
       } : { success: true },
       error: null,
@@ -119,18 +124,17 @@ describe('Visita Domiciliar na agenda oficial', () => {
     ))
   })
 
-  it('o Administrativo seleciona a assistente social sem usar tela paralela', async () => {
+  it('usa o profissional já selecionado na agenda administrativa sem exibir seletor extra', async () => {
     backend.rpc.mockImplementation(async (_name: string, args: { p_action: string }) => ({
-      data: args.p_action === 'professionals'
-        ? { success: true, professionals: [{ id: 'professional-1', name: 'Profissional social' }] }
-        : { success: true, visits: [block] }, error: null,
+      data: { success: true, visits: [block] }, error: null,
     }))
-    const user = userEvent.setup()
-    render(<SocialHomeVisits administrative />)
-    await user.selectOptions(await screen.findByLabelText('Assistente social'), 'professional-1')
+    render(<SocialHomeVisits administrative professionalId="professional-1" />)
     expect(await screen.findByText('Programação em aberto — sem pacientes')).toBeVisible()
+    expect(screen.queryByLabelText('Assistente social')).not.toBeInTheDocument()
     await waitFor(() => expect(backend.rpc).toHaveBeenCalledWith(
-      'manage_social_home_visits_for_interface', expect.objectContaining({ p_action: 'list', p_professional_id: 'professional-1' }),
+      'manage_social_home_visits_for_interface', expect.objectContaining({
+        p_action: 'list', p_professional_id: 'professional-1',
+      }),
     ))
   })
 })
