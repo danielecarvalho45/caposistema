@@ -80,7 +80,7 @@ describe('AgendaPage', () => {
     vi.useRealTimers()
   })
 
-  it('exibe o botão Visita Domiciliar na Minha Agenda incorporada da Assistência Social', async () => {
+  it('não exibe bloqueio na Minha Agenda da Assistência Social: bloqueio fica na configuração', async () => {
     const socialContext: AccessContext = {
       ...accessContext,
       function_title: 'Assistente Social',
@@ -90,9 +90,9 @@ describe('AgendaPage', () => {
     renderWithRouter(<AgendaPage accessContext={socialContext}
       loadAgenda={vi.fn().mockResolvedValue({ status: 'empty' })} embeddedHome />)
 
-    const action = screen.getByRole('button', { name: 'Bloquear para Visita Domiciliar' })
-    expect(action).toBeVisible()
-    expect(action).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' }))
+      .not.toBeInTheDocument()
+    expect(await screen.findByText('Agendar Visita Domiciliar')).toBeVisible()
   })
 
   it('não mostra o botão de visita domiciliar na agenda de outras especialidades', async () => {
