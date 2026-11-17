@@ -36,11 +36,13 @@ export function SocialHomeVisits({
   administrative = false,
   preselectedPatientId = '',
   preselectedPatientName = '',
+  mode = 'manage',
 }: Readonly<{
   professionalId?: string | null
   administrative?: boolean
   preselectedPatientId?: string
   preselectedPatientName?: string
+  mode?: 'manage' | 'schedule'
 }>) {
   const target = professionalId ?? ''
   const [visits, setVisits] = useState<Visit[]>([])
@@ -177,10 +179,13 @@ export function SocialHomeVisits({
 
   return (
     <section className="agenda-pointual-actions" aria-label="Visita Domiciliar — Assistência Social">
-      <h3>Visita Domiciliar — Assistência Social</h3>
-      <p>Reserve o período para visitas externas na agenda oficial. Os pacientes não precisam de horário individual: o motorista organiza a rota.</p>
+      <h3>{mode === 'schedule' ? 'Agendar Visita Domiciliar' : 'Bloqueio — Visita Domiciliar'}</h3>
+      <p>{mode === 'schedule'
+        ? 'Escolha um período já bloqueado e inclua o paciente. A organização da rota e dos horários cabe ao motorista.'
+        : 'Reserve o período para visitas externas na agenda oficial. Os pacientes não precisam de horário individual: o motorista organiza a rota.'}</p>
       {Boolean(target || professionalId) && (
         <>
+          {mode === 'manage' && (<>
           <div className="agenda-operation-heading">
             <label>Data <CapoDateInput value={date} onChange={(event) => setDate(event.target.value)} /></label>
             <label>Início <CapoTimeInput value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
@@ -190,8 +195,11 @@ export function SocialHomeVisits({
             <textarea rows={2} maxLength={800} value={description} onChange={(event) => setDescription(event.target.value)} />
           </label>
           <button type="button" disabled={busy} onClick={() => void create()}>Bloquear para Visita Domiciliar</button>
-          <h4>Visitas programadas e bloqueios existentes</h4>
-          {visits.length === 0 && <p>Nenhum bloqueio de visita domiciliar neste contexto.</p>}
+          </>)}
+          <h4>{mode === 'schedule' ? 'Períodos bloqueados para visita' : 'Visitas programadas e bloqueios existentes'}</h4>
+          {visits.length === 0 && <p>{mode === 'schedule'
+            ? 'Ainda não há período bloqueado para Visita Domiciliar nesta agenda.'
+            : 'Nenhum bloqueio de visita domiciliar neste contexto.'}</p>}
           {visits.map((visit) => (
             <article key={visit.block_id} className="assistential-card">
               <strong>Visita Domiciliar — {visit.date} · {String(visit.start_time).slice(0,5)}–{String(visit.end_time).slice(0,5)}</strong>
@@ -206,6 +214,7 @@ export function SocialHomeVisits({
                     <span>Telefone: {patient.phone?.trim() || 'Não informado no cadastro'}</span>
                   </div>
                   <small>Situação: {patient.status.replace(/_/g, ' ')}</small>
+                  {mode === 'manage' && (<>
                   <button type="button" disabled={busy} onClick={() => {
                     const key = `${visit.block_id}:${patient.patient_id}`
                     setOutcomeKey(outcomeKey === key ? '' : key)
@@ -231,6 +240,7 @@ export function SocialHomeVisits({
                       <button type="button" disabled={busy} onClick={() => void saveOutcome(visit.block_id, patient.patient_id)}>Salvar resultado da visita</button>
                     </div>
                   )}
+                  </>)}
                 </div>
               ))}
               {preselectedPatientId && !visit.patients.some((patient) => patient.patient_id === preselectedPatientId) && (
