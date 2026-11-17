@@ -1276,29 +1276,6 @@ export function OwnAgendaManager({
         </p>
       )}
 
-      {(enableSocialHomeVisits || (accessContext?.professional_id === professionalId &&
-        resolveProfessionalScreenKind(accessContext) === 'assistencia_social')) && (
-        <section className="agenda-pointual-actions" aria-label="Configuração de bloqueio domiciliar">
-          <div className="agenda-operation-heading">
-            <h4>Bloqueio exclusivo — Visita Domiciliar</h4>
-            <p>Reserve a data e o período nesta configuração. O agendamento dos pacientes será feito posteriormente na agenda da profissional.</p>
-          </div>
-          <div className="agenda-own-action-grid">
-            <button type="button" className="agenda-own-action-card"
-              aria-expanded={showVisitBlocking} aria-controls="configuracao-bloqueio-domiciliar"
-              onClick={() => setShowVisitBlocking((value) => !value)}>
-              <span className="agenda-own-action-icon"><CapoIcon name="calendar" size={20} /></span>
-              <strong>{showVisitBlocking ? 'Fechar bloqueio de Visita Domiciliar' : 'Bloquear para Visita Domiciliar'}</strong>
-            </button>
-          </div>
-          {showVisitBlocking && (
-            <div id="configuracao-bloqueio-domiciliar">
-              <SocialHomeVisits professionalId={professionalId} mode="configure" />
-            </div>
-          )}
-        </section>
-      )}
-
       <section className="agenda-pointual-actions" aria-labelledby="agenda-pointual-actions-title">
         <div className="agenda-operation-heading">
           <h4 id="agenda-pointual-actions-title">Ajustes pontuais de uma data</h4>
@@ -1318,6 +1295,7 @@ export function OwnAgendaManager({
                 disabled={activeConfigurations.length === 0 || busy}
                 onClick={() => {
                   setEntryType(action.value)
+                  setShowVisitBlocking(false)
                   setPendingConfirmation(null)
                   setFeedback(null)
                 }}
@@ -1326,10 +1304,38 @@ export function OwnAgendaManager({
                 <strong>{action.label}</strong>
               </button>
             ))}
+          {(enableSocialHomeVisits || (accessContext?.professional_id === professionalId &&
+        resolveProfessionalScreenKind(accessContext) === 'assistencia_social')) && (
+            <button
+              type="button"
+              className="agenda-own-action-card"
+              aria-label="Bloquear para Visita Domiciliar"
+              title="Reservar um período exclusivo para Visita Domiciliar na agenda da Assistência Social"
+              aria-pressed={showVisitBlocking}
+              aria-expanded={showVisitBlocking}
+              aria-controls="configuracao-bloqueio-domiciliar"
+              disabled={activeConfigurations.length === 0 || busy}
+              onClick={() => {
+                setShowVisitBlocking((current) => !current)
+                setEntryType('')
+                setPendingConfirmation(null)
+                setFeedback(null)
+              }}
+            >
+              <span className="agenda-own-action-icon"><CapoIcon name="calendar" size={20} /></span>
+              <strong>Bloquear para Visita Domiciliar</strong>
+            </button>
+          )}
         </div>
+        {showVisitBlocking && (enableSocialHomeVisits || (accessContext?.professional_id === professionalId &&
+        resolveProfessionalScreenKind(accessContext) === 'assistencia_social')) && (
+          <div id="configuracao-bloqueio-domiciliar" className="agenda-own-visit-configuration">
+            <SocialHomeVisits professionalId={professionalId} mode="configure" />
+          </div>
+        )}
       </section>
 
-      {activeConfigurations.length > 0 && (
+      {activeConfigurations.length > 0 && !showVisitBlocking && (
         <>
           <label>
             Configuração
