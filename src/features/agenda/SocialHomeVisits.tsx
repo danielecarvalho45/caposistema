@@ -37,12 +37,14 @@ export function SocialHomeVisits({
   preselectedPatientId = '',
   preselectedPatientName = '',
   mode = 'manage',
+  onChanged,
 }: Readonly<{
   professionalId?: string | null
   administrative?: boolean
   preselectedPatientId?: string
   preselectedPatientName?: string
   mode?: 'configure' | 'manage' | 'schedule'
+  onChanged?: () => void
 }>) {
   const target = professionalId ?? ''
   const [visits, setVisits] = useState<Visit[]>([])
@@ -148,6 +150,7 @@ export function SocialHomeVisits({
       setFeedback(action === 'add' ? 'Paciente adicionado à Visita Domiciliar.' : 'Paciente retirado da programação; o bloqueio permanece ativo.')
       setSelected(''); setQuery(''); setCandidates([])
       await reload()
+      onChanged?.()
     } catch (error) { setFeedback(errorText(error)) }
     finally { setBusy(false) }
   }
