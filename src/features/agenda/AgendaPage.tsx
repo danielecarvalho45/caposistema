@@ -1199,6 +1199,54 @@ export function AgendaPage({
     ),
   )
 
+  const [homeVisitRevision, setHomeVisitRevision] = useState(0)
+  const [homeVisitResult, setHomeVisitResult] = useState<{
+    key: string
+    visits: readonly HomeVisitBlock[]
+    error: string | null
+  } | null>(null)
+  // A própria RPC valida autorização e isolamento de profissionais/pacientes.
+  const canReadHomeVisits = isSocialWorkerAgenda || socialProfessionalSelected
+  const homeVisitKey = `${professionalId ?? ''}:${startDate}:${endDate}`
+  useEffect(() => {
+    if (!canReadHomeVisits || !professionalId) {
+      setHomeVisitResult(null)
+      return
+    }
+    let active = true
+    const key = homeVisitKey
+    void getSupabaseClient().rpc('manage_social_home_visits_for_interface', {
+      p_action: 'list', p_professional_id: professionalId,
+    }).then(({ data, error }) => {
+      if (!active) return
+      if (error) {
+        setHomeVisitResult({ key, visits: [], error: error.message })
+        return
+      }
+      const response = data && typeof data === 'object' && !Array.isArray(data)
+        ? data as Record<string, unknown> : null
+      if (response?.success !== true || !Array.isArray(response.visits)) {
+        setHomeVisitResult({ key, visits: [], error: 'Não foi possível consultar as visitas domiciliares.' })
+        return
+      }
+      const visits = response.visits.filter((item): item is HomeVisitBlock => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+        const visit = item as Record<string, unknown>
+        return typeof visit.block_id === 'string' && typeof visit.date === 'string'
+          && typeof visit.start_time === 'string' && typeof visit.end_time === 'string'
+          && Array.isArray(visit.patients)
+      }).filter((visit) => visit.date >= startDate && visit.date <= endDate)
+      setHomeVisitResult({ key, visits, error: null })
+    }).catch((error: unknown) => {
+      if (active) setHomeVisitResult({
+        key, visits: [], error: error instanceof Error ? error.message : 'Falha ao consultar visitas domiciliares.',
+      })
+    })
+    return () => { active = false }
+  }, [canReadHomeVisits, professionalId, homeVisitKey, homeVisitRevision, startDate, endDate])
+  const visibleHomeVisits = canReadHomeVisits && homeVisitResult?.key === homeVisitKey
+    ? homeVisitResult.visits : []
+
   const load = useCallback(async () => {
     const requestId = ++requestSequence.current
     setState(loadingState())
@@ -2647,7 +2695,8 @@ export function AgendaPage({
         </div>
 
         {isSocialWorkerAgenda && (
-          <SocialHomeVisits professionalId={professionalId} mode="schedule" />
+          <SocialHomeVisits professionalId={professionalId} mode="schedule"
+            onChanged={() => setHomeVisitRevision((current) => current + 1)} />
         )}
 
 
@@ -2744,6 +2793,7 @@ export function AgendaPage({
                 </div>
                 {appointmentPatientId ? (
                   <SocialHomeVisits administrative professionalId={selectedProfessionalId} mode="schedule"
+                    onChanged={() => setHomeVisitRevision((current) => current + 1)}
                     preselectedPatientId={appointmentPatientId}
                     preselectedPatientName={appointmentPatients.find((patient) => patient.patient_id === appointmentPatientId)?.full_name || appointmentPatientQuery} />
                 ) : (
@@ -3520,6 +3570,9 @@ export function AgendaPage({
         )}
 
         <div aria-live="polite">
+          {canReadHomeVisits && homeVisitResult?.key === homeVisitKey && homeVisitResult.error && (
+            <p role="alert">Não foi possível consultar a programação de visitas domiciliares: {homeVisitResult.error}</p>
+          )}
           {professionalId && scheduleGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
           {professionalId && scheduleGrid.status === 'error' && (
             <p className="assistential-error" role="alert">
@@ -3533,6 +3586,7 @@ export function AgendaPage({
               endDate={endDate}
               view={view}
               appointments={calendarAppointments}
+              homeVisits={visibleHomeVisits}
               attendanceOverrides={attendanceOverrides}
               onAttendance={canRegisterAttendance ? updateAttendance : undefined}
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
