@@ -866,6 +866,7 @@ export function AgendaPage({
   const location = useLocation()
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
+  const [socialVisitMode, setSocialVisitMode] = useState(false)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('')
   const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
@@ -1131,6 +1132,9 @@ export function AgendaPage({
   const specialtyOptions = Array.from(
     new Map(catalogRows.map((row) => [row.specialty_id, row.specialty_name])),
   )
+  const socialProfessionalSelected = !isProfessional && Boolean(selectedProfessionalId) && catalogRows.some((row) =>
+    row.professional_id === selectedProfessionalId &&
+    row.specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('assistencia social'))
   const professionalOptions = Array.from(
     new Map(
       catalogRows
@@ -2492,9 +2496,6 @@ export function AgendaPage({
 
   return (
     <section className={embeddedHome ? 'assistential-page agenda-home-embedded' : 'assistential-page'} aria-labelledby="agenda-title">
-      {!embeddedHome && !isProfessional &&
-        roleCodes.some((role) => role === 'administrador' || role === 'administrativo_operacional') &&
-        <SocialHomeVisits administrative />}
       <div className={embeddedHome ? 'assistential-card agenda-home-card' : 'assistential-card'}>
         <div className="assistential-heading">
           <div>
@@ -2631,6 +2632,18 @@ export function AgendaPage({
                 <h3 id="schedule-title">{isProfessional || movementKind === 'retorno' ? 'Agendar retorno' : 'Novo Agendamento'}</h3>
               </div>
             </div>
+            {socialProfessionalSelected && !awaitingNextAppointmentChoice && (
+              <div className="capo-visit-mode" role="group" aria-label="Tipo de agendamento da Assistência Social">
+                <button type="button" aria-pressed={!socialVisitMode} className={!socialVisitMode ? 'is-selected' : ''}
+                  onClick={() => setSocialVisitMode(false)}>Atendimento local</button>
+                <button type="button" aria-pressed={socialVisitMode} className={socialVisitMode ? 'is-selected' : ''}
+                  onClick={() => setSocialVisitMode(true)}>Visita Domiciliar</button>
+              </div>
+            )}
+            {socialProfessionalSelected && socialVisitMode && !awaitingNextAppointmentChoice ? (
+              <SocialHomeVisits administrative professionalId={selectedProfessionalId} />
+            ) : (
+              <>
             {!isProfessional && schedulingCatalog.status === 'error' && <p role="alert">{schedulingCatalog.error.message}</p>}
             {!isProfessional && schedulingCatalog.status === 'empty' && <p>Nenhuma especialidade/profissional com agenda ativa foi encontrada.</p>}
             <div className="agenda-form-grid">
@@ -2940,6 +2953,8 @@ export function AgendaPage({
             <p className="agenda-contract-note">
               O agendamento é confirmado somente após retorno positivo do banco CAPO.
             </p>
+              </>
+            )}
           </section>
         )}
 
@@ -3482,6 +3497,10 @@ export function AgendaPage({
                   }
                 : undefined}
             />
+          )}
+
+          {!showScheduleForm && !isProfessional && socialProfessionalSelected && (
+            <SocialHomeVisits administrative professionalId={selectedProfessionalId} />
           )}
 
           {professionalId && psychologyGroupSessions.length > 0 && (
