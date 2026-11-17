@@ -16,6 +16,7 @@ import { OwnAgendaManager } from './OwnAgendaManager'
 import { FamilyPsychologyReturnAction } from './FamilyPsychologyReturnAction'
 import { FamilyLinkRebookingAction } from './FamilyLinkRebookingAction'
 import { SocialHomeVisits } from './SocialHomeVisits'
+import { resolveProfessionalScreenKind } from '../professional/professional-screen'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { openCapoWhatsAppTab, reserveCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import { movementWhatsAppMessage, type CommunicationContact } from './appointment-communication'
@@ -867,6 +868,7 @@ export function AgendaPage({
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [socialVisitMode, setSocialVisitMode] = useState(false)
+  const [showOwnVisitBlock, setShowOwnVisitBlock] = useState(false)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('')
   const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
@@ -1064,6 +1066,8 @@ export function AgendaPage({
   }, [embeddedHome, isProfessional])
 
   const effectiveSpecialties = accessContext.specialties ?? []
+  const isSocialWorkerAgenda = isProfessional && Boolean(professionalId) &&
+    resolveProfessionalScreenKind(accessContext) === 'assistencia_social'
   const contextHasSingleSpecialty = effectiveSpecialties.length === 1
   const shouldShowSpecialty = showSpecialty && !contextHasSingleSpecialty
   const pendingSpecialties: PatientSpecialtiesState = { status: 'loading' }
@@ -2592,6 +2596,26 @@ export function AgendaPage({
           )}
         </div>
 
+        {isSocialWorkerAgenda && (
+          <div className="agenda-own-visit-access">
+            <button
+              type="button"
+              className="agenda-own-visit-toggle"
+              aria-expanded={showOwnVisitBlock}
+              aria-controls="agenda-own-visit-block"
+              onClick={() => setShowOwnVisitBlock((current) => !current)}
+            >
+              <CapoIcon name="calendar" size={18} />
+              {showOwnVisitBlock ? 'Fechar bloqueio de Visita Domiciliar' : 'Bloquear para Visita Domiciliar'}
+            </button>
+            {showOwnVisitBlock && (
+              <div id="agenda-own-visit-block">
+                <SocialHomeVisits professionalId={professionalId} />
+              </div>
+            )}
+          </div>
+        )}
+
         {!isProfessional && (
           <>
             <div className="agenda-actions" aria-label="Operações da agenda">
@@ -3508,12 +3532,6 @@ export function AgendaPage({
           {!showScheduleForm && !isProfessional && socialProfessionalSelected && (
             <SocialHomeVisits administrative professionalId={selectedProfessionalId} />
           )}
-          {!embeddedHome && isProfessional && professionalId &&
-            effectiveSpecialties.some((item) => item.specialty_name
-              .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('assistencia social')) && (
-              <SocialHomeVisits professionalId={professionalId} />
-            )}
-
           {professionalId && psychologyGroupSessions.length > 0 && (
             <section className="agenda-psychology-sessions" aria-label="Terapia em grupo na agenda oficial">
               <h3>Atendimentos em grupo — Psicologia</h3>
