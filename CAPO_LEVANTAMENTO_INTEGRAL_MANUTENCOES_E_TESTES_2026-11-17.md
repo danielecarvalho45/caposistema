@@ -362,3 +362,7 @@ Cada linha remete ao título histórico no Documento Mestre; não significa `PAS
 
 ## Conclusão
 **Nenhuma das 257 famílias numeradas de registro deve ser marcada integralmente como homologada por esta inspeção.** A auditoria encontrou implementação estática nas rotinas prioritárias e contratos correspondentes no banco, mas não produziu evidência de funcionamento em todos os logins e dispositivos. Manter as pendências operacionais explícitas no Documento Mestre.
+
+
+## Complemento — abrangência de contas reais (consulta de leitura em 17/11/2026)
+No cruzamento `user_roles` + `user_accounts.is_active`, foram encontrados os seguintes números de contas ativas por papel: `administrador=1`, `administrador_tecnico=1`, `coordenador=1`, `profissional=6`. Não houve linha `administrativo_operacional` para contas ativas nessa consulta. **Essas contagens são por papel e uma conta com papéis acumulados pode ser contada mais de uma vez.** Portanto, não é possível certificar comportamento no login operacional real somente a partir de código e RPC. Também não concluir que o perfil não existe no sistema: ausência nessa consulta é ausência de conta ativa com esse vínculo específico no instante observado.
