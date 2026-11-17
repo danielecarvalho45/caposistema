@@ -760,7 +760,7 @@ export function GestorTeamPage({
               allowStructuralEdit
               enableSocialHomeVisits={specialties.some((specialty) =>
                 specialty.label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'assistencia social' &&
-                selectedCodes(selected.profile.specialty_ids).includes(specialty.id))}
+                memberInput(selected).specialtyIds.includes(specialty.id))}
               enablePsychologyGroup={Boolean(selected.functionTitle?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog') || specialties.some((specialty) => specialty.label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog') && selectedCodes(selected.profile.specialty_ids).includes(specialty.id)))}
             />
           ) : (
