@@ -141,9 +141,15 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
             <div className="capo-team-day-primary">
               <strong className="capo-team-day-time">{clock(slot.slot_start)}</strong>
               <span className="capo-team-day-patient">
-                {slot.slot_status === 'agendado' ? slot.patient_name ?? 'Horário ocupado' :
-                  slot.slot_status === 'livre' ? 'Horário livre' :
-                  slot.block_type ? <AgendaBlockIndicator type={slot.block_type} /> : 'Horário bloqueado'}
+                {slot.slot_status === 'agendado' && id
+                  ? <Link to="/agenda" className="capo-team-day-patient-link"
+                      state={isLinkCancellation
+                        ? ('appointment_kind' in slot && slot.appointment_kind === 'familiar'
+                          ? { origin: 'family_link_cancellation', appointmentId: id }
+                          : { origin: 'patient_link_cancellation', appointmentId: id, patientId: slot.patient_id })
+                        : undefined}>{slot.patient_name ?? 'Horário ocupado'}</Link>
+                  : slot.slot_status === 'livre' ? 'Horário livre' :
+                    slot.block_type ? <AgendaBlockIndicator type={slot.block_type} /> : 'Horário bloqueado'}
               </span>
               {slot.slot_status === 'agendado' && <small className="capo-team-day-state">{ready ? state.error ? 'Confirmação indisponível' : stateLabel(slot, state) : 'Consultando confirmação…'}</small>}
             </div>
@@ -167,6 +173,13 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                             professionalId: slot.professional_id, slotDate: slot.slot_date }}><CapoIcon name="calendar" size={15} /> Remarcar</Link>
                     ) : <button type="button" className="capo-team-day-action" disabled><CapoIcon name="calendar" size={15} /> Remarcar</button>}
                   </>
+                )}
+                {slot.slot_status === 'agendado' && !!id && !isLinkCancellation && (
+                  <Link className="capo-team-day-action capo-team-day-cancel" to="/agenda"
+                    state={{ origin: 'home_cancel_appointment', appointmentId: id,
+                      professionalId: slot.professional_id, slotDate: slot.slot_date }}>
+                    <CapoIcon name="block" size={15} /> Cancelar
+                  </Link>
                 )}
                 {slot.slot_status === 'livre' && (
                   <Link className="capo-team-day-action" to="/agenda"
