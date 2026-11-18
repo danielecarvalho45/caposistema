@@ -120,7 +120,7 @@ export function GestorDashboard() {
           </header>
           {agendaGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
           {agendaGrid.status === 'error' && <p role="alert">{agendaGrid.error.message}</p>}
-          {agendaGrid.status === 'empty' && <p>Nenhum horário cadastrado para este dia.</p>}
+          {agendaGrid.status === 'empty' && <><p>Nenhum horário ativo cadastrado para este dia.</p><DailyTeamAgendaRows slots={[]} /></>}
           {agendaGrid.status === 'success' && (
             <DailyTeamAgendaRows slots={agendaGrid.data} />
           )}
