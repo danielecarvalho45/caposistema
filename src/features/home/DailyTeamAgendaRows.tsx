@@ -40,13 +40,17 @@ function stateLabel(slot: AgendaScheduleSlot | LinkCancellation, status: Status)
   if (contact === 'sem_resposta') return 'Contato realizado · Sem resposta'
   return 'Confirmação pendente'
 }
-export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly AgendaScheduleSlot[] }>) {
+export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all' }: Readonly<{ slots: readonly AgendaScheduleSlot[]; day?: string; mode?: 'all' | 'today' | 'next' }>) {
   const [state, setState] = useState<Status>({ contacts: {}, decisions: {}, familyIds: {}, error: null })
   const [busy, setBusy] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [cancelledLinks, setCancelledLinks] = useState<readonly LinkCancellation[]>([])
   const [feedback, setFeedback] = useState<string | null>(null)
-  const day = slots[0]?.slot_date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+  const day = selectedDay ?? slots[0]?.slot_date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+  const upcoming = new Date().getTime()
+  const freeToday = slots.filter((slot) => slot.slot_status === 'livre' && Date.parse(slot.slot_start) > upcoming)
+  const professionalsWithAvailability = Array.from(new Map(freeToday.map((slot) => [slot.professional_id, { id: slot.professional_id, name: slot.professional_name }])).values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+  const visibleSlots = mode === 'today' ? slots.filter((slot) => slot.slot_status === 'agendado') : slots
   // Os estados de confirmação são independentes da presença/falta assistencial.
   useEffect(() => {
     if (!day) return
@@ -155,7 +159,7 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
     <div className="capo-team-day-list" aria-label="Agenda do dia em ordem de horário">
       {state.error && <p role="alert">Não foi possível verificar as confirmações; confirmação manual indisponível. {state.error}</p>}
       {feedback && <p role="status">{feedback}</p>}
-      {orderedSlots([...slots, ...cancelledLinks]).map((slot) => {
+      {orderedSlots([...visibleSlots, ...cancelledLinks]).map((slot) => {
         const id = slot.appointment_id
         const decision = id ? state.decisions[id] : null
         const contact = id ? state.contacts[id] : null
@@ -230,6 +234,25 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
           </div>
         )
       })}
+      {mode === 'today' && (
+        <section className="capo-today-free-summary" aria-label="Profissionais com horários disponíveis hoje">
+          <h4>Horários disponíveis hoje</h4>
+          {professionalsWithAvailability.length === 0 ? (
+            <p>Nenhum horário livre restante identificado hoje.</p>
+          ) : (
+            <ul>
+              {professionalsWithAvailability.map((professional) => (
+                <li key={professional.id}>
+                  <span>{professional.name} — horários disponíveis hoje</span>
+                  <Link to="/agenda" state={{ origin: 'home_professional_schedule', professionalId: professional.id, slotDate: day }}>
+                    Consultar agenda
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   )
 }
