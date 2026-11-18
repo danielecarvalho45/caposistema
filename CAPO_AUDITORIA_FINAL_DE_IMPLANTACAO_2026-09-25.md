@@ -35,3 +35,17 @@
 **Limites e pendências:** mudanças efetuadas somente nos arquivos do frontend e documentação no GitHub; **nenhuma migração ou dado real no Supabase**. Verificadas estaticamente importações/componentes, fluxo de dados, perfil restrito, continuidade do contrato `AgendaScheduleSlot`, funcionamento anterior por parâmetro opcional `mode='all'`. Não declarar testes Vitest/TypeScript/build, CI, publicação Cloudflare nem teste autenticado em Gestor/AO e nas Homes dos demais profissionais como concluídos sem execução efetiva. Confirmar visualmente responsividade, indicadores de confirmação manual/link, preservação de remarcação pelo link, disponibilidade futura sem falsos horários, clique "Consultar agenda", e sexta/fim de semana no calendário local.
 
 **Situação:** CÓDIGO VERSIONADO NA MAIN / HOMOLOGAÇÃO VISUAL E OPERACIONAL PENDENTE / NENHUMA ALTERAÇÃO EM AGENDA GERAL, BLOQUEIOS OU HOMES DOS PERFIS PROFISSIONAIS.
+
+---
+
+## 18/11/2026 — Ajuste visual da Home: restaurar lateral e reduzir agenda administrativa
+
+**Pedido da Titular, continuidade da manutenção da Home autorizada:** preservar na Home do Gestor/Titular os componentes **Aniversariantes de hoje** e **Atividades Recentes** exatamente na coluna lateral que ocupavam antes da divisão da agenda, mantendo a agenda de dois dias úteis visualmente mais discreta. Na Home do Administrativo Operacional, preservar igualmente a lateral anterior de **Pendências do dia** e **Faltosos**. O escopo é exclusivamente de apresentação; preservar as regras de dias úteis, filtragem de horários, disponibilidade, pacientes, ações e os componentes dos demais perfis.
+
+**Causa confirmada:** no CSS `src/features/home/daily-team-agenda.css` o seletor `.gestor-dashboard-grid > .capo-two-day-home, .operational-dashboard-grid > .capo-two-day-home` tinha `grid-column: 1 / -1`; isso fazia a agenda expandir para as duas colunas do grid-pai, deslocando a lateral original para uma linha inferior. O grid-pai preexistente já possuía estrutura principal + lateral e os componentes de aniversariantes/atividades estavam mantidos no DOM.
+
+**Correção cirúrgica aplicada:** commit `ed1fc157e981d8a5ce0f59a752c70a73d08221d6` na branch `main`. Na regra exclusiva da Home administrativa a agenda ocupa somente `grid-column: 1`, restabelecendo a lateral original na segunda coluna; as duas agendas internas continuam lado a lado em larguras adequadas e passam a usar tipografia, paddings, espaçamentos e botões menores exclusivamente sob `.capo-two-day-home`. Mantida quebra responsiva para uma coluna em telas reduzidas. Nenhuma alteração de JSX, de consultas SQL, migrações, bloqueio/grade da Agenda Geral, ou interfaces dos profissionais.
+
+**Validação:** alteração visual versionada no GitHub; execução de build, testes DOM e homologação visual no Cloudflare não comprovada. Verificação de estrutura do CSS e grid original realizada por leitura do repositório. Confirmar na interface publicada se a lateral voltou à posição esperada sem overflow em desktop/tablet e se os botões continuam legíveis e acionáveis.
+
+**Estado:** AJUSTE VISUAL VERSIONADO / HOMOLOGAÇÃO DA HOME PENDENTE.
