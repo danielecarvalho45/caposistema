@@ -7,7 +7,7 @@ import { CapoIcon } from '../../components/icons/CapoIcon'
 import './daily-team-agenda.css'
 
 type LinkCancellation = AgendaScheduleSlot & { link_cancelled: true; appointment_kind: string }
-type Status = { contacts: Record<string, string>; decisions: Record<string, string>; error: string | null }
+type Status = { contacts: Record<string, string>; decisions: Record<string, string>; familyIds: Record<string, boolean>; error: string | null }
 
 function asRows(value: unknown, key?: string): Record<string, unknown>[] {
   const rows = key && value && typeof value === 'object' && !Array.isArray(value)
@@ -41,7 +41,7 @@ function stateLabel(slot: AgendaScheduleSlot | LinkCancellation, status: Status)
   return 'Confirmação pendente'
 }
 export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly AgendaScheduleSlot[] }>) {
-  const [state, setState] = useState<Status>({ contacts: {}, decisions: {}, error: null })
+  const [state, setState] = useState<Status>({ contacts: {}, decisions: {}, familyIds: {}, error: null })
   const [busy, setBusy] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [cancelledLinks, setCancelledLinks] = useState<readonly LinkCancellation[]>([])
@@ -59,11 +59,14 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
         p_start_date: day, p_end_date: day, p_professional_id: null,
       }),
       getSupabaseClient().rpc('get_home_link_reschedule_for_interface', { p_date: day }),
-    ]).then(([contactsResult, linkResult, cancelledResult]) => {
+      getSupabaseClient().rpc('get_family_psychology_agenda_cards_for_interface', {
+        p_start_date: day, p_end_date: day, p_professional_id: null,
+      }),
+    ]).then(([contactsResult, linkResult, cancelledResult, familyResult]) => {
       if (!active) return
-      if (contactsResult.status === 'error' || linkResult.error || cancelledResult.error) {
-        setState({ contacts: {}, decisions: {}, error: contactsResult.status === 'error'
-          ? contactsResult.error.message : linkResult.error?.message ?? cancelledResult.error?.message ?? 'Erro ao consultar confirmações' })
+      if (contactsResult.status === 'error' || linkResult.error || cancelledResult.error || familyResult.error) {
+        setState({ contacts: {}, decisions: {}, familyIds: {}, error: contactsResult.status === 'error'
+          ? contactsResult.error.message : linkResult.error?.message ?? cancelledResult.error?.message ?? familyResult.error?.message ?? 'Erro ao consultar confirmações' })
         setCancelledLinks([])
         setReady(true)
         return
@@ -77,6 +80,14 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
       for (const row of asRows(linkResult.data)) {
         if (typeof row.appointment_id === 'string' && typeof row.decision === 'string')
           decisions[row.appointment_id] = row.decision
+      }
+      const familyIds: Record<string, boolean> = {}
+      for (const row of asRows(familyResult.data)) {
+        const id = row.appointment_id
+        if (typeof id !== 'string') continue
+        familyIds[id] = true
+        if (typeof row.last_notice_result === 'string') contacts[id] = row.last_notice_result
+        if (typeof row.confirmation_decision === 'string') decisions[id] = row.confirmation_decision
       }
       const cancellations = asRows(cancelledResult.data, 'items')
         .filter((row) => typeof row.appointment_id === 'string' &&
@@ -96,11 +107,11 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
           appointment_kind: String(row.appointment_kind),
         }))
       setCancelledLinks(cancellations)
-      setState({ contacts, decisions, error: null })
+      setState({ contacts, decisions, familyIds, error: null })
       setReady(true)
     }).catch((error: unknown) => {
       if (active) {
-        setState({ contacts: {}, decisions: {}, error: error instanceof Error ? error.message : 'Falha ao consultar confirmações' })
+        setState({ contacts: {}, decisions: {}, familyIds: {}, error: error instanceof Error ? error.message : 'Falha ao consultar confirmações' })
         setCancelledLinks([])
         setReady(true)
       }
@@ -108,19 +119,34 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
     return () => { active = false }
   }, [day])
 
-  async function confirmManual(appointmentId: string) {
+  async function confirmManual(appointmentId: string, family = false) {
     if (busy || state.error) return
     setBusy(appointmentId)
     setFeedback(null)
-    const result = await getRpcService().registerAppointmentPrevisitContact(
-      appointmentId, 'confirmou', 'Confirmação prévia registrada manualmente pelo Administrativo.')
-    if (result.status === 'success' && (result.data as Record<string, unknown>)?.success !== false) {
-      setState((current) => ({ ...current, contacts: { ...current.contacts, [appointmentId]: 'confirmou' } }))
-      setFeedback('Confirmação prévia manual registrada. Não corresponde à presença no atendimento.')
-    } else {
-      setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a operação.')
+    try {
+      const success = family
+        ? await getSupabaseClient().rpc('register_family_psychology_previsit_contact_for_interface', {
+            p_appointment_id: appointmentId, p_result: 'confirmou',
+          }).then(({ data, error }) => {
+            if (error) throw error
+            return Boolean(data && typeof data === 'object' && !Array.isArray(data) && data.success === true)
+          })
+        : await getRpcService().registerAppointmentPrevisitContact(
+            appointmentId, 'confirmou', 'Confirmação prévia registrada manualmente pelo Administrativo.'
+          ).then((result) => result.status === 'success' &&
+            Boolean(result.data && typeof result.data === 'object' &&
+              (result.data as Record<string, unknown>).success === true))
+      if (success) {
+        setState((current) => ({ ...current, contacts: { ...current.contacts, [appointmentId]: 'confirmou' } }))
+        setFeedback('Confirmação prévia manual registrada. Não corresponde à presença no atendimento.')
+      } else {
+        setFeedback('O banco não confirmou a operação. Nenhum estado foi alterado na agenda.')
+      }
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Falha ao registrar confirmação manual.')
+    } finally {
+      setBusy(null)
     }
-    setBusy(null)
   }
 
   return (
@@ -132,10 +158,11 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
         const decision = id ? state.decisions[id] : null
         const contact = id ? state.contacts[id] : null
         const isLinkCancellation = 'link_cancelled' in slot && slot.link_cancelled === true
+        const isFamily = !!id && state.familyIds[id] === true
         const confirmed = decision === 'comparecera' || contact === 'confirmou'
         const requestedChange = isLinkCancellation || decision === 'nao_comparecera' || contact === 'solicitou_cancelamento' || contact === 'solicitou_remarcacao'
-        const canConfirm = slot.slot_status === 'agendado' && !!id && !!slot.patient_id && !confirmed && !requestedChange && !state.error && ready
-        const canReschedule = ready && !state.error && slot.slot_status === 'agendado' && !!id && !!slot.patient_id && (!confirmed || requestedChange)
+        const canConfirm = slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily) && !confirmed && !requestedChange && !state.error && ready
+        const canReschedule = ready && !state.error && slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily) && (!confirmed || requestedChange)
         return (
           <div className={`capo-team-day-entry is-${slot.slot_status}`} key={`${slot.professional_id}:${slot.slot_start}:${id ?? ''}`}>
             <div className="capo-team-day-primary">
@@ -161,16 +188,19 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                     <button type="button" className="capo-team-day-action" title="Confirmar resposta por WhatsApp ou telefone"
                       aria-label={`Confirmar manualmente ${slot.patient_name ?? 'paciente'}`}
                       disabled={!canConfirm || busy !== null}
-                      onClick={() => void confirmManual(id)}><CapoIcon name="check" size={15} /> Confirmar</button>
+                      onClick={() => void confirmManual(id, isFamily)}><CapoIcon name="check" size={15} /> Confirmar</button>
                     {canReschedule ? (
                       <Link className="capo-team-day-action" to="/agenda"
                         state={isLinkCancellation
                           ? ('appointment_kind' in slot && slot.appointment_kind === 'familiar'
                             ? { origin: 'family_link_cancellation', appointmentId: id }
                             : { origin: 'patient_link_cancellation', appointmentId: id, patientId: slot.patient_id })
-                          : { origin: 'home_reschedule_appointment', appointmentId: id,
-                            patientId: slot.patient_id, patientName: slot.patient_name ?? '',
-                            professionalId: slot.professional_id, slotDate: slot.slot_date }}><CapoIcon name="calendar" size={15} /> Remarcar</Link>
+                          : isFamily
+                            ? { origin: 'home_family_reschedule_appointment', appointmentId: id,
+                                professionalId: slot.professional_id, slotDate: slot.slot_date }
+                            : { origin: 'home_reschedule_appointment', appointmentId: id,
+                                patientId: slot.patient_id, patientName: slot.patient_name ?? '',
+                                professionalId: slot.professional_id, slotDate: slot.slot_date }}><CapoIcon name="calendar" size={15} /> Remarcar</Link>
                     ) : <button type="button" className="capo-team-day-action" disabled><CapoIcon name="calendar" size={15} /> Remarcar</button>}
                   </>
                 )}
@@ -186,9 +216,11 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                     state={{ origin: 'home_free_slot', professionalId: slot.professional_id,
                       slotDate: slot.slot_date, slotStart: slot.slot_start }}>Agendar</Link>
                 )}
-                {slot.slot_status === 'agendado' && !!id && !!slot.patient_id && ready && !state.error && !confirmed && !requestedChange && (
+                {slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily) && ready && !state.error && !confirmed && !requestedChange && (
                   <Link className="capo-team-day-action" to="/agenda"
-                    state={{ origin: 'home_previsit_appointment', appointmentId: id,
+                    state={isFamily ? { origin: 'home_family_notice_appointment', appointmentId: id,
+                      professionalId: slot.professional_id, slotDate: slot.slot_date } :
+                      { origin: 'home_previsit_appointment', appointmentId: id,
                       professionalId: slot.professional_id, slotDate: slot.slot_date }}>Avisar</Link>
                 )}
               </div>
