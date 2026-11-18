@@ -29,14 +29,15 @@
 
 
 /* Exclusivo da Home administrativa do Gestor/Titular e Administrativo Operacional. */
+/* Manter a agenda na coluna principal: aniversários/atividades e pendências/faltosos ficam na lateral original. */
 .gestor-dashboard-grid > .capo-two-day-home,
-.operational-dashboard-grid > .capo-two-day-home { grid-column: 1 / -1; min-width: 0; }
+.operational-dashboard-grid > .capo-two-day-home { grid-column: 1; min-width: 0; }
 .capo-two-day-home { width: 100%; min-width: 0; }
-.capo-two-day-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
-.capo-two-day-column { min-width:0; background:#f8fbff; border:1px solid #dce8f2; border-radius:12px; padding:12px; }
-.capo-two-day-column h3 { font-size:1.02rem; margin:0 0 6px; color:#17365f; }
-.capo-two-day-column h3 small { font-size:.78rem; font-weight:500; }
-.capo-two-day-column > p { font-size:.84rem; color:#60799c; margin:0 0 12px; }
+.capo-two-day-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; align-items:start; }
+.capo-two-day-column { min-width:0; background:#f8fbff; border:1px solid #dce8f2; border-radius:9px; padding:8px; }
+.capo-two-day-column h3 { font-size:.89rem; margin:0 0 5px; color:#17365f; }
+.capo-two-day-column h3 small { font-size:.72rem; font-weight:500; }
+.capo-two-day-column > p { font-size:.75rem; color:#60799c; margin:0 0 8px; }
 .capo-two-day-column .capo-team-day-patient { flex-basis:160px; }
 .capo-today-free-summary { margin-top:14px; padding:12px; border-top:1px solid #cddfec; }
 .capo-today-free-summary h4 { margin:0 0 9px; color:#17365f; font-size:.94rem; }
@@ -45,3 +46,17 @@
 .capo-today-free-summary li { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; font-size:.82rem; }
 .capo-today-free-summary a { text-decoration:underline; color:#005ebc; font-weight:650; }
 @media(max-width:900px){.capo-two-day-grid { grid-template-columns:1fr; } }
+
+/* Compactar somente as listas dentro da Home administrativa, mantendo ações e dados. */
+.capo-two-day-home .capo-team-day-list { gap:5px; }
+.capo-two-day-home .capo-team-day-entry { padding:7px 8px; gap:4px; }
+.capo-two-day-home .capo-team-day-time { font-size:.85rem; min-width:45px; }
+.capo-two-day-home .capo-team-day-patient { font-size:.84rem; flex-basis:125px; }
+.capo-two-day-home .capo-team-day-state { font-size:.7rem; }
+.capo-two-day-home .capo-team-day-secondary { padding-left:0; gap:5px; }
+.capo-two-day-home .capo-team-day-professional { font-size:.75rem; }
+.capo-two-day-home .capo-team-day-actions { gap:4px; }
+.capo-two-day-home .capo-team-day-action { font-size:.7rem; min-height:27px; padding:3px 6px; }
+@media (max-width:620px) {
+ .gestor-dashboard-grid > .capo-two-day-home, .operational-dashboard-grid > .capo-two-day-home { grid-column:auto; }
+}
