@@ -49,3 +49,17 @@
 **Validação:** alteração visual versionada no GitHub; execução de build, testes DOM e homologação visual no Cloudflare não comprovada. Verificação de estrutura do CSS e grid original realizada por leitura do repositório. Confirmar na interface publicada se a lateral voltou à posição esperada sem overflow em desktop/tablet e se os botões continuam legíveis e acionáveis.
 
 **Estado:** AJUSTE VISUAL VERSIONADO / HOMOLOGAÇÃO DA HOME PENDENTE.
+
+---
+
+## 18/11/2026 — Refinamento da Home administrativa: somente agendados e avisos de disponibilidade em ambos os dias
+
+**Solicitação da Titular:** a nova Home administrativa com dois dias úteis ficou visualmente longa e esticada. Corrigir a apresentação para **mostrar exclusivamente consultas agendadas nos dois dias**, preservando ao final de **cada coluna** um único aviso sucinto com os profissionais que possuem horários livres no dia correspondente e link `Consultar agenda`; horários livres individuais não devem ocupar a visão rápida. Manter aniversariantes/atividades recentes na lateral original do Gestor e pendências/faltosos na lateral original do Administrativo Operacional. Não mudar a Home profissional nem a Agenda Geral.
+
+**Implementação pontual GitHub `main`:** `AdministrativeTwoDayAgenda.tsx` passou a usar o modo compacto `today` em ambas as colunas, preservando a consulta separada à grade real de cada dia e o cálculo de segunda a sexta-feira. Passou a apresentar título discreto, linha de contexto `Consultas agendadas · disponibilidade ao final` e resumo de vagas por data (commit `4f1b8744f2f64420fdbbe397324be7ba3eb201f4`). Em `DailyTeamAgendaRows.tsx`, o resumo passou a ser neutro quanto à data (`Profissional · horários disponíveis`), mantendo o filtro de slots `livre` com início posterior ao instante atual, e links `home_professional_schedule` que abrem a agenda canônica na data e profissional; pedidos de remarcação já vinculados ao link continuam preservados (commit `b7cb0d91d5e43a1c8cb0122166e40d3f9cba3759`). O CSS `daily-team-agenda.css` reduziu densidade, tipografia, padding e lacunas **somente dentro de `.capo-two-day-home`**, e limitou a altura por coluna com rolagem interna, para a agenda não se alongar verticalmente nem empurrar os painéis laterais (commit `b03a35a607ee272baa2c96c16c8c9eb8bf6da3dc`). Teste específico de duas colunas alterado para verificar ausência de linhas `Horário livre` em ambas e presença do resumo e link de consulta na segunda, commit `aecfa6fe8a4a0958d760db203960b1fe8aea0d4c`.
+
+**Preservação:** Gestor/Titular e Administrativo Operacional utilizam o mesmo componente de Home administrativa; não foram tocados componentes das Homes de profissionais, estrutura de Agendas, bloqueio/remanejamento homologado, status de presença, banco Supabase, horários, profissionais ou dados reais. A regra de múltiplos profissionais com vagas usa grade real e agrupa por ID de profissional, sem repetir horários na visão rápida. Visualização da Agenda Geral segue autorizada por papel.
+
+**Validação pendente:** arquivos de código e teste versionados; não há confirmação de execução de Vitest, build, Cloudflare ou homologação visual autenticada nesta etapa. Conferir responsividade e legibilidade da lista interna rolável em Gestor e Administrativo Operacional e se o aviso de disponibilidade de ambos os dias acompanha os dados reais.
+
+**Estado:** AJUSTE VISUAL E FILTROS VERSIONADOS NA MAIN / AGUARDA HOMOLOGAÇÃO VISUAL DA TITULAR.
