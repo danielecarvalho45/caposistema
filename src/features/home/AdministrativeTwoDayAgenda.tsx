@@ -70,8 +70,8 @@ export function AdministrativeTwoDayAgenda({
             <p>{column.mode === 'today' ? 'Consultas agendadas e disponibilidade resumida' : 'Consultas agendadas e horários livres'}</p>
             {column.state.status === 'loading' && <p>Carregando agenda…</p>}
             {column.state.status === 'error' && <p role="alert">Não foi possível consultar a agenda deste dia.</p>}
-            {column.state.status === 'empty' && <DailyTeamAgendaRows slots={[]} day={column.date} mode={column.mode} />}
-            {column.state.status === 'success' && <DailyTeamAgendaRows slots={column.state.data} day={column.date} mode={column.mode} />}
+            {column.state.status === 'empty' && <DailyTeamAgendaRows slots={[]} day={column.date} mode={column.mode} summaryLabel={dates.isToday ? 'Horários disponíveis hoje' : 'Horários disponíveis no próximo dia útil'} />}
+            {column.state.status === 'success' && <DailyTeamAgendaRows slots={column.state.data} day={column.date} mode={column.mode} summaryLabel={dates.isToday ? 'Horários disponíveis hoje' : 'Horários disponíveis no próximo dia útil'} />}
           </section>
         ))}
       </div>
