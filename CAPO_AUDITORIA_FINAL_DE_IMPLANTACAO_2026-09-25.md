@@ -9680,3 +9680,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limite da homologação:** função e critérios conferidos no Supabase; não realizada tentativa autenticada na interface, build, Vitest ou confirmação de publicação Cloudflare. **Bloqueio de 20/11/2026 não foi criado nesta manutenção** (consulta de leitura retornou `scheilla_existing_general_blocks_20nov=0`). O Gestor deve testar a mesma operação, conferir o resultado visual Dia/Semana/Mês e garantir que nenhum paciente esteja pendente de remanejamento.
 
 **Estado:** CORREÇÃO SQL APLICADA / CONFLITO FALSO ELIMINADO NA CONSULTA DE VERIFICAÇÃO / AUDITORIA HISTÓRICA PRESERVADA / HOMOLOGAÇÃO DE GRAVAÇÃO REAL PENDENTE.
+
+
+### Homologação operacional informada pela Titular — bloqueios da agenda (18/11/2026)
+
+**Evidência da Titular:** após a aplicação da correção do falso conflito por configuração inativa e das manutenções anteriores relacionadas ao bloqueio geral, a Titular informou expressamente: **“Testado a correção e todas as manutenções de bloqueio estão ativas e funcionando.”** Essa é uma confirmação de teste operacional pela usuária no CAPO, não uma execução independente de teste automatizado pelo assistente.
+
+**Abrangência declarada:** funcionalidades de bloqueio que foram objeto das manutenções recentes, incluindo o caso de Scheilla e o fluxo de bloqueio geral. Considerar as manutenções **homologadas pela Titular no uso operacional**, sem ampliar a afirmação para cenários ou perfis não citados, nem presumir detalhes de testes não relatados.
+
+**Referências técnicas:** migração final `supabase/migrations/20261118222500_ignore_inactive_configs_agenda_period_conflicts.sql`, commit `75128abadd4ceecd9de4d5541eb5e011791ba9b1`; validação SQL de conflito falso igual a zero; documentação anterior no commit `1507f3b086942fce75b1125c8bca47eb828f7724`.
+
+**Estado:** BLOQUEIOS — **HOMOLOGAÇÃO OPERACIONAL POSITIVA PELA TITULAR; CORREÇÃO CONFIRMADA EM USO.** Manter componentes e regras aprovadas preservados contra regressão, seguir continuidade simples e exigir VERDE para futuras alterações funcionais. Nenhuma mutação de agenda ou dados nesta anotação.
