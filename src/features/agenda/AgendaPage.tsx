@@ -488,6 +488,7 @@ export function HomeScheduleGrid({
                       {familyCard && <small>Familiar/Cuidador · CAPO {String(familyCard.family_capo_number ?? 'Pendente')} · CMS {String(familyCard.family_cms ?? 'Não informado')}</small>}
                       {familyCard?.source_patient_deceased === true && <small>Paciente vinculado em óbito · {String(familyCard.source_patient_death_date ?? '').split('-').reverse().join('/')}</small>}
                       {familyCard?.confirmation_decision === 'comparecera' && <small>✓ Confirmado antecipadamente pelo link</small>}
+                      {familyCard?.last_notice_result === 'confirmou' && familyCard.confirmation_decision !== 'comparecera' && <small>✓ Avisado · Confirmado manualmente pelo Administrativo</small>}
                       {attendanceMarker(attendanceStatus)}
                       {slot.appointment_id && previsitContacts?.[slot.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[slot.appointment_id].result)}</small>}
                       {slot.slot_status === 'agendado' &&
@@ -626,6 +627,7 @@ export function HomeScheduleGrid({
                       {familyCard && <small>Familiar/Cuidador · CAPO {String(familyCard.family_capo_number ?? 'Pendente')} · CMS {String(familyCard.family_cms ?? 'Não informado')}</small>}
                       {familyCard?.source_patient_deceased === true && <small>Paciente vinculado em óbito · {String(familyCard.source_patient_death_date ?? '').split('-').reverse().join('/')}</small>}
                       {familyCard?.confirmation_decision === 'comparecera' && <small>✓ Confirmado antecipadamente pelo link</small>}
+                      {familyCard?.last_notice_result === 'confirmou' && familyCard.confirmation_decision !== 'comparecera' && <small>✓ Avisado · Confirmado manualmente pelo Administrativo</small>}
                       {slot.slot_status === 'livre' && onSchedule && (
                         <button
                           type="button"
@@ -1049,6 +1051,41 @@ export function AgendaPage({
   const navigationState = location.state && typeof location.state === 'object'
     ? location.state as Record<string, unknown>
     : null
+  // A Home administrativa abre a mesma agenda canônica de familiar/cuidador.
+  // Confirmação prévia e remarcação não modificam presença/falta assistencial.
+  useEffect(() => {
+    if (isProfessional || !navigationState) return
+    const origin = navigationState.origin
+    if (origin !== 'home_family_reschedule_appointment' &&
+        origin !== 'home_family_notice_appointment') return
+    const appointmentId = typeof navigationState.appointmentId === 'string'
+      ? navigationState.appointmentId : ''
+    const requestedProfessional = typeof navigationState.professionalId === 'string'
+      ? navigationState.professionalId : ''
+    const requestedDate = typeof navigationState.slotDate === 'string'
+      ? navigationState.slotDate : ''
+    if (!appointmentId || !requestedProfessional) return
+    if (requestedDate && (consultationStartDate !== requestedDate || consultationEndDate !== requestedDate)) {
+      setConsultationStartDate(requestedDate)
+      setConsultationEndDate(requestedDate)
+      setView('day')
+      return
+    }
+    if (selectedProfessionalId !== requestedProfessional) {
+      setSelectedProfessionalId(requestedProfessional)
+      return
+    }
+    const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
+    if (!family) return
+    if (origin === 'home_family_reschedule_appointment' && familyRescheduleId !== appointmentId) {
+      prepareFamilyReschedule(appointmentId)
+      setAppointmentFeedback('Remarcação do familiar selecionada na agenda oficial da Psicologia.')
+    } else if (origin === 'home_family_notice_appointment') {
+      setAppointmentFeedback('Consulta familiar selecionada. Use “Lembrar consulta com link” na agenda para preparar o aviso.')
+    }
+  }, [navigationState, isProfessional, consultationStartDate, consultationEndDate,
+      selectedProfessionalId, familyPsychologyCards, familyRescheduleId])
+
   const familyLinkRebookingId = navigationState?.origin === 'family_link_cancellation'
     && typeof navigationState.appointmentId === 'string'
     ? navigationState.appointmentId : ''
@@ -3446,6 +3483,7 @@ export function AgendaPage({
                       <td>{String(item.family_name ?? 'Familiar')} <small>Familiar/Cuidador · CAPO {String(item.family_capo_number ?? '')}</small></td>
                       <td>{item.confirmation_decision === 'comparecera'
                         ? '✓ Presença confirmada pelo link'
+                        : notice === 'confirmou' ? '✓ Avisado · Confirmado manualmente pelo Administrativo'
                         : notice === 'avisado' ? '✓ Paciente avisado'
                         : notice === 'solicitou_cancelamento' ? 'Solicitou cancelamento'
                         : 'Ainda sem registro de contato prévio'}</td>
