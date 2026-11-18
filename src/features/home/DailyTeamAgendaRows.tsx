@@ -52,6 +52,8 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
     if (!day) return
     let active = true
     setReady(false)
+    setCancelledLinks([])
+    setState({ contacts: {}, decisions: {}, familyIds: {}, error: null })
     const rpc = getRpcService()
     void Promise.all([
       rpc.getAppointmentPrevisitContacts(day, day, null),
