@@ -20,7 +20,7 @@ function clock(value: string) {
   return Number.isNaN(date.getTime()) ? value.slice(11, 16) :
     new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo', hourCycle: 'h23' }).format(date)
 }
-function orderedSlots(slots: readonly AgendaScheduleSlot[]) {
+function orderedSlots<T extends AgendaScheduleSlot>(slots: readonly T[]): T[] {
   return [...slots].sort((a, b) =>
     Date.parse(a.slot_start) - Date.parse(b.slot_start) ||
     a.professional_name.localeCompare(b.professional_name, 'pt-BR') ||
@@ -158,7 +158,7 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                     {canReschedule ? (
                       <Link className="capo-team-day-action" to="/agenda"
                         state={isLinkCancellation
-                          ? (slot.appointment_kind === 'familiar'
+                          ? ('appointment_kind' in slot && slot.appointment_kind === 'familiar'
                             ? { origin: 'family_link_cancellation', appointmentId: id }
                             : { origin: 'patient_link_cancellation', appointmentId: id, patientId: slot.patient_id })
                           : { origin: 'home_reschedule_appointment', appointmentId: id,
