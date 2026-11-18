@@ -75,3 +75,17 @@
 **Decisão de manutenção:** **ENCERRADA E APROVADA VISUALMENTE PELA TITULAR**. Preservar o padrão, sem mudanças preventivas ou reestruturação. Reabrir exclusivamente para erro concreto com novo **VERDE** e correção cirúrgica. A confirmação de uso da Titular não significa execução de suíte automatizada ou homologação de fluxos não exercitados.
 
 **Preservação:** nenhuma modificação de banco Supabase, agendamentos, bloqueios da Agenda Geral ou Homes profissionais neste registro documental.
+
+---
+
+## 18/11/2026 — VERDE: padronização global de barras de rolagem com azul translúcido
+
+**Autorização expressa da Titular:** após aprovar a Home administrativa de dois dias úteis, solicitou substituir o contraste da barra de rolagem por **azul-claro translúcido, discreto, fino e arredondado**. Em seguida ampliou expressamente o escopo visual para **todas as barras de rolagem do sistema CAPO, todos os perfis e todas as telas** e autorizou a execução com **VERDE**.
+
+**Implementação única e global:** `src/styles/global.css`, importado por `src/main.tsx` após `tokens.css` para todos os perfis, recebeu os tokens `--capo-scrollbar-thumb` (`rgb(69 151 214 / 29%)`) e `--capo-scrollbar-thumb-hover` (`rgb(54 131 201 / 48%)`). Aplica `scrollbar-width: thin` e `scrollbar-color: ... transparent` para navegadores com suporte padronizado, e pseudoelementos `::-webkit-scrollbar`, `::-webkit-scrollbar-track`, `::-webkit-scrollbar-thumb` com largura e altura de 7px, trilho transparente, borda arredondada e incremento leve de cor no hover para motores que suportem esse desenho. Em `forced-colors: active`, mantém cores e espessura automáticas do sistema para acessibilidade.
+
+**Escopo preservado:** somente CSS global estético. Não alterar `overflow`, direção, posição, altura, gesto de toque, navegação, rolagem efetiva, agendas, bloqueios, agendamentos, notificações, solicitações, permissões, dados reais ou homologação. Em dispositivos e navegadores que desenham barras sobrepostas/nativas, o acabamento pode ser controlado pelo próprio sistema operacional, sem regressão funcional.
+
+**Commit GitHub:** `aec4ff55e362f304cbc247552d8e7cd0e0f9ceef` no repositório `danielecarvalho45/caposistema`, branch `main`. A regra está no único arquivo global já carregado na entrada `src/main.tsx`; os estilos locais de módulos e Homes não precisaram ser alterados.
+
+**Verificações e limites:** conferidos por leitura do GitHub a importação da folha global, ausência de padrão de scrollbar existente na folha global e os tokens da identidade visual. Não executado `vitest`/build, teste visual em Firefox, Chromium, Safari e celular, nem confirmada publicação Cloudflare; o padrão final depende do suporte do navegador. **Status: ESTILO GLOBAL VERSIONADO, HOMOLOGAÇÃO VISUAL DA TITULAR PENDENTE.**
