@@ -33,6 +33,7 @@ function renderPage(element: ReactNode) {
 function serviceWith(result: object) {
   return {
     getNotifications: vi.fn().mockResolvedValue(result),
+    getNotificationsByState: vi.fn().mockResolvedValue(result),
     updateNotification: vi.fn().mockResolvedValue({
       status: 'success',
       data: {
@@ -162,18 +163,14 @@ describe('NotificationsPage', () => {
   it('filtra não lidas e recarrega do backend após marcar como lida', async () => {
     const user = userEvent.setup()
     const service = serviceWith({ status: 'success', data: [notification] })
-    service.getNotifications
-      .mockResolvedValueOnce({ status: 'success', data: [notification] })
+    service.getNotificationsByState
       .mockResolvedValueOnce({ status: 'success', data: [notification] })
       .mockResolvedValueOnce({ status: 'empty' })
 
     renderPage(<NotificationsPage service={service} />)
     await screen.findByText('Solicitação concluída')
-    await user.selectOptions(
-      screen.getByLabelText('Filtrar notificações'),
-      'unread',
-    )
-    expect(service.getNotifications).toHaveBeenLastCalledWith(true, 20, 0)
+    expect(screen.getByLabelText('Filtrar notificações')).toHaveValue('unread')
+    expect(service.getNotificationsByState).toHaveBeenLastCalledWith('unread', 20, 0)
     await user.click(screen.getByRole('button', { name: 'Marcar como lida' }))
 
     expect(service.updateNotification).toHaveBeenCalledWith(
@@ -181,7 +178,7 @@ describe('NotificationsPage', () => {
       'lida',
       '',
     )
-    expect(service.getNotifications).toHaveBeenCalledTimes(3)
+    expect(service.getNotificationsByState).toHaveBeenCalledTimes(2)
     expect(
       await screen.findByText('Nenhuma notificação encontrada.'),
     ).toBeVisible()
@@ -251,7 +248,7 @@ describe('NotificationsPage', () => {
     renderPage(<NotificationsPage service={service} />)
     await user.click(await screen.findByRole('button', { name: 'Marcar como lida' }))
     expect(await screen.findByRole('status')).toHaveTextContent('O banco não confirmou a atualização da notificação.')
-    expect(service.getNotifications).toHaveBeenCalledTimes(1)
+    expect(service.getNotificationsByState).toHaveBeenCalledTimes(1)
   })
 
   it('abre a solicitação administrativa pelo ID sem confundir leitura com atendimento', async () => {
@@ -321,5 +318,36 @@ describe('CAPO — notificações resolvidas não permanecem na fila ativa', () 
     if (result.status === 'success') {
       expect(result.data.map((item) => item.notification_id)).toEqual(['notification-id'])
     }
+  })
+})
+
+
+describe('CAPO — quatro filtros com a mesma central do Gestor e AO', () => {
+  it('consulta o banco na ordem Não lidas, Lidas, Resolvidas e Todas', async () => {
+    const user = userEvent.setup()
+    const service = serviceWith({ status: 'empty' })
+    renderPage(<NotificationsPage service={service} />)
+    const select = screen.getByLabelText('Filtrar notificações')
+    expect(select).toHaveValue('unread')
+    expect(Array.from(select.querySelectorAll('option')).map((o) => o.value)).toEqual(['unread', 'read', 'resolved', 'all'])
+    expect(service.getNotificationsByState).toHaveBeenCalledWith('unread', 20, 0)
+    await user.selectOptions(select, 'read')
+    expect(service.getNotificationsByState).toHaveBeenCalledWith('read', 20, 0)
+    await user.selectOptions(select, 'resolved')
+    expect(service.getNotificationsByState).toHaveBeenCalledWith('resolved', 20, 0)
+    await user.selectOptions(select, 'all')
+    expect(service.getNotificationsByState).toHaveBeenCalledWith('all', 20, 0)
+  })
+  it('preserva resolvidas na consulta histórica e exclui resolvidas da fila não lida', async () => {
+    const resolved = { ...notification, read_at: '2026-11-18T10:00:00Z', resolved_at: '2026-11-18T11:00:00Z' }
+    const transport = vi.fn().mockResolvedValue({ data: [resolved], error: null })
+    const service = createNotificationsService(transport)
+    const history = await service.getNotificationsByState('resolved', 20, 0)
+    expect(history.status).toBe('success')
+    expect(transport).toHaveBeenCalledWith('get_my_notifications_by_state_for_interface', {
+      p_state: 'resolved', p_limit: 20, p_offset: 0,
+    })
+    const active = await service.getNotificationsByState('unread', 20, 0)
+    expect(active.status).toBe('empty')
   })
 })
