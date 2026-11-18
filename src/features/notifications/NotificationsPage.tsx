@@ -234,7 +234,7 @@ export function NotificationsPage({
                         : 'Abrir contexto'}
                     </button>
                   )}
-                  {isUnread(item) && (
+                  {isUnread(item) && item.resolved_at === null && (
                     <button
                       type="button"
                       disabled={busy}
