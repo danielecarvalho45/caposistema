@@ -7,6 +7,7 @@ import {
   type Notification,
   type NotificationsService,
   type NotificationView,
+  type NotificationCategory,
 } from './notifications-integration'
 import './notifications-page.css'
 
@@ -34,6 +35,7 @@ export function NotificationsPage({
 }: Props) {
   const navigate = useNavigate()
   const [view, setView] = useState<NotificationView>('unread')
+  const [category, setCategory] = useState<NotificationCategory>('general')
   const [page, setPage] = useState(0)
   const [state, setState] = useState<AsyncState<readonly Notification[]>>({
     status: 'loading',
@@ -44,14 +46,14 @@ export function NotificationsPage({
   useEffect(() => {
     let active = true
     void service
-      .getNotificationsByState(view, pageSize, page * pageSize)
+      .getNotificationsByCategory(category, view, pageSize, page * pageSize)
       .then((nextState) => {
         if (active) setState(nextState)
       })
     return () => {
       active = false
     }
-  }, [view, page, service])
+  }, [category, view, page, service])
 
   async function update(item: Notification, action: 'lida' | 'resolvida') {
     setBusyId(item.notification_id)
@@ -70,7 +72,8 @@ export function NotificationsPage({
       setBusyId(null)
       return
     }
-    const refreshed = await service.getNotificationsByState(
+    const refreshed = await service.getNotificationsByCategory(
+      category,
       view,
       pageSize,
       page * pageSize,
@@ -163,6 +166,32 @@ export function NotificationsPage({
           </select>
         </label>
       </header>
+
+      <nav className="notifications-category-tabs" aria-label="Categorias de notificações" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+        <button type="button" aria-pressed={category === 'general'} onClick={() => {
+          setCategory('general')
+          setView('unread')
+          setPage(0)
+          setState({ status: 'loading' })
+          setFeedback(null)
+        }}>
+          Notificações gerais
+        </button>
+        <button type="button" aria-pressed={category === 'confirmations'} onClick={() => {
+          setCategory('confirmations')
+          setView('unread')
+          setPage(0)
+          setState({ status: 'loading' })
+          setFeedback(null)
+        }}>
+          Confirmações de agendamento
+        </button>
+      </nav>
+      {category === 'confirmations' && (
+        <p className="notifications-feedback">
+          Pendências de confirmação por link ou contato manual. A confirmação efetiva retira o aviso da fila ativa; pedidos de remarcação continuam exigindo providência na Agenda.
+        </p>
+      )}
 
       <p className="notifications-counter" aria-live="polite">
         {totalCount}{' '}
