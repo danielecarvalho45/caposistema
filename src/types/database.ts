@@ -1144,6 +1144,14 @@ export type Database = {
         }
         Returns: Json
       }
+      get_family_psychology_agenda_cards_for_interface: {
+        Args: { p_start_date: string; p_end_date: string; p_professional_id?: string | null }
+        Returns: Json
+      }
+      register_family_psychology_previsit_contact_for_interface: {
+        Args: { p_appointment_id: string; p_result: string }
+        Returns: Json
+      }
       get_home_link_reschedule_for_interface: {
         Args: { p_date: string }
         Returns: Json
