@@ -13,7 +13,7 @@ import type { AccessContext } from '../../types/access'
 import { ProfileDashboard } from './ProfileDashboard'
 import { CareLocationNotices } from './CareLocationNotices'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
-import { TeamDayAgendaPanel } from './TeamDayAgendaPanel'
+import { AdministrativeTwoDayAgenda } from './AdministrativeTwoDayAgenda'
 import './home-page.css'
 import '../../styles/quick-access.css'
 
@@ -59,8 +59,6 @@ export function HomePage({
 }: HomePageProps) {
   const [birthdays, setBirthdays] =
     useState<AsyncState<BirthdayOverview>>(loadingState())
-  const [operationalAgenda, setOperationalAgenda] =
-    useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState())
   const [operationalPending, setOperationalPending] =
     useState<AsyncState<readonly PendingItem[]>>(loadingState())
   const [operationalNoShows, setOperationalNoShows] =
@@ -92,12 +90,6 @@ export function HomePage({
   useEffect(() => {
     if (!isAdministrativeOperational) return
     let active = true
-    const today = new Date().toLocaleDateString('en-CA', {
-      timeZone: 'America/Sao_Paulo',
-    })
-    void loadOperationalAgendaGrid(today, today, null).then((state) => {
-      if (active) setOperationalAgenda(state)
-    })
     void loadOperationalPending(8, 0).then((state) => {
       if (active) setOperationalPending(state)
     })
@@ -109,7 +101,6 @@ export function HomePage({
     }
   }, [
     isAdministrativeOperational,
-    loadOperationalAgendaGrid,
     loadOperationalNoShows,
     loadOperationalPending,
   ])
@@ -121,7 +112,7 @@ export function HomePage({
 
       {isAdministrativeOperational && (
         <section className="operational-dashboard-grid" aria-label="Rotina operacional do dia">
-          <TeamDayAgendaPanel agenda={operationalAgenda} />
+          <AdministrativeTwoDayAgenda loadAgenda={loadOperationalAgendaGrid} />
 
 
           <aside className="gestor-side-stack">
