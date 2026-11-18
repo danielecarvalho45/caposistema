@@ -384,6 +384,7 @@ export function HomeScheduleGrid({
   homeVisits = [],
   renderAdministrativeActions,
   renderFamilyReturnAction,
+  showProfessional = false,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
   startDate: string
@@ -401,6 +402,7 @@ export function HomeScheduleGrid({
   groupSessions?: readonly PsychologyGroupSession[]
   familyAppointments?: readonly Record<string, unknown>[]
   homeVisits?: readonly HomeVisitBlock[]
+  showProfessional?: boolean
   renderAdministrativeActions?: (appointmentId: string) => ReactNode
   renderFamilyReturnAction?: (appointmentId: string) => ReactNode
 }>) {
@@ -437,6 +439,7 @@ export function HomeScheduleGrid({
           <thead>
             <tr>
               <th scope="col">Horário</th>
+              {showProfessional && <th scope="col">Profissional</th>}
               <th scope="col">Paciente</th>
               <th scope="col">Especialidades</th>
               <th scope="col">Tipo</th>
@@ -483,6 +486,7 @@ export function HomeScheduleGrid({
               return (
                 <tr key={`${slot.professional_id}:${slot.slot_start}`} className={`is-${slot.slot_status}`}>
                   <td data-label="Horário"><strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong></td>
+                  {showProfessional && <td data-label="Profissional"><strong>{slot.professional_name}</strong></td>}
                   <td data-label="Paciente">
                     <div className="agenda-home-patient-line">
                       <strong>{group ? group.name : patientName}</strong>
@@ -617,6 +621,7 @@ export function HomeScheduleGrid({
                       key={`${slot.professional_id}:${slot.slot_start}`}
                     >
                       <strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong>
+                      {showProfessional && <small className="agenda-schedule-professional">{slot.professional_name}</small>}
                       <span className="agenda-schedule-status">
                         {group ? (group.blocked ? `${group.name} · Grupo bloqueado` : `${group.name} · ${group.participants.length}/${group.capacity} vagas`) :
                         slot.slot_status === 'livre'
@@ -2260,12 +2265,13 @@ export function AgendaPage({
   ])
 
   useEffect(() => {
-    if (!canAccess || !professionalId) {
+    if (!canAccess || (isProfessional && !professionalId)) {
       setScheduleGrid({ status: 'empty' })
       return
     }
     let active = true
     setScheduleGrid(loadingState())
+    // NULL representa 'Todos os profissionais' nos perfis com acesso geral.
     void getRpcService()
       .getAgendaScheduleGrid(startDate, endDate, professionalId)
       .then((nextState) => {
@@ -2274,7 +2280,7 @@ export function AgendaPage({
     return () => {
       active = false
     }
-  }, [canAccess, endDate, professionalId, startDate])
+  }, [canAccess, endDate, isProfessional, professionalId, startDate])
 
   useEffect(() => {
     const stateValue = location.state && typeof location.state === 'object'
@@ -3620,19 +3626,20 @@ export function AgendaPage({
           {canReadHomeVisits && homeVisitResult?.key === homeVisitKey && homeVisitResult.error && (
             <p role="alert">Não foi possível consultar a programação de visitas domiciliares: {homeVisitResult.error}</p>
           )}
-          {professionalId && scheduleGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
-          {professionalId && scheduleGrid.status === 'error' && (
+          {scheduleGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
+          {scheduleGrid.status === 'error' && (
             <p className="assistential-error" role="alert">
               Não foi possível carregar a grade da agenda: {scheduleGrid.error.message}
             </p>
           )}
-          {professionalId && (scheduleGrid.status === 'empty' || scheduleGrid.status === 'success') && (
+          {(scheduleGrid.status === 'empty' || scheduleGrid.status === 'success') && (
             <HomeScheduleGrid
               slots={scheduleGrid.status === 'success' ? scheduleGrid.data : []}
               startDate={startDate}
               endDate={endDate}
               view={view}
               appointments={calendarAppointments}
+              showProfessional={!professionalId}
               homeVisits={visibleHomeVisits}
               attendanceOverrides={attendanceOverrides}
               onAttendance={canRegisterAttendance ? updateAttendance : undefined}
@@ -3886,25 +3893,6 @@ export function AgendaPage({
               </button>
             </div>
           )}
-          {!professionalId && (state.status === 'empty' ||
-            (state.status === 'success' && calendarAppointments.length === 0)) &&
-            view === 'day' && familyPsychologyCards.length === 0 && (
-              <p>Nenhum atendimento agendado para este dia.</p>
-            )}
-          {!professionalId && (state.status === 'empty' || state.status === 'success') &&
-            (view !== 'day' || (state.status === 'success' && calendarAppointments.length > 0)) && (
-              <AgendaResults
-                appointments={calendarAppointments}
-                startDate={startDate}
-                endDate={endDate}
-                view={view}
-                showSpecialty={shouldShowSpecialty}
-                onAttendance={canRegisterAttendance ? updateAttendance : undefined}
-                onCancel={prepareCancellation}
-                busyAppointmentId={busyAppointmentId}
-                previsitContacts={previsitContacts}
-              />
-            )}
           {familyPsychologyCards.length > 0 && ((isProfessional && scheduleGrid.status !== 'success') || (familyRescheduleId && view !== 'day')) && (
             <section id="agenda-familiares-psicologia" aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
               <h3>Atendimentos de familiares — Psicologia</h3>
