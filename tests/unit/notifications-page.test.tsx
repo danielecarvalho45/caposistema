@@ -34,6 +34,7 @@ function serviceWith(result: object) {
   return {
     getNotifications: vi.fn().mockResolvedValue(result),
     getNotificationsByState: vi.fn().mockResolvedValue(result),
+    getNotificationsByCategory: vi.fn().mockResolvedValue(result),
     updateNotification: vi.fn().mockResolvedValue({
       status: 'success',
       data: {
@@ -163,14 +164,14 @@ describe('NotificationsPage', () => {
   it('filtra não lidas e recarrega do backend após marcar como lida', async () => {
     const user = userEvent.setup()
     const service = serviceWith({ status: 'success', data: [notification] })
-    service.getNotificationsByState
+    service.getNotificationsByCategory
       .mockResolvedValueOnce({ status: 'success', data: [notification] })
       .mockResolvedValueOnce({ status: 'empty' })
 
     renderPage(<NotificationsPage service={service} />)
     await screen.findByText('Solicitação concluída')
     expect(screen.getByLabelText('Filtrar notificações')).toHaveValue('unread')
-    expect(service.getNotificationsByState).toHaveBeenLastCalledWith('unread', 20, 0)
+    expect(service.getNotificationsByCategory).toHaveBeenLastCalledWith('general', 'unread', 20, 0)
     await user.click(screen.getByRole('button', { name: 'Marcar como lida' }))
 
     expect(service.updateNotification).toHaveBeenCalledWith(
@@ -178,7 +179,7 @@ describe('NotificationsPage', () => {
       'lida',
       '',
     )
-    expect(service.getNotificationsByState).toHaveBeenCalledTimes(2)
+    expect(service.getNotificationsByCategory).toHaveBeenCalledTimes(2)
     expect(
       await screen.findByText('Nenhuma notificação encontrada.'),
     ).toBeVisible()
@@ -248,7 +249,7 @@ describe('NotificationsPage', () => {
     renderPage(<NotificationsPage service={service} />)
     await user.click(await screen.findByRole('button', { name: 'Marcar como lida' }))
     expect(await screen.findByRole('status')).toHaveTextContent('O banco não confirmou a atualização da notificação.')
-    expect(service.getNotificationsByState).toHaveBeenCalledTimes(1)
+    expect(service.getNotificationsByCategory).toHaveBeenCalledTimes(1)
   })
 
   it('abre a solicitação administrativa pelo ID sem confundir leitura com atendimento', async () => {
@@ -330,13 +331,16 @@ describe('CAPO — quatro filtros com a mesma central do Gestor e AO', () => {
     const select = screen.getByLabelText('Filtrar notificações')
     expect(select).toHaveValue('unread')
     expect(Array.from(select.querySelectorAll('option')).map((o) => o.value)).toEqual(['unread', 'read', 'resolved', 'all'])
-    expect(service.getNotificationsByState).toHaveBeenCalledWith('unread', 20, 0)
+    expect(service.getNotificationsByCategory).toHaveBeenCalledWith('general', 'unread', 20, 0)
     await user.selectOptions(select, 'read')
-    expect(service.getNotificationsByState).toHaveBeenCalledWith('read', 20, 0)
+    expect(service.getNotificationsByCategory).toHaveBeenCalledWith('general', 'read', 20, 0)
     await user.selectOptions(select, 'resolved')
-    expect(service.getNotificationsByState).toHaveBeenCalledWith('resolved', 20, 0)
+    expect(service.getNotificationsByCategory).toHaveBeenCalledWith('general', 'resolved', 20, 0)
     await user.selectOptions(select, 'all')
-    expect(service.getNotificationsByState).toHaveBeenCalledWith('all', 20, 0)
+    expect(service.getNotificationsByCategory).toHaveBeenCalledWith('general', 'all', 20, 0)
+    await user.click(screen.getByRole('button', { name: 'Confirmações de agendamento' }))
+    expect(select).toHaveValue('unread')
+    expect(service.getNotificationsByCategory).toHaveBeenCalledWith('confirmations', 'unread', 20, 0)
   })
   it('preserva resolvidas na consulta histórica e exclui resolvidas da fila não lida', async () => {
     const resolved = { ...notification, read_at: '2026-11-18T10:00:00Z', resolved_at: '2026-11-18T11:00:00Z' }
@@ -349,5 +353,26 @@ describe('CAPO — quatro filtros com a mesma central do Gestor e AO', () => {
     })
     const active = await service.getNotificationsByState('unread', 20, 0)
     expect(active.status).toBe('empty')
+  })
+})
+
+describe('CAPO — consulta independente da aba de confirmações', () => {
+  it('separa avisos de consulta e preserva auditabilidade do histórico resolvido', async () => {
+    const notice = {
+      ...notification, notification_type: 'appointment_confirmation_unanswered',
+      entity_type: 'patient_appointments', resolved_at: '2026-11-18T10:00:00Z',
+      read_at: '2026-11-18T10:00:00Z',
+    }
+    const transport = vi.fn().mockResolvedValue({ data: [notice], error: null })
+    const service = createNotificationsService(transport)
+    const history = await service.getNotificationsByCategory('confirmations', 'resolved', 20, 0)
+    expect(history.status).toBe('success')
+    expect(transport).toHaveBeenCalledWith('get_my_notifications_by_category_for_interface', {
+      p_category: 'confirmations', p_state: 'resolved', p_limit: 20, p_offset: 0,
+    })
+    const pending = await service.getNotificationsByCategory('confirmations', 'unread', 20, 0)
+    expect(pending.status).toBe('empty')
+    const general = await service.getNotificationsByCategory('general', 'all', 20, 0)
+    expect(general.status).toBe('empty')
   })
 })
