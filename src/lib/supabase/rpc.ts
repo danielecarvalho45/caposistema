@@ -2697,6 +2697,13 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_patient_id: patientId },
         parse: parseConfirmedJson,
       }),
+    getPatientBereavementContact: (patientId: string) =>
+      execute({
+        transport,
+        operation: 'get_patient_bereavement_contact_for_interface',
+        args: { p_patient_id: patientId },
+        parse: parseConfirmedJson,
+      }),
     registerPatientDeath: (input: {
       patientId: string
       deathDate: string
