@@ -1,24 +1,11 @@
 import { Link } from 'react-router-dom'
 import type { AgendaScheduleSlot, AsyncState } from '../../lib/supabase/rpc'
-import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
-
-function slotTime(value: string) {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'America/Sao_Paulo',
-      }).format(date)
-}
+import { DailyTeamAgendaRows } from './DailyTeamAgendaRows'
 
 export function TeamDayAgendaPanel({
   agenda,
-  enableSchedulingActions = false,
 }: Readonly<{
   agenda: AsyncState<readonly AgendaScheduleSlot[]>
-  enableSchedulingActions?: boolean
 }>) {
   return (
     <article className="gestor-panel operational-agenda-panel">
@@ -41,45 +28,7 @@ export function TeamDayAgendaPanel({
       )}
 
       {agenda.status === 'success' && agenda.data.length > 0 && (
-        <div className="operational-agenda-slot-list" aria-label="Agendas dos profissionais">
-          {agenda.data.map((slot) => (
-            <div
-              className={`operational-agenda-slot is-${slot.slot_status}`}
-              key={`${slot.professional_id}:${slot.slot_start}`}
-            >
-              <strong>{slotTime(slot.slot_start)}</strong>
-              <span className="operational-agenda-professional">{slot.professional_name}</span>
-              <span className="operational-agenda-status">
-                {slot.slot_status === 'livre'
-                  ? 'Livre'
-                  : slot.slot_status === 'bloqueado'
-                    ? <AgendaBlockIndicator type={slot.block_type} />
-                    : slot.patient_name ?? 'Horário ocupado'}
-              </span>
-
-              {enableSchedulingActions && slot.slot_status === 'livre' && (
-                <Link
-                  className="operational-agenda-action"
-                  to="/agenda"
-                  state={{
-                    origin: 'home_free_slot',
-                    professionalId: slot.professional_id,
-                    slotDate: slot.slot_date,
-                    slotStart: slot.slot_start,
-                  }}
-                >
-                  Agendar
-                </Link>
-              )}
-
-              {slot.slot_status === 'agendado' && (
-                <Link className="operational-agenda-action" to="/agenda">
-                  Abrir
-                </Link>
-              )}
-            </div>
-          ))}
-        </div>
+        <DailyTeamAgendaRows slots={agenda.data} />
       )}
 
       <Link className="gestor-panel-foot" to="/agenda">
