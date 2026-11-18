@@ -9857,3 +9857,17 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Estado:** MIGRAÇÃO E INTERFACE VERSIONADAS / VERIFICAÇÃO SQL ESTRUTURAL POSITIVA / HOMOLOGAÇÃO OPERACIONAL DOIS PERFIS E FEEDBACK PENDENTE. Qualquer regressão comprovada corrigir cirurgicamente com novo VERDE.
 
 **Complemento de segurança de apresentação:** commit `33fd1bbde5e03536acd5e34cc73bd56fc673cd05` impede que uma notificação já resolvida ainda sem `read_at` ofereça o comando de marcar leitura no histórico, sem alterar o registro ou oferecer reabertura indevida.
+
+---
+
+## 18/11/2026 — VERDE: omitir ao próprio registrador os avisos do óbito, preservando destinatários
+
+**Ocorrência relatada pela Titular:** ao registrar um óbito no Gestor/Titular apareceram três notificações de um único óbito na Central. Investigação SQL somente leitura localizou, para o mesmo paciente falecido, exatamente três registros `patient_death` gerados no mesmo instante para `administrativo_operacional`, `coordenador` e um `profissional` individual. A conta `administrador` que registrou o óbito possuía visibilidade ampliada a esses papéis, portanto enxergava os três, embora não fossem três registros de óbito. A identidade responsável é registrada em `patients.death_recorded_by` como `user_accounts.id`; `auth.uid()` é `user_accounts.auth_user_id`.
+
+**VERDE da Titular:** o profissional/administrativo que realizou um registro de óbito não deve receber notificações informando sua própria ação. Manter os avisos necessários aos demais destinatários, inclusive Administrativo Operacional de outra conta, Coordenação e profissionais assistenciais autorizados. A regra identifica **o usuário registrador, não suprime todo o perfil administrativo**.
+
+**Correção cirúrgica:** migração versionada `supabase/migrations/20261118235930_hide_death_notification_from_registrar.sql`, commit `e1403e0c2061df7c9d87e6ae5e956b2bddd51c79`, aplicada pelo Supabase `success=true`. Alteradas somente as cláusulas de visibilidade de `get_my_notifications_for_interface` (sino/ativos) e `get_my_notifications_by_state_for_interface` (Não lidas, Lidas, Resolvidas, Todas). Predicado adicional, exclusivamente para `notification_type='patient_death'` de `patients`, omite o evento quando existe paciente cujo `death_recorded_by` corresponde à `user_accounts.id` do usuário autenticado. Sem filtragem para qualquer outra conta. Mantidos contextos de homologação/produção, permissões, ordenação, paginação, estado e histórico. Nenhuma modificação em `capo_fluxo_obito`, registro/inativação/cancelamento de consultas, gatilhos de luto, bloqueio de agenda, fluxos WhatsApp, dados reais ou registros anteriores da tabela `notifications`.
+
+**Verificação SQL pós-migração:** ambas RPCs contém a restrição `registrar.auth_user_id = auth.uid()`, possuem `capo_patient_visible_in_current_context`, mantêm `authenticated EXECUTE=true` e `anon=false`. Os três avisos do óbito anterior continuam salvos fisicamente, mas são excluídos da visualização do registrador inclusive na aba Todas e contador do sino. Os demais destinatários continuam cobertos pela regra original; não foram realizados testes autenticados em cada login, build, Vitest ou deploy Cloudflare.
+
+**Situação:** CORREÇÃO SQL APLICADA / VERIFICAÇÃO ESTRUTURAL POSITIVA / TESTE VISUAL DOS DESTINATÁRIOS PENDENTE. Não reabrir fluxos de óbito e luto homologados.
