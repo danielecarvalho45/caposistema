@@ -146,3 +146,56 @@ dd {
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
+
+
+/* CAPO — barras de rolagem discretas, padrão global */
+:root {
+  --capo-scrollbar-thumb: rgb(69 151 214 / 29%);
+  --capo-scrollbar-thumb-hover: rgb(54 131 201 / 48%);
+}
+
+/* Firefox e navegadores com a especificação padrão: sem alterar rolagem ou overflow. */
+html,
+body,
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--capo-scrollbar-thumb) transparent;
+}
+
+html:hover,
+body:hover,
+*:hover {
+  scrollbar-color: var(--capo-scrollbar-thumb-hover) transparent;
+}
+
+/* Chromium, Edge e Safari: trilho transparente e indicador azul suavizado. */
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--capo-scrollbar-thumb);
+  background-clip: padding-box;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover,
+*:hover::-webkit-scrollbar-thumb {
+  background-color: var(--capo-scrollbar-thumb-hover);
+}
+
+@media (forced-colors: active) {
+  html,
+  body,
+  * {
+    scrollbar-color: auto;
+    scrollbar-width: auto;
+  }
+}
