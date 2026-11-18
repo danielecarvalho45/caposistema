@@ -9527,3 +9527,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Exemplo explicativo:** sexta-feira 08:10–17:10, Arteterapia em grupo 13:30–17:00. Se um bloqueio anterior cobriu somente 08:10–12:00 e o Gestor registra correção abrangendo 08:10–17:10, o resultado esperado é indisponibilidade durante toda a jornada, **incluindo o grupo**. Antes de salvar, listar e remanejar todos os atendimentos individuais e participantes do grupo afetados; manter os registros anteriores para auditoria e dar prioridade à alteração posterior apenas após gravação bem-sucedida.
 
 **Estado:** DIAGNÓSTICO DE CONFLITO COM GRUPO COMPROVADO NO CÓDIGO; JORNADA E GRUPO CONFERIDOS NO BANCO; DATA/RESULTADO DA TENTATIVA NÃO CONFIRMADOS; CORREÇÃO NÃO EXECUTADA — AGUARDANDO VERDE EXPRESSO.
+
+
+### Complemento da Titular — substituir o bloqueio anterior pela correção (18/11/2026)
+
+**Decisão funcional expressa:** a Titular autoriza que, ao corrigir um bloqueio geral cadastrado incorretamente, o primeiro bloqueio seja **substituído** pelo novo, em vez de ficar concorrendo com ele ou somando horários. O último bloqueio efetivamente salvo será o único vigente para o âmbito corrigido, inclusive quando for mais curto que o anterior. A substituição não equivale a apagar definitivamente a evidência histórica: marcar o bloqueio antigo como substituído/inativo ou registrá-lo em trilha de auditoria com vínculo ao novo registro, preservando autor, datas, horários e justificativa.
+
+**Critérios obrigatórios para implementação futura:** operação transacional, sem deixar janela de desbloqueio entre desativar o antigo e gravar o novo; identificar explicitamente os bloqueios anteriores que serão substituídos, sem apagar outras datas e sem afetar bloqueios independentes; verificar e exigir remanejamento dos atendimentos individuais, familiares e participantes de grupo afetados pelo novo estado; preservar programação coletiva de Psicologia e modalidade exclusiva Visita Domiciliar. Se a validação do novo bloqueio falhar, manter o bloqueio anterior intacto. Revalidar a disponibilidade dos horários antes de reabri-los quando o novo bloqueio for menor. A gravação anterior permanece na auditoria, mas não na agenda ativa.
+
+**Exemplo:** Scheilla, sexta-feira 08h10–17h10 com grupo 13h30–17h00; bloqueio antigo 08h10–12h00 e correção 08h10–17h10: depois de tratar pacientes afetados e concluir a transação, apenas o novo bloqueio ficará ativo, fechando também o grupo. Se o novo for menor, os horários que deixarem de estar bloqueados só voltam a ficar disponíveis após validação de consistência.
+
+**Estado:** REGRA AUTORIZADA PARA ESPECIFICAÇÃO; alteração funcional NÃO executada neste ato — a Titular ainda não emitiu VERDE específico para implementação. Não executar exclusão física em produção com base nesta mensagem.
