@@ -3893,6 +3893,23 @@ export function AgendaPage({
               </button>
             </div>
           )}
+          {!professionalId && scheduleGrid.status === 'error' &&
+            (state.status === 'success' || state.status === 'empty') && (
+              <section aria-label="Agendamentos disponíveis durante falha da grade">
+                <p role="status">A consulta de horários livres e bloqueados está indisponível. Abaixo aparecem somente os agendamentos, sem indicação de disponibilidade.</p>
+                <AgendaResults
+                  appointments={calendarAppointments}
+                  startDate={startDate}
+                  endDate={endDate}
+                  view={view}
+                  showSpecialty={shouldShowSpecialty}
+                  onAttendance={canRegisterAttendance ? updateAttendance : undefined}
+                  onCancel={prepareCancellation}
+                  busyAppointmentId={busyAppointmentId}
+                  previsitContacts={previsitContacts}
+                />
+              </section>
+            )}
           {familyPsychologyCards.length > 0 && ((isProfessional && scheduleGrid.status !== 'success') || (familyRescheduleId && view !== 'day')) && (
             <section id="agenda-familiares-psicologia" aria-label="Atendimentos de familiares na agenda da Psicologia" className="agenda-schedule-form">
               <h3>Atendimentos de familiares — Psicologia</h3>
