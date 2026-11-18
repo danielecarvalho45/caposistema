@@ -1120,8 +1120,8 @@ ADMINISTRATIVO DO CAPO`
               <RegisterPatientDeath
                 patientId={editingPatientId}
                 patientName={editForm.full_name ?? 'Paciente'}
-                onChanged={(deceased) => {
-                  setEditForm((current) => ({ ...current, status: deceased ? 'obito' : 'ativo' }))
+                onChanged={(status) => {
+                  setEditForm((current) => ({ ...current, status }))
                   setAppointmentHistory(null)
                   if (query.trim()) void searchPatients()
                 }}
