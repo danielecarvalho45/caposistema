@@ -1084,7 +1084,7 @@ ADMINISTRATIVO DO CAPO`
               </Link>
             )}
 
-            {canEditPatient && canAccessAppRoute(accessContext, '/fila') && (
+            {editForm.status !== 'obito' && canEditPatient && canAccessAppRoute(accessContext, '/fila') && (
               <Link
                 to="/fila"
                 state={{
@@ -1100,7 +1100,7 @@ ADMINISTRATIVO DO CAPO`
               </Link>
             )}
 
-            {canAccessAppRoute(accessContext, '/encerramentos') && (
+            {editForm.status !== 'obito' && canAccessAppRoute(accessContext, '/encerramentos') && (
               <Link
                 to="/encerramentos"
                 state={{
