@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getRpcService, type AgendaScheduleSlot } from '../../lib/supabase/rpc'
 import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
+import { CapoIcon } from '../../components/icons/CapoIcon'
 import './daily-team-agenda.css'
 
 type LinkCancellation = AgendaScheduleSlot & { link_cancelled: true; appointment_kind: string }
@@ -154,7 +155,7 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                     <button type="button" className="capo-team-day-action" title="Confirmar resposta por WhatsApp ou telefone"
                       aria-label={`Confirmar manualmente ${slot.patient_name ?? 'paciente'}`}
                       disabled={!canConfirm || busy !== null}
-                      onClick={() => void confirmManual(id)}>✓ Confirmar</button>
+                      onClick={() => void confirmManual(id)}><CapoIcon name="check" size={15} /> Confirmar</button>
                     {canReschedule ? (
                       <Link className="capo-team-day-action" to="/agenda"
                         state={isLinkCancellation
@@ -163,8 +164,8 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                             : { origin: 'patient_link_cancellation', appointmentId: id, patientId: slot.patient_id })
                           : { origin: 'home_reschedule_appointment', appointmentId: id,
                             patientId: slot.patient_id, patientName: slot.patient_name ?? '',
-                            professionalId: slot.professional_id, slotDate: slot.slot_date }}>↻ Remarcar</Link>
-                    ) : <button type="button" className="capo-team-day-action" disabled>↻ Remarcar</button>}
+                            professionalId: slot.professional_id, slotDate: slot.slot_date }}><CapoIcon name="calendar" size={15} /> Remarcar</Link>
+                    ) : <button type="button" className="capo-team-day-action" disabled><CapoIcon name="calendar" size={15} /> Remarcar</button>}
                   </>
                 )}
                 {slot.slot_status === 'livre' && (
