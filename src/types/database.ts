@@ -654,6 +654,29 @@ export type Database = {
           total_count: number
         }[]
       }
+      get_my_notifications_by_category_for_interface: {
+        Args: {
+          p_category?: 'general' | 'confirmations'
+          p_state?: 'unread' | 'read' | 'resolved' | 'all'
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          notification_id: string
+          notification_type: string
+          title: string
+          message: string
+          priority: string | null
+          status: string
+          patient_id: string | null
+          entity_type: string | null
+          entity_id: string | null
+          created_at: string
+          read_at: string | null
+          resolved_at: string | null
+          total_count: number
+        }[]
+      }
       get_my_notifications_by_state_for_interface: {
         Args: {
           p_state?: 'unread' | 'read' | 'resolved' | 'all'
