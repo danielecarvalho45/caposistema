@@ -9820,3 +9820,20 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limite de homologação:** gatilhos e escopo de permissão verificados apenas estruturalmente por SQL; teste integral de novo óbito real com familiar, vínculo posterior ao óbito, substituição, limite de prazo, conta real Assistência Social e agendamento psicológico autenticado permanece pendente. Não foram executados Vitest, TypeScript/build ou validação do deploy Cloudflare. Os fluxos de óbito já homologados não foram alterados, e a notificação aos profissionais permanece em teste conforme decisão anterior da Titular.
 
 **Estado:** IMPLEMENTAÇÃO VERSIONADA E MIGRAÇÃO APLICADA; VERIFICAÇÃO ESTRUTURAL POSITIVA; HOMOLOGAÇÃO OPERACIONAL DO LUTO PENDENTE.
+
+---
+
+## 18/11/2026 — Decisão da Titular: fluxo de Luto implementado, manutenção encerrada e somente teste operacional em aberto
+
+**Autorização:** a Titular confirmou o comportamento já implementado do Luto Familiar/Cuidador e concedeu VERDE para registrar o novo estado de manutenção no Documento Mestre, sem alterar código ou dados.
+
+**Decisão de governança:**
+- A frente de implementação/correção estrutural do fluxo de Luto está **CONCLUÍDA E FECHADA PARA NOVAS ALTERAÇÕES FUNCIONAIS**. Preservar o funcionamento já versionado na branch `main` e aplicado no Supabase: início automático no óbito se houver familiar ativo; entrada automática no Luto quando um familiar for incluído ou substituir outro durante até dois meses após o óbito; somente um vínculo ativo por paciente; substituição justificada com histórico preservado; acompanhamento pela Assistência Social responsável quando existente; fila e agendamento próprios de Psicologia, sem agendamento automático; independência dos dados e atendimentos do familiar.
+- **ÚNICA PENDÊNCIA:** **TESTE OPERACIONAL DO LUTO EM ABERTO**, a ser executado quando houver o próximo **registro real de luto** decorrente de óbito e de vínculo familiar, sem criar pacientes, óbitos ou familiares fictícios em produção. Confirmar na interface a abertura do luto, visualização pela Assistência Social autorizada, manutenção do vínculo/identidade familiar e elegibilidade para Psicologia, conforme o caso. Se o evento real não contemplar substituição ou o prazo limite, registrar que tais cenários não foram exercitados, sem alegar homologação não comprovada.
+- Após o registro de resultado satisfatório na situação real pertinente, **encerrar também a ação de teste/homologação** no Documento Mestre. Até lá, não confundir "implementado" com "homologado operacionalmente".
+- **Manutenções futuras somente cirúrgicas**, motivadas por erro efetivo demonstrado em perfil/funcionalidade específica, com diagnóstico e novo **VERDE** explícito da Titular. Proibidas refatorações preventivas, reinterpretações ou mudanças que possam causar regressão, especialmente nas regras de óbito já homologadas e no bloqueio de agenda previamente congelado.
+- O acompanhamento de notificações aos profissionais no evento óbito continua pendente de teste pelos destinatários, conforme registro separado; não reabrir automaticamente as demais funções já homologadas.
+
+**Estado oficial:** **FLUXO DE LUTO — IMPLEMENTAÇÃO CONCLUÍDA / MANUTENÇÃO FUNCIONAL FECHADA / TESTE REAL EM ABERTO / CORREÇÃO FUTURA APENAS CIRÚRGICA COM VERDE**.
+
+**Escopo da presente ação:** alteração exclusivamente documental no Documento Mestre. Nenhuma alteração de aplicação, migração, tabelas, RPCs, triggers ou dados de produção.
