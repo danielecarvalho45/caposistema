@@ -1144,6 +1144,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_home_link_reschedule_for_interface: {
+        Args: { p_date: string }
+        Returns: Json
+      }
       get_patient_confirmation_states_for_interface: {
         Args: { p_start_date: string; p_end_date: string; p_professional_id?: string | null }
         Returns: Json
