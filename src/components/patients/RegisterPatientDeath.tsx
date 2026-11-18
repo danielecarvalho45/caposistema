@@ -32,7 +32,7 @@ function asDeathContext(value: unknown): DeathContext | null {
   }
 }
 
-export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ patientId: string; patientName: string }>) {
+export function RegisterPatientDeath({ patientId, patientName, onChanged }: Readonly<{ patientId: string; patientName: string; onChanged?: (deceased: boolean) => void }>) {
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -107,6 +107,9 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
     setBusy(true)
     try {
       await prepareCondolences(reservation)
+    } catch {
+      reservation?.cancel()
+      setFeedback('Não foi possível preparar o WhatsApp. O registro de óbito permanece preservado; tente novamente pelo botão.')
     } finally {
       setBusy(false)
     }
@@ -118,19 +121,31 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
     const reservation = reserveCapoWhatsAppTab()
     setBusy(true)
     setFeedback('')
-    const result = await getRpcService().registerPatientDeath({
-      patientId, deathDate: date, deathTime: time || null, source, notes: notes.trim() || null,
-    })
-    if (result.status === 'success') {
-      setFeedback('Óbito registrado no banco e preservado na auditoria. Consultas futuras foram canceladas.')
-      setOpen(false)
-      await loadContext()
-      await prepareCondolences(reservation)
-    } else {
+    try {
+      const result = await getRpcService().registerPatientDeath({
+        patientId, deathDate: date, deathTime: time || null, source, notes: notes.trim() || null,
+      })
+      if (result.status === 'success') {
+        setFeedback('Óbito registrado no banco e preservado na auditoria. Consultas futuras foram canceladas.')
+        setOpen(false)
+        onChanged?.(true)
+        await loadContext()
+        try {
+          await prepareCondolences(reservation)
+        } catch {
+          reservation?.cancel()
+          setFeedback('Óbito registrado e consultas futuras canceladas. Não foi possível abrir o WhatsApp; utilize o botão de condolências.')
+        }
+      } else {
+        reservation?.cancel()
+        setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o registro.')
+      }
+    } catch (error) {
       reservation?.cancel()
-      setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o registro.')
+      setFeedback(error instanceof Error ? error.message : 'Não foi possível confirmar o registro de óbito.')
+    } finally {
+      setBusy(false)
     }
-    setBusy(false)
   }
 
   async function correct() {
@@ -142,6 +157,7 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
     if (result.status === 'success') {
       setCorrectionReason('')
       setFeedback('Registro de óbito corrigido. O status anterior foi restaurado com histórico preservado.')
+      onChanged?.(false)
       await loadContext()
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a correção.')
