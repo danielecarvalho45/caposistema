@@ -24,7 +24,9 @@ export function administrativeAgendaDates(now = new Date()) {
   // Em sábados e domingos a Home antecipa os dois próximos dias úteis.
   const [year, month, day] = today.split('-').map(Number)
   const weekday = new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay()
-  const first = weekday === 0 || weekday === 6 ? nextBusinessDay(today === today ? new Date(Date.UTC(year, month - 1, day - 1, 12)).toISOString().slice(0, 10) : today) : today
+  const first = weekday === 0 || weekday === 6
+    ? nextBusinessDay(new Date(Date.UTC(year, month - 1, day - 1, 12)).toISOString().slice(0, 10))
+    : today
   return { first, second: nextBusinessDay(first), isToday: first === today }
 }
 
