@@ -9635,3 +9635,16 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Diagnóstico:** há divergência entre data selecionada, dia semanal de atendimento e resultado observado. Uma sexta-feira próxima é `27/11/2026`, com a jornada citada; não presumir que essa foi a data efetivamente escolhida. Exigir confirmação da data correta ou imagem do calendário/resultado e contexto de teste vs real antes de propor qualquer alteração ou escrever no banco. Manter remanejamento obrigatório e programação de grupos protegidos.
 
 **Estado:** DATA E AUSÊNCIA DE BLOQUEIO PARA 29/11 CONFIRMADAS; CAUSA DA VISUALIZAÇÃO 10:10 NÃO REPRODUZIDA; SEM ALTERAÇÃO FUNCIONAL; AGUARDANDO ESCLARECIMENTO DE DATA/IMAGEM.
+
+
+### Atualização factual — bloqueio de 20/11/2026 da Scheilla, início 10h10
+
+**Correção da data pela Titular:** confirmar especificamente a sexta-feira **20/11/2026** (não domingo, 29/11), tentativa de bloquear **08h10–17h10**; relatou que na interface o bloqueio teria começado às **10h10**.
+
+**Evidência SQL somente leitura:** a Scheilla possui grade real ATIVA na sexta-feira 08h10–17h10 (configuração `1f320285-2d2a-403b-ac99-c7cb75837549`); nenhum `agenda_blocks` com `specific_date=2026-11-20` está vinculado à profissional, inclusive inativos. Não existe, portanto, bloqueio geral pontual persistido para essa data no banco verificado. Entre os blocos recorrentes da grade ativa está `intervalo` **10h10–10h30** (ID `a381890f-5678-452c-8f92-bd14e431fd1a`); também existem `estudo_caso` 11h30–12h, `alimentacao` 12h–13h30 e **grupo de Arteterapia** 13h30–17h (`psychology_group_schedule_blocks` vinculado a bloco `outro`). Logo o primeiro indicador de bloqueio visto às 10h10 corresponde a um **intervalo recorrente**, não demonstra execução de bloqueio geral parcial.
+
+**Proteção de pacientes:** consulta agregada para 20/11 na profissional encontrou **0 consultas de `patient_appointments` ativas (incluindo grupo)** e **0 de `family_psychology_appointments`** no estado atual, portanto não há, nesta fotografia, pacientes remanejáveis nessa data. Isso não comprova ausência de consulta no instante original da tentativa.
+
+**Diagnóstico delimitado:** erro observado não é gravação comprovadamente truncada em 10h10: o bloqueio geral pedido não foi persistido na agenda real, e o marcador 10h10 é um intervalo de rotina. A causa exata do não salvamento ainda depende de observar a mensagem de retorno da tela ou o histórico da RPC no momento da operação, e verificar se foi efetuada no contexto real ou `manuteste`. Não inserir bloqueio na agenda real por dedução e não alterar registros sem novo VERDE específico.
+
+**Estado:** DIVERGÊNCIA DE DATA SOLUCIONADA / BLOCO DE 10H10 IDENTIFICADO / AUSÊNCIA DE BLOQUEIO GERAL PARA 20/11 COMPROVADA / CAUSA DE NÃO GRAVAÇÃO AINDA NÃO HOMOLOGADA / SEM MUTAÇÃO.
