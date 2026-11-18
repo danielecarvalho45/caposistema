@@ -465,11 +465,15 @@ export function OwnAgendaManager({
 
   async function applyRemanejamento() {
     const appointment = affectedAppointments.find((item) => stringValue(item.appointment_id) === remanejamentoId)
-    if (!appointment || !remanejamentoStart || remanejamentoBusy || !allowStructuralEdit) return
+    const kind = stringValue(appointment?.appointment_kind)
+    if (!appointment || remanejamentoBusy || !allowStructuralEdit ||
+        (kind === 'grupo' ? !remanejamentoDate : !remanejamentoStart)) return
     setRemanejamentoBusy(true)
-    const result = stringValue(appointment.appointment_kind) === 'familiar'
-      ? await rpc.rescheduleFamilyPsychologyAppointment(remanejamentoId, professionalId, remanejamentoStart, remanejamentoReason)
-      : await rpc.rescheduleAppointment({
+    const result = kind === 'grupo'
+      ? await rpc.reschedulePsychologyGroupParticipant(remanejamentoId, remanejamentoDate, remanejamentoReason)
+      : kind === 'familiar'
+        ? await rpc.rescheduleFamilyPsychologyAppointment(remanejamentoId, professionalId, remanejamentoStart, remanejamentoReason)
+        : await rpc.rescheduleAppointment({
           appointmentId: remanejamentoId,
           newProfessionalId: professionalId,
           newSlotStart: remanejamentoStart,
@@ -483,11 +487,11 @@ export function OwnAgendaManager({
       const locationResult = newId ? await rpc.getAppointmentCareLocation(newId) : null
       const location = locationResult?.status === 'success' ? record(locationResult.data) : null
       const careLocation = stringValue(location?.care_location).trim()
-      setRemanejamentoContact(stringValue(appointment.appointment_kind) === 'paciente' && careLocation ? {
+      setRemanejamentoContact((kind === 'paciente' || kind === 'grupo') && careLocation ? {
         patientId: stringValue(appointment.person_id),
         patientName: stringValue(appointment.person_name),
         oldStart: stringValue(appointment.appointment_date),
-        newStart: remanejamentoStart,
+        newStart: kind === 'grupo' ? stringValue(response?.new_appointment_start) : remanejamentoStart,
         careLocation,
       } : null)
       setFeedback('Consulta remarcada e histórico preservado. Confira as demais pendências antes de bloquear.')
@@ -1380,13 +1384,14 @@ export function OwnAgendaManager({
                   const selected = remanejamentoId === id
                   return (
                     <li key={id}>
-                      {stringValue(item.person_name)} · {stringValue(item.appointment_kind) === 'familiar' ? 'Familiar/Cuidador · ' : ''}
+                      {stringValue(item.person_name)} · {stringValue(item.appointment_kind) === 'familiar' ? 'Familiar/Cuidador · ' : stringValue(item.appointment_kind) === 'grupo' ? 'Psicologia em grupo · ' : ''}
                       {new Date(stringValue(item.appointment_date)).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                       {allowStructuralEdit && (
                         <button type="button" disabled={remanejamentoBusy} onClick={() => {
                           setRemanejamentoId(selected ? '' : id)
                           setRemanejamentoSlots([])
                           setRemanejamentoStart('')
+                          setRemanejamentoDate('')
                         }}>
                           {selected ? 'Fechar remanejamento' : 'Remanejar esta consulta'}
                         </button>
@@ -1394,18 +1399,28 @@ export function OwnAgendaManager({
                       {selected && allowStructuralEdit && (
                         <div className="agenda-form-grid">
                           <label>Nova data
-                            <CapoDateInput  value={remanejamentoDate} onChange={(event) => void loadRemanejamentoSlots(event.target.value)} />
+                            <CapoDateInput value={remanejamentoDate} onChange={(event) => {
+                              if (stringValue(item.appointment_kind) === 'grupo') {
+                                setRemanejamentoDate(event.target.value)
+                                setRemanejamentoStart('')
+                                setRemanejamentoSlots([])
+                              } else {
+                                void loadRemanejamentoSlots(event.target.value)
+                              }
+                            }} />
                           </label>
-                          <label>Horário livre
-                            <select value={remanejamentoStart} onChange={(event) => setRemanejamentoStart(event.target.value)}>
-                              <option value="">Selecionar horário</option>
-                              {remanejamentoSlots.map((slot) => <option key={stringValue(slot.slot_start)} value={stringValue(slot.slot_start)}>{stringValue(slot.slot_time)}</option>)}
-                            </select>
-                          </label>
+                          {stringValue(item.appointment_kind) === 'grupo'
+                            ? <p>Grupo de Psicologia: selecione outra data semanal válida do mesmo grupo. O banco verificará o bloqueio da sessão e realizará o remanejamento.</p>
+                            : <label>Horário livre
+                                <select value={remanejamentoStart} onChange={(event) => setRemanejamentoStart(event.target.value)}>
+                                  <option value="">Selecionar horário</option>
+                                  {remanejamentoSlots.map((slot) => <option key={stringValue(slot.slot_start)} value={stringValue(slot.slot_start)}>{stringValue(slot.slot_time)}</option>)}
+                                </select>
+                              </label>}
                           <label>Motivo (opcional)
                             <input value={remanejamentoReason} maxLength={500} onChange={(event) => setRemanejamentoReason(event.target.value)} />
                           </label>
-                          <button type="button" disabled={!remanejamentoStart || remanejamentoBusy} onClick={() => void applyRemanejamento()}>
+                          <button type="button" disabled={!(stringValue(item.appointment_kind) === 'grupo' ? remanejamentoDate : remanejamentoStart) || remanejamentoBusy} onClick={() => void applyRemanejamento()}>
                             Confirmar remarcação
                           </button>
                         </div>
