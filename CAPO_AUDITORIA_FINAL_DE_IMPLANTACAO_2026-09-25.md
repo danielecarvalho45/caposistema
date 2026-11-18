@@ -9663,3 +9663,20 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção cirúrgica indicada, pendente de VERDE:** incluir `AND ac.is_active=true` na verificação de conflitos de `agenda_blocks` da `create_agenda_period_for_interface` e inspecionar as demais consultas de conflito relacionadas, preservando os blocos de configurações inativas como históricos para auditoria, sem apagá-los. Manter as exclusões de intervalos e grupo ativo, a proteção de remanejamento de pacientes/familiares/participantes e isolamento dos ambientes. Teste de regressão: sexta 20/11/2026 08h10–17h10 sem falso conflito, grupo 13h30–17h00 bloqueável, nenhum atendimento perdido, regras de conflito legítimo mantidas. Aplicar migração somente após autorização.
 
 **Estado:** INVESTIGAÇÃO CONCLUÍDA, FALHA COMPROVADA POR SQL SOMENTE LEITURA; **NENHUM BLOQUEIO OU FUNÇÃO FOI ALTERADO**.
+
+
+---
+
+## 18/11/2026 — VERDE: corrigido conflito falso de configuração inativa da Scheilla
+
+**Autorização da Titular:** `VERDE` específico para eliminar o conflito indevido `Existe outro bloqueio incompatível com o período` ao tentar bloquear **20/11/2026 (sexta-feira), 08h10–17h10**, na agenda real da psicóloga Scheilla Maria Beraldo Nadalini.
+
+**Causa comprovada antes da manutenção:** `create_agenda_period_for_interface` permitia as regras atualizadas de bloqueio geral (sobreposição de intervalos, regravação do mesmo dia e grupo oficial de Psicologia), mas a consulta de conflitos `agenda_blocks ab JOIN agenda_configs ac` verificava `ab.is_active` sem `ac.is_active`. Uma antiga configuração inativa da Scheilla conservava um bloco de atividade histórica de Arteterapia, 13h30–14h30, `agenda_blocks.id=aa861660-b1d2-49bc-88bc-7729f14242b7`, indevidamente considerado incompatível. A agenda corrente permanece 08h10–17h10 e o grupo legítimo 13h30–17h00.
+
+**Alteração aplicada:** nova migração versionada `supabase/migrations/20261118222500_ignore_inactive_configs_agenda_period_conflicts.sql` no repositório `danielecarvalho45/caposistema`, branch `main`, commit `75128abadd4ceecd9de4d5541eb5e011791ba9b1`. A função `public.create_agenda_period_for_interface(uuid,date,date,time,time,text,text,text)` foi substituída cirurgicamente, acrescentando `ac.is_active=true` exclusivamente nos predicados que inspecionam conflitos entre blocos e entre exceções de agenda. As demais verificações, segurança, transação, substituição atômica de bloqueios e remanejamento prévio permanecem. Migração aplicada ao Supabase oficial com resposta `success=true`.
+
+**Verificação pós-aplicação, consulta SQL somente leitura:** `blocks_require_active_config=true`; `exceptions_require_active_config=true`; `protects_remanejamento=true`; `recognizes_groups=true`; `preserves_environment_isolation=true`; **`active_incompatible_conflicts_scheilla_20nov=0`** para 08h10–17h10; histórico de atividade antiga mantido (`retained_inactive_historical_activities=1`); 1 bloco de Visita Domiciliar ativo preservado. Não houve operação de bloqueio ou mutação em pacientes/consultas nessa verificação.
+
+**Limite da homologação:** função e critérios conferidos no Supabase; não realizada tentativa autenticada na interface, build, Vitest ou confirmação de publicação Cloudflare. **Bloqueio de 20/11/2026 não foi criado nesta manutenção** (consulta de leitura retornou `scheilla_existing_general_blocks_20nov=0`). O Gestor deve testar a mesma operação, conferir o resultado visual Dia/Semana/Mês e garantir que nenhum paciente esteja pendente de remanejamento.
+
+**Estado:** CORREÇÃO SQL APLICADA / CONFLITO FALSO ELIMINADO NA CONSULTA DE VERIFICAÇÃO / AUDITORIA HISTÓRICA PRESERVADA / HOMOLOGAÇÃO DE GRAVAÇÃO REAL PENDENTE.
