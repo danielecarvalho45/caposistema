@@ -30,11 +30,15 @@ const early: AgendaScheduleSlot = {
   slot_start: '2026-11-18T08:10:00-03:00', slot_end: '2026-11-18T09:10:00-03:00',
   appointment_id: 'appt-1', patient_id: 'patient-1', patient_name: 'Paciente Cedo',
 }
-function setup(contacts: unknown[] = [], decisions: unknown[] = [], cancelled: unknown[] = []) {
+function setup(contacts: unknown[] = [], decisions: unknown[] = [], cancelled: unknown[] = [], family: unknown[] = []) {
   mocks.getAppointmentPrevisitContacts.mockResolvedValue({ status: 'success', data: { items: contacts } })
-  mocks.rpc.mockImplementation(async (name: string) =>
-    ({ data: name === 'get_patient_confirmation_states_for_interface'
-      ? decisions : { items: cancelled }, error: null }))
+  mocks.rpc.mockImplementation(async (name: string) => {
+    if (name === 'get_patient_confirmation_states_for_interface') return { data: decisions, error: null }
+    if (name === 'get_family_psychology_agenda_cards_for_interface') return { data: family, error: null }
+    if (name === 'register_family_psychology_previsit_contact_for_interface')
+      return { data: { success: true, result: 'confirmou' }, error: null }
+    return { data: { items: cancelled }, error: null }
+  })
 }
 function mount(slots: AgendaScheduleSlot[] = [base, early]) {
   return render(<MemoryRouter><DailyTeamAgendaRows slots={slots} /></MemoryRouter>)
@@ -46,7 +50,7 @@ describe('Home administrativa — agenda compartilhada por horário', () => {
   it('ordena horários de profissionais distintos e mantém paciente na primeira linha', async () => {
     mount()
     const list = await screen.findByLabelText('Agenda do dia em ordem de horário')
-    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledTimes(3))
     const entries = within(list).getAllByText(/Paciente (Cedo|Tardio)/)
     expect(entries.map((e) => e.textContent)).toEqual(['Paciente Cedo', 'Paciente Tardio'])
     expect(screen.getByText('Ana Profissional')).toBeVisible()
@@ -92,4 +96,27 @@ describe('Home administrativa — agenda compartilhada por horário', () => {
     expect(within(entry as HTMLElement).getByRole('button', { name: /Confirmar manualmente/ }))
       .toBeDisabled()
   })
+  it('confirma familiar pela RPC própria e mostra confirmação manual sem alterar presença', async () => {
+    const familySlot: AgendaScheduleSlot = {
+      ...early, appointment_id: 'family-appointment', patient_id: null,
+      patient_name: 'Familiar atendida', professional_name: 'Psicóloga Cadastrada',
+    }
+    setup([], [], [], [{
+      appointment_id: 'family-appointment', family_name: 'Familiar atendida',
+      confirmation_decision: null, last_notice_result: 'avisado',
+    }])
+    mount([familySlot])
+    const button = await screen.findByRole('button', { name: 'Confirmar manualmente Familiar atendida' })
+    await waitFor(() => expect(button).toBeEnabled())
+    fireEvent.click(button)
+    await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith(
+      'register_family_psychology_previsit_contact_for_interface',
+      { p_appointment_id: 'family-appointment', p_result: 'confirmou' },
+    ))
+    expect(await screen.findByText('Avisado · Confirmado manualmente')).toBeVisible()
+    expect(button).toBeDisabled()
+    const remarca = screen.getByRole('button', { name: /Remarcar/ })
+    expect(remarca).toBeDisabled()
+  })
+
 })
