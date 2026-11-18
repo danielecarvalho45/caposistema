@@ -106,6 +106,20 @@ function parseNotifications(value: unknown): readonly Notification[] {
     .filter((item) => item.resolved_at === null)
 }
 
+export type NotificationView = 'unread' | 'read' | 'resolved' | 'all'
+
+function parseByState(value: unknown, view: NotificationView): readonly Notification[] {
+  const operation = 'get_my_notifications_by_state_for_interface'
+  if (!Array.isArray(value)) throw contractError(operation, 'lista de notificações esperada.')
+  const notifications = value.map((item) => parseNotification(item, operation))
+  return notifications.filter((item) => {
+    if (view === 'unread') return item.resolved_at === null && item.read_at === null
+    if (view === 'read') return item.resolved_at === null && item.read_at !== null
+    if (view === 'resolved') return item.resolved_at !== null
+    return true
+  })
+}
+
 function parseAction(value: unknown): NotificationActionResult {
   const operation = 'update_my_notification_for_interface'
   if (!isRecord(value)) throw contractError(operation, 'resultado inválido.')
@@ -152,6 +166,13 @@ export function createNotificationsService(
         },
         parseNotifications,
       ),
+    getNotificationsByState: (view: NotificationView, limit: number, offset: number) =>
+      execute(
+        transport,
+        'get_my_notifications_by_state_for_interface',
+        { p_state: view, p_limit: limit, p_offset: offset },
+        (value) => parseByState(value, view),
+      ),
     updateNotification: (
       notificationId: string,
       action: 'lida' | 'resolvida',
@@ -180,9 +201,10 @@ async function supabaseTransport(
       args: Database['public']['Functions'][Name]['Args'],
     ) => Promise<{ data: unknown; error: unknown }>
   }).rpc(
-    operation as 'get_my_notifications_for_interface' | 'update_my_notification_for_interface',
+    operation as 'get_my_notifications_for_interface' | 'get_my_notifications_by_state_for_interface' | 'update_my_notification_for_interface',
     args as
       | Database['public']['Functions']['get_my_notifications_for_interface']['Args']
+      | Database['public']['Functions']['get_my_notifications_by_state_for_interface']['Args']
       | Database['public']['Functions']['update_my_notification_for_interface']['Args'],
   )
 }
