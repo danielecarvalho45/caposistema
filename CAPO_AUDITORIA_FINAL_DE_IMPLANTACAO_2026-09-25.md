@@ -63,3 +63,15 @@
 **Validação pendente:** arquivos de código e teste versionados; não há confirmação de execução de Vitest, build, Cloudflare ou homologação visual autenticada nesta etapa. Conferir responsividade e legibilidade da lista interna rolável em Gestor e Administrativo Operacional e se o aviso de disponibilidade de ambos os dias acompanha os dados reais.
 
 **Estado:** AJUSTE VISUAL E FILTROS VERSIONADOS NA MAIN / AGUARDA HOMOLOGAÇÃO VISUAL DA TITULAR.
+
+---
+
+## 18/11/2026 — Homologação pela Titular da Home administrativa compacta em dois dias úteis
+
+**Confirmação operacional expressa da Titular:** após a manutenção de layout e filtros da Home administrativa, a Titular informou **“Tá ok deu certo”**, confirmando que a apresentação corrigida funciona conforme esperado na interface utilizada.
+
+**Escopo homologado pela Titular:** somente as Homes de **Gestor/Titular** e **Administrativo Operacional** apresentam agenda em dois dias úteis; em ambos, a visualização rápida mostra consultas agendadas e, ao fim de cada dia, aviso compacto de profissionais com horários livres e acesso para consultar a Agenda Geral. Foram mantidos o painel lateral de **Aniversariantes e Atividades Recentes** no Gestor/Titular e de **Pendências e Faltosos** no Administrativo Operacional; a agenda passou a ser compacta e com rolagem própria para evitar alongamento da Home. As Homes dos profissionais continuam no padrão anterior.
+
+**Decisão de manutenção:** **ENCERRADA E APROVADA VISUALMENTE PELA TITULAR**. Preservar o padrão, sem mudanças preventivas ou reestruturação. Reabrir exclusivamente para erro concreto com novo **VERDE** e correção cirúrgica. A confirmação de uso da Titular não significa execução de suíte automatizada ou homologação de fluxos não exercitados.
+
+**Preservação:** nenhuma modificação de banco Supabase, agendamentos, bloqueios da Agenda Geral ou Homes profissionais neste registro documental.
