@@ -60,3 +60,26 @@
 @media (max-width:620px) {
  .gestor-dashboard-grid > .capo-two-day-home, .operational-dashboard-grid > .capo-two-day-home { grid-column:auto; }
 }
+
+/* Visão rápida: evitar que listas longas estiquem a Home e desloquem os painéis laterais. */
+.capo-two-day-home { padding:10px; }
+.capo-two-day-home .gestor-panel-head { margin-bottom:7px; }
+.capo-two-day-home .gestor-panel-head h2 { font-size:1rem; }
+.capo-two-day-home .capo-two-day-grid { gap:7px; }
+.capo-two-day-home .capo-two-day-column { padding:7px; }
+.capo-two-day-home .capo-two-day-column > p { font-size:.7rem; margin-bottom:6px; }
+.capo-two-day-home .capo-team-day-list { max-height:415px; overflow-y:auto; overflow-x:hidden; gap:4px; padding-right:3px; }
+.capo-two-day-home .capo-team-day-entry { padding:5px 6px; gap:3px; }
+.capo-two-day-home .capo-team-day-primary { gap:4px 7px; }
+.capo-two-day-home .capo-team-day-patient { flex-basis:105px; font-size:.79rem; }
+.capo-two-day-home .capo-team-day-time { font-size:.8rem; min-width:41px; }
+.capo-two-day-home .capo-team-day-secondary { gap:3px; }
+.capo-two-day-home .capo-team-day-actions { gap:3px; }
+.capo-two-day-home .capo-team-day-action { min-height:25px; padding:3px 5px; }
+.capo-two-day-home .capo-today-free-summary { margin-top:7px; padding:8px 4px 4px; }
+.capo-two-day-home .capo-today-free-summary h4 { font-size:.8rem; margin-bottom:6px; }
+.capo-two-day-home .capo-today-free-summary ul { gap:5px; }
+.capo-two-day-home .capo-today-free-summary li { font-size:.74rem; gap:5px; }
+@media (max-width:620px) {
+ .capo-two-day-home .capo-team-day-list { max-height:360px; }
+}
