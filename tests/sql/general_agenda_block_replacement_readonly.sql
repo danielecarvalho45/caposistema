@@ -7,6 +7,7 @@ WITH contract AS (
   'create_agenda_period_for_interface',
   'get_psychology_group_sessions_for_interface',
   'book_psychology_group_participant_for_interface',
+  'get_agenda_block_affected_for_interface',
   'manage_social_home_visits_for_interface'
  )
 )
@@ -21,6 +22,9 @@ SELECT
      FROM contract WHERE proname='create_agenda_period_for_interface') affected_patients_guarded,
   (SELECT src LIKE '%''blocked'',EXISTS%'
      FROM contract WHERE proname='get_psychology_group_sessions_for_interface') blocked_group_exposed,
+  (SELECT src LIKE '%pa.psychology_group_block_id IS NOT NULL THEN ''grupo''%'
+      AND src LIKE '%private.capo_professional_visible_in_current_context%'
+     FROM contract WHERE proname='get_agenda_block_affected_for_interface') group_participants_classified,
   (SELECT src LIKE '%A sessão em grupo está bloqueada%'
      FROM contract WHERE proname='book_psychology_group_participant_for_interface') blocked_group_booking_denied,
   (SELECT src LIKE '%private.capo_professional_visible_in_current_context%'
