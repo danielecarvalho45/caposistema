@@ -9785,3 +9785,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limites e testes pendentes:** não foi executado build/TypeScript, teste autenticado e conferência visual no Cloudflare, nem teste de regressão de um novo óbito com encerramento profissional pendente. Corrigir óbito lançado indevidamente **não reabre automaticamente** os ciclos encerrados, assim como não restaura consultas canceladas; eventual regularização deve ser decisão administrativa expressa e auditada, sem reativação automática. Verificar em homologação o comportamento para perfis e isolamento test/real, especialmente após atualização da interface publicada.
 
 **Status:** ALTERAÇÃO CIRÚRGICA VERSIONADA NA MAIN / MIGRAÇÃO APLICADA / ESTADO DE BENEDITO REGULARIZADO NO BANCO / HOMOLOGAÇÃO OPERACIONAL PENDENTE. O módulo de óbito permanece em teste; bloqueio de agenda continua CONGELADO.
+
+
+---
+
+## 18/11/2026 — Homologação operacional pela Titular: fluxo de óbito; notificações permanecem em teste
+
+**Declaração expressa da Titular/Gestora:** após verificar na interface o funcionamento das manutenções de registro de óbito, informou que **o funcionamento está correto**. Esclareceu que **não verificou o recebimento das notificações pelos profissionais do CAPO**, pois essa comprovação depende de teste realizado pelos próprios profissionais. Determinou manter **apenas o componente de notificações aos profissionais em estado de teste**, com verificação final quando ocorrer outro óbito real.
+
+**Estado de homologação por componente:**
+- **Funcionalidades do fluxo de óbito verificadas pela Titular: HOMOLOGADAS OPERACIONALMENTE.** Incluem identificação/inativação por óbito, cancelamento de consultas futuras, correção dos atalhos incompatíveis com óbito, distinção do encerramento do ciclo assistencial por óbito e preparação de condolências com seleção de telefone principal ou secundário, dentro do escopo das manutenções apresentadas e verificadas pela Titular. Não presumir execução de testes automatizados ou validação em todos os perfis.
+- **Notificações aos profissionais ativos do CAPO: EM TESTE / PENDENTE DE COMPROVAÇÃO DE RECEBIMENTO PELOS DESTINATÁRIOS.** A lógica técnica foi implementada anteriormente, mas ainda falta confirmar no uso real que cada profissional com conta ativa e acesso autorizado efetivamente visualiza a notificação, respeitando isolamento real/homologação e permissões.
+- **Próxima validação:** por ocasião de **outro óbito real** registrado legitimamente no CAPO, solicitar aos profissionais que confiram suas próprias notificações; documentar resultados por perfil e eventuais divergências sem utilizar pacientes fictícios ou gerar óbitos de teste em produção. A constatação da Titular não equivale a teste realizado pelos profissionais.
+- **Governança:** manter as funcionalidades homologadas estáveis, sem modificar o que está funcionando. Qualquer correção por erro concreto exige diagnóstico e novo VERDE delimitado. O bloqueio de agenda permanece encerrado, homologado e congelado. Dados e ciclos de familiares/cuidadores permanecem independentes e preservados.
+
+**Status atualizado:** FLUXO DE ÓBITO — **FUNCIONALIDADES VERIFICADAS PELA TITULAR APROVADAS**; **SOMENTE NOTIFICAÇÕES AOS PROFISSIONAIS EM FASE DE TESTE**. Nenhuma alteração de interface, SQL, cadastro de paciente, notificação ou óbito foi feita nesta anotação de auditoria.
