@@ -9605,3 +9605,22 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Delimitação:** código versionado em `main` e estrutura da RPC confirmada. Ainda não houve teste autenticado visual nas telas Gestor/Titular, Administrativo, Coordenação, Dia/Semana/Mês, nem build, TypeScript/Vitest/Playwright ou verificação de publicação Cloudflare. Não declarar homologação operacional até conferência de produção/homologação. Para validar, comparar a mesma data com Todos e com filtro de profissional, incluindo um bloco integral e Psicologia em grupo. Proteger rigorosamente o isolamento entre bancos lógicos e os dados dos pacientes.
 
 **Estado:** CORREÇÃO DA INTERFACE COMMITADA — VERIFICAÇÕES ESTÁTICAS E SQL SOMENTE LEITURA OK — HOMOLOGAÇÃO VISUAL/BUILD PENDENTES.
+
+
+---
+
+## 18/11/2026 — DIAGNÓSTICO PRÉ-VERDE: primeiros horários da agenda Scheilla não bloqueados
+
+**Relato da Titular:** após tentar bloquear desde o primeiro horário da agenda da psicóloga Sheila/Scheilla, os primeiros horários continuam aparentemente disponíveis; solicitou VERIFICAR e depois CONTINUAR, sem VERDE novo específico para esta ocorrência.
+
+**Identidade e configurações conferidas no Supabase real, somente leitura:** `Scheilla Maria Beraldo Nadalini`, profissional ativo, `is_homologation_profile=false`. Configuração de terça-feira ativa e vigente em 18/11/2026: 08h10–17h00 (iniciada em 10/11/2026, final de vigência 31/05/2027). Configuração de sexta-feira ativa desde 12/11/2026: 08h10–17h10 (sem final de vigência) com grupo de Arteterapia 13h30–17h00. Demais configurações históricas são inativas.
+
+**Evidência principal:** consulta a `public.agenda_blocks` **de todas as configurações** da profissional, sem filtrar `is_active`, incluindo `specific_date IS NOT NULL` e `block_type='bloqueio'`, retornou **zero registros**. Consulta a `public.agenda_exceptions` das mesmas configurações também retornou **zero registros**. Não é possível atribuir a uma falha de pintura dos horários bloqueados aquilo que não possui um bloco correspondente no banco oficial. A data exata, intervalo enviado, resposta RPC e ambiente da tentativa da Titular não foram fornecidos; a causa do não salvamento permanece **não comprovada**. Nenhuma deleção ou atualização ocorreu na auditoria.
+
+**Outro dado relevante para a segurança da operação:** há pelo menos uma consulta real futura em 24/11/2026, 08h10–09h10, vinculada à profissional, de modo que um pedido que abranja esta data e esse horário **deve exigir remanejamento antes da gravação**; isso é uma hipótese concreta de recusa, não prova de que a tentativa da Titular tenha abrangido esse dia. Não expor identidade da pessoa atendida ou detalhes clínicos.
+
+**Código inspecionado:** `src/features/agenda/OwnAgendaManager.tsx` envia `create_agenda_period_for_interface` com `p_professional_id`, datas, horas e `p_entry_type`, e mostra mensagem de retorno se `success!==true` ou erro de transporte. A função SQL em produção realiza pré-validação de conflitos e atendimentos afetados com comportamento transacional (sem gravação parcial deliberada). O texto de sucesso não documenta todos os casos de recusa sem inspeção da resposta RPC; não simular gravação contra a agenda real sem decisão e remanejamento dos envolvidos.
+
+**Conclusão:** para a profissional real consultada, **o bloqueio geral não consta gravado** — não apenas os primeiros horários. É preciso confirmar data e intervalo exatos usados, mensagem apresentada após Salvar e contexto real/manuteste, e confrontar resposta da RPC para separar rejeição legítima de defeito técnico. Depois, se necessária, propor correção cirúrgica sob novo VERDE, preservando grupo, consultas e isolamento dos ambientes.
+
+**Estado:** DIAGNÓSTICO SOMENTE LEITURA REALIZADO / CAUSA RAIZ DO NÃO SALVAMENTO AINDA NÃO REPRODUZIDA / SEM ALTERAÇÃO FUNCIONAL OU DADOS.
