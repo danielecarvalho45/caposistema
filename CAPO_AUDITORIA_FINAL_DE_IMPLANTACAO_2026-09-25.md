@@ -9586,3 +9586,22 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Correção cirúrgica planejada, NÃO aplicada:** permitir que papéis com visão geral autorizada consultem `getAgendaScheduleGrid(startDate,endDate,null)` quando Todos estiver selecionado, e renderizar a grade correspondente para Dia/Semana/Mês, usando a mesma tipografia e estados, com identificação do profissional em cada linha/bloco. Para profissional assistencial, continuar escopando sua própria agenda. Prevenir duplicação de slots da mesma configuração, preservar marcação de grupos, histórico, Visita Domiciliar, agenda inativa arquivada e isolamento lógico de ambientes. Testar Todos vs. filtro individual em Gestor/Titular, Administrativo Operacional e Coordenação, incluindo dia 100% bloqueado, jornadas parcialmente bloqueadas e grupos.
 
 **Estado:** DIAGNÓSTICO DE CAUSA NA INTERFACE COMPROVADO — AGUARDANDO VERDE ESPECÍFICO. Nenhuma alteração em interface, RPC, dados ou agenda foi feita nesta etapa. Teste visual autenticado ainda pendente.
+
+
+---
+
+## 18/11/2026 — VERDE: exibir bloqueios na consulta Todos os profissionais (Dia, Semana e Mês)
+
+**Autorização:** VERDE explícito da Titular após diagnóstico pré-VERDE documentado no mesmo dia. Objetivo: ao selecionar `Todos os profissionais` na consulta da agenda, apresentar as jornadas e os bloqueios de todos os profissionais autorizados, inclusive dias inteiramente bloqueados, no mesmo padrão de informação do filtro individual.
+
+**Causa previamente comprovada:** `src/features/agenda/AgendaPage.tsx` impedia a consulta da grade quando o profissional selecionado era `null` (`!professionalId`) e a tela geral só exibiria `AgendaResults`, que contém agendamentos, mas não horários bloqueados ou livres. O banco já suporta `get_agenda_schedule_grid_for_interface(start,end,NULL)` com filtro de ambiente e de papéis.
+
+**Intervenções versionadas no GitHub main, sem SQL de escrita:**
+1. Commit `2beabe68f720e3283d4a84c1d209cda6504f71c9` — remove a barreira `!professionalId` na carga da grade para usuários autorizados, preservando a exigência da própria agenda para perfis profissionais. Passa a renderizar `HomeScheduleGrid` tanto para todos os profissionais quanto para um individual. Na visão geral, acrescenta coluna **Profissional** (Dia) e nome do profissional em cada cartão (Semana/Mês). A apresentação da grade unificada inclui slots livres, ocupados e bloqueados, inclusive blocos de dia inteiro. A consulta individual mantém a mesma estrutura e ações vigentes.
+2. Commit `b8824a81b28be73face6b7df3d613375fc6966d6` — preserva `AgendaResults` somente como **fallback explícito de agendamentos**, caso a RPC oficial da grade retorne erro na consulta Todos, com aviso de que a disponibilidade e os bloqueios NÃO puderam ser consultados. Isso evita mostrar horários supostamente livres quando os dados de bloqueios estão indisponíveis.
+
+**Verificação estática feita após atualização:** oito verificações de presença de código retornaram `true` para carga com `null`, renderização global da grade, coluna/identificação de profissional, manutenção do caminho individual, indicação em cartões e fallback apenas em erro. O contrato físico no Supabase foi verificado somente por leitura: filtro `p_professional_id IS NULL` suportado; guarda `private.capo_professional_visible_in_current_context` mantida; `block_rows` retornados e proteção anterior `ab.id block_id` mantida. Fotografia do banco após patch: 8 bloqueios gerais ativos e 1 Visita Domiciliar ativa; nenhum registro foi alterado nesta manutenção.
+
+**Delimitação:** código versionado em `main` e estrutura da RPC confirmada. Ainda não houve teste autenticado visual nas telas Gestor/Titular, Administrativo, Coordenação, Dia/Semana/Mês, nem build, TypeScript/Vitest/Playwright ou verificação de publicação Cloudflare. Não declarar homologação operacional até conferência de produção/homologação. Para validar, comparar a mesma data com Todos e com filtro de profissional, incluindo um bloco integral e Psicologia em grupo. Proteger rigorosamente o isolamento entre bancos lógicos e os dados dos pacientes.
+
+**Estado:** CORREÇÃO DA INTERFACE COMMITADA — VERIFICAÇÕES ESTÁTICAS E SQL SOMENTE LEITURA OK — HOMOLOGAÇÃO VISUAL/BUILD PENDENTES.
