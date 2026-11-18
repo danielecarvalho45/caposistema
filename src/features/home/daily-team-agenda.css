@@ -21,3 +21,8 @@
  .capo-team-day-professional { flex-basis:100%; padding-left:69px; }
  .capo-team-day-actions { flex:1; padding-left:69px; }
 }
+
+.capo-team-day-patient-link { color:inherit; text-decoration:none; }
+.capo-team-day-patient-link:hover { text-decoration:underline; }
+.capo-team-day-patient-link:focus-visible { outline:2px solid #005ebc; outline-offset:2px; }
+.capo-team-day-cancel { border-color:#dba3a3; color:#9b3838; }
