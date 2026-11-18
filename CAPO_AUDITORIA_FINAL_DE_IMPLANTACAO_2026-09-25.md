@@ -9747,3 +9747,22 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limites:** testes TypeScript/build, execução autenticada de fluxo completo, inspeção visual publicada e comprovação de entrega das notificações por múltiplos perfis continuam **PENDENTES**. Regra de aviso alcança profissionais ATIVOS com login individual existente, no contexto operacional autorizado. Caso não haja familiar vinculado com telefone, WhatsApp não deve ser aberto para o número do falecido, e o operador recebe orientação para obter contato autorizado.
 
 **Estado:** MIGRAÇÃO APLICADA / UI VERSIONADA NO GITHUB MAIN / VERIFICAÇÕES DE SQL E CÓDIGO APROVADAS / HOMOLOGAÇÃO OPERACIONAL COMPLETA PENDENTE. Não declarar módulo encerrado sem teste da Titular.
+
+---
+
+## 18/11/2026 — VERDE: condolências via WhatsApp principal ou secundário do cadastro
+
+**Solicitação e autorização:** Titular determinou que a mensagem de condolências use os telefones cadastrados no próprio registro do paciente (principal ou segundo número), com escolha explícita, sem obrigatoriedade de familiar/cuidador vinculado. VERDE concedido para correção delimitada. O número cadastrado pode pertencer ao falecido; o operador deve conferir previamente se o destinatário é familiar/contato autorizado, sem envio automático.
+
+**Diagnóstico:** `RegisterPatientDeath.tsx` consultava `get_patient_bereavement_contact_for_interface(uuid)`, cuja consulta SQL procurava exclusivamente um telefone em `patient_family_links`/`family_members`; sem vínculo familiar o fluxo parava. O cadastro `patients` já continha `phone` e `phone_secondary`.
+
+**Correção na branch main:**
+- Componente `src/components/patients/RegisterPatientDeath.tsx`, commit `1bd14a3c4c24524e82903c5f8e5b1b8e0ff34581`: após registro do óbito, consulta opções cadastradas; mostra botões de WhatsApp principal e secundário, apenas para números válidos, sem duplicar número igual; exige clique no destinatário escolhido; conserva envio manual, mensagem acolhedora e possibilidade de nova consulta dos telefones.
+- Migração `supabase/migrations/20261118234500_bereavement_patient_registered_phones.sql`, commit corretivo `3c6a7bed12ba6d7390d8e1928fb69890cc7ea08c`: preserva a assinatura da RPC, autenticação, termo vigente, escopo do paciente e permissões originais por perfil; substitui apenas a busca em familiar por `patients.phone` e `patients.phone_secondary`, com resposta `phone`/`phone_secondary`. Mantido `GRANT EXECUTE` a `authenticated` e revogado a `anon`.
+- Migração aplicada ao Supabase oficial: `success=true`. Consulta SQL de verificação: `uses_second_number=true`, `preserves_patient_scope=true`, `preserves_term=true`, `no_family_dependency=true`, `authenticated_can_execute=true`, `anon_can_execute=false`.
+
+**Proteções:** sem alteração das triggers de óbito, cancelamento de consultas, notificações, histórico, familiar/cuidador paciente CAPO, isolamento dos ambientes ou bloqueio de agenda congelado. Não foi enviado WhatsApp nem criado óbito de teste em produção.
+
+**Limite de homologação:** faltam teste autenticado do fluxo de tela/seleção dos dois telefones, build/TypeScript, confirmação de deploy Cloudflare e teste de envio manual. O módulo de óbito continua em teste operacional, não homologado integralmente.
+
+**Estado:** CORREÇÃO VERSIONADA NA MAIN E MIGRAÇÃO APLICADA; VERIFICAÇÕES SQL POSITIVAS; HOMOLOGAÇÃO DA INTERFACE PENDENTE.
