@@ -1144,6 +1144,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_patient_confirmation_states_for_interface: {
+        Args: { p_start_date: string; p_end_date: string; p_professional_id?: string | null }
+        Returns: Json
+      }
       create_agenda_block_for_interface: {
         Args: {
           p_agenda_config_id: string
