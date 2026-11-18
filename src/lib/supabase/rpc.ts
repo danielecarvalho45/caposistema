@@ -3911,6 +3911,7 @@ function createSupabaseTransport(
       case 'get_family_queue_candidates_for_slot':
       case 'create_family_psychology_appointment_for_interface':
       case 'update_family_waiting_list_status_for_interface':
+      case 'get_patient_bereavement_contact_for_interface':
       case 'get_patient_death_context_for_interface':
       case 'register_patient_death_for_interface':
       case 'correct_patient_death_for_interface':
