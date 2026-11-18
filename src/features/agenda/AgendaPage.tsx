@@ -2375,6 +2375,18 @@ export function AgendaPage({
     const requestedSlotStart =
       typeof stateValue?.slotStart === 'string' ? stateValue.slotStart : ''
 
+    // A Home administrativa consulta a agenda filtrada do profissional, sem criar agendamento.
+    if (origin === 'home_professional_schedule' && requestedProfessionalId && requestedSlotDate) {
+      setShowScheduleForm(false)
+      setShowRescheduleForm(false)
+      setView('day')
+      setConsultationStartDate(requestedSlotDate)
+      setConsultationEndDate(requestedSlotDate)
+      setAnchorDate(requestedSlotDate)
+      setSelectedProfessionalId(requestedProfessionalId)
+      return
+    }
+
     // Histórico do paciente abre o dia da consulta sem iniciar novo agendamento.
     if (origin === 'patient_appointment_history' && requestedAppointmentId && requestedSlotDate) {
       setShowScheduleForm(false)
