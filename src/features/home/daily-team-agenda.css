@@ -26,3 +26,22 @@
 .capo-team-day-patient-link:hover { text-decoration:underline; }
 .capo-team-day-patient-link:focus-visible { outline:2px solid #005ebc; outline-offset:2px; }
 .capo-team-day-cancel { border-color:#dba3a3; color:#9b3838; }
+
+
+/* Exclusivo da Home administrativa do Gestor/Titular e Administrativo Operacional. */
+.gestor-dashboard-grid > .capo-two-day-home,
+.operational-dashboard-grid > .capo-two-day-home { grid-column: 1 / -1; min-width: 0; }
+.capo-two-day-home { width: 100%; min-width: 0; }
+.capo-two-day-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.capo-two-day-column { min-width:0; background:#f8fbff; border:1px solid #dce8f2; border-radius:12px; padding:12px; }
+.capo-two-day-column h3 { font-size:1.02rem; margin:0 0 6px; color:#17365f; }
+.capo-two-day-column h3 small { font-size:.78rem; font-weight:500; }
+.capo-two-day-column > p { font-size:.84rem; color:#60799c; margin:0 0 12px; }
+.capo-two-day-column .capo-team-day-patient { flex-basis:160px; }
+.capo-today-free-summary { margin-top:14px; padding:12px; border-top:1px solid #cddfec; }
+.capo-today-free-summary h4 { margin:0 0 9px; color:#17365f; font-size:.94rem; }
+.capo-today-free-summary p { color:#60799c; font-size:.84rem; }
+.capo-today-free-summary ul { padding:0; margin:0; list-style:none; display:grid; gap:8px; }
+.capo-today-free-summary li { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; font-size:.82rem; }
+.capo-today-free-summary a { text-decoration:underline; color:#005ebc; font-weight:650; }
+@media(max-width:900px){.capo-two-day-grid { grid-template-columns:1fr; } }
