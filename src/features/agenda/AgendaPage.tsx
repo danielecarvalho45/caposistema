@@ -1078,7 +1078,11 @@ export function AgendaPage({
     const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
     if (!family) return
     if (origin === 'home_family_reschedule_appointment' && familyRescheduleId !== appointmentId) {
-      prepareFamilyReschedule(appointmentId)
+      setFamilyRescheduleId(appointmentId)
+      setFamilyRescheduleDate('')
+      setFamilyRescheduleSlots([])
+      setFamilyRescheduleStart('')
+      setFamilyRescheduleReason('')
       setAppointmentFeedback('Remarcação do familiar selecionada na agenda oficial da Psicologia.')
     } else if (origin === 'home_family_notice_appointment') {
       setAppointmentFeedback('Consulta familiar selecionada. Use “Lembrar consulta com link” na agenda para preparar o aviso.')
