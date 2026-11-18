@@ -58,20 +58,20 @@ export function AdministrativeTwoDayAgenda({
   return (
     <article className="gestor-panel capo-two-day-home" aria-label="Agenda administrativa de dois dias úteis">
       <header className="gestor-panel-head">
-        <div><p className="eyebrow">Agendas administrativas</p><h2>Hoje e próximo dia útil</h2></div>
+        <div><p className="eyebrow">Visão rápida</p><h2>Agendas dos próximos dias úteis</h2></div>
       </header>
       <div className="capo-two-day-grid">
         {([
           { date: dates.first, label: dates.isToday ? 'Hoje' : 'Próximo dia útil', state: first, mode: 'today' as const },
-          { date: dates.second, label: dates.isToday ? 'Próximo dia útil' : 'Dia útil seguinte', state: second, mode: 'next' as const },
+          { date: dates.second, label: dates.isToday ? 'Próximo dia útil' : 'Dia útil seguinte', state: second, mode: 'today' as const },
         ]).map((column) => (
           <section className="capo-two-day-column" key={column.date} aria-label={column.label}>
             <h3>{column.label} <small>— {displayDate(column.date)}</small></h3>
-            <p>{column.mode === 'today' ? 'Consultas agendadas e disponibilidade resumida' : 'Consultas agendadas e horários livres'}</p>
+            <p>Consultas agendadas · disponibilidade ao final</p>
             {column.state.status === 'loading' && <p>Carregando agenda…</p>}
             {column.state.status === 'error' && <p role="alert">Não foi possível consultar a agenda deste dia.</p>}
-            {column.state.status === 'empty' && <DailyTeamAgendaRows slots={[]} day={column.date} mode={column.mode} summaryLabel={dates.isToday ? 'Horários disponíveis hoje' : 'Horários disponíveis no próximo dia útil'} />}
-            {column.state.status === 'success' && <DailyTeamAgendaRows slots={column.state.data} day={column.date} mode={column.mode} summaryLabel={dates.isToday ? 'Horários disponíveis hoje' : 'Horários disponíveis no próximo dia útil'} />}
+            {column.state.status === 'empty' && <DailyTeamAgendaRows slots={[]} day={column.date} mode={column.mode} summaryLabel={column.date === dates.first ? (dates.isToday ? 'Disponibilidade hoje' : 'Disponibilidade neste dia') : 'Disponibilidade no dia seguinte'} />}
+            {column.state.status === 'success' && <DailyTeamAgendaRows slots={column.state.data} day={column.date} mode={column.mode} summaryLabel={column.date === dates.first ? (dates.isToday ? 'Disponibilidade hoje' : 'Disponibilidade neste dia') : 'Disponibilidade no dia seguinte'} />}
           </section>
         ))}
       </div>
