@@ -49,8 +49,15 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all' }: R
   const day = selectedDay ?? slots[0]?.slot_date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
   const upcoming = new Date().getTime()
   const freeToday = slots.filter((slot) => slot.slot_status === 'livre' && Date.parse(slot.slot_start) > upcoming)
-  const professionalsWithAvailability = Array.from(new Map(freeToday.map((slot) => [slot.professional_id, { id: slot.professional_id, name: slot.professional_name }])).values()).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
-  const visibleSlots = mode === 'today' ? slots.filter((slot) => slot.slot_status === 'agendado') : slots
+  const professionalsWithAvailability = Array.from(
+    new Map<string, { id: string; name: string }>(
+      freeToday.map((slot): [string, { id: string; name: string }] => [
+        slot.professional_id, { id: slot.professional_id, name: slot.professional_name },
+      ]),
+    ).values(),
+  ).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+  const visibleSlots = mode === 'today' ? slots.filter((slot) => slot.slot_status === 'agendado') :
+    mode === 'next' ? slots.filter((slot) => slot.slot_status !== 'bloqueado') : slots
   // Os estados de confirmação são independentes da presença/falta assistencial.
   useEffect(() => {
     if (!day) return
