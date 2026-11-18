@@ -9766,3 +9766,22 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Limite de homologação:** faltam teste autenticado do fluxo de tela/seleção dos dois telefones, build/TypeScript, confirmação de deploy Cloudflare e teste de envio manual. O módulo de óbito continua em teste operacional, não homologado integralmente.
 
 **Estado:** CORREÇÃO VERSIONADA NA MAIN E MIGRAÇÃO APLICADA; VERIFICAÇÕES SQL POSITIVAS; HOMOLOGAÇÃO DA INTERFACE PENDENTE.
+
+---
+
+## 18/11/2026 — VERDE: diferenciar óbito do encerramento comum de ciclo CAPO
+
+**Origem:** Titular observou no cadastro de Benedito Ferreira do Prado (óbito registrado) os atalhos "Adicionar na fila de espera" e "Encerramentos", este último direcionando à interface de abertura de novo ciclo. Autorizou VERDE específico para separação do fluxo de óbito do fluxo de encerramento assistencial habitual, com preservação de familiares, histórico e bloqueio de agenda congelado.
+
+**Evidência anterior:** paciente com `patients.status='obito'`, `deceased=true`, óbito em 18/11/2026, porém `patient_care_cycles` ciclo nº 1 `status='ativo'`, especialidade `ativa`. RPCs existentes `add_patient_to_waiting_list_for_interface` e `open_return_care_cycle_for_interface` já barravam falecidos, mas a interface exibia atalhos operacionais incompatíveis. Não havia inclusão dele na `waiting_list` verificada.
+
+**Alterações:**
+1. `src/features/patients/PatientsPage.tsx`, commit `e248a3ad48585c59354b3f20d61b558d661ff165`: não apresenta atalhos `/fila` e `/encerramentos` quando `status='obito'`; mantém registro de óbito, consulta de histórico e demais recursos autorizados. Não altera fluxos para pacientes vivos.
+2. Migração `supabase/migrations/20261118235900_finalize_death_care_cycles.sql`, commit `16e50938cda28e62824aa17c5b554eb901f1ddba`, aplicada Supabase oficial `success=true`: acrescenta `resolution_type='obito'` ao domínio de resolução de especialidades; cria rotina administrativa restrita (não executável por `anon`/`authenticated`) e trigger específica ao momento de registrar o óbito, que finaliza ciclos e especialidades operacionais do paciente com motivo explícito de óbito e histórico auditável. Encerramentos pendentes eventualmente vinculados são tratados como interrupção administrativa por óbito, com justificativa expressa distinta de encerramento clínico. Não altera ciclos próprios de familiares/cuidadores, não apaga registros, não modifica a trigger preexistente de cancelamento/notificações nem o bloqueio de agenda.
+3. Regularização retrospectiva restrita aos ciclos ainda abertos de pacientes com óbito já registrado, no mesmo script. A pesquisa prévia encontrou somente o ciclo nº 1 de Benedito Ferreira do Prado nesse estado.
+
+**Verificação posterior SQL somente leitura:** Benedito segue `status='obito'`, `deceased=true`; ciclo nº 1 agora `encerrado`, com `completed_at` preenchido; especialidade `encerrada`, `resolution_type='obito'`, razão "Finalização administrativa do acompanhamento por óbito do paciente."; `deceased_open_cycles=0`, `deceased_open_specialties=0`; trigger `trg_capo_finalize_death_care_cycles` presente; helper de mutação sem `EXECUTE` a `anon` e `authenticated`. Não foram criados óbitos de teste nem enviados avisos novos nesta manutenção.
+
+**Limites e testes pendentes:** não foi executado build/TypeScript, teste autenticado e conferência visual no Cloudflare, nem teste de regressão de um novo óbito com encerramento profissional pendente. Corrigir óbito lançado indevidamente **não reabre automaticamente** os ciclos encerrados, assim como não restaura consultas canceladas; eventual regularização deve ser decisão administrativa expressa e auditada, sem reativação automática. Verificar em homologação o comportamento para perfis e isolamento test/real, especialmente após atualização da interface publicada.
+
+**Status:** ALTERAÇÃO CIRÚRGICA VERSIONADA NA MAIN / MIGRAÇÃO APLICADA / ESTADO DE BENEDITO REGULARIZADO NO BANCO / HOMOLOGAÇÃO OPERACIONAL PENDENTE. O módulo de óbito permanece em teste; bloqueio de agenda continua CONGELADO.
