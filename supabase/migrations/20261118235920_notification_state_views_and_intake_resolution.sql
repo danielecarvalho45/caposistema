@@ -125,7 +125,7 @@ begin
     n.created_at desc
   limit v_limit offset v_offset;
 end;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION public.get_my_notifications_by_state_for_interface(text,integer,integer) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_my_notifications_by_state_for_interface(text,integer,integer) TO authenticated;
