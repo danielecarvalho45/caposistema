@@ -47,7 +47,7 @@ BEGIN
     'patient_name',v_patient.full_name
   );
 END;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION public.get_patient_bereavement_contact_for_interface(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_patient_bereavement_contact_for_interface(uuid) TO authenticated;
