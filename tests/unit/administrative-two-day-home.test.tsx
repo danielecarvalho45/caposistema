@@ -38,7 +38,7 @@ describe('Home exclusivamente administrativa — dois dias úteis', () => {
       })
     }
   })
-  it('consulta separadamente o dia atual e o seguinte sem gravar agendas', async () => {
+  it('consulta separadamente ambos os dias e mostra apenas resumo das vagas', async () => {
     const day = administrativeAgendaDates()
     const freeSlot: AgendaScheduleSlot = {
       professional_id: 'prof-livre', professional_name: 'Profissional disponível',
@@ -56,8 +56,9 @@ describe('Home exclusivamente administrativa — dois dias úteis', () => {
     expect(load).toHaveBeenCalledWith(day.second, day.second, null)
     const columns = await screen.findAllByLabelText(/Próximo dia útil|Hoje|Dia útil seguinte/)
     expect(columns).toHaveLength(2)
-    expect(within(columns[1]).getByText('Horário livre')).toBeVisible()
+    expect(within(columns[1]).queryByText('Horário livre')).not.toBeInTheDocument()
     expect(within(columns[0]).queryByText('Horário livre')).not.toBeInTheDocument()
-    expect(within(columns[1]).getByRole('link', { name: 'Agendar' })).toHaveAttribute('href', '/agenda')
+    expect(within(columns[1]).getByText('Profissional disponível · horários disponíveis')).toBeVisible()
+    expect(within(columns[1]).getByRole('link', { name: 'Consultar agenda' })).toHaveAttribute('href', '/agenda')
   })
 })
