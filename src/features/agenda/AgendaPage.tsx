@@ -148,7 +148,7 @@ function previsitIndicator(result?: string) {
     case 'confirmou_paciente': return '✅ Confirmada pelo paciente (link)'
     case 'aguardando_paciente': return '◌ Aguardando confirmação pelo link'
     case 'avisado': return '💬 Avisado previamente'
-    case 'confirmou': return '💬 Avisado previamente'
+    case 'confirmou': return '✓ Avisado · Confirmado manualmente pelo Administrativo'
     case 'sem_resposta': return '◌ Aviso sem resposta'
     case 'solicitou_cancelamento': return '✕ Solicitou cancelamento'
     case 'solicitou_remarcacao': return '↻ Solicitou remarcação'
