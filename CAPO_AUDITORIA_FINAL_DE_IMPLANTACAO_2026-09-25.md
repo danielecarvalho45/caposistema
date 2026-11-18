@@ -9571,3 +9571,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Preservação pós-verificação:** a definição de `manage_social_home_visits_for_interface` mantém hash `dae1e876c85f1cc512fa5150fe41f57e`; no momento da leitura permaneciam 1 Visita Domiciliar e 8 bloqueios gerais ativos, sem inserções ou alterações de registros operacionais por estes testes. Não atribuir automaticamente os três bloqueios gerais novos de 20/11 às migrations: operações são externas às aplicações de DDL.
 
 **Estado adicional:** BACKEND SQL E CÓDIGO VERSIONADOS; TESTE SQL DE CONTRATOS APROVADO. **Vitest, build, Cloudflare, simulação autenticada de substituição e remanejamento e conferência visual ainda pendentes**; não declarar a operação de ponta a ponta homologada.
+
+
+---
+
+## 18/11/2026 — DIAGNÓSTICO PRÉ-VERDE: grade bloqueada desaparece em Todos os profissionais
+
+**Relato da Titular:** na consulta da agenda com filtro **Todos os profissionais**, jornadas bloqueadas não são exibidas para conferência; o bloqueio aparece somente após selecionar um profissional individualmente. Regra exigida: tanto a visão geral quanto a filtrada devem exibir as mesmas informações de horário livre, ocupado e bloqueado, incluindo bloqueio integral de dia sem pacientes e períodos da Psicologia em grupo.
+
+**Diagnóstico comprovado no código GitHub main:** `src/features/agenda/AgendaPage.tsx` define `professionalId = selectedProfessionalId || null` para usuários não profissionais; porém o `useEffect` da grade em torno das linhas 2262–2277 faz `if (!canAccess || !professionalId) { setScheduleGrid({status:'empty'}); return; }`, impedindo consulta de `getAgendaScheduleGrid` quando o filtro é Todos. O componente `HomeScheduleGrid` também fica condicionado a `professionalId` em torno das linhas 3623–3629. A consulta geral `loadAgenda(...,null)` carrega agendamentos, mas não substitui a grade de disponibilidades e bloqueios. Logo a divergência é atribuível ao fluxo condicional da interface e **não** demonstra ausência de bloqueios no banco.
+
+**Supabase somente leitura:** a `get_agenda_schedule_grid_for_interface(date,date,uuid)` já suporta `p_professional_id IS NULL` para papéis autorizados e inclui os blocos `block_rows`; preserva `private.capo_professional_visible_in_current_context`, responsável pelo isolamento. Fotografia do banco no instante da análise: **8 bloqueios gerais específicos por data ativos**, não modificados.
+
+**Correção cirúrgica planejada, NÃO aplicada:** permitir que papéis com visão geral autorizada consultem `getAgendaScheduleGrid(startDate,endDate,null)` quando Todos estiver selecionado, e renderizar a grade correspondente para Dia/Semana/Mês, usando a mesma tipografia e estados, com identificação do profissional em cada linha/bloco. Para profissional assistencial, continuar escopando sua própria agenda. Prevenir duplicação de slots da mesma configuração, preservar marcação de grupos, histórico, Visita Domiciliar, agenda inativa arquivada e isolamento lógico de ambientes. Testar Todos vs. filtro individual em Gestor/Titular, Administrativo Operacional e Coordenação, incluindo dia 100% bloqueado, jornadas parcialmente bloqueadas e grupos.
+
+**Estado:** DIAGNÓSTICO DE CAUSA NA INTERFACE COMPROVADO — AGUARDANDO VERDE ESPECÍFICO. Nenhuma alteração em interface, RPC, dados ou agenda foi feita nesta etapa. Teste visual autenticado ainda pendente.
