@@ -9691,3 +9691,21 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Referências técnicas:** migração final `supabase/migrations/20261118222500_ignore_inactive_configs_agenda_period_conflicts.sql`, commit `75128abadd4ceecd9de4d5541eb5e011791ba9b1`; validação SQL de conflito falso igual a zero; documentação anterior no commit `1507f3b086942fce75b1125c8bca47eb828f7724`.
 
 **Estado:** BLOQUEIOS — **HOMOLOGAÇÃO OPERACIONAL POSITIVA PELA TITULAR; CORREÇÃO CONFIRMADA EM USO.** Manter componentes e regras aprovadas preservados contra regressão, seguir continuidade simples e exigir VERDE para futuras alterações funcionais. Nenhuma mutação de agenda ou dados nesta anotação.
+
+
+---
+
+## 18/11/2026 — ENCERRAMENTO FORMAL E CONGELAMENTO: manutenção de bloqueio de agenda
+
+**Determinação expressa da Titular/Gestora, após testes operacionais:** “Fechar a manutenção de bloqueio de agenda não sendo permitido nenhuma alteração no que foi feito. Tá funcionando e testado agora só manutenção se houver erro em algum perfil.”
+
+**DECISÃO VINCULANTE DE GOVERNANÇA: BLOQUEIO DE AGENDA HOMOLOGADO, ENCERRADO E CONGELADO.**
+- A manutenção de **bloqueio de agenda** está **finalizada e aprovada pela Titular em uso real**. NÃO executar novas modificações preventivas, refatorações, revisões funcionais, padronizações que alterem comportamento, reinterpretações de regras ou mudanças em interfaces/RPCs/estruturas que possam modificar direta ou indiretamente o fluxo de bloqueio já aprovado.
+- Preservar integralmente o que foi implementado e testado: jornada integral conforme grade ativa, intervalos e atividades, grupo de Psicologia, bloqueio e substituição de período, restrições e remanejamento obrigatório de pacientes e familiares, visualização do bloqueado em consulta individual e geral, histórico/auditoria, isolamento de dados reais/homologação, permissões por perfil e Visita Domiciliar como fluxo próprio.
+- **Única exceção:** manutenção pontual **se surgir erro concreto em um perfil específico**. Antes de qualquer alteração, registrar evidência e reproduzir/diagnosticar o problema, indicar função e perfil afetados, avaliar impacto transversal e regressões, e obter **novo VERDE expresso** da Titular para a intervenção delimitada. Corrigir somente o defeito identificado; não mudar o comportamento homologado dos demais perfis. Documentar e revalidar a correção.
+- A implementação ser compartilhada entre perfis NÃO autoriza expandir permissões ou efetuar mudanças universais sem necessidade. O congelamento deve ser respeitado também durante alterações em outros módulos que consumam os mesmos componentes.
+- Esta anotação é de **governança/auditoria**, não é alteração funcional. Não criar bloqueios, apagar históricos ou modificar dados operacionais em decorrência do encerramento.
+
+**Evidência de homologação:** confirmação da Titular de que as correções e todas as manutenções de bloqueio estão “ativas e funcionando”; inspeção técnica posterior confirmou bloqueio real da Scheilla em **20/11/2026 das 08h10 às 17h10**, sobrepondo o grupo atual, sem conflitos incompatíveis e sem agendamentos pendentes nessa data. Não confundir homologação relatada pela Titular com execução de testes automáticos em todos os perfis.
+
+**Status final:** **ENCERRADO • HOMOLOGADO PELA TITULAR • CONGELADO CONTRA ALTERAÇÕES**, salvo erro comprovado em perfil específico e nova autorização VERDE.
