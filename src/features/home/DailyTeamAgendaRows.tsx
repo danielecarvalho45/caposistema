@@ -40,7 +40,7 @@ function stateLabel(slot: AgendaScheduleSlot | LinkCancellation, status: Status)
   if (contact === 'sem_resposta') return 'Contato realizado · Sem resposta'
   return 'Confirmação pendente'
 }
-export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all' }: Readonly<{ slots: readonly AgendaScheduleSlot[]; day?: string; mode?: 'all' | 'today' | 'next' }>) {
+export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', summaryLabel = 'Horários disponíveis hoje' }: Readonly<{ slots: readonly AgendaScheduleSlot[]; day?: string; mode?: 'all' | 'today' | 'next'; summaryLabel?: string }>) {
   const [state, setState] = useState<Status>({ contacts: {}, decisions: {}, familyIds: {}, error: null })
   const [busy, setBusy] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -243,7 +243,7 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all' }: R
       })}
       {mode === 'today' && (
         <section className="capo-today-free-summary" aria-label="Profissionais com horários disponíveis hoje">
-          <h4>Horários disponíveis hoje</h4>
+          <h4>{summaryLabel}</h4>
           {professionalsWithAvailability.length === 0 ? (
             <p>Nenhum horário livre restante identificado hoje.</p>
           ) : (
