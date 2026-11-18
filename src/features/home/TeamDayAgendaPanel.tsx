@@ -27,7 +27,8 @@ export function TeamDayAgendaPanel({
         </div>
       )}
 
-      {agenda.status === 'success' && agenda.data.length > 0 && (
+      {agenda.status === 'empty' && <DailyTeamAgendaRows slots={[]} />}
+      {agenda.status === 'success' && (
         <DailyTeamAgendaRows slots={agenda.data} />
       )}
 
