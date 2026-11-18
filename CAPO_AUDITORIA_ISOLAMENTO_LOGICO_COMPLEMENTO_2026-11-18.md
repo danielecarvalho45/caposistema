@@ -1,0 +1,11 @@
+# CAPO — Complemento de Auditoria: horários disponíveis e Auditoria global (18/11/2026)
+
+**Autorização:** mesmo VERDE para separar homologação e produção no único Supabase existente. Referência principal: `CAPO_AUDITORIA_ISOLAMENTO_LOGICO_2026-11-18.md`, anexo ao Documento Mestre de Continuidade.
+
+**Ampliação do diagnóstico:** entre as RPCs de leitura, `get_available_appointment_slots` autorizava um perfil simulado administrativo a consultar datas/horários de qualquer profissional, sem conferir `private.capo_professional_visible_in_current_context`. `get_audit_logs_for_interface` permitia acesso à Auditoria global conforme perfil, mas não separava eventos de pacientes e usuários de homologação dos reais.
+
+**Correção cirúrgica aplicada:** `supabase/migrations/20261118160000_scope_available_slots_and_audit_by_environment.sql` (commit `fb376d924e61b50b4bfb4017c8304f21316d46cb`) instalada com `success=true`. A função de vagas rejeita profissional fora do contexto com SQLSTATE 42501. A consulta global de Auditoria passa a aplicar `capo_audit_patient_id` + `capo_patient_visible_in_current_context`; para eventos sem paciente identificável, a visão técnica fica restrita ao próprio `auth.uid()` e a visão real exclui autor de homologação. Eventos de pacientes de outro ambiente ficam excluídos de ambas as visões. Não se apagou nem alterou o histórico de Auditoria; somente o escopo da leitura.
+
+**Teste executado e versionado:** `tests/sql/homologation_slots_audit_scope_readonly.sql` (commit `ff25959c66065d5d3f18091f247a9f8ddbba6482`) executado no Supabase: tentativa de listar vagas de profissional real pela conta de teste recusada; Auditoria da conta real não retornou pacientes de teste nem eventos com autor `manuteste` nas primeiras 100 entradas. Script não altera dados.
+
+**Limites:** o escopo auditado cobre os contratos descritos; não significa certificação de toda função existente. Registros históricos de Auditoria sem paciente identificado e sem autor técnico exigem exame especializado de sua proveniência, sem alteração retroativa arbitrária. Não houve teste visual em navegador, Vitest, build ou publicação verificada. Permanecem 83 pacientes reais e 3 de teste, 5 bloqueios gerais e 1 Visita Domiciliar. Dalila inativa, Natália real e perfis técnicos preservados. Nenhum banco adicional criado.
