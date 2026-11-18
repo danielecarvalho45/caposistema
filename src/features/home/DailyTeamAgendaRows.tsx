@@ -5,8 +5,7 @@ import { getRpcService, type AgendaScheduleSlot } from '../../lib/supabase/rpc'
 import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
 import './daily-team-agenda.css'
 
-type Contact = { appointment_id: string; result: string }
-type Decision = { appointment_id: string; decision: string | null; responded_at: string | null }
+type LinkCancellation = AgendaScheduleSlot & { link_cancelled: true; appointment_kind: string }
 type Status = { contacts: Record<string, string>; decisions: Record<string, string>; error: string | null }
 
 function asRows(value: unknown, key?: string): Record<string, unknown>[] {
@@ -27,7 +26,8 @@ function orderedSlots(slots: readonly AgendaScheduleSlot[]) {
     a.professional_name.localeCompare(b.professional_name, 'pt-BR') ||
     (a.patient_name ?? '').localeCompare(b.patient_name ?? '', 'pt-BR'))
 }
-function stateLabel(slot: AgendaScheduleSlot, status: Status) {
+function stateLabel(slot: AgendaScheduleSlot | LinkCancellation, status: Status) {
+  if ('link_cancelled' in slot && slot.link_cancelled) return 'Solicitou remarcação pelo link'
   if (slot.slot_status !== 'agendado' || !slot.appointment_id) return null
   const decision = status.decisions[slot.appointment_id]
   const contact = status.contacts[slot.appointment_id]
@@ -42,23 +42,29 @@ function stateLabel(slot: AgendaScheduleSlot, status: Status) {
 export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly AgendaScheduleSlot[] }>) {
   const [state, setState] = useState<Status>({ contacts: {}, decisions: {}, error: null })
   const [busy, setBusy] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
+  const [cancelledLinks, setCancelledLinks] = useState<readonly LinkCancellation[]>([])
   const [feedback, setFeedback] = useState<string | null>(null)
-  const day = slots[0]?.slot_date ?? ''
+  const day = slots[0]?.slot_date ?? new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
   // Os estados de confirmação são independentes da presença/falta assistencial.
   useEffect(() => {
     if (!day) return
     let active = true
+    setReady(false)
     const rpc = getRpcService()
     void Promise.all([
       rpc.getAppointmentPrevisitContacts(day, day, null),
       getSupabaseClient().rpc('get_patient_confirmation_states_for_interface', {
         p_start_date: day, p_end_date: day, p_professional_id: null,
       }),
-    ]).then(([contactsResult, linkResult]) => {
+      getSupabaseClient().rpc('get_home_link_reschedule_for_interface', { p_date: day }),
+    ]).then(([contactsResult, linkResult, cancelledResult]) => {
       if (!active) return
-      if (contactsResult.status === 'error' || linkResult.error) {
+      if (contactsResult.status === 'error' || linkResult.error || cancelledResult.error) {
         setState({ contacts: {}, decisions: {}, error: contactsResult.status === 'error'
-          ? contactsResult.error.message : linkResult.error?.message ?? 'Erro ao consultar confirmações' })
+          ? contactsResult.error.message : linkResult.error?.message ?? cancelledResult.error?.message ?? 'Erro ao consultar confirmações' })
+        setCancelledLinks([])
+        setReady(true)
         return
       }
       const contacts: Record<string, string> = {}
@@ -71,9 +77,32 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
         if (typeof row.appointment_id === 'string' && typeof row.decision === 'string')
           decisions[row.appointment_id] = row.decision
       }
+      const cancellations = asRows(cancelledResult.data, 'items')
+        .filter((row) => typeof row.appointment_id === 'string' &&
+          typeof row.slot_start === 'string' && typeof row.professional_id === 'string' &&
+          typeof row.patient_name === 'string' && typeof row.professional_name === 'string')
+        .map((row) => ({
+          appointment_id: String(row.appointment_id),
+          patient_id: typeof row.patient_id === 'string' ? row.patient_id : null,
+          patient_name: String(row.patient_name),
+          professional_id: String(row.professional_id),
+          professional_name: String(row.professional_name),
+          slot_date: day, slot_start: String(row.slot_start),
+          slot_end: String(row.slot_end ?? row.slot_start),
+          weekday: -1, duration_minutes: 0, slot_status: 'agendado' as const,
+          appointment_type: 'Solicitação pelo link', block_type: null,
+          link_cancelled: true as const,
+          appointment_kind: String(row.appointment_kind),
+        }))
+      setCancelledLinks(cancellations)
       setState({ contacts, decisions, error: null })
+      setReady(true)
     }).catch((error: unknown) => {
-      if (active) setState({ contacts: {}, decisions: {}, error: error instanceof Error ? error.message : 'Falha ao consultar confirmações' })
+      if (active) {
+        setState({ contacts: {}, decisions: {}, error: error instanceof Error ? error.message : 'Falha ao consultar confirmações' })
+        setCancelledLinks([])
+        setReady(true)
+      }
     })
     return () => { active = false }
   }, [day])
@@ -97,13 +126,14 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
     <div className="capo-team-day-list" aria-label="Agenda do dia em ordem de horário">
       {state.error && <p role="alert">Não foi possível verificar as confirmações; confirmação manual indisponível. {state.error}</p>}
       {feedback && <p role="status">{feedback}</p>}
-      {orderedSlots(slots).map((slot) => {
+      {orderedSlots([...slots, ...cancelledLinks]).map((slot) => {
         const id = slot.appointment_id
         const decision = id ? state.decisions[id] : null
         const contact = id ? state.contacts[id] : null
+        const isLinkCancellation = 'link_cancelled' in slot && slot.link_cancelled === true
         const confirmed = decision === 'comparecera' || contact === 'confirmou'
-        const requestedChange = decision === 'nao_comparecera' || contact === 'solicitou_cancelamento' || contact === 'solicitou_remarcacao'
-        const canConfirm = slot.slot_status === 'agendado' && !!id && !!slot.patient_id && !confirmed && !requestedChange && !state.error
+        const requestedChange = isLinkCancellation || decision === 'nao_comparecera' || contact === 'solicitou_cancelamento' || contact === 'solicitou_remarcacao'
+        const canConfirm = slot.slot_status === 'agendado' && !!id && !!slot.patient_id && !confirmed && !requestedChange && !state.error && ready
         const canReschedule = slot.slot_status === 'agendado' && !!id && !!slot.patient_id && (!confirmed || requestedChange)
         return (
           <div className={`capo-team-day-entry is-${slot.slot_status}`} key={`${slot.professional_id}:${slot.slot_start}:${id ?? ''}`}>
@@ -127,9 +157,13 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                       onClick={() => void confirmManual(id)}>✓ Confirmar</button>
                     {canReschedule ? (
                       <Link className="capo-team-day-action" to="/agenda"
-                        state={{ origin: 'home_reschedule_appointment', appointmentId: id,
-                          patientId: slot.patient_id, patientName: slot.patient_name ?? '',
-                          professionalId: slot.professional_id, slotDate: slot.slot_date }}>↻ Remarcar</Link>
+                        state={isLinkCancellation
+                          ? (slot.appointment_kind === 'familiar'
+                            ? { origin: 'family_link_cancellation', appointmentId: id }
+                            : { origin: 'patient_link_cancellation', appointmentId: id, patientId: slot.patient_id })
+                          : { origin: 'home_reschedule_appointment', appointmentId: id,
+                            patientId: slot.patient_id, patientName: slot.patient_name ?? '',
+                            professionalId: slot.professional_id, slotDate: slot.slot_date }}>↻ Remarcar</Link>
                     ) : <button type="button" className="capo-team-day-action" disabled>↻ Remarcar</button>}
                   </>
                 )}
