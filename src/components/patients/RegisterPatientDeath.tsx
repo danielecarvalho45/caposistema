@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { reserveCapoWhatsAppTab } from '../contact/whatsapp-tab'
 
+type ContactChoice = Readonly<{ phone: string; label: string }>
+
 type DeathSource = 'family_caregiver' | 'health_service' | 'official_document' | 'other_authorized_institution'
 
 type DeathContext = Readonly<{
@@ -43,6 +45,8 @@ export function RegisterPatientDeath({ patientId, patientName, onChanged }: Read
   const [feedback, setFeedback] = useState('')
   const [deathContext, setDeathContext] = useState<DeathContext | null>(null)
   const [contextLoaded, setContextLoaded] = useState(false)
+  const [contactChoices, setContactChoices] = useState<ContactChoice[]>([])
+  const [contactsLoaded, setContactsLoaded] = useState(false)
 
   const loadContext = useCallback(async () => {
     const result = await getRpcService().getPatientDeathContext(patientId)
@@ -65,60 +69,51 @@ export function RegisterPatientDeath({ patientId, patientName, onChanged }: Read
     setDeathContext(null)
     setOpen(false)
     setCorrectionReason('')
+    setContactChoices([])
+    setContactsLoaded(false)
     void loadContext()
   }, [loadContext])
 
-  async function prepareCondolences(reservation: ReturnType<typeof reserveCapoWhatsAppTab>) {
+  async function loadCondolenceContacts() {
     const result = await getRpcService().getPatientBereavementContact(patientId)
     if (result.status !== 'success') {
-      reservation?.cancel()
-      setFeedback('Óbito registrado. Não foi possível consultar o familiar para condolências. Utilize o botão de WhatsApp novamente.')
+      setContactChoices([])
+      setContactsLoaded(false)
+      setFeedback(result.status === 'error' ? result.error.message : 'Não foi possível consultar os telefones cadastrados.')
       return
     }
     const row = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
       ? result.data as Record<string, unknown> : null
-    if (row?.contact_found !== true || typeof row.phone !== 'string') {
-      reservation?.cancel()
-      setFeedback('Óbito registrado e consultas futuras canceladas. Não há telefone de familiar/cuidador vinculado para preparar as condolências.')
-      return
+    const choices: ContactChoice[] = []
+    for (const [key, label] of [['phone', 'WhatsApp principal'], ['phone_secondary', 'WhatsApp secundário']] as const) {
+      const phone = row?.[key]
+      if (typeof phone !== 'string' || !phone.trim()) continue
+      const digits = phone.replace(/\D/g, '')
+      const normalized = digits.startsWith('55') && digits.length >= 12 ? digits : `55${digits}`
+      if (!/^55\d{10,11}$/.test(normalized)) continue
+      if (!choices.some((choice) => choice.phone === normalized)) choices.push({ phone: normalized, label })
     }
-    const digits = row.phone.replace(/\D/g, '')
-    const normalizedPhone = digits.startsWith('55') ? digits : `55${digits}`
-    if (!/^55\d{10,11}$/.test(normalizedPhone)) {
-      reservation?.cancel()
-      setFeedback('Óbito registrado. O telefone do familiar/cuidador vinculado precisa ser revisado antes do envio de condolências.')
-      return
-    }
-    const familyName = typeof row.family_name === 'string' ? row.family_name.trim() : ''
-    const deceasedName = typeof row.patient_name === 'string' ? row.patient_name.trim() : patientName
-    const greeting = familyName ? `À família de ${deceasedName}, em especial a ${familyName},` : `À família de ${deceasedName},`
-    const message = `${greeting}\n\nRecebemos com profunda tristeza a notícia do falecimento de ${deceasedName}. Neste momento de dor, desejamos que vocês encontrem acolhimento, força e carinho nas lembranças e no amor compartilhado.\n\nToda a equipe do CAPO se solidariza com a família e permanece à disposição para acolhê-los.\n\nCom respeito e afeto,\nEquipe CAPO`
-    const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalizedPhone)}&text=${encodeURIComponent(message)}`
-    if (!reservation?.open(url)) {
-      setFeedback('Óbito registrado e consultas futuras canceladas. O WhatsApp não abriu: autorize a janela no navegador e utilize o botão de condolências.')
-      return
-    }
-    setFeedback('Óbito registrado, consultas futuras canceladas e WhatsApp aberto para o familiar vinculado. Confira o destinatário e envie a mensagem manualmente.')
+    setContactChoices(choices)
+    setContactsLoaded(true)
+    setFeedback(choices.length
+      ? 'Selecione o telefone cadastrado e confira com quem ele está antes de enviar as condolências.'
+      : 'Óbito registrado. Não há telefone principal ou secundário válido no cadastro. Revise os contatos antes de preparar condolências.')
   }
 
-  async function openCondolences() {
+  function openCondolences(choice: ContactChoice) {
     if (busy || !deathContext?.deceased) return
     const reservation = reserveCapoWhatsAppTab()
-    setBusy(true)
-    try {
-      await prepareCondolences(reservation)
-    } catch {
-      reservation?.cancel()
-      setFeedback('Não foi possível preparar o WhatsApp. O registro de óbito permanece preservado; tente novamente pelo botão.')
-    } finally {
-      setBusy(false)
+    const message = `À família de ${patientName},\n\nRecebemos com profunda tristeza a notícia do falecimento de ${patientName}. Neste momento de dor, desejamos que vocês encontrem acolhimento, força e carinho nas lembranças e no amor compartilhado.\n\nToda a equipe do CAPO se solidariza com a família e permanece à disposição para acolhê-los.\n\nCom respeito e afeto,\nEquipe CAPO`
+    const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(choice.phone)}&text=${encodeURIComponent(message)}`
+    if (!reservation?.open(url)) {
+      setFeedback('Não foi possível abrir o WhatsApp. Autorize a janela no navegador e tente novamente. O registro de óbito permanece preservado.')
+      return
     }
+    setFeedback(`WhatsApp aberto no ${choice.label.toLowerCase()}. Confira se o destinatário é um contato familiar autorizado antes do envio manual.`)
   }
 
   async function register() {
     if (!date || busy || deathContext?.deceased) return
-    // Reservar a aba no clique, antes da confirmação assíncrona no banco.
-    const reservation = reserveCapoWhatsAppTab()
     setBusy(true)
     setFeedback('')
     try {
@@ -126,22 +121,15 @@ export function RegisterPatientDeath({ patientId, patientName, onChanged }: Read
         patientId, deathDate: date, deathTime: time || null, source, notes: notes.trim() || null,
       })
       if (result.status === 'success') {
-        setFeedback('Óbito registrado no banco e preservado na auditoria. Consultas futuras foram canceladas.')
+        setFeedback('Óbito registrado no banco e preservado na auditoria. Consultas futuras canceladas.')
         setOpen(false)
         onChanged?.('obito')
         await loadContext()
-        try {
-          await prepareCondolences(reservation)
-        } catch {
-          reservation?.cancel()
-          setFeedback('Óbito registrado e consultas futuras canceladas. Não foi possível abrir o WhatsApp; utilize o botão de condolências.')
-        }
+        await loadCondolenceContacts()
       } else {
-        reservation?.cancel()
         setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o registro.')
       }
     } catch (error) {
-      reservation?.cancel()
       setFeedback(error instanceof Error ? error.message : 'Não foi possível confirmar o registro de óbito.')
     } finally {
       setBusy(false)
@@ -194,9 +182,18 @@ export function RegisterPatientDeath({ patientId, patientName, onChanged }: Read
       <legend>Óbito registrado — {patientName}</legend>
       <p>Data: {deathContext?.death_date ?? 'não informada'}{deathContext?.death_recorded_by_name ? ` · Registrado por: ${deathContext.death_recorded_by_name}` : ''}</p>
       <p>O paciente permanece identificado com situação de óbito, fora da agenda ativa. As consultas futuras são canceladas, com histórico preservado.</p>
-      <button type="button" disabled={busy} onClick={() => void openCondolences()}>
-        Preparar condolências no WhatsApp do familiar
-      </button>
+      {!contactsLoaded && <button type="button" disabled={busy} onClick={() => void loadCondolenceContacts()}>
+        Consultar telefones para condolências
+      </button>}
+      {contactsLoaded && contactChoices.length > 0 && <>
+        <p>Selecione o número cadastrado. Verifique antes do envio se pertence a um contato familiar autorizado; o número pode ser de uso exclusivo do paciente falecido.</p>
+        {contactChoices.map((choice) => <button type="button" key={choice.phone} disabled={busy} onClick={() => openCondolences(choice)}>
+          {choice.label}: {choice.phone}
+        </button>)}
+      </>}
+      {contactsLoaded && contactChoices.length === 0 && <button type="button" disabled={busy} onClick={() => void loadCondolenceContacts()}>
+        Consultar telefones novamente
+      </button>}
       <p>Para corrigir um registro feito por engano, informe o motivo. O histórico anterior não será apagado.</p>
       <label>
         Motivo da correção *
