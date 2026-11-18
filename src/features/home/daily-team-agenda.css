@@ -1,0 +1,23 @@
+.capo-team-day-list { display:grid; gap:7px; }
+.capo-team-day-entry { background:#f7faff; border:1px solid #dce8f2; border-radius:9px; padding:9px 11px; display:grid; gap:7px; min-width:0; }
+.capo-team-day-entry.is-livre { background:#f5fbf7; }
+.capo-team-day-entry.is-bloqueado { background:#fff9f2; }
+.capo-team-day-primary { display:flex; flex-wrap:wrap; align-items:center; gap:8px 13px; min-width:0; }
+.capo-team-day-time { font-size:.98rem; color:#17365f; min-width:56px; font-variant-numeric:tabular-nums; }
+.capo-team-day-patient { flex:1 1 230px; min-width:0; font-size:.94rem; color:#1d395f; font-weight:650; overflow-wrap:anywhere; }
+.capo-team-day-state { font-size:.76rem; color:#426b82; font-weight:650; white-space:normal; }
+.capo-team-day-secondary { display:flex; gap:9px; align-items:center; flex-wrap:wrap; justify-content:space-between; padding-left:69px; }
+.capo-team-day-professional { color:#60799c; font-size:.81rem; min-width:0; }
+.capo-team-day-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.capo-team-day-action { display:inline-flex; justify-content:center; align-items:center; text-decoration:none; border-radius:7px; border:1px solid #78ace1; background:white; color:#005ebc; min-height:29px; padding:4px 10px; font-size:.76rem; font-weight:700; line-height:1.2; cursor:pointer; }
+.capo-team-day-action:disabled { opacity:.47; cursor:not-allowed; background:#f1f5f9; border-color:#d5e1ea; color:#758596; }
+.capo-team-day-action:focus-visible { outline:2px solid #005ebc; outline-offset:2px; }
+@media (max-width:660px) {
+ .capo-team-day-entry { padding:9px; }
+ .capo-team-day-primary { gap:6px; }
+ .capo-team-day-patient { flex-basis:calc(100% - 70px); }
+ .capo-team-day-state { margin-left:69px; }
+ .capo-team-day-secondary { padding-left:0; align-items:flex-start; }
+ .capo-team-day-professional { flex-basis:100%; padding-left:69px; }
+ .capo-team-day-actions { flex:1; padding-left:69px; }
+}
