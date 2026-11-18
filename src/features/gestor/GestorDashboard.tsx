@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getRpcService, loadingState, type AsyncState, type AgendaScheduleSlot, type BirthdayOverview } from '../../lib/supabase/rpc'
+import { getRpcService, loadingState, type AsyncState, type BirthdayOverview } from '../../lib/supabase/rpc'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { CareLocationNotices } from '../home/CareLocationNotices'
 import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
 import { agendaBlockText } from '../../components/icons/AgendaBlockIndicator'
-import { DailyTeamAgendaRows } from '../home/DailyTeamAgendaRows'
+import { AdministrativeTwoDayAgenda } from '../home/AdministrativeTwoDayAgenda'
 
 
 type AgendaChangeRow = Readonly<Record<string, unknown>>
@@ -52,17 +52,13 @@ const quickAccess = [
 ] as const satisfies readonly (readonly [string, CapoIconName, string, string, string])[]
 
 export function GestorDashboard() {
-  const [agendaGrid, setAgendaGrid] = useState<AsyncState<readonly AgendaScheduleSlot[]>>(loadingState)
   const [birthdays, setBirthdays] = useState<AsyncState<BirthdayOverview>>(loadingState)
   const [approvedAgendaChanges, setApprovedAgendaChanges] = useState<AsyncState<unknown>>(loadingState)
   const [agendaChangeBusyId, setAgendaChangeBusyId] = useState<string | null>(null)
   const [agendaChangeFeedback, setAgendaChangeFeedback] = useState<string | null>(null)
   useEffect(() => {
     let active = true
-    const date = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
-    const rpc = getRpcService()
-    void rpc.getAgendaScheduleGrid(date, date, null).then((result) => { if (active) setAgendaGrid(result) })
-    void rpc.getBirthdays().then((result) => { if (active) setBirthdays(result) })
+    void getRpcService().getBirthdays().then((result) => { if (active) setBirthdays(result) })
     return () => { active = false }
   }, [])
 
@@ -111,21 +107,7 @@ export function GestorDashboard() {
         </div>
       </section>
       <section className="gestor-dashboard-grid" aria-label="Visão geral do sistema">
-        <article className="gestor-panel gestor-home-agenda-grid">
-          <header>
-            <h3><CapoIcon name="calendar" /> Agenda do dia <em>— Todos os profissionais</em></h3>
-            <span className="gestor-agenda-weekday">
-              {new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }).format(new Date())}
-            </span>
-          </header>
-          {agendaGrid.status === 'loading' && <p>Carregando horários cadastrados…</p>}
-          {agendaGrid.status === 'error' && <p role="alert">{agendaGrid.error.message}</p>}
-          {agendaGrid.status === 'empty' && <><p>Nenhum horário ativo cadastrado para este dia.</p><DailyTeamAgendaRows slots={[]} /></>}
-          {agendaGrid.status === 'success' && (
-            <DailyTeamAgendaRows slots={agendaGrid.data} />
-          )}
-          <Link to="/agenda">Agenda geral do dia ›</Link>
-        </article>
+        <AdministrativeTwoDayAgenda />
         <aside className="gestor-side-stack"><article className="gestor-panel"><h3><CapoIcon name="cake" /> Aniversariantes de hoje</h3>
           {birthdays.status === 'loading' && <p>Carregando aniversariantes…</p>}
           {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
