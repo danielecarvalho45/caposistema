@@ -242,15 +242,15 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
         )
       })}
       {mode === 'today' && (
-        <section className="capo-today-free-summary" aria-label="Profissionais com horários disponíveis hoje">
+        <section className="capo-today-free-summary" aria-label="Profissionais com horários disponíveis neste dia">
           <h4>{summaryLabel}</h4>
           {professionalsWithAvailability.length === 0 ? (
-            <p>Nenhum horário livre restante identificado hoje.</p>
+            <p>Sem horários livres disponíveis.</p>
           ) : (
             <ul>
               {professionalsWithAvailability.map((professional) => (
                 <li key={professional.id}>
-                  <span>{professional.name} — horários disponíveis hoje</span>
+                  <span>{professional.name} · horários disponíveis</span>
                   <Link to="/agenda" state={{ origin: 'home_professional_schedule', professionalId: professional.id, slotDate: day }}>
                     Consultar agenda
                   </Link>
