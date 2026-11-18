@@ -121,7 +121,7 @@ export function HomePage({
 
       {isAdministrativeOperational && (
         <section className="operational-dashboard-grid" aria-label="Rotina operacional do dia">
-          <TeamDayAgendaPanel agenda={operationalAgenda} enableSchedulingActions />
+          <TeamDayAgendaPanel agenda={operationalAgenda} />
 
 
           <aside className="gestor-side-stack">
