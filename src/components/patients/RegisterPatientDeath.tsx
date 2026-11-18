@@ -3,6 +3,7 @@ import { capoTodayIso } from '../../lib/date/capo-locale'
 import { CapoDateInput } from '../inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
 import { getRpcService } from '../../lib/supabase/rpc'
+import { reserveCapoWhatsAppTab } from '../contact/whatsapp-tab'
 
 type DeathSource = 'family_caregiver' | 'health_service' | 'official_document' | 'other_authorized_institution'
 
@@ -67,18 +68,66 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
     void loadContext()
   }, [loadContext])
 
+  async function prepareCondolences(reservation: ReturnType<typeof reserveCapoWhatsAppTab>) {
+    const result = await getRpcService().getPatientBereavementContact(patientId)
+    if (result.status !== 'success') {
+      reservation?.cancel()
+      setFeedback('Óbito registrado. Não foi possível consultar o familiar para condolências. Utilize o botão de WhatsApp novamente.')
+      return
+    }
+    const row = result.data && typeof result.data === 'object' && !Array.isArray(result.data)
+      ? result.data as Record<string, unknown> : null
+    if (row?.contact_found !== true || typeof row.phone !== 'string') {
+      reservation?.cancel()
+      setFeedback('Óbito registrado e consultas futuras canceladas. Não há telefone de familiar/cuidador vinculado para preparar as condolências.')
+      return
+    }
+    const digits = row.phone.replace(/\D/g, '')
+    const normalizedPhone = digits.startsWith('55') ? digits : `55${digits}`
+    if (!/^55\d{10,11}$/.test(normalizedPhone)) {
+      reservation?.cancel()
+      setFeedback('Óbito registrado. O telefone do familiar/cuidador vinculado precisa ser revisado antes do envio de condolências.')
+      return
+    }
+    const familyName = typeof row.family_name === 'string' ? row.family_name.trim() : ''
+    const deceasedName = typeof row.patient_name === 'string' ? row.patient_name.trim() : patientName
+    const greeting = familyName ? `À família de ${deceasedName}, em especial a ${familyName},` : `À família de ${deceasedName},`
+    const message = `${greeting}\n\nRecebemos com profunda tristeza a notícia do falecimento de ${deceasedName}. Neste momento de dor, desejamos que vocês encontrem acolhimento, força e carinho nas lembranças e no amor compartilhado.\n\nToda a equipe do CAPO se solidariza com a família e permanece à disposição para acolhê-los.\n\nCom respeito e afeto,\nEquipe CAPO`
+    const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(normalizedPhone)}&text=${encodeURIComponent(message)}`
+    if (!reservation?.open(url)) {
+      setFeedback('Óbito registrado e consultas futuras canceladas. O WhatsApp não abriu: autorize a janela no navegador e utilize o botão de condolências.')
+      return
+    }
+    setFeedback('Óbito registrado, consultas futuras canceladas e WhatsApp aberto para o familiar vinculado. Confira o destinatário e envie a mensagem manualmente.')
+  }
+
+  async function openCondolences() {
+    if (busy || !deathContext?.deceased) return
+    const reservation = reserveCapoWhatsAppTab()
+    setBusy(true)
+    try {
+      await prepareCondolences(reservation)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function register() {
     if (!date || busy || deathContext?.deceased) return
+    // Reservar a aba no clique, antes da confirmação assíncrona no banco.
+    const reservation = reserveCapoWhatsAppTab()
     setBusy(true)
     setFeedback('')
     const result = await getRpcService().registerPatientDeath({
       patientId, deathDate: date, deathTime: time || null, source, notes: notes.trim() || null,
     })
     if (result.status === 'success') {
-      setFeedback('Óbito registrado no banco e preservado na auditoria.')
+      setFeedback('Óbito registrado no banco e preservado na auditoria. Consultas futuras foram canceladas.')
       setOpen(false)
       await loadContext()
+      await prepareCondolences(reservation)
     } else {
+      reservation?.cancel()
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o registro.')
     }
     setBusy(false)
@@ -128,6 +177,10 @@ export function RegisterPatientDeath({ patientId, patientName }: Readonly<{ pati
     {deceased && <fieldset>
       <legend>Óbito registrado — {patientName}</legend>
       <p>Data: {deathContext?.death_date ?? 'não informada'}{deathContext?.death_recorded_by_name ? ` · Registrado por: ${deathContext.death_recorded_by_name}` : ''}</p>
+      <p>O paciente permanece identificado com situação de óbito, fora da agenda ativa. As consultas futuras são canceladas, com histórico preservado.</p>
+      <button type="button" disabled={busy} onClick={() => void openCondolences()}>
+        Preparar condolências no WhatsApp do familiar
+      </button>
       <p>Para corrigir um registro feito por engano, informe o motivo. O histórico anterior não será apagado.</p>
       <label>
         Motivo da correção *
