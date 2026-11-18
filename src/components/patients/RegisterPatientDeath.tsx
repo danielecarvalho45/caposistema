@@ -32,7 +32,7 @@ function asDeathContext(value: unknown): DeathContext | null {
   }
 }
 
-export function RegisterPatientDeath({ patientId, patientName, onChanged }: Readonly<{ patientId: string; patientName: string; onChanged?: (deceased: boolean) => void }>) {
+export function RegisterPatientDeath({ patientId, patientName, onChanged }: Readonly<{ patientId: string; patientName: string; onChanged?: (status: string) => void }>) {
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -128,7 +128,7 @@ export function RegisterPatientDeath({ patientId, patientName, onChanged }: Read
       if (result.status === 'success') {
         setFeedback('Óbito registrado no banco e preservado na auditoria. Consultas futuras foram canceladas.')
         setOpen(false)
-        onChanged?.(true)
+        onChanged?.('obito')
         await loadContext()
         try {
           await prepareCondolences(reservation)
@@ -157,7 +157,7 @@ export function RegisterPatientDeath({ patientId, patientName, onChanged }: Read
     if (result.status === 'success') {
       setCorrectionReason('')
       setFeedback('Registro de óbito corrigido. O status anterior foi restaurado com histórico preservado.')
-      onChanged?.(false)
+      onChanged?.(typeof result.data === 'object' && result.data !== null && 'restored_status' in result.data && typeof result.data.restored_status === 'string' ? result.data.restored_status : 'inativo')
       await loadContext()
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a correção.')
