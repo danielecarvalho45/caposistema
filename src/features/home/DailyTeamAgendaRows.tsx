@@ -134,7 +134,7 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
         const confirmed = decision === 'comparecera' || contact === 'confirmou'
         const requestedChange = isLinkCancellation || decision === 'nao_comparecera' || contact === 'solicitou_cancelamento' || contact === 'solicitou_remarcacao'
         const canConfirm = slot.slot_status === 'agendado' && !!id && !!slot.patient_id && !confirmed && !requestedChange && !state.error && ready
-        const canReschedule = slot.slot_status === 'agendado' && !!id && !!slot.patient_id && (!confirmed || requestedChange)
+        const canReschedule = ready && !state.error && slot.slot_status === 'agendado' && !!id && !!slot.patient_id && (!confirmed || requestedChange)
         return (
           <div className={`capo-team-day-entry is-${slot.slot_status}`} key={`${slot.professional_id}:${slot.slot_start}:${id ?? ''}`}>
             <div className="capo-team-day-primary">
@@ -144,7 +144,7 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                   slot.slot_status === 'livre' ? 'Horário livre' :
                   slot.block_type ? <AgendaBlockIndicator type={slot.block_type} /> : 'Horário bloqueado'}
               </span>
-              {slot.slot_status === 'agendado' && <small className="capo-team-day-state">{stateLabel(slot, state)}</small>}
+              {slot.slot_status === 'agendado' && <small className="capo-team-day-state">{ready ? state.error ? 'Confirmação indisponível' : stateLabel(slot, state) : 'Consultando confirmação…'}</small>}
             </div>
             <div className="capo-team-day-secondary">
               <span className="capo-team-day-professional">{slot.professional_name}</span>
@@ -172,7 +172,7 @@ export function DailyTeamAgendaRows({ slots }: Readonly<{ slots: readonly Agenda
                     state={{ origin: 'home_free_slot', professionalId: slot.professional_id,
                       slotDate: slot.slot_date, slotStart: slot.slot_start }}>Agendar</Link>
                 )}
-                {slot.slot_status === 'agendado' && !!id && !!slot.patient_id && !confirmed && !requestedChange && (
+                {slot.slot_status === 'agendado' && !!id && !!slot.patient_id && ready && !state.error && !confirmed && !requestedChange && (
                   <Link className="capo-team-day-action" to="/agenda"
                     state={{ origin: 'home_previsit_appointment', appointmentId: id,
                       professionalId: slot.professional_id, slotDate: slot.slot_date }}>Avisar</Link>
