@@ -9492,3 +9492,6 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Checagem pós-DDL:** catálogo confirma que `ab.id block_id` existe e que a referência `rb.block_id=ab.id` permanece consistente. Contagens de ativos preservadas: 5 bloqueios gerais, 1 Visita Domiciliar. Há 3 bloqueios gerais pontuais historicamente vinculados a padrão não vigente ou dia incompatível, que a leitura complementar deve exibir. **Ainda não realizado teste autenticado real da RPC em navegador, build/CI ou verificação de publicação Cloudflare**; não declarar a visualização operacionalmente homologada.
 
 **Estado:** ERRO DE REFERÊNCIA CORRIGIDO NO SQL / ESTRUTURA CONFERIDA / HOMOLOGAÇÃO OPERACIONAL PENDENTE. Testar a Home Gestor, Home Administrativo e a grade da agenda profissional em Dia/Semana/Mês após publicação, sem reabrir o escopo de bloqueio domiciliar.
+
+
+**Confirmação operacional da Titular — 18/11/2026:** após a migração `20261118194500_fix_grid_recurring_block_id_projection.sql`, a Titular informou **“Corrigido”** ao verificar novamente a Home Gestor/Titular. **Estado desta ocorrência:** CORRIGIDO E CONFIRMADO PELA TITULAR — CONGELADO. Esta confirmação refere-se à visualização da Agenda do Dia do Gestor/Titular, não significando homologação dos demais perfis ou testes de gravação de bloqueios. Não reabrir sem nova evidência de regressão.
