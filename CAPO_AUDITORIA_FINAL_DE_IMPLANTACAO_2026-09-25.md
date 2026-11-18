@@ -9624,3 +9624,14 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Conclusão:** para a profissional real consultada, **o bloqueio geral não consta gravado** — não apenas os primeiros horários. É preciso confirmar data e intervalo exatos usados, mensagem apresentada após Salvar e contexto real/manuteste, e confrontar resposta da RPC para separar rejeição legítima de defeito técnico. Depois, se necessária, propor correção cirúrgica sob novo VERDE, preservando grupo, consultas e isolamento dos ambientes.
 
 **Estado:** DIAGNÓSTICO SOMENTE LEITURA REALIZADO / CAUSA RAIZ DO NÃO SALVAMENTO AINDA NÃO REPRODUZIDA / SEM ALTERAÇÃO FUNCIONAL OU DADOS.
+
+
+### Complemento factual — data informada de bloqueio Scheilla, 29/11/2026
+
+**Detalhamento prestado pela Titular:** informou que configurou bloqueio para `29/11/2026`, `08:10–17:10`, mas viu bloqueio somente a partir de `10:10`.
+
+**Verificação em banco real, somente leitura:** `29/11/2026` corresponde ao **domingo (weekday=0)**; a psicóloga `Scheilla Maria Beraldo Nadalini` tem padrões ATIVOS exclusivamente para **terça-feira (weekday=2, 08:10–17:00)** e **sexta-feira (weekday=5, 08:10–17:10)**. A consulta `agenda_blocks` da profissional para `specific_date='2026-11-29'` retornou **zero** registros, incluindo inativos. A consulta mais ampla a blocos pontuais de todos os profissionais de `27/11/2026` a `30/11/2026` também retornou **zero** linhas. Não afirmar que 10:10 foi o início de um bloqueio persistido na data informada; a evidência física não confirma isso. A RPC `create_agenda_period_for_interface` deveria ignorar datas sem configuração semanal vigente, podendo responder nenhum dia correspondente quando a seleção abrange somente domingo; verificar mensagem da tela e data da consulta para apontar se houve discrepância de interface ou erro de seleção.
+
+**Diagnóstico:** há divergência entre data selecionada, dia semanal de atendimento e resultado observado. Uma sexta-feira próxima é `27/11/2026`, com a jornada citada; não presumir que essa foi a data efetivamente escolhida. Exigir confirmação da data correta ou imagem do calendário/resultado e contexto de teste vs real antes de propor qualquer alteração ou escrever no banco. Manter remanejamento obrigatório e programação de grupos protegidos.
+
+**Estado:** DATA E AUSÊNCIA DE BLOQUEIO PARA 29/11 CONFIRMADAS; CAUSA DA VISUALIZAÇÃO 10:10 NÃO REPRODUZIDA; SEM ALTERAÇÃO FUNCIONAL; AGUARDANDO ESCLARECIMENTO DE DATA/IMAGEM.
