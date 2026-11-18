@@ -4,7 +4,8 @@ import { getRpcService, loadingState, type AsyncState, type AgendaScheduleSlot, 
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { CareLocationNotices } from '../home/CareLocationNotices'
 import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
-import { AgendaBlockIndicator, agendaBlockText } from '../../components/icons/AgendaBlockIndicator'
+import { agendaBlockText } from '../../components/icons/AgendaBlockIndicator'
+import { DailyTeamAgendaRows } from '../home/DailyTeamAgendaRows'
 
 
 type AgendaChangeRow = Readonly<Record<string, unknown>>
@@ -121,79 +122,7 @@ export function GestorDashboard() {
           {agendaGrid.status === 'error' && <p role="alert">{agendaGrid.error.message}</p>}
           {agendaGrid.status === 'empty' && <p>Nenhum horário cadastrado para este dia.</p>}
           {agendaGrid.status === 'success' && (
-            <div className="gestor-agenda-slot-list">
-              {agendaGrid.data.map((slot) => (
-                <div className={`gestor-agenda-slot is-${slot.slot_status}`} key={`${slot.professional_id}:${slot.slot_start}`}>
-                  <strong>{new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date(slot.slot_start))}</strong>
-                  <span>{slot.professional_name}</span>
-                  <small>
-                    {slot.slot_status === 'livre'
-                      ? 'Livre'
-                      : slot.slot_status === 'bloqueado'
-                        ? slot.block_type ? <><AgendaBlockIndicator type={slot.block_type} /></> : 'Bloqueado'
-                        : slot.patient_name ?? 'Agendado'}
-                  </small>
-                  {slot.slot_status === 'livre' && (
-                    <Link
-                      className="gestor-agenda-slot-action"
-                      to="/agenda"
-                      state={{
-                        origin: 'home_free_slot',
-                        professionalId: slot.professional_id,
-                        slotDate: slot.slot_date,
-                        slotStart: slot.slot_start,
-                      }}
-                    >
-                      Agendar
-                    </Link>
-                  )}
-                  {slot.slot_status === 'agendado' && slot.appointment_id && slot.patient_id && (
-                    <Link
-                      className="gestor-agenda-slot-action"
-                      to="/agenda"
-                      state={{
-                        origin: 'home_previsit_appointment',
-                        appointmentId: slot.appointment_id,
-                        professionalId: slot.professional_id,
-                        slotDate: slot.slot_date,
-                      }}
-                    >
-                      Avisar / confirmar
-                    </Link>
-                  )}
-                  {slot.slot_status === 'agendado' && slot.appointment_id && slot.patient_id && (
-                    <Link
-                      className="gestor-agenda-slot-action"
-                      to="/agenda"
-                      state={{
-                        origin: 'home_reschedule_appointment',
-                        appointmentId: slot.appointment_id,
-                        patientId: slot.patient_id,
-                        patientName: slot.patient_name ?? '',
-                        professionalId: slot.professional_id,
-                        slotDate: slot.slot_date,
-                      }}
-                    >
-                      Reagendar
-                    </Link>
-                  )}
-                  {slot.slot_status === 'agendado' && slot.appointment_id && (
-                    <Link
-                      className="gestor-agenda-slot-action gestor-agenda-slot-cancel-action"
-                      to="/agenda"
-                      state={{
-                        origin: 'home_cancel_appointment',
-                        appointmentId: slot.appointment_id,
-                        professionalId: slot.professional_id,
-                        slotDate: slot.slot_date,
-                      }}
-                    >
-                      Cancelar
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
+            <DailyTeamAgendaRows slots={agendaGrid.data} />
           )}
           <Link to="/agenda">Agenda geral do dia ›</Link>
         </article>
