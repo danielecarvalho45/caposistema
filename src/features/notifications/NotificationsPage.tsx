@@ -6,6 +6,7 @@ import {
   NOTIFICATIONS_UPDATED_EVENT,
   type Notification,
   type NotificationsService,
+  type NotificationView,
 } from './notifications-integration'
 import './notifications-page.css'
 
@@ -32,7 +33,7 @@ export function NotificationsPage({
   getContextHref,
 }: Props) {
   const navigate = useNavigate()
-  const [onlyUnread, setOnlyUnread] = useState(false)
+  const [view, setView] = useState<NotificationView>('unread')
   const [page, setPage] = useState(0)
   const [state, setState] = useState<AsyncState<readonly Notification[]>>({
     status: 'loading',
@@ -43,14 +44,14 @@ export function NotificationsPage({
   useEffect(() => {
     let active = true
     void service
-      .getNotifications(onlyUnread, pageSize, page * pageSize)
+      .getNotificationsByState(view, pageSize, page * pageSize)
       .then((nextState) => {
         if (active) setState(nextState)
       })
     return () => {
       active = false
     }
-  }, [onlyUnread, page, service])
+  }, [view, page, service])
 
   async function update(item: Notification, action: 'lida' | 'resolvida') {
     setBusyId(item.notification_id)
@@ -69,8 +70,8 @@ export function NotificationsPage({
       setBusyId(null)
       return
     }
-    const refreshed = await service.getNotifications(
-      onlyUnread,
+    const refreshed = await service.getNotificationsByState(
+      view,
       pageSize,
       page * pageSize,
     )
@@ -128,7 +129,7 @@ export function NotificationsPage({
   function changeFilter(value: string) {
     setState({ status: 'loading' })
     setFeedback(null)
-    setOnlyUnread(value === 'unread')
+    setView(value as NotificationView)
     setPage(0)
   }
 
@@ -152,20 +153,26 @@ export function NotificationsPage({
           Exibição
           <select
             aria-label="Filtrar notificações"
-            value={onlyUnread ? 'unread' : 'all'}
+            value={view}
             onChange={(event) => changeFilter(event.target.value)}
           >
-            <option value="all">Todas</option>
             <option value="unread">Não lidas</option>
+            <option value="read">Lidas</option>
+            <option value="resolved">Resolvidas</option>
+            <option value="all">Todas</option>
           </select>
         </label>
       </header>
 
       <p className="notifications-counter" aria-live="polite">
         {totalCount}{' '}
-        {onlyUnread
+        {view === 'unread'
           ? `não lida${totalCount === 1 ? '' : 's'}`
-          : `notificação${totalCount === 1 ? '' : 'ões'}`}
+          : view === 'read'
+            ? `lida${totalCount === 1 ? '' : 's'}`
+            : view === 'resolved'
+              ? `resolvida${totalCount === 1 ? '' : 's'}`
+              : `notificação${totalCount === 1 ? '' : 'ões'}`}
       </p>
 
       {state.status === 'loading' && (
@@ -202,9 +209,11 @@ export function NotificationsPage({
                 <div className="notification-content">
                   <div className="notification-heading">
                     <h2>{item.title}</h2>
-                    {isUnread(item) && (
-                      <span className="notification-dot">Não lida</span>
-                    )}
+                    {item.resolved_at !== null
+                      ? <span className="notification-dot">Resolvida</span>
+                      : isUnread(item)
+                        ? <span className="notification-dot">Não lida</span>
+                        : <span className="notification-dot">Lida</span>}
                   </div>
                   <p>{item.message}</p>
                   <small>
