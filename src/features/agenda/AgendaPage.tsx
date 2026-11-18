@@ -73,6 +73,7 @@ type PsychologyGroupSession = {
   date: string
   start: string
   end: string
+  blocked?: boolean
   participants: readonly {
     appointment_id: string
     patient_id: string
@@ -462,7 +463,7 @@ export function HomeScheduleGrid({
                     ? 'Horário ocupado'
                     : '—')
               const attendanceStatus = (slot.appointment_id ? attendanceOverrides?.[slot.appointment_id] : undefined) ?? appointment?.attendance_status ?? String(familyAppointments?.find((item) => String(item.appointment_id) === slot.appointment_id)?.attendance_status ?? 'agendado')
-              const statusLabel = group ? `${group.participants.length}/${group.capacity} vagas` :
+              const statusLabel = group ? (group.blocked ? 'Grupo bloqueado' : `${group.participants.length}/${group.capacity} vagas`) :
                 slot.slot_status === 'livre'
                   ? 'Livre'
                   : slot.slot_status === 'bloqueado'
@@ -617,7 +618,7 @@ export function HomeScheduleGrid({
                     >
                       <strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong>
                       <span className="agenda-schedule-status">
-                        {group ? `${group.name} · ${group.participants.length}/${group.capacity} vagas` :
+                        {group ? (group.blocked ? `${group.name} · Grupo bloqueado` : `${group.name} · ${group.participants.length}/${group.capacity} vagas`) :
                         slot.slot_status === 'livre'
                           ? 'Livre'
                           : slot.slot_status === 'bloqueado'
@@ -3725,8 +3726,9 @@ export function AgendaPage({
                         <strong>{session.name}</strong>
                         <span>{session.date.split('-').reverse().join('/')} · {slotClock(session.start)}–{slotClock(session.end)}</span>
                       </div>
-                      <strong>{occupied}/{session.capacity} vagas</strong>
+                      <strong>{session.blocked ? 'Grupo bloqueado' : `${occupied}/${session.capacity} vagas`}</strong>
                     </div>
+                    {session.blocked && <p role="status">Período bloqueado na agenda da Psicologia. Novas reservas indisponíveis; participantes precisam de remanejamento.</p>}
                     {session.participants.length === 0 && <p>Nenhum paciente agendado neste grupo.</p>}
                     {session.participants.map((participant) => (
                       <div className="agenda-psychology-participant" key={participant.appointment_id}>
@@ -3821,7 +3823,7 @@ export function AgendaPage({
                       </div>
                     ))}
                     {canBook && (
-                      <button type="button" disabled={occupied >= session.capacity || groupBookingBusy}
+                      <button type="button" disabled={session.blocked || occupied >= session.capacity || groupBookingBusy}
                         onClick={() => {
                           setGroupBookingId(session.group_id)
                           setGroupBookingDate(session.date)
@@ -3830,10 +3832,10 @@ export function AgendaPage({
                           setGroupPatients([])
                           setGroupBookingFeedback('')
                         }}>
-                        {occupied >= session.capacity ? 'Grupo completo' : `Agendar paciente · ${session.capacity - occupied} vagas`}
+                        {session.blocked ? 'Grupo bloqueado' : occupied >= session.capacity ? 'Grupo completo' : `Agendar paciente · ${session.capacity - occupied} vagas`}
                       </button>
                     )}
-                    {selected && (
+                    {selected && !session.blocked && (
                       <div className="agenda-psychology-booking">
                         <label>Paciente (nome ou Nº CAPO)
                           <input value={groupPatientQuery} onChange={(event) => {
