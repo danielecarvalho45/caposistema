@@ -506,6 +506,10 @@ ADMINISTRATIVO DO CAPO`
 
   async function savePatientEditor() {
     if (!editingPatientId || editBusy) return
+    if (editForm.status === 'obito') {
+      setFeedback('Cadastro com óbito registrado: a situação só pode ser corrigida pelo fluxo auditável de óbito.')
+      return
+    }
     if (editForm.full_name?.trim().length < 3 || !editForm.birth_date) {
       setFeedback('Informe nome completo e data de nascimento válidos.')
       return
@@ -923,7 +927,7 @@ ADMINISTRATIVO DO CAPO`
                 {editForm.cms ? <> · CMS <strong>{editForm.cms}</strong></> : null}
               </p>
             </div>
-            <span className="patients-selected-status">{editForm.status === 'inativo' ? 'Inativo' : 'Ativo'}</span>
+            <span className="patients-selected-status">{editForm.status === 'obito' ? 'Óbito registrado · Inativo' : editForm.status === 'inativo' ? 'Inativo' : 'Ativo'}</span>
           </div>
 
           <div className="patients-form-grid patients-selected-grid">
@@ -1001,11 +1005,12 @@ ADMINISTRATIVO DO CAPO`
             <label>Situação
               <select
                 value={editForm.status ?? 'ativo'}
-                disabled={!canEditPatient}
+                disabled={!canEditPatient || editForm.status === 'obito'}
                 onChange={(event) => setEditForm({ ...editForm, status: event.target.value })}
               >
                 <option value="ativo">Ativo</option>
                 <option value="inativo">Inativo</option>
+                {editForm.status === 'obito' && <option value="obito">Óbito registrado · Inativo</option>}
               </select>
             </label>
             <label className="patients-span-all">Observação administrativa
@@ -1020,7 +1025,7 @@ ADMINISTRATIVO DO CAPO`
 
           {canEditPatient && (
             <div className="patients-form-actions patients-selected-save">
-              <button type="button" disabled={editBusy} onClick={() => void savePatientEditor()}>
+              <button type="button" disabled={editBusy || editForm.status === 'obito'} onClick={() => void savePatientEditor()}>
                 {editBusy ? 'Salvando…' : 'Salvar alterações'}
               </button>
             </div>
@@ -1035,7 +1040,7 @@ ADMINISTRATIVO DO CAPO`
           )}
 
           <div className="patients-flow-actions" aria-label={`Ações do paciente ${editForm.full_name || ''}`}>
-            {patientWhatsAppHref(editForm.phone) ? (
+            {editForm.status !== 'obito' && patientWhatsAppHref(editForm.phone) ? (
               <a href={patientWhatsAppHref(editForm.phone) ?? undefined} target="_blank" rel="noreferrer">
                 <span aria-hidden="true">💬</span>
                 WhatsApp
@@ -1044,7 +1049,7 @@ ADMINISTRATIVO DO CAPO`
               <span className="is-disabled"><span aria-hidden="true">💬</span> WhatsApp</span>
             )}
 
-            {canAccessAppRoute(accessContext, '/agenda') && (
+            {editForm.status !== 'obito' && canAccessAppRoute(accessContext, '/agenda') && (
               <Link
                 to="/agenda"
                 state={{
@@ -1115,6 +1120,11 @@ ADMINISTRATIVO DO CAPO`
               <RegisterPatientDeath
                 patientId={editingPatientId}
                 patientName={editForm.full_name ?? 'Paciente'}
+                onChanged={(deceased) => {
+                  setEditForm((current) => ({ ...current, status: deceased ? 'obito' : 'ativo' }))
+                  setAppointmentHistory(null)
+                  if (query.trim()) void searchPatients()
+                }}
               />
             )}
           </div>
