@@ -9462,3 +9462,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Estado:** **SQL APLICADO / VERIFICAÇÕES ESTRUTURAIS APROVADAS / HOMOLOGAÇÃO OPERACIONAL PENDENTE**. Ainda NÃO executados os testes autenticados de criação/remanejamento com casos reais, testes visuais de Dia/Semana/Mês nos perfis Gestor, Administrativo e Profissional, Vitest, TypeScript, build Vite ou confirmação de Cloudflare. Não declarar bloqueio integralmente homologado sem essas etapas. Se aparecerem regressões de sobreposição entre grades simultâneas, inspecionar a data e o padrão exatos antes de alterar novamente a função.
 
 **Conferência adicional somente leitura dos bloqueios pontuais:** consulta SQL após a migração identificou **5 bloqueios gerais pontuais ativos**, dos quais **3** estavam vinculados a configuração que não cobria corretamente o dia, a vigência ou o horário registrado. Esses três registros permanecem intactos e devem ser cobertos pela leitura complementar de bloqueios por data. Não foi executada sessão de navegador autenticada para confirmar a renderização.
+
+
+---
+
+## 18/11/2026 — VERDE para verificar visualização da Agenda Geral do Dia nas Homes
+
+**Solicitação:** verificar se a falha visual comunicada na Agenda Geral do Dia do Gestor/Titular é exclusiva do perfil ou afeta outros; titular emitiu VERDE durante a análise. A manifestação exata (erro exibido, horário faltando, duplicidade, card desalinhado ou outro) não foi fornecida, logo não declarar uma causa raiz visual sem reprodução.
+
+**Verificações realizadas antes de qualquer alteração:** `src/features/gestor/GestorDashboard.tsx` e `src/features/home/HomePage.tsx` / `TeamDayAgendaPanel.tsx` consultam a **mesma** `getAgendaScheduleGrid(dia,dia,null)` e montam o **mesmo** `DailyTeamAgendaRows` para Gestor e Administrativo Operacional; o componente trata estados de confirmação/avisos, solicitações via link e ordenação global por horário. Uma falha do componente compartilhado ou da RPC da grade pode atingir os **dois** perfis, não necessariamente todos. A Home profissional usa `AgendaPage`/`HomeScheduleGrid`, outra apresentação; não concluir regressão visual em profissionais sem teste específico. O Gestor possui cartão/estados de erro e vazio distintos do painel Administrativo, portanto falhas de **invólucro visual** podem ser locais do Gestor.
+
+**Banco, verificação somente leitura:** em 18/11/2026 havia 9 profissionais ativos com agenda configurada para esse dia; **nenhum** com mais de uma configuração vigente nessa data. Isso afasta, para o dia testado, duplicidade de padrão ativo como explicação suficiente de anomalia da Home; não equivale a teste de renderização. As RPCs de confirmação, família e remarcação são consumidas em conjunto no componente compartilhado; se alguma falhar, o estado de confirmação manual é desabilitado e a falha é exibida, sem alterar automaticamente os agendamentos. O efeito real em uma sessão Gestor/AO não foi reproduzido.
+
+**Conclusão do alcance:** **não comprovado que seja exclusivo do Gestor**; **potencialmente compartilhado entre Gestor e Administrativo** por componente e RPC comuns. **Não há prova de falha em todos os perfis.** Sem evidência de sintomas específicos ou teste de interface autenticada, não aplicar alteração especulativa em componente compartilhado, banco ou blocos congelados, apesar do VERDE para análise/correção. Próximo passo: obter evidência da Home (mensagem, imagem ou condição exata) e confrontá-la com a Home AO; corrigir cirurgicamente só a causa comprovada, com teste de regressão e atualização deste registro.
+
+**Estado:** ANÁLISE DE ALCANCE CONCLUÍDA / SINTOMA VISUAL ESPECÍFICO NÃO REPRODUZIDO / SEM MUDANÇA DE CÓDIGO OU DADOS NESTA ETAPA.
