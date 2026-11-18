@@ -274,7 +274,7 @@ export function NotificationsPage({
                   )}
                   {item.resolved_at === null &&
                     (!item.entity_type ||
-                      ['appointment_patient_reschedule', 'appointment_confirmation_unanswered'].includes(item.notification_type)) && (
+                      item.notification_type === 'appointment_patient_reschedule') && (
                     <button
                       type="button"
                       disabled={busy}
