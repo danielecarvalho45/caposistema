@@ -9477,3 +9477,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Conclusão do alcance:** **não comprovado que seja exclusivo do Gestor**; **potencialmente compartilhado entre Gestor e Administrativo** por componente e RPC comuns. **Não há prova de falha em todos os perfis.** Sem evidência de sintomas específicos ou teste de interface autenticada, não aplicar alteração especulativa em componente compartilhado, banco ou blocos congelados, apesar do VERDE para análise/correção. Próximo passo: obter evidência da Home (mensagem, imagem ou condição exata) e confrontá-la com a Home AO; corrigir cirurgicamente só a causa comprovada, com teste de regressão e atualização deste registro.
 
 **Estado:** ANÁLISE DE ALCANCE CONCLUÍDA / SINTOMA VISUAL ESPECÍFICO NÃO REPRODUZIDO / SEM MUDANÇA DE CÓDIGO OU DADOS NESTA ETAPA.
+
+
+---
+
+## 18/11/2026 — VERDE: regressão da Agenda Geral do Dia na Home Gestor e AO (rb.block_id)
+
+**Evidência operacional:** foto fornecida pela Titular mostra na Home do Gestor/Titular, em `Agenda do dia — Todos os profissionais`, a falha SQL literal `column rb.block_id does not exist` em lugar da grade. A análise anterior de alcance já demonstrara que a Home do Administrativo Operacional usa a mesma RPC e o mesmo componente; portanto a causa é de contrato compartilhado, ainda que reprodução visual tenha sido apresentada somente na Home Gestor. Home profissional usa outro componente mas também consulta a RPC compartilhada, logo existe risco para qualquer consumidor desta função.
+
+**Causa comprovada:** a migração imediatamente anterior `20261118190000_general_agenda_block_overlap_and_grid.sql` acrescentou a CTE `dated_block_rows` com `not exists (select 1 from recurring_blockers rb where rb.block_id=ab.id)`, mas a projeção de `recurring_blockers` continha apenas `ab.block_type`, sem `ab.id AS block_id`. A referência inválida fazia falhar a avaliação SQL da consulta, não sendo um defeito de CSS ou exclusivamente do Gestor.
+
+**VERDE e reparo mínimo executado:** adicionada apenas a coluna `ab.id block_id` ao `select` da CTE `recurring_blockers` em `get_agenda_schedule_grid_for_interface`, preservando o retorno externo e demais contratos. Migração `supabase/migrations/20261118194500_fix_grid_recurring_block_id_projection.sql`, commit `764de9d64211049a00f79c80bdb251af75c2da78`, aplicada ao Supabase oficial (`success=true`). Não houve alteração da função exclusiva de Visita Domiciliar, registros, bloqueios, pacientes ou configurações.
+
+**Checagem pós-DDL:** catálogo confirma que `ab.id block_id` existe e que a referência `rb.block_id=ab.id` permanece consistente. Contagens de ativos preservadas: 5 bloqueios gerais, 1 Visita Domiciliar. Há 3 bloqueios gerais pontuais historicamente vinculados a padrão não vigente ou dia incompatível, que a leitura complementar deve exibir. **Ainda não realizado teste autenticado real da RPC em navegador, build/CI ou verificação de publicação Cloudflare**; não declarar a visualização operacionalmente homologada.
+
+**Estado:** ERRO DE REFERÊNCIA CORRIGIDO NO SQL / ESTRUTURA CONFERIDA / HOMOLOGAÇÃO OPERACIONAL PENDENTE. Testar a Home Gestor, Home Administrativo e a grade da agenda profissional em Dia/Semana/Mês após publicação, sem reabrir o escopo de bloqueio domiciliar.
