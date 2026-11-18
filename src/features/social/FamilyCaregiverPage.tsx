@@ -13,6 +13,17 @@ import {
 import './family-caregiver-page.css'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 
+function familyLinkDeadlineExpired(deathDate: unknown): boolean {
+  if (typeof deathDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(deathDate)) return true
+  const [year, month, day] = deathDate.split('-').map(Number)
+  const lastDay = new Date(Date.UTC(year, month + 2, 0)).getUTCDate()
+  const endDate = new Date(Date.UTC(year, month + 1, Math.min(day, lastDay)))
+  const todayBrazil = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date())
+  return todayBrazil > endDate.toISOString().slice(0, 10)
+}
+
 function digits(value: string) {
   return value.replace(/\D/g, '')
 }
@@ -58,6 +69,9 @@ export function FamilyCaregiverPage({
   const [feedback, setFeedback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const authorized = context?.can_operate ?? false
+  const postDeathLinkExpired = context?.source_patient?.deceased === true
+    && familyLinkDeadlineExpired(context.source_patient.death_date)
+
 
   useEffect(() => {
     const stateValue =
@@ -387,6 +401,13 @@ export function FamilyCaregiverPage({
       {patientId && authorized && (
         <section className="family-caregiver-panel">
           <h2>Vincular / substituir familiar</h2>
+          {context?.source_patient?.deceased === true && (
+            <p role="status">
+              {postDeathLinkExpired
+                ? 'Prazo de dois meses após o óbito encerrado. Novos vínculos e substituições ficam bloqueados; o histórico e o acompanhamento do familiar permanecem preservados.'
+                : 'Após o óbito, é permitido um único familiar/cuidador ativo, inclusive por substituição justificada, até dois meses após a data do falecimento. O luto é iniciado automaticamente.'}
+            </p>
+          )}
           <div className="family-caregiver-form">
             {(
               [
@@ -483,7 +504,7 @@ export function FamilyCaregiverPage({
           <div className="family-caregiver-actions">
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || postDeathLinkExpired}
               onClick={() =>
                 void write(context?.active_link ? 'replace' : 'create')
               }
