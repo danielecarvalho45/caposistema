@@ -9709,3 +9709,41 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 **Evidência de homologação:** confirmação da Titular de que as correções e todas as manutenções de bloqueio estão “ativas e funcionando”; inspeção técnica posterior confirmou bloqueio real da Scheilla em **20/11/2026 das 08h10 às 17h10**, sobrepondo o grupo atual, sem conflitos incompatíveis e sem agendamentos pendentes nessa data. Não confundir homologação relatada pela Titular com execução de testes automáticos em todos os perfis.
 
 **Status final:** **ENCERRADO • HOMOLOGADO PELA TITULAR • CONGELADO CONTRA ALTERAÇÕES**, salvo erro comprovado em perfil específico e nova autorização VERDE.
+
+
+---
+
+## 18/11/2026 — VERDE: registro de óbito, inativação operacional, cancelamento e condolências
+
+**Autorização:** a Titular relatou que, após registrar óbito, o paciente permanecia visualmente “Ativo” e ainda possuía consultas futuras. Determinou que o registro de óbito torne o paciente inativo no CAPO, desmarque consultas marcadas, notifique todos os profissionais que atendem no CAPO e abra mensagem acolhedora de condolências pelo WhatsApp. A Titular autorizou implementação com **VERDE**, sem tocar na manutenção de bloqueio de agenda, previamente encerrada e congelada.
+
+**Diagnóstico físico antes da intervenção:**
+- `register_patient_death_for_interface` já definia `patients.deceased=true` e `patients.status='obito'`, uma situação histórica específica distinta de `inativo`, mas não enviava WhatsApp nem cancelava consultas por si.
+- Trigger `trg_capo_fluxo_obito` existia e notificava Administrativo Operacional, Coordenação e somente profissionais que já tinham `patient_appointments` para o paciente; NÃO alcançava necessariamente todos os profissionais ativos.
+- Trigger `trg_capo_bloquear_agendamento_obito` vetava toda atualização de consulta de paciente falecido, inclusive o cancelamento necessário.
+- `PatientsPage.tsx` mostrava **Ativo** para qualquer `status` diferente de `inativo`, inclusive `obito`; salvar alteração tentava converter `obito` para `ativo`.
+- Consulta SQL somente leitura encontrou 1 paciente com `deceased=true,status='obito'` e 1 consulta futura ainda `agendado/confirmado`.
+
+**Migração aplicada no Supabase oficial:** `supabase/migrations/20261118230000_death_workflow_cancel_notify_family_contact.sql`, commit GitHub `fd82b3652124425e69d48b77b78af31b17841797`, aplicação `success=true`.
+1. `capo_bloquear_agendamento_obito`: mantém vedação de novos agendamentos do paciente falecido, mas permite atualizar agendamento existente para `cancelado`/`remarcado` sem alterar identificação, profissional ou data/horário. A mudança não modifica gerenciador/bloqueio de agenda.
+2. `capo_fluxo_obito`: trigger de óbito, no mesmo commit transacional, cancela consultas futuras do **paciente falecido** com `attendance_status` `agendado/confirmado`, atribui justificativa de cancelamento e conserva registros auditáveis; **não modifica `family_psychology_appointments` do familiar/cuidador**, que mantém atendimento próprio. Reutiliza avisos administrativos/Coordenação e passa a notificar individualmente todos os profissionais ativos com contas e logins autorizados **no ambiente atual**, mesmo sem agendamento anterior com o falecido. Contas de profissionais ainda sem login não têm destinatário individual para receber aviso; atendimento não pode afirmar que esses receberam notificação.
+3. Regularização controlada na mesma migração de futuras consultas ativas já existentes para pacientes previamente falecidos; nenhum novo paciente/óbito fictício registrado. O `status='obito'` é preservado (situação clínica-administrativa histórica distinta, funcionalmente não ativo). Nenhuma conversão indiscriminada para `inativo`, que perderia identificação específica de óbito.
+4. Nova RPC `get_patient_bereavement_contact_for_interface(uuid)`: consulta APENAS telefone de familiar/cuidador vinculado com link vigente (`unlinked_at IS NULL`), com filtros de contexto, autenticação, termo legal e permissões Gestor/Administrativo/Assistência Social vinculada. Não utiliza automaticamente o telefone do falecido, não expõe a anônimos, não envia mensagem pelo servidor.
+
+**Interface:** `src/components/patients/RegisterPatientDeath.tsx`, commits `d38c8ea060a2e13ca0509e259d9c93bdcc1b2aed` e `0ec4cd905e53645e91b6500ce52eb45b9692887a` e `4ca04c92f9f4858e4b8ba66e1d05ffce43cd39ce`; o clique de confirmação reserva/reutiliza a aba CAPO do WhatsApp, após sucesso do registro busca contato autorizado e prepara texto acolhedor da Equipe CAPO para conferência/envio **manual** pelo operador. Falhas de popup/ausência de telefone são comunicadas, com botão para tentar novamente. Correção de óbito por engano continua auditada e restaura a situação anterior informada pelo banco; consultas canceladas não são recriadas automaticamente.
+
+**Cadastro:** `src/features/patients/PatientsPage.tsx` commits `2846e8dff4999c79ff151e3cd8dcf70ae14bd1cf`, `465142b1de6ddb23fc38a3163542e7592f9291e5`; identifica `obito` como **“Óbito registrado · Inativo”**, impede salvar cadastro falecido por formulário que só aceita ativo/inativo e desabilita contato WhatsApp direto ao falecido e ação de novo agendamento; reflete status após registro/correção pelo componente filho.
+
+**Transporte de RPC:** `src/lib/supabase/rpc.ts` commits `58bc53e8b88e7a49fabf4f9fbcdfcf64e8597f98` e `023fbdb51f58d0fdf44ecd5584d60eb819ec85be`; método `getPatientBereavementContact` e inclusão explícita na lista de RPCs autorizadas, indispensável para funcionamento.
+
+**Verificações físicas, somente leitura, após migração:**
+- 1 trigger `trg_capo_fluxo_obito`; 1 trigger `trg_capo_bloquear_agendamento_obito`.
+- 0 consultas futuras `agendado/confirmado` de pacientes falecidos; 1 consulta anteriormente pendente regularizada com motivo **Cancelamento automático por óbito**.
+- 1 paciente com óbito registrado e `status='obito'`.
+- RPC de telefone permitida para `authenticated`, não executável por `anon`.
+- 9 bloqueios gerais de agenda ativos e 1 bloco de Visita Domiciliar ativo, sem mutação nessa área.
+- Revisão estática de frontend/RPC/migração, cobrindo estados e guarda do WhatsApp. Não foram realizados novos óbitos, cadastro fictício, envio de WhatsApp nem simulação de notificações em contas reais.
+
+**Limites:** testes TypeScript/build, execução autenticada de fluxo completo, inspeção visual publicada e comprovação de entrega das notificações por múltiplos perfis continuam **PENDENTES**. Regra de aviso alcança profissionais ATIVOS com login individual existente, no contexto operacional autorizado. Caso não haja familiar vinculado com telefone, WhatsApp não deve ser aberto para o número do falecido, e o operador recebe orientação para obter contato autorizado.
+
+**Estado:** MIGRAÇÃO APLICADA / UI VERSIONADA NO GITHUB MAIN / VERIFICAÇÕES DE SQL E CÓDIGO APROVADAS / HOMOLOGAÇÃO OPERACIONAL COMPLETA PENDENTE. Não declarar módulo encerrado sem teste da Titular.
