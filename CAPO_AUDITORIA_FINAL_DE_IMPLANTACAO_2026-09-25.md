@@ -9495,3 +9495,18 @@ A conferência visual da Titular mostrou que o atalho **Pacientes** da seção *
 
 
 **Confirmação operacional da Titular — 18/11/2026:** após a migração `20261118194500_fix_grid_recurring_block_id_projection.sql`, a Titular informou **“Corrigido”** ao verificar novamente a Home Gestor/Titular. **Estado desta ocorrência:** CORRIGIDO E CONFIRMADO PELA TITULAR — CONGELADO. Esta confirmação refere-se à visualização da Agenda do Dia do Gestor/Titular, não significando homologação dos demais perfis ou testes de gravação de bloqueios. Não reabrir sem nova evidência de regressão.
+
+
+---
+
+## 18/11/2026 — Conferência transversal da regressão rb.block_id por telas
+
+**Pedido da Titular:** após confirmar “Corrigido” na Home Gestor/Titular, verificar se o mesmo erro `column rb.block_id does not exist` foi corrigido nas demais telas e registrar, sem repetir manutenção.
+
+**Origem compartilhada comprovada no código `main`:** `src/lib/supabase/rpc.ts` concentra `getAgendaScheduleGrid`, consumidora de `public.get_agenda_schedule_grid_for_interface`. Usam essa leitura: `src/features/gestor/GestorDashboard.tsx` (Home Gestor), `src/features/home/HomePage.tsx` + `TeamDayAgendaPanel.tsx` (Home Administrativo Operacional), `src/features/coordination/CoordinationDashboard.tsx` (Home Coordenação), `src/features/agenda/AgendaPage.tsx` (grade de agendas nos perfis autorizados, visualização Dia/Semana/Mês, consulta profissional e seleção da grade para retorno). Gestor, Administrativo e Coordenação utilizam `DailyTeamAgendaRows` direta ou indiretamente; a agenda profissional renderiza `HomeScheduleGrid`, mas compartilha a mesma RPC de dados. Não foram encontradas chamadas duplicadas independentes da função que reintroduzissem a referência inválida nessas telas.
+
+**Prova de correção física no Supabase:** após migração `20261118194500_fix_grid_recurring_block_id_projection.sql` (commit `764de9d64211049a00f79c80bdb251af75c2da78`), consulta `pg_get_functiondef` confirma que a CTE `recurring_blockers` projeta `ab.id block_id` e a leitura `dated_block_rows` referencia `rb.block_id=ab.id`; o guard `private.capo_professional_visible_in_current_context` permanece e a função está executável pelo papel autenticado. Contagens preservadas: 5 bloqueios gerais e 1 Visita Domiciliar. Não se reexecutou migração nem se alterou tabela ou função nesta conferência.
+
+**Veredito por alcance:** Home **Gestor/Titular**: erro visual confirmado corrigido pela própria Titular, status CONCLUÍDO E CONGELADO para esta ocorrência. Home **Administrativo**, Home **Coordenação**, **AgendaPage** administrativa/profissional Dia/Semana/Mês e grade de **retorno profissional**: a causa `rb.block_id` foi corrigida na RPC que todas consomem; **homologação visual individual ainda não realizada**. Não confundir prova de atualização central com teste autenticado concluído em todas as telas. Qualquer outro erro independente deve receber novo diagnóstico, sem reabrir automaticamente este bloco.
+
+**Estado:** CORREÇÃO CENTRAL CONFIRMADA NO BANCO / CONSUMIDORES MAPEADOS / HOME GESTOR HOMOLOGADA PELA TITULAR / OUTRAS TELAS AGUARDAM TESTE OPERACIONAL. Nenhuma alteração em pacientes, profissionais, agendamentos ou bloqueios durante esta verificação.
