@@ -212,7 +212,7 @@ begin
   end loop;
   return v_count;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.capo_notify_unanswered_family_confirmation_links()
  RETURNS integer
@@ -257,4 +257,4 @@ BEGIN
  END LOOP;
  RETURN v_count;
 END;
-$function$
+$function$;
