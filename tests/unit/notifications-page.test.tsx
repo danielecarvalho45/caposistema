@@ -119,6 +119,7 @@ describe('NotificationsPage', () => {
       ...notification,
       notification_type: 'appointment_patient_reschedule',
       title: 'Remarcação solicitada pelo paciente',
+      message: 'Paciente: Pessoa de teste. Profissional: Profissional de teste. Consulta original: 18/11/2026 às 09:10. Solicitou remarcação pelo link.',
       patient_id: 'patient-1',
       entity_type: 'patient_appointments',
       entity_id: 'appointment-1',
@@ -129,6 +130,8 @@ describe('NotificationsPage', () => {
       return <output data-testid="destination">{JSON.stringify({ pathname: location.pathname, state: location.state })}</output>
     }
     renderPage(<><NotificationsPage service={service} getContextHref={() => '/agenda'} /><Destination /></>)
+    expect(await screen.findByText(/Profissional: Profissional de teste/)).toBeVisible()
+    expect(screen.getByText(/Consulta original: 18\/11\/2026 às 09:10/)).toBeVisible()
     await user.click(await screen.findByRole('button', { name: '📅 Agendar nova consulta' }))
     expect(await screen.findByTestId('destination')).toHaveTextContent('patient_link_cancellation')
     expect(screen.getByTestId('destination')).toHaveTextContent('appointment-1')
