@@ -1940,6 +1940,13 @@ export function AgendaPage({
       return
     }
     const previous = reschedulableAppointments.find((item) => item.appointment_id === validReschedulableId)
+    if (rescheduleOrigin === 'faltoso' && (
+      !previous || previous.professional_id !== rescheduleProfessionalId ||
+      previous.patient_id !== appointmentPatientId
+    )) {
+      setAppointmentFeedback('Remarcação de faltoso deve manter o paciente e o profissional da consulta original.')
+      return
+    }
     const patientId = appointmentPatientId
     const newSlotStart = validRescheduleSlotStart
     setLastRescheduledContact(null)
@@ -2562,13 +2569,16 @@ export function AgendaPage({
       if (!requestedProfessionalId || !sourceAppointmentId) return
       setShowScheduleForm(false)
       setShowRescheduleForm(true)
+      setMovementKind('remarcacao')
       setAppointmentPatientId(patientId)
       setAppointmentPatientQuery(patientName)
       setSelectedProfessionalId(requestedProfessionalId)
       setSelectedReschedulableId(sourceAppointmentId)
       setRescheduleOrigin('faltoso')
       setRescheduleReason('')
+      setSelectedRescheduleSlotStart('')
       setRescheduleTargetDate(capoTodayIso())
+      setAppointmentFeedback('Selecione a nova data e horário na agenda do profissional da falta. O encaminhamento será encerrado após a remarcação confirmada.')
       return
     }
 
@@ -3278,7 +3288,7 @@ export function AgendaPage({
             <div className="agenda-form-grid">
               <label>
                 Tipo de movimentação *
-                <select value={movementKind} onChange={(event) => {
+                <select value={movementKind} disabled={rescheduleOrigin === 'faltoso'} onChange={(event) => {
                   const choice = event.target.value as typeof movementKind
                   if (choice === 'retorno') {
                     const original = visibleAppointments.find((item) => item.appointment_id === validReschedulableId)
@@ -3297,7 +3307,7 @@ export function AgendaPage({
               </label>
               <label>
                 Agendamento
-                <select value={validReschedulableId} onChange={(event) => setSelectedReschedulableId(event.target.value)} disabled={reschedulableAppointments.length === 0}>
+                <select value={validReschedulableId} onChange={(event) => setSelectedReschedulableId(event.target.value)} disabled={reschedulableAppointments.length === 0 || rescheduleOrigin === 'faltoso'}>
                   <option value="">
                     {reschedulableAppointments.length
                       ? 'Selecionar agendamento'
