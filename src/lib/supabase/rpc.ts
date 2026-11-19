@@ -3664,6 +3664,8 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'get_nutrition_context_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     saveNutritionPlan: (args: ConfirmedJsonArgs) =>
       execute({ transport, operation: 'save_nutrition_plan_for_interface', args, parse: parseConfirmedJson }),
+    saveDetailedNutritionPlan: (args: ConfirmedJsonArgs) =>
+      execute({ transport, operation: 'save_nutrition_plan_detailed_for_interface', args, parse: parseConfirmedJson }),
     createNutritionDocument: (patientId: string) =>
       execute({ transport, operation: 'create_nutrition_document_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     createNutritionManagementDocument: (patientId: string) =>
