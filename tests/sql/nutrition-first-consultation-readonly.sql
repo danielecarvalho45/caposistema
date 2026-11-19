@@ -22,7 +22,7 @@ with functions as (
   union all
   select 'retorno_nao_desviado_para_60',
     position('if v_type in (''primeiro_capo'',''primeiro_especialidade'',''primeira_consulta'')' in booking)>0
-    and position('if v_type in (''primeiro_capo'',''primeiro_especialidade'',''primeira_consulta'')' in extended_booking)>0
+    and position('when v_type_raw=''retorno'' then ''retorno''' in booking)>0
   from functions
   union all
   select 'agendamento_estendido_um_registro_e_duas_vagas_contiguas',
