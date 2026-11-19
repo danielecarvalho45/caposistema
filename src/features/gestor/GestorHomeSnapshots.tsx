@@ -4,24 +4,6 @@ import { getRpcService, loadingState, type AsyncState, type TechnicalSystemStatu
 
 type AuditEntry = Readonly<Record<string, unknown>>
 type Metric = Readonly<{ name: string; value: string }>
-const metricNames: Record<string, string> = {
-  total_current: 'Pacientes ativos',
-  new_period: 'Novos pacientes',
-  valid_period: 'Consultas válidas',
-  realized_period: 'Consultas realizadas',
-  no_show_period: 'Faltas',
-  returns_period: 'Retornos',
-  pending_current: 'Pendentes',
-  active_current: 'Em acompanhamento',
-}
-const sectionNames: Record<string, string> = {
-  patients: 'Pacientes',
-  agenda: 'Agenda',
-  no_show_followup: 'Faltosos',
-  waiting_list: 'Fila de espera',
-  administrative_requests: 'Solicitações',
-  referrals: 'Encaminhamentos',
-}
 const auditActions: Record<string, string> = { INSERT: 'Registro criado', UPDATE: 'Registro atualizado', DELETE: 'Registro excluído' }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -43,18 +25,25 @@ function auditEntries(value: unknown): readonly AuditEntry[] {
 function summaryMetrics(value: unknown): readonly Metric[] {
   const source = asRecord(value)
   if (!source) return []
-  const metrics: Metric[] = []
-  for (const [section, sectionValue] of Object.entries(source)) {
-    if (!(section in sectionNames)) continue
-    const record = asRecord(sectionValue)
-    if (!record) continue
-    for (const [name, metric] of Object.entries(record)) {
-      if (typeof metric !== 'number' && typeof metric !== 'string') continue
-      if (!(name in metricNames)) continue
-      metrics.push({ name: `${sectionNames[section]} · ${metricNames[name]}`, value: String(metric) })
-    }
-  }
-  return metrics.slice(0, 4)
+  const patients = asRecord(source.patients)
+  const agenda = asRecord(source.agenda)
+  const definitions: readonly [Record<string, unknown> | null, string, string][] = [
+    [patients, 'active_current', 'Pacientes ativos'],
+    [patients, 'registered_period', 'Pacientes cadastrados no mês'],
+    [agenda, 'realized_period', 'Consultas realizadas no mês'],
+    [agenda, 'no_show_period', 'Faltas no mês'],
+  ]
+  return definitions.flatMap(([record, key, name]) => {
+    const value = record?.[key]
+    return typeof value === 'number' ? [{ name, value: String(value) }] : []
+  })
+}
+function currentCapoDateParts() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date())
+  const part = (name: string) => parts.find((item) => item.type === name)?.value ?? ''
+  return { year: part('year'), month: part('month'), day: part('day') }
 }
 function useHomeRefresh<T>(load: () => Promise<AsyncState<T>>) {
   const [state, setState] = useState<AsyncState<T>>(loadingState)
@@ -111,11 +100,10 @@ function AuditRecentActivities() {
 }
 function HomeIndicatorSummary() {
   const load = useCallback(() => {
-    const now = new Date()
-    const date = (year: number, month: number, day: number) => `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const { year, month, day } = currentCapoDateParts()
     return getRpcService().getReportsDashboard(
-      date(now.getFullYear(), now.getMonth() + 1, 1),
-      date(now.getFullYear(), now.getMonth() + 1, now.getDate()),
+      `${year}-${month}-01`,
+      `${year}-${month}-${day}`,
       null,
     )
   }, [])
