@@ -39,3 +39,13 @@
 .capo-comm-conversation p {font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .capo-comm-actions {display:flex;gap:8px;flex-wrap:wrap}
 @media(max-width:780px){.capo-comm-layout {grid-template-columns:1fr}.capo-comm-list {max-height:230px}}
+
+.capo-comm-events {padding:9px;border:1px solid #deebf5;background:#f9fcff;border-radius:9px}
+.capo-comm-events h4 {font-size:.82rem;margin-bottom:7px}
+.capo-comm-events ol {display:grid;gap:6px;padding-left:21px;margin:0}
+.capo-comm-events li {font-size:.78rem}
+.capo-comm-events li small {display:block;font-size:.7rem;color:#667e97}
+@media(max-width:620px) {
+ .capo-communication-unread span:nth-child(2) {display:none}
+ .capo-communication-unread {padding:6px}
+}
