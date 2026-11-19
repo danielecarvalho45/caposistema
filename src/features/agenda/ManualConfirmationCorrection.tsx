@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import './manual-confirmation-correction.css'
 
 export type ManualCorrectionResult = 'correcao_pendente' | 'avisado' | 'sem_resposta'
 
