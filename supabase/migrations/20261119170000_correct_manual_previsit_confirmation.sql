@@ -83,7 +83,7 @@ begin
  then raise exception 'A última informação não é uma confirmação manual a corrigir. Atualize a agenda.' using errcode='22023'; end if;
  if v_kind='patient' then
    insert into public.appointment_previsit_contacts(appointment_id,result,notes,recorded_by)
-   values(p_appointment_id,v_result,'Correção de confirmação manual: '||btrim(p_reason),v_account);
+   values(p_appointment_id,v_result,left('Correção de confirmação manual: '||btrim(p_reason),500),v_account);
  else
    insert into public.family_psychology_previsit_contacts(appointment_id,result,recorded_by)
    values(p_appointment_id,v_result,v_account);
