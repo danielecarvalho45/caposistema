@@ -1,0 +1,11 @@
+.capo-maintenance-notices {min-width:0;padding:13px;border:1px solid #d9e7f3;border-radius:9px;background:rgb(255 255 255 / 85%);color:#17365f}
+.capo-maintenance-notices header {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.capo-maintenance-notices h3 {margin:0;font-size:16px;line-height:1.2}
+.capo-maintenance-notices p {font-size:12px;margin:8px 0;color:#607895}
+.capo-maintenance-notices ul {list-style:none;padding:0;margin:0;display:grid;gap:9px}
+.capo-maintenance-notices li {display:grid;gap:4px;padding:9px;border:1px solid #e4edf5;border-radius:8px;background:#f8fbff;overflow-wrap:anywhere}
+.capo-maintenance-notices li strong {font-size:12px}
+.capo-maintenance-notices li span {font-size:11px;color:#56718f}
+.capo-maintenance-notices li small {font-size:11px;color:#657c98}
+.capo-maintenance-notices a,.capo-maintenance-notices button {justify-self:start;padding:4px 7px;border:1px solid #c6daec;background:#fff;color:#16639a;border-radius:7px;font-size:11px;text-decoration:none;cursor:pointer}
+.capo-maintenance-notices button:disabled {opacity:.6;cursor:default}
