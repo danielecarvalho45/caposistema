@@ -6,6 +6,7 @@ import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { getNotificationsService, NOTIFICATIONS_UPDATED_EVENT } from '../notifications/notifications-integration'
 import { ProfileShortcuts } from '../../components/shell/ProfileShortcuts'
+import { CommunicationUnreadLink } from '../communication/CommunicationUnreadLink'
 import './gestor.css'
 
 type GestorShellProps = Readonly<{
