@@ -214,3 +214,22 @@
 **Escopo aprovado:** quadro abaixo de `Atividades Recentes` na Home Gestor/Titular; quadro no Painel Técnico do TI; acompanhamento de chamados técnicos pendentes, em atendimento e aguardando teste, consulta do histórico e acesso ao chamado. Preservados o isolamento real/homologação, a tabela e RPC existentes, as solicitações administrativas, as notificações gerais e as rotinas previamente homologadas.
 
 **Regra de estabilidade:** não alterar ou reconstruir essa funcionalidade homologada sem nova falha comprovada e autorização específica da Titular. Quaisquer futuras manutenções deverão ser cirúrgicas e não regressivas. Esta confirmação diz respeito ao **teste operacional informado pela Titular**; não equivale a afirmar que CI, Vitest ou build foram executados neste turno.
+
+---
+
+## 19/11/2026 — VERDE: cancelamentos e motivos abaixo de Faltosos na Home de todos os profissionais
+
+**VERDE explícito da Titular:** em **todas as Homes profissionais**, acrescentar quadro de cancelamentos de consultas da data atual, com horário original, paciente, motivo, data/hora do cancelamento e responsável pelo registro, **imediatamente abaixo do card Faltosos**. Não reconstruir agenda, não manter consulta cancelada como slot ocupado, não misturar ambientes e não confundir cancelamento com falta.
+
+**Implementação (GitHub `main`):**
+- `supabase/migrations/20261119170000_professional_home_daily_cancellation_notices.sql`, commit `f9b81643ba08e97e02fd1aa5ebc5e66a9b304030`, **aplicada ao Supabase oficial**. RPC read-only `public.get_my_daily_appointment_cancellations_for_interface(p_date date)`, `SECURITY DEFINER`, exige autenticação, conta ativa, aceite do termo vigente, papel `profissional`, vínculo profissional `capo_effective_professional_id()`; filtra exclusivamente `patient_appointments.professional_id` do usuário, situação `cancelado`, data local São Paulo e `capo_patient_visible_in_current_context(patient_id)`. Retorna apenas informações pertinentes à consulta e ao cancelamento, sem permissão de escrita. `anon` sem EXECUTE.
+- `src/features/agenda/ProfessionalDailyCancellations.tsx`, commit `20d4fe4f0da5dfd9390bdffd678495a1d6554692`, componente informativo com consulta da data atual `capoTodayIso()`, lista, estados de carregamento/erro/vazio e atualização com aba visível a cada 30s e ao voltar foco. Sem botões de cancelamento/remarcação.
+- `src/features/agenda/professional-cancellations.css`, commit `54f65a3405d4df013f83733b7ebbbac4560bc631`: estilo discreto e responsivo.
+- `src/features/agenda/AgendaPage.tsx`, commit `164e215b1dfad88d6ad0344c34f001f18896eaef`: inserido `<ProfessionalDailyCancellations />` **logo depois do indicador Faltosos**, sob `embeddedHome && isProfessional`. Como `AgendaPage embeddedHome` é compartilhado por `AssistentialPage` (Clínico Geral e demais assistenciais/psicologia/fisioterapia), `NutritionPage` e `SocialPage`, aplica-se às Homes profissionais sem mudanças isoladas em cada perfil.
+- Testes versionados `tests/unit/professional-home-cancellations.test.ts`, commit `2e886b0cf709f1f6d1d638682c385d75ab556d7b`: ordenação e ausência de dados fictícios.
+
+**Conferências realizadas:** função criada no Supabase e GitHub, estrutura da Home revisada. Ensaio SQL `READ ONLY` com identidade do clínico Ilton verificou **zero cancelamentos de outros profissionais**, sem gravar dados. Ensaio simulando login Danilo foi **recusado pela validação de termo legal**; consulta dos registros mostrou que a conta Danilo tinha **zero aceites de termo** no momento da verificação. Isso não autoriza contornar o termo nem afirmar tela homologada: ele precisará cumprir o fluxo normal do aceite antes de poder utilizar recursos protegidos. A consulta real de Dulce de 19/11 às 12h10 permanece `cancelado`, preservando `attendance_reason` e auditoria.
+
+**Invariantes:** nenhuma alteração em `patient_appointments`, grade ativa, `get_agenda_schedule_grid_for_interface`, Notificações, Faltosos, filas, óbito, retorno, remarcações, agenda recorrente, componentes existentes, permissões ou ambiente de homologação. Nenhuma duplicação de dados, criação de segundo banco, alteração de status de consulta ou aviso automático ao profissional (este último é demanda distinta).
+
+**Pendente de homologação:** execução automatizada de Vitest/build, publicação Cloudflare e teste visual após login/aceite do termo de cada profissional. Não declarar homologado até confirmação da Titular.
