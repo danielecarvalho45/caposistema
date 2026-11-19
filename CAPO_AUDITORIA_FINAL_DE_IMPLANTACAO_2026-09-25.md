@@ -337,3 +337,18 @@
 **Implementação:** somente o emoji de pessoa no cartão Cadastro Novo foi substituído por SVG vetorial discreto, de linhas finas e cor herdada do tema, no arquivo src/features/patients/PatientsPage.tsx, commit 06d65cdf732fc911cab5c86d57924cfcf52d24a3. O cartão Cadastro Existente, as cores, estilos globais, formulários, regras e banco permanecem sem alteração.
 
 **Estado:** código versionado em main; publicação Cloudflare e homologação visual pendentes de confirmação.
+
+
+---
+
+## 19/11/2026 — Homologação visual do ícone do Cadastro Novo e VERDE para Solicitações Recebidas
+
+**Confirmação da Titular:** "DEU CERTO" referente ao novo ícone vetorial do Cadastro Novo. Manutenção visual aprovada operacionalmente e encerrada, sem mudanças na paleta nem nos formulários.
+
+**Novo VERDE da Titular:** iniciar a tela de Solicitações pela visão **Recebidas**, e não por **Todas**, preservando os demais filtros, status, abas e procedimentos do módulo.
+
+**Diagnóstico:** em `src/features/requests/RequestsPage.tsx` a aba `recebidas` já vinha selecionada, mas o estado inicial do filtro `status` era vazio (Todas), o que carregava solicitações de qualquer situação. O botão Recebidas também reconfigurava indevidamente o filtro para vazio.
+
+**Correção cirúrgica no GitHub main:** commit `7083215e03699bbe7bac87cd50238188748b92bf`: status inicial `pending`, e comando Recebidas agora usa `pending`. Mantidos filtros e ações das demais abas. Teste de regressão versionado em `tests/unit/requests-page.test.tsx`, commit `42bcee41b18543a6dbc7e02a0c6510dcaef9a0fb`, confere botão Recebidas selecionado, filtro em pending e RPC invocada com pending. Nenhuma alteração de Supabase, registros ou permissões.
+
+**Situação:** código e teste versionados; execução de Vitest/build, publicação Cloudflare e homologação operacional ainda não comprovadas. Não declarar manutenção homologada sem confirmação da Titular.
