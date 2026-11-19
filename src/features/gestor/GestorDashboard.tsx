@@ -48,6 +48,7 @@ const quickAccess = [
   ['/fila', 'list', 'Filas', 'Pacientes e familiares', 'mint'],
   ['/faltosos', 'clock', 'Faltosos', 'Acompanhar e remarcar', 'pink'],
   ['/solicitacoes', 'clipboard', 'Solicitações', 'Analisar e encaminhar', 'purple'],
+  ['/encaminhamentos', 'clipboard', 'Encaminhamentos', 'Acompanhar encaminhamentos', 'green'],
   ['/transporte', 'truck', 'Transporte', 'Providências e acompanhamento', 'yellow'],
   ['/gestor/familiares', 'people', 'Familiares', 'Cadastro e vínculos', 'mint'],
   ['/encerramentos', 'check', 'Encerramentos', 'Por especialidade', 'slate'],
@@ -117,9 +118,7 @@ export function GestorDashboard() {
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
           {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
         </article>
-        <AuditRecentActivities /><MaintenanceNoticeBoard /></aside>
-      </section>
-      <section className="gestor-summary-grid" aria-label="Resumo do sistema">
+        <AuditRecentActivities /><MaintenanceNoticeBoard />
         <article className="gestor-panel gestor-approved-agenda-changes">
           <header>
             <div>
@@ -158,6 +157,9 @@ export function GestorDashboard() {
             ))}
           {agendaChangeFeedback && <p role="status">{agendaChangeFeedback}</p>}
         </article>
+        </aside>
+      </section>
+      <section className="gestor-summary-grid" aria-label="Resumo do sistema">
         <HomeIndicatorSummary />
         <HomeTechnicalStatus />
       </section>
