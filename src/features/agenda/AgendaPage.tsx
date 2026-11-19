@@ -25,6 +25,7 @@ import { isVisibleOnAgenda } from './agenda-visibility'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getNotificationsService } from '../notifications/notifications-integration'
 import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
+import { ProfessionalDailyCancellations } from './ProfessionalDailyCancellations'
 import { CapoIcon } from '../../components/icons/CapoIcon'
 import './agenda-page.css'
 
@@ -3997,6 +3998,7 @@ export function AgendaPage({
             <strong>{periodNoShows ?? '—'}</strong>
             <small>Encaminhados ao Administrativo</small>
           </article>
+          <ProfessionalDailyCancellations />
         </aside>
       )}
     </section>
