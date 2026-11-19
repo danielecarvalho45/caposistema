@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
+import { COMMUNICATION_UPDATED_EVENT, hasIncomingCommunication, isCommunicationInReceived, notifyInternalCommunicationUpdated } from './communication-inbox'
 import './internal-communication.css'
 
 type Recipient = { account_id: string; name: string; function_title: string; can_receive_admin_demand: boolean }
@@ -39,8 +40,10 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
   const isAdmin = accessContext.roles.some(r => r.code === 'administrador' || r.code === 'administrativo_operacional')
   const permitted = isAdmin || accessContext.roles.some(r => r.code === 'profissional')
   const selected = threads.find(t => t.id === selectedId)
-  const inbox = threads.filter(t => view === 'recebidas' ? t.recipient_id === myAccountId : t.sender_id === myAccountId)
-  const unread = threads.filter(t => t.recipient_id === myAccountId && t.unread).length
+  const inbox = threads.filter(t => view === 'recebidas'
+    ? isCommunicationInReceived(t, myAccountId)
+    : t.sender_id === myAccountId)
+  const unread = threads.filter(t => hasIncomingCommunication(t, myAccountId)).length
 
   const reload = useCallback(async () => {
     const [{ data, error }, { data: people, error: directoryError }] = await Promise.all([
@@ -51,6 +54,27 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
     setThreads(rows<Thread>(data))
     setRecipients(rows<Recipient>(people))
   }, [])
+
+  useEffect(() => {
+    if (!permitted) return
+    let active = true
+    const refresh = () => {
+      if (!active || document.visibilityState !== 'visible') return
+      void reload().catch(() => { /* A próxima sincronização preserva a caixa atual. */ })
+    }
+    const onVisibility = () => { if (document.visibilityState === 'visible') refresh() }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', onVisibility)
+    globalThis.addEventListener(COMMUNICATION_UPDATED_EVENT, refresh)
+    const interval = window.setInterval(refresh, 20000)
+    return () => {
+      active = false
+      window.clearInterval(interval)
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', onVisibility)
+      globalThis.removeEventListener(COMMUNICATION_UPDATED_EVENT, refresh)
+    }
+  }, [permitted, reload])
 
   useEffect(() => {
     if (!permitted) { setLoading(false); return }
@@ -105,6 +129,7 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
       if (error) throw error
       if (!data || typeof data !== 'object' || Array.isArray(data) || data.success !== true) throw new Error('Envio não confirmado pelo CAPO.')
       await reload()
+      notifyInternalCommunicationUpdated()
       setNewOpen(false); setRecipientIds([]); setSubject(''); setBody(''); setPatient(null); setSearch('')
       setView('enviadas'); setFeedback('Comunicação enviada e registrada no histórico.')
     } catch (error) { setFeedback(error instanceof Error ? error.message : 'Não foi possível enviar.') }
@@ -123,6 +148,7 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
       if (!data || typeof data !== 'object' || Array.isArray(data) || data.success !== true) throw new Error('Ação não confirmada pelo CAPO.')
       if (action === 'responder') setReply('')
       await reload()
+      notifyInternalCommunicationUpdated()
       if (action !== 'ler') setFeedback('Atualização registrada no histórico da comunicação.')
     } catch (error) { setFeedback(error instanceof Error ? error.message : 'Falha ao atualizar comunicação.') }
     finally { setBusy(false) }
@@ -133,7 +159,12 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
     // Abertura do item registra ciência individual sem concluí-lo.
     void getSupabaseClient().rpc('update_internal_communication_for_interface', {
       p_communication_id: selected.id, p_action: 'ler', p_body: null,
-    }).then(({ error }) => { if (!error) setThreads(current => current.map(t => t.id === selected.id ? { ...t, unread: false } : t)) })
+    }).then(({ error }) => {
+      if (!error) {
+        setThreads(current => current.map(t => t.id === selected.id ? { ...t, unread: false } : t))
+        notifyInternalCommunicationUpdated()
+      }
+    })
   }, [selectedId, selected?.unread, selected?.id, busy])
 
   if (!permitted) return <section className="capo-comm-page"><h2>Comunicação Interna</h2><p>Perfil não autorizado.</p></section>
@@ -190,8 +221,8 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
           {!loading && !inbox.length && <p>Nenhuma comunicação nesta caixa.</p>}
           {inbox.map(t => <button type="button" key={t.id} className={selectedId === t.id ? 'is-selected' : ''}
             onClick={() => { setSelectedId(t.id); setReply('') }}>
-            <strong>{t.unread ? '● ' : ''}{t.subject}</strong>
-            <span>{view === 'recebidas' ? t.sender_name : t.recipient_name}</span>
+            <strong>{hasIncomingCommunication(t, myAccountId) ? '● ' : ''}{t.subject}</strong>
+            <span>{t.sender_id === myAccountId ? t.recipient_name : t.sender_name}</span>
             <small>{t.kind === 'recado' ? 'Recado' : 'Demanda administrativa'} · {stamp(t.updated_at)}{t.kind !== 'recado' ? ' · '+t.status.replace('_',' ') : ''}</small>
           </button>)}
         </div>
