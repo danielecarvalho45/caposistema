@@ -6,18 +6,49 @@ import { Link, useLocation } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
+import './nutrition-document.css'
 
 type NutritionRecord = Readonly<Record<string, unknown>>
 type NutritionDeliveryAction = 'start' | 'complete' | 'cancel' | 'reopen'
-type NutritionPlan = { breakfast: string; lunch: string; snack: string; dinner: string; hydration: string; supplement: string; other: string }
-const emptyPlan = (): NutritionPlan => ({ breakfast: '', lunch: '', snack: '', dinner: '', hydration: '', supplement: '', other: '' })
+type NutritionPlan = {
+  title: string; breakfast: string; lunch: string; dessertLunch: string;
+  snack: string; dinner: string; dessertDinner: string; hydration: string;
+  supplement: string; other: string; oncology: string; notes: string
+}
+const emptyPlan = (): NutritionPlan => ({
+  title: 'PLANO ALIMENTAR ORAL', breakfast: '', lunch: '', dessertLunch: '',
+  snack: '', dinner: '', dessertDinner: '', hydration: '', supplement: '',
+  other: '', oncology: '', notes: '',
+})
+const nutritionSections: readonly { key: keyof Omit<NutritionPlan, 'title'>; label: string; rows: number }[] = [
+  { key: 'breakfast', label: 'Café da manhã', rows: 5 },
+  { key: 'lunch', label: 'Almoço', rows: 6 },
+  { key: 'dessertLunch', label: 'Sobremesa (almoço)', rows: 3 },
+  { key: 'snack', label: 'Lanche da tarde', rows: 4 },
+  { key: 'dinner', label: 'Jantar', rows: 6 },
+  { key: 'dessertDinner', label: 'Sobremesa (jantar)', rows: 3 },
+  { key: 'hydration', label: 'Hidratação', rows: 4 },
+  { key: 'supplement', label: 'Suplementação nutricional', rows: 4 },
+  { key: 'other', label: 'Outras orientações', rows: 4 },
+  { key: 'oncology', label: 'Orientações nutricionais em tratamento oncológico', rows: 6 },
+  { key: 'notes', label: 'Observações complementares', rows: 4 },
+]
 function asRecord(value: unknown): NutritionRecord | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as NutritionRecord : null
 }
 function planFromContext(value: unknown): { plan: NutritionPlan; canEdit: boolean } {
   const current = asRecord(asRecord(value)?.current_plan)
   const read = (key: string) => typeof current?.[key] === 'string' ? current[key] as string : ''
-  return { plan: { breakfast: read('breakfast'), lunch: read('lunch'), snack: read('snack'), dinner: read('dinner'), hydration: read('hydration'), supplement: read('nutritional_supplement'), other: read('other_guidance') }, canEdit: !current || current.owned_by_me === true }
+  return {
+    plan: {
+      title: read('document_title') || 'PLANO ALIMENTAR ORAL',
+      breakfast: read('breakfast'), lunch: read('lunch'), dessertLunch: read('dessert_lunch'),
+      snack: read('snack'), dinner: read('dinner'), dessertDinner: read('dessert_dinner'),
+      hydration: read('hydration'), supplement: read('nutritional_supplement'),
+      other: read('other_guidance'), oncology: read('oncology_guidance'), notes: read('additional_notes'),
+    },
+    canEdit: !current || current.owned_by_me === true,
+  }
 }
 
 function field(record: NutritionRecord | null, ...keys: string[]) {
@@ -29,53 +60,69 @@ function field(record: NutritionRecord | null, ...keys: string[]) {
   return null
 }
 
-function nutritionPdfWrap(value: string, width = 84) {
-  const words = value.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
-  if (!words.length) return ['']
+function nutritionPdfWrap(value: string, width = 76) {
+  // Preservar as quebras que a Nutricionista digitou; nunca inserir dietas prontas.
   const lines: string[] = []
-  let current = ''
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word
-    if (next.length > width) {
-      if (current) lines.push(current)
-      current = word
-    } else {
-      current = next
+  for (const paragraph of value.replace(/\r\n?/g, '\n').split('\n')) {
+    if (!paragraph.trim()) { lines.push(''); continue }
+    let current = ''
+    for (const word of paragraph.trim().split(/\s+/)) {
+      if (current && (current + ' ' + word).length > width) {
+        lines.push(current)
+        current = word
+      } else current = current ? current + ' ' + word : word
     }
+    if (current) lines.push(current)
   }
-  if (current) lines.push(current)
   return lines
 }
 
 function buildNutritionPdf(document: NutritionRecord) {
   const snapshot = asRecord(document.plan_snapshot)
-  const labels: readonly [string, string][] = [
-    ['breakfast', 'Desjejum'],
-    ['lunch', 'Almoço'],
-    ['snack', 'Lanche'],
-    ['dinner', 'Jantar'],
-    ['hydration', 'Hidratação'],
-    ['nutritional_supplement', 'Complemento nutricional'],
-    ['other_guidance', 'Outras orientações'],
-  ]
-  const lines = [
-    'PLANO ALIMENTAR NUTRICIONAL',
-    '',
-    `Paciente: ${field(document, 'patient_name') ?? ''}`,
-    `CMS: ${field(document, 'cms') ?? '—'}`,
-    `Nº CAPO: ${field(document, 'patient_number') ?? '—'}`,
-    `Autoria: ${field(document, 'author_name') ?? ''}`,
-    `Registro profissional: ${field(document, 'author_registration') ?? 'Não informado'}`,
-    `Revisão: ${String(document.revision_no ?? '—')}`,
-    `Gerado em: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}`,
-    '',
-  ]
-  for (const [key, label] of labels) {
-    const value = typeof snapshot?.[key] === 'string' ? String(snapshot[key]).trim() : ''
-    if (value) lines.push(`${label}:`, ...nutritionPdfWrap(value), '')
+  const formatDate = (value: unknown) => {
+    const date = typeof value === 'string' ? new Date(value) : new Date()
+    return Number.isNaN(date.getTime()) ? 'Não informada' : date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
   }
-
-  return buildCapoDocumentPdf(lines, { fontSize: 11, lineHeight: 14, linesPerPage: 40, generatedBy: field(document, 'author_name') ?? 'Autoria não informada', generatedByRole: 'Nutricionista' })
+  const title = typeof snapshot?.document_title === 'string' && snapshot.document_title.trim()
+    ? snapshot.document_title.trim() : 'PLANO ALIMENTAR ORAL'
+  const sections = [
+    ['breakfast','CAFÉ DA MANHÃ'], ['lunch','ALMOÇO'],
+    ['dessert_lunch','SOBREMESA (ALMOÇO)'], ['snack','LANCHE DA TARDE'],
+    ['dinner','JANTAR'], ['dessert_dinner','SOBREMESA (JANTAR)'],
+    ['hydration','HIDRATAÇÃO'], ['nutritional_supplement','SUPLEMENTAÇÃO NUTRICIONAL'],
+    ['other_guidance','OUTRAS ORIENTAÇÕES'],
+    ['oncology_guidance','ORIENTAÇÕES NUTRICIONAIS EM TRATAMENTO ONCOLÓGICO'],
+    ['additional_notes','OBSERVAÇÕES COMPLEMENTARES'],
+  ] as const
+  const author = field(document, 'author_name') ?? 'Nutricionista responsável'
+  const lines = [
+    'SECRETARIA MUNICIPAL DE SAÚDE — CAPO',
+    'SERVIÇO DE NUTRIÇÃO',
+    'Pouso Alegre/MG, ' + formatDate(document.created_at),
+    '',
+    'Paciente: ' + (field(document, 'patient_name') ?? 'Não informado'),
+    'Nº CAPO: ' + (field(document, 'patient_number') ?? 'Não informado'),
+    'CMS: ' + (field(document, 'cms') ?? 'Não informado'),
+    '',
+    title.toUpperCase(),
+    '____________________________________________________________',
+    '',
+  ]
+  for (const [key, label] of sections) {
+    const value = typeof snapshot?.[key] === 'string' ? String(snapshot[key]).trim() : ''
+    if (value) lines.push(label, ...nutritionPdfWrap(value), '')
+  }
+  lines.push(
+    '____________________________________________________________',
+    'Responsável: ' + author,
+    'Registro profissional: ' + (field(document, 'author_registration') ?? 'Não informado'),
+    'Revisão: ' + String(document.revision_no ?? '—'),
+    'Documento emitido em: ' + formatDate(document.created_at),
+  )
+  return buildCapoDocumentPdf(lines, {
+    fontSize: 10, lineHeight: 15, linesPerPage: 37,
+    generatedBy: author, generatedByRole: 'Nutricionista',
+  })
 }
 
 export function NutritionPage({
@@ -100,6 +147,8 @@ export function NutritionPage({
   const canConsultDocuments = isController || isCoordinator || isAdministrativeManager
   const authorized = isNutritionProfessional || canManageDeliveries || canConsultDocuments
   const [patientId, setPatientId] = useState('')
+  const [patientIdentification, setPatientIdentification] = useState<NutritionRecord | null>(null)
+  const [previewVisible, setPreviewVisible] = useState(false)
   const [selectedPatientName, setSelectedPatientName] = useState('')
   const [birthdays, setBirthdays] = useState<AsyncState<BirthdayOverview>>(loadingState)
   const [patientQuery, setPatientQuery] = useState('')
@@ -226,7 +275,7 @@ export function NutritionPage({
   }
 
   async function selectNutritionPatient(id: string, name: string) {
-    setFeedback(null); setPatientId(''); setPlanLoaded(false); setDocument(null); setVulnerabilityAlert(null)
+    setFeedback(null); setPatientId(''); setPatientIdentification(null); setPreviewVisible(false); setPlanLoaded(false); setDocument(null); setVulnerabilityAlert(null)
     const result = await getRpcService().getNutritionContext(id)
     if (result.status !== 'success') {
       setFeedback(result.status === 'error' ? result.error.message : 'O contexto nutricional do paciente não foi retornado.')
@@ -235,6 +284,7 @@ export function NutritionPage({
     const loaded = planFromContext(result.data)
     const context = asRecord(result.data)
     setPlan(loaded.plan); setCanEditPlan(loaded.canEdit); setPlanLoaded(true)
+    setPatientIdentification(asRecord(context?.patient))
     setVulnerabilityAlert(asRecord(context?.vulnerability_alert))
     setPatientId(id); setSelectedPatientName(name)
   }
@@ -255,7 +305,7 @@ export function NutritionPage({
       return
     }
     setBusy(true); setFeedback(null)
-    const result = await getRpcService().saveNutritionPlan({
+    const result = await getRpcService().saveDetailedNutritionPlan({
       p_patient_id: patientId,
       p_breakfast: plan.breakfast,
       p_lunch: plan.lunch,
@@ -264,6 +314,11 @@ export function NutritionPage({
       p_hydration: plan.hydration,
       p_nutritional_supplement: plan.supplement,
       p_other_guidance: plan.other,
+      p_dessert_lunch: plan.dessertLunch,
+      p_dessert_dinner: plan.dessertDinner,
+      p_oncology_guidance: plan.oncology,
+      p_additional_notes: plan.notes,
+      p_document_title: plan.title,
     })
     if (result.status === 'success') {
       const reloaded = await getRpcService().getNutritionContext(patientId)
@@ -545,11 +600,46 @@ export function NutritionPage({
             {patientId && <p>Paciente selecionado: {selectedPatientName}</p>}
             {patientId && <PatientDischargeProximityIndicator patientId={patientId} />}
             {planLoaded && !canEditPlan && <p role="status">O plano atual pertence a outro profissional; edição indisponível neste contexto.</p>}
-            <div className="home-profile-grid">
-              {Object.entries({ breakfast: 'Desjejum', lunch: 'Almoço', snack: 'Lanche', dinner: 'Jantar', hydration: 'Hidratação', supplement: 'Suplemento nutricional', other: 'Outras orientações' }).map(([planField, label]) => <label key={planField}>{label}<textarea rows={2} value={plan[planField as keyof typeof plan]} onChange={(event) => setPlan((current) => ({ ...current, [planField]: event.target.value }))} /></label>)}
+            <div className="nutrition-document-editor" aria-label="Edição documental do Plano Alimentar">
+              <header className="nutrition-document-heading">
+                <strong>Secretaria Municipal de Saúde — CAPO</strong>
+                <span>Serviço de Nutrição</span>
+                {patientId && <span>Paciente: {selectedPatientName}</span>}
+                {patientId && <span>Nº CAPO: {field(patientIdentification, 'patient_number') ?? 'Não informado'} · CMS: {field(patientIdentification, 'cms') ?? 'Não informado'}</span>}
+                <small>Identificação e autoria são vinculadas ao cadastro e à sessão profissional.</small>
+              </header>
+              <label className="nutrition-document-title-field">
+                Título do documento
+                <input type="text" maxLength={250} value={plan.title} disabled={!patientId || !canEditPlan}
+                  onChange={(event) => setPlan((current) => ({ ...current, title: event.target.value }))} />
+              </label>
+              {nutritionSections.map(({ key, label, rows }) => (
+                <label className="nutrition-document-section" key={key}>
+                  <strong>{label}</strong>
+                  <textarea rows={rows} maxLength={5000} value={plan[key]}
+                    disabled={!patientId || !canEditPlan}
+                    placeholder="Digite livremente as orientações para este paciente"
+                    onChange={(event) => setPlan((current) => ({ ...current, [key]: event.target.value }))} />
+                </label>
+              ))}
             </div>
-            <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void savePlan()}>Salvar / atualizar plano</button>
-            <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void generateDocument()}>Gerar documento nutricional oficial</button>
+            <div className="nutrition-document-actions">
+              <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void savePlan()}>Salvar / atualizar plano</button>
+              <button type="button" disabled={!patientId || !planLoaded} onClick={() => setPreviewVisible((current) => !current)}>{previewVisible ? 'Ocultar prévia' : 'Visualizar prévia'}</button>
+              <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void generateDocument()}>Gerar documento nutricional oficial</button>
+            </div>
+            {previewVisible && patientId && (
+              <article className="nutrition-document-preview" aria-label="Prévia do Plano Alimentar">
+                <header><strong>Secretaria Municipal de Saúde — CAPO</strong><span>Serviço de Nutrição</span></header>
+                <p><strong>Paciente:</strong> {selectedPatientName}</p>
+                <p><strong>Nº CAPO:</strong> {field(patientIdentification, 'patient_number') ?? 'Não informado'} · <strong>CMS:</strong> {field(patientIdentification, 'cms') ?? 'Não informado'}</p>
+                <h3>{plan.title || 'PLANO ALIMENTAR ORAL'}</h3>
+                {nutritionSections.filter(({ key }) => plan[key].trim()).map(({ key, label }) => (
+                  <section key={key}><h4>{label}</h4><p>{plan[key]}</p></section>
+                ))}
+                <footer>Documento de pré-visualização. O PDF oficial recebe autoria, registro profissional, data e revisão diretamente do banco.</footer>
+              </article>
+            )}
             {feedback && <p role="status">{feedback}</p>}
             {document && (
               <div>
