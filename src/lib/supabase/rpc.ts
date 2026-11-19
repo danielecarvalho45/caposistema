@@ -2343,6 +2343,12 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'register_coordination_team_decision_for_interface', args: { p_professional_id: professionalId, p_action_type: actionType, p_start_date: startDate, p_end_date: endDate, p_reason: reason, p_decision: decision, p_source_agenda_change_request_id: sourceRequestId }, parse: parseConfirmedJson }),
     getCoordinationTeamDecisions: (status: string | null = null, professionalId: string | null = null, limit = 50, offset = 0) =>
       execute({ transport, operation: 'get_coordination_team_decisions_for_interface', args: { p_status: status, p_professional_id: professionalId, p_limit: limit, p_offset: offset }, parse: (value) => value }),
+    getHomePatientStatusCounts: () =>
+      execute({
+        transport,
+        operation: 'get_home_patient_status_counts_for_interface',
+        parse: parseConfirmedJson,
+      }),
     getReportsDashboard: (
       startDate: string,
       endDate: string,
@@ -3902,6 +3908,7 @@ function createSupabaseTransport(
       case 'clear_homologation_context_for_interface':
       case 'create_technical_support_request_for_interface':
       case 'update_appointment_attendance_for_interface':
+      case 'get_home_patient_status_counts_for_interface':
       case 'get_reports_dashboard_for_interface':
       case 'get_patient_timeline_for_interface':
       case 'get_patient_appointment_history_for_interface':
