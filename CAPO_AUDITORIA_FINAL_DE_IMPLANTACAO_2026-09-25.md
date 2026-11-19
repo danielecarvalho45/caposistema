@@ -486,3 +486,18 @@
 **Regressões:** `tests/unit/no-shows-page.test.tsx` commit `2425bbd6624bbb4b8204a61e0180cb2aa605ecd7` atualiza seleção pelo link, verifica separação entre quadro e acompanhamento e retorno às colunas, sem mudar contratos de RPC. **Nenhuma modificação no Supabase**, nos status, nas remarcações, no disparo de notificações, nas permissões ou na Assistência Social.
 
 **Limites:** alterações versionadas e inspecionadas no GitHub; execução de Vitest, build, publicação Cloudflare e teste visual autenticado ainda não foram confirmados. Não declarar homologação da interface sem essas evidências.
+
+
+---
+
+## 19/11/2026 — VERDE: Home Gestor/Titular — atividades reais, indicadores, diagnóstico e cadastro no alto
+
+**Autorização expressa:** a Titular aprovou quatro adequações da Home: integrar Atividades Recentes à auditoria global, mostrar indicadores gerenciais reais, consultar o Status do Sistema e mover o botão colorido de Cadastro de Profissionais para o alto, ao lado de Equipe. Complementou durante a execução: **manter a cor e o padrão visual do CAPO**.
+
+**Escopo e evidências:** `src/features/gestor/GestorHomeSnapshots.tsx`, commit `5ebf33ae8e614991966e987f42e6704e70f779fb`, implementa três componentes usando exclusivamente os contratos CAPO existentes `getAuditLogs` (6 eventos recentes, período até sete dias, limitado pelos controles da RPC de auditoria), `getReportsDashboard` (mês atual), `getTechnicalSystemStatus` (resumo de componentes técnicos). Todos usam loading/empty/error com mensagem explícita, botões Atualizar, recarga ao retornar à janela e revisão periódica de 60s durante página visível. A auditoria mostra ação, área, autoria, horário e resumo autorizado; leva para `/gestor/auditoria`, não para a timeline individual do paciente. Os indicadores seguem as métricas reais `patients.active_current`, `patients.registered_period`, `agenda.realized_period` e `agenda.no_show_period`, com período definido pelo relógio de Brasília; ajustes no commit `e2c307970fbe54cdda62c5f43c480b726e99bd43`. O diagnóstico exibe estado consolidado dos componentes retornados pela função canônica, com link para `/tecnica`, sem exibir status fictício.
+
+**Integração visual:** `src/features/gestor/GestorDashboard.tsx`, commit `e1a68e44fe9513b178b42eeedc3547f71bf9a393`, substitui o link estático Atividades Recentes pelo painel real, mantendo-o abaixo de Aniversariantes e acima do quadro de manutenção; os resumos de indicadores e status são exibidos abaixo da agenda, e o atalho `Cadastrar profissional` foi movido imediatamente depois de `Equipe` no grupo superior. A rota original `/gestor/administracao` continua inalterada; não há duplicação do formulário.
+
+**Padrão cromático CAPO:** `src/features/gestor/gestor.css`, commits `0ac053d9ab5bf2b47023f1bf1b508fabb923bb2c` e `da07af69ed14103b48dcdb31aeeab742d6b53b68`: atalho usa o mesmo azul institucional `#006bd9`, base `rgb(232 246 255 / 82%)`, fontes, arredondamentos e sombras do padrão `gestor-quick-card`; mantém distribuição superior, agenda de dois dias e coluna lateral. O resumo inferior reorganiza-se em duas colunas responsivas e preserva a lista de alterações estruturais aprovadas. `tests/unit/gestor-dashboard.test.tsx`, commit `1401164b1c68b01d7c3622ccb264a49d1ebc8e5a`, revisa asserções de atalhos, ordem Equipe/Cadastro, presença dos quadros e links aos módulos oficiais.
+
+**Segurança e não regressão:** nenhuma tabela, permissão, função ou migration alterada; consumidas apenas RPCs oficiais com autorização e isolamento de produção/homologação. **Testes unitários, build e publicação Cloudflare não foram comprovados nesta execução; a Titular ainda não homologou o resultado visual em produção.** Não registrar como produção testada sem evidência.
