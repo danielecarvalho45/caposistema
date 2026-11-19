@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { NutritionPage } from '../../src/features/nutrition/NutritionPage'
 import type { AccessContext } from '../../src/types/access'
 
@@ -43,7 +43,30 @@ const nutritionContext = {
   vulnerability_alert: null,
 }
 
+function renderHomeAndPlan() {
+  return render(
+    <MemoryRouter initialEntries={['/']}>
+      <Routes>
+        <Route path="/" element={<NutritionPage accessContext={accessContext} homeOnly />} />
+        <Route path="/nutricao" element={<NutritionPage accessContext={accessContext} />} />
+        <Route path="/agenda" element={<div>Agenda de origem</div>} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
 beforeEach(() => {
+  rpc.getProfessionalAppointmentContext.mockResolvedValue({
+    status: 'success',
+    data: {
+      appointment_id: 'appointment-test',
+      patient_id: 'patient-test',
+      patient_name: 'Paciente da homologação',
+      professional_id: 'nutrition-professional-test',
+      specialty_name: 'Nutrição',
+      attendance_status: 'confirmado',
+    },
+  })
   rpc.getMyAssistentialSpecialties.mockResolvedValue({
     status: 'success', data: [{ specialty_name: 'Nutrição' }],
   })
@@ -54,9 +77,32 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 
 describe('Plano Alimentar documental — Nutrição', () => {
+  it('mantém a Home compacta e abre a tela independente ao clicar no atalho', async () => {
+    const user = userEvent.setup()
+    renderHomeAndPlan()
+    expect(screen.getByRole('navigation', { name: 'Acessos rápidos da Nutrição' })).toBeVisible()
+    expect(screen.queryByLabelText('Edição documental do Plano Alimentar')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('link', { name: /Planejamento Alimentar/ }))
+    expect(await screen.findByLabelText('Edição documental do Plano Alimentar')).toBeVisible()
+    expect(screen.queryByRole('navigation', { name: 'Acessos rápidos da Nutrição' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('link', { name: /Voltar à Home/ }))
+    expect(await screen.findByRole('navigation', { name: 'Acessos rápidos da Nutrição' })).toBeVisible()
+    expect(screen.queryByLabelText('Edição documental do Plano Alimentar')).not.toBeInTheDocument()
+  })
+
+  it('confirma na agenda da Home e navega à tela exclusiva revalidando a consulta', async () => {
+    const user = userEvent.setup()
+    renderHomeAndPlan()
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
+    expect(rpc.getProfessionalAppointmentContext).toHaveBeenCalledWith('appointment-test')
+    expect(rpc.getNutritionContext).toHaveBeenCalledWith('patient-test')
+    expect(screen.queryByRole('navigation', { name: 'Acessos rápidos da Nutrição' })).not.toBeInTheDocument()
+  })
+
   it('abre um formulário livre de uma coluna e mantém campos adicionais digitáveis', async () => {
     const user = userEvent.setup()
-    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    renderHomeAndPlan()
     await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
     expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
     expect(screen.getByLabelText('Edição documental do Plano Alimentar')).toBeVisible()
@@ -84,7 +130,7 @@ describe('Plano Alimentar documental — Nutrição', () => {
     rpc.saveDetailedNutritionPlan.mockResolvedValue({
       status: 'error', error: { message: 'Falha simulada na gravação' },
     })
-    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    renderHomeAndPlan()
     await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
     expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
     await user.type(screen.getByLabelText('Sobremesa (almoço)'), 'Texto livre a preservar')
@@ -97,7 +143,7 @@ describe('Plano Alimentar documental — Nutrição', () => {
   it('não declara sucesso sem confirmação do plano pelo banco', async () => {
     const user = userEvent.setup()
     rpc.saveDetailedNutritionPlan.mockResolvedValue({ status: 'success', data: { success: true } })
-    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    renderHomeAndPlan()
     await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
     expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
     await user.type(screen.getByLabelText('Sobremesa (almoço)'), 'Conferência necessária')
@@ -112,7 +158,7 @@ describe('Plano Alimentar documental — Nutrição', () => {
       status: 'success',
       data: { ...nutritionContext, current_plan: { owned_by_me: false } },
     })
-    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    renderHomeAndPlan()
     await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
     expect(await screen.findByText(/O plano atual pertence a outro profissional/)).toBeVisible()
     expect(screen.getByRole('button', { name: 'Salvar / atualizar plano' })).toBeDisabled()
@@ -120,7 +166,7 @@ describe('Plano Alimentar documental — Nutrição', () => {
   })
 
   it('não oferece geração de documento sem paciente confirmado', async () => {
-    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    renderHomeAndPlan()
     expect(screen.queryByLabelText('Edição documental do Plano Alimentar')).not.toBeInTheDocument()
     expect(rpc.saveDetailedNutritionPlan).not.toHaveBeenCalled()
   })
