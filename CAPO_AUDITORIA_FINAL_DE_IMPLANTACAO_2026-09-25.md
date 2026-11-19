@@ -315,3 +315,14 @@
 **Código:** src/features/patients/PatientsPage.tsx, commit 0096ae0b80f604975e75d48a15a870367714ef13 (main). Seletor inicial por botões antes dos campos; título do tipo escolhido e opção de voltar à seleção. A reabertura da aba Cadastrar e a finalização dos fluxos de cadastro retornam à escolha inicial. Sem alteração nos campos, persistência ou no banco.
 
 **Estado:** versionado em main; testes automatizados, build, publicação Cloudflare e homologação visual não confirmados. Homologação operacional em manuteste pendente.
+
+
+---
+
+## 19/11/2026 — VERDE: cartões visuais na escolha inicial do tipo de cadastro
+
+**Pedido:** fazer a tela de escolha do cadastro no mesmo formato da demonstração aprovada: dois cartões lado a lado, com ícone, título, descrição curta e ação Selecionar. Não alterar nenhum dado, campo ou regra dos formulários.
+
+**Implementação em main:** src/features/patients/PatientsPage.tsx commit 7f11f6142cb1d912965d683a37a04e65855317af; src/features/patients/patients-page.css commit 1a2ae61859f41f01dc3222b852eb021b6e0eee82. Botões Cadastro Novo e Cadastro Existente em cartões clicáveis, layout responsivo com uma coluna no celular; ambos abrem o formulário atual já condicionado a registrationKind.
+
+**Invariantes:** sem mexer no formulário, dados, campos, obrigatoriedades, banco, RPCs, oferta inicial, duplicidade ou permissões. Apenas apresentação da seleção inicial. **Status:** código versionado; homologação visual, build e deploy não confirmados nesta sessão.
