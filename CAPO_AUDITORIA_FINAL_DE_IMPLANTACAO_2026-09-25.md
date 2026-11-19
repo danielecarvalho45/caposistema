@@ -532,3 +532,16 @@
 **Preservação:** nenhum schema, migration ou registro de pacientes alterado; nenhuma modificação nas regras de agendamento, atendimento, bloqueios, remanejamento, notificações, autorização de aprovações ou fluxo de Encaminhamentos. CSS usa apenas paleta e padrões de cartões já usados pelo CAPO.
 
 **Limites verificáveis:** alterações gravadas no GitHub `main` e inspecionada estrutura JSX, mas ainda não houve execução demonstrada de Vitest/build, publicação Cloudflare ou homologação visual autenticada. Não declarar essas etapas concluídas sem evidência.
+
+
+---
+
+## 19/11/2026 — VERDE: Agenda Geral preenche o espaço vertical livre da Home Gestor/Titular
+
+**Autorização:** a Titular solicitou eliminar o grande espaço em branco abaixo da Agenda Geral de dois dias úteis na Home do Gestor/Titular: **"não deixar buracos, expandir até preencher o buraco atual"**, com organização também do conteúdo interno, sem criar horários nem consultas fictícias. A Titular emitiu **VERDE**.
+
+**Implementação cirúrgica no frontend:** `src/features/gestor/gestor.css`, commit `40a60b8c643bef853432af5866bab1a1c473eae5`. Em desktops com largura superior a 1150px, a grade principal da Home Gestor/Titular passa a estender seus itens até a altura da coluna lateral; o componente existente `capo-two-day-home` passa a organizar cabeçalho, grade de dois dias e rodapé com flexbox; as duas colunas acompanham essa altura; as listas de consultas e os cartões reais podem ocupar o espaço vertical sem o antigo limite interno de 415px; a disponibilidade livre real, inclusive a mensagem de ausência de horários, ocupa a área restante usando o esquema cromático institucional já adotado pelo CAPO. O ajuste não gera slots adicionais nem registros duplicados. Em telas com até 1150px, a Home mantém o comportamento responsivo previamente existente, sem forçar preenchimento artificial em dispositivos estreitos.
+
+**Preservação:** estilos estritamente sob `.gestor-dashboard`; sem tocar em `AdministrativeTwoDayAgenda.tsx` ou `DailyTeamAgendaRows.tsx`, regras de horários, confirmação, avisos, remarcação, cancelamento, registros reais, Supabase, Administração Operacional, manutenção ou indicadores. O quadro de alterações aprovadas continua abaixo dos avisos de manutenção na lateral; o atalho Encaminhamentos permanece no topo.
+
+**Verificação e limites:** modificação registrada na branch `main` e inspecionada; **execução de testes automatizados, build, publicação Cloudflare e homologação visual autenticada não foram confirmados**. Monitorar em telas grandes com agendas muito cheias ou vazias para assegurar legibilidade.
