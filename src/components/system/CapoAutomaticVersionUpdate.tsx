@@ -81,7 +81,7 @@ export function CapoAutomaticVersionUpdate() {
         if (!response.ok) return
         const data: unknown = await response.json()
         if (data && typeof data === 'object' && 'version' in data
-          && typeof data.version === 'string' && /^\d{10,}$/.test(data.version)
+          && typeof data.version === 'string' && /^(?:\d{10,}|[a-f0-9]{24})$/.test(data.version)
           && data.version !== __CAPO_BUILD_VERSION__ && mounted.current) {
           setNewVersion(true)
         }
