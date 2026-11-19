@@ -1,9 +1,10 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
+import { createCapoSourceVersion } from './scripts/capo-build-version'
 
-// Mesmo identificador embutido no JavaScript e publicado como manifesto.
-// O navegador consulta o manifesto sem cache para detectar novas publicações.
-const capoBuildVersion = `${Date.now()}`
+// Mesmo identificador determinístico no JavaScript e no manifesto.
+// Alterações apenas em auditorias, migrations e documentos não geram aviso.
+const capoBuildVersion = createCapoSourceVersion()
 
 export default defineConfig({
   plugins: [
