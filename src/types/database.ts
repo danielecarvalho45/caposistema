@@ -11,6 +11,7 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      get_my_internal_communication_identity_for_interface: { Args: Record<never, never>; Returns: Json }
       get_internal_communication_recipients_for_interface: { Args: Record<never, never>; Returns: Json }
       get_internal_communications_for_interface: { Args: { p_limit?: number }; Returns: Json }
       create_internal_communication_for_interface: {
