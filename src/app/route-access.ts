@@ -14,6 +14,7 @@ export const KNOWN_APP_ROUTES = [
   '/fila',
   '/faltosos',
   '/solicitacoes',
+  '/comunicacao',
   '/transporte',
   '/receita',
   '/encaminhamentos',
@@ -191,6 +192,8 @@ export function canAccessAppRoute(
         'coordenador',
         'administrativo_operacional',
       ])
+    case '/comunicacao':
+      return accessContext.is_active && hasRole(accessContext, ['administrador','administrativo_operacional','profissional'])
     case '/solicitacoes':
       return (
         (Boolean(accessContext.professional_id) && hasProfessionalAssistentialRole(accessContext)) ||
