@@ -132,6 +132,7 @@ export function NoShowsPage({
     } else if (next.status === 'empty') {
       setHasMoreOccurrences(false)
     } else if (next.status === 'error') {
+      setHasMoreOccurrences(false)
       setFeedback('Não foi possível carregar mais ocorrências: ' + next.error.message)
     }
     setLoadingMoreOccurrences(false)
