@@ -1,0 +1,29 @@
+.capo-new-version {
+  position: fixed;
+  z-index: 10000;
+  inset: auto 1rem 1rem auto;
+  max-width: min(25rem, calc(100vw - 2rem));
+  display: grid;
+  gap: .45rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--color-border, #b9cbda);
+  border-radius: .75rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #243347);
+  box-shadow: 0 .4rem 1.4rem #0002;
+  font-size: .875rem;
+}
+.capo-new-version strong { font-size: .92rem; }
+.capo-new-version span { line-height: 1.4; }
+.capo-new-version button {
+  justify-self: start;
+  padding: .4rem .75rem;
+  background: var(--color-brand-blue, #185e93);
+  color: white;
+  border: 0;
+  border-radius: .4rem;
+  cursor: pointer;
+}
+@media (max-width: 540px) {
+  .capo-new-version { inset: auto .6rem .6rem .6rem; max-width: none; }
+}
