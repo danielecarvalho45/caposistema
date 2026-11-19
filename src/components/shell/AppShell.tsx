@@ -7,6 +7,7 @@ import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getNotificationsService, NOTIFICATIONS_UPDATED_EVENT } from '../../features/notifications/notifications-integration'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { ProfileShortcuts } from './ProfileShortcuts'
+import { CommunicationUnreadLink } from '../../features/communication/CommunicationUnreadLink'
 import './app-shell.css'
 
 type AppShellProps = Readonly<{
