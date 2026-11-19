@@ -193,4 +193,27 @@ describe('Visita Domiciliar na agenda oficial', () => {
       }),
     ))
   })
+  it('na Home inclui paciente somente no período selecionado, sem formulário separado', async () => {
+    backend.rpc.mockImplementation(async (_name: string, args: { p_action: string }) => ({
+      data: args.p_action === 'list'
+        ? { success: true, visits: [block, { ...block, block_id: 'block-2', date: '2026-11-20' }] }
+        : { success: true },
+      error: null,
+    }))
+    const user = userEvent.setup()
+    render(<SocialHomeVisits professionalId="professional-1" mode="schedule" onlyBlockId="block-1" compact />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Adicionar pacientes' })).toBeVisible())
+    expect(screen.queryByText('Agendar Visita Domiciliar')).not.toBeInTheDocument()
+    expect(screen.queryByText('2026-11-20')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Bloquear para Visita Domiciliar' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Adicionar pacientes' }))
+    await user.type(screen.getByPlaceholderText('Nome ou nº CAPO'), 'Paciente')
+    await user.click(screen.getByRole('button', { name: 'Buscar paciente' }))
+    await user.selectOptions(screen.getByLabelText('Paciente'), 'patient-1')
+    await user.click(screen.getByRole('button', { name: 'Agendar visita domiciliar' }))
+    expect(backend.rpc).toHaveBeenCalledWith('manage_social_home_visits_for_interface', expect.objectContaining({
+      p_action: 'add', p_block_id: 'block-1', p_patient_id: 'patient-1', p_visit_time: null,
+    }))
+    expect(backend.rpc.mock.calls.some((call) => call[1]?.p_action === 'create')).toBe(false)
+  })
 })
