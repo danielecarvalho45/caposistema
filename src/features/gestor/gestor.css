@@ -437,3 +437,72 @@
     width: 100%;
   }
 }
+
+
+/* Home Gestor — atalhos e resumos reais sem alterar a agenda e a lateral homologadas. */
+.gestor-dashboard .gestor-quick-cadastro {
+  color: #fff;
+  background: #1769aa;
+  border-color: #155a94;
+  box-shadow: 0 3px 10px rgb(23 105 170 / 18%);
+}
+.gestor-dashboard .gestor-quick-cadastro:hover,
+.gestor-dashboard .gestor-quick-cadastro:focus-visible {
+  color: #fff;
+  background: #105487;
+}
+.gestor-dashboard .gestor-quick-cadastro small { color: #eef7ff; }
+.gestor-dashboard .gestor-summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.gestor-dashboard .gestor-summary-grid > .gestor-approved-agenda-changes {
+  grid-column: 1 / -1;
+  grid-row: auto;
+}
+.gestor-dashboard .gestor-summary-grid > :nth-child(2) {
+  grid-column: auto;
+  grid-row: auto;
+}
+.gestor-home-snapshot header { align-items: flex-start; }
+.gestor-home-snapshot header button {
+  border: 1px solid #d4e4f3;
+  border-radius: 6px;
+  color: #14578e;
+  background: #f5faff;
+  padding: 5px 8px;
+  font: 600 11px Arial, Helvetica, sans-serif;
+  cursor: pointer;
+}
+.gestor-home-snapshot > a {
+  display: inline-block;
+  margin-top: 10px;
+  color: #006bd9;
+  font-size: 12px;
+}
+.gestor-home-snapshot .gestor-home-activity-list,
+.gestor-home-snapshot .gestor-home-status-items {
+  display: grid;
+  gap: 8px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.gestor-home-activity-list li {
+  display: grid;
+  gap: 3px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0eaf4;
+}
+.gestor-home-activity-list strong { font-size: 11px; }
+.gestor-home-activity-list small,
+.gestor-home-activity-list span { color: #637b92; font-size: 10px; }
+.gestor-home-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gestor-home-metrics div { padding: 10px; background: #f5f9fd; border-radius: 7px; }
+.gestor-home-metrics dt { color: #526e88; font-size: 11px; }
+.gestor-home-metrics dd { margin: 5px 0 0; color: #14578e; font-weight: 700; font-size: 18px; }
+.gestor-home-status-items li { display: flex; gap: 8px; justify-content: space-between; font-size: 11px; }
+.gestor-home-status-label { font-size: 12px; }
+@media (max-width: 620px) {
+  .gestor-dashboard .gestor-summary-grid { grid-template-columns: 1fr; }
+  .gestor-home-metrics { grid-template-columns: 1fr 1fr; }
+}
