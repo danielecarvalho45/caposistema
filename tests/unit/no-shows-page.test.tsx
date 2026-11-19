@@ -123,24 +123,45 @@ describe('NoShowsPage', () => {
     render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     expect(await screen.findByText('Paciente em contato')).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Acompanhamento' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Contatos' })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /Ocorrências novas/ })).toBeVisible()
     expect(screen.getByRole('heading', { name: /Ocorrências pendentes/ })).toBeVisible()
     expect(screen.getByRole('heading', { name: /Ocorrências encerradas/ })).toBeVisible()
     expect(screen.queryByLabelText('Situação')).not.toBeInTheDocument()
     expect(screen.getByText('Paciente encerrado')).toBeVisible()
 
-    await user.click(screen.getByRole('button', { name: /Paciente encerrado/ }))
+    await user.click(screen.getByRole('link', { name: /Paciente encerrado/ }))
     expect(screen.getByRole('heading', { name: 'Acompanhamento' })).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Remanejamento / Remarcação' }))
     expect(screen.queryByRole('link', { name: 'Agendar' })).not.toBeInTheDocument()
     expect(service.getNoShowFollowups).toHaveBeenCalledWith(null, 100, 0)
   })
 
+  it('ao clicar no nome abre página própria e volta para as três colunas', async () => {
+    const user = userEvent.setup()
+    const service = serviceWithFollowups({ status: 'success', data: [followup] })
+    render(<MemoryRouter initialEntries={['/faltosos']}><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
+
+    expect(await screen.findByRole('heading', { name: /Ocorrências novas/ })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Acompanhamento' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: /Paciente real/ }))
+    expect(screen.getByRole('heading', { name: 'Acompanhamento de Faltosos' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Acompanhamento' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: /Ocorrências novas/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Contatos' })).toBeVisible()
+
+    await user.click(screen.getByRole('link', { name: 'Voltar para Faltosos' }))
+    expect(await screen.findByRole('heading', { name: /Ocorrências novas/ })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Acompanhamento' })).not.toBeInTheDocument()
+  })
+
   it('Agendar abre a Agenda Geral do profissional da falta sem criar solicitação', async () => {
     const service = serviceWithFollowups({ status: 'success', data: [followup] })
     const user = userEvent.setup()
     render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
-    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    await user.click(await screen.findByRole('link', { name: /Paciente real/ }))
     await user.click(screen.getByRole('button', { name: 'Remanejamento / Remarcação' }))
     const action = await screen.findByRole('link', { name: 'Agendar' })
     expect(action).toHaveAttribute('href', '/agenda')
@@ -195,7 +216,7 @@ describe('NoShowsPage', () => {
     render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     await user.click(
-      await screen.findByRole('button', { name: /Paciente real/ }),
+      await screen.findByRole('link', { name: /Paciente real/ }),
     )
     await user.click(screen.getByRole('button', { name: 'Contatos' }))
     await screen.findByText('Nenhum contato registrado.')
@@ -222,7 +243,7 @@ describe('NoShowsPage', () => {
     const user = userEvent.setup()
     const service = serviceWithFollowups({ status: 'success', data: [followup] })
     render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
-    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    await user.click(await screen.findByRole('link', { name: /Paciente real/ }))
 
     expect(screen.getByRole('heading', { name: 'Acompanhamento' })).toBeVisible()
     expect(screen.queryByRole('link', { name: 'Agendar' })).not.toBeInTheDocument()
@@ -251,7 +272,7 @@ describe('NoShowsPage', () => {
       status: 'success', data: [{ ...followup, active_search_status: 'encerrado' }],
     })
     render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
-    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    await user.click(await screen.findByRole('link', { name: /Paciente real/ }))
     await user.click(screen.getByRole('button', { name: 'Contatos' }))
     expect(screen.queryByRole('button', { name: 'Registrar contato' })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Remanejamento / Remarcação' }))
@@ -286,7 +307,7 @@ describe('NoShowsPage', () => {
 
     await userEvent
       .setup()
-      .click(await screen.findByRole('button', { name: /Paciente real/ }))
+      .click(await screen.findByRole('link', { name: /Paciente real/ }))
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Contatos' }))
 
