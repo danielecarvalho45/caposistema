@@ -1,0 +1,100 @@
+/* CAPO — Plano Alimentar: coluna única, composição documental.
+   Não altera os componentes das demais especialidades. */
+.nutrition-document-editor,
+.nutrition-document-preview {
+  box-sizing: border-box;
+  width: min(100%, 850px);
+  margin: 18px auto;
+  padding: clamp(20px, 4.5vw, 48px);
+  border: 1px solid #cdd5de;
+  border-radius: 4px;
+  background: #fff;
+  color: #26354a;
+  box-shadow: 0 8px 26px rgba(24, 45, 69, 0.06);
+}
+.nutrition-document-heading,
+.nutrition-document-preview > header {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 26px;
+  padding-bottom: 17px;
+  border-bottom: 2px solid #2d5370;
+  text-align: left;
+}
+.nutrition-document-heading strong,
+.nutrition-document-preview > header strong { font-size: 1rem; }
+.nutrition-document-heading span { overflow-wrap: anywhere; }
+.nutrition-document-heading small { font-size: .82rem; color: #627185; }
+.nutrition-document-title-field,
+.nutrition-document-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 22px;
+}
+.nutrition-document-title-field { margin-bottom: 31px; font-weight: 700; }
+.nutrition-document-title-field input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #c8d5df;
+  border-radius: 5px;
+  padding: 11px 13px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: #1c3e5a;
+  background: #fbfcfd;
+}
+.nutrition-document-section strong,
+.nutrition-document-preview h4 {
+  padding-bottom: 6px;
+  border-bottom: 1px solid #bac8d3;
+  text-transform: uppercase;
+  font-size: .84rem;
+  letter-spacing: .045em;
+  color: #254963;
+}
+.nutrition-document-section textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.6;
+  border: 1px solid #c8d5df;
+  border-radius: 5px;
+  background: #fff;
+  color: #26354a;
+  padding: 13px 14px;
+}
+.nutrition-document-section textarea:focus,
+.nutrition-document-title-field input:focus {
+  outline: 2px solid #307db7;
+  outline-offset: 1px;
+}
+.nutrition-document-section textarea:disabled,
+.nutrition-document-title-field input:disabled { background: #f5f6f8; opacity: .85; }
+.nutrition-document-actions { display: flex; flex-wrap: wrap; gap: 11px; }
+.nutrition-document-preview h3 {
+  font-size: 1.13rem;
+  text-align: center;
+  text-transform: uppercase;
+  border-bottom: 2px solid #2d5370;
+  padding: 17px 0;
+}
+.nutrition-document-preview section { margin-top: 24px; }
+.nutrition-document-preview section p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; }
+.nutrition-document-preview footer { border-top: 1px solid #bac8d3; padding-top: 16px; margin-top: 36px; font-size: .85rem; color: #5e7186; }
+@media (max-width: 600px) {
+  .nutrition-document-editor,
+  .nutrition-document-preview { padding: 18px 14px; margin: 14px auto; }
+  .nutrition-document-actions { flex-direction: column; align-items: stretch; }
+  .nutrition-document-actions button { width: 100%; }
+}
+@media print {
+  .nutrition-document-preview { border: 0; box-shadow: none; max-width: none; padding: 0; }
+  .nutrition-document-editor, .nutrition-document-actions { display: none !important; }
+}
