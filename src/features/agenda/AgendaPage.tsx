@@ -1711,6 +1711,10 @@ export function AgendaPage({
         return
       }
       const professionalName = professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1]
+      if (!professionalName) {
+        setAppointmentFeedback('Não foi possível validar o profissional selecionado no catálogo. Atualize a agenda antes de agendar.')
+        return
+      }
       const conflicts = (history.status === 'success' ? history.data : []).filter((item) =>
         ['agendado', 'confirmado'].includes(item.attendance_status)
         && item.professional_name === professionalName
