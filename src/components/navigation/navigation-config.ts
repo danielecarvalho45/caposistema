@@ -23,6 +23,7 @@ export const navigationItems: readonly NavigationItem[] = [
   { path: '/faltosos', label: 'Faltosos', icon: '⚑', group: 'principal' },
   { path: '/busca-ativa', label: 'Busca Ativa', icon: '⌕', group: 'principal' },
   { path: '/solicitacoes', label: 'Solicitações', icon: '▤', group: 'principal' },
+  { path: '/comunicacao', label: 'Comunicação Interna', icon: '✉', group: 'principal' },
   { path: '/transporte', label: 'Transporte', icon: '⇄', group: 'principal' },
   { path: '/receita', label: 'Renovação de Receita', icon: '💊', group: 'principal' },
   { path: '/encaminhamentos', label: 'Encaminhamentos', icon: '↗', group: 'principal' },
