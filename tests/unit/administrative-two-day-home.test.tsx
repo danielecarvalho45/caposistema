@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgendaScheduleSlot } from '../../src/lib/supabase/rpc'
 import { AdministrativeTwoDayAgenda, administrativeAgendaDates } from '../../src/features/home/AdministrativeTwoDayAgenda'
+import { capoHolidayOn, capoHolidaysForYear, capoIsBusinessDay, capoNextBusinessDay } from '../../src/lib/calendar/capo-holidays'
 
 const mocks = vi.hoisted(() => ({
   getAppointmentPrevisitContacts: vi.fn(),
@@ -26,10 +27,34 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 
 describe('Home exclusivamente administrativa — dois dias úteis', () => {
-  it('avança de sexta-feira para segunda-feira', () => {
-    expect(administrativeAgendaDates(new Date('2026-11-20T15:00:00-03:00'))).toEqual({
-      first: '2026-11-20', second: '2026-11-23', isToday: true,
+  it('não conta feriado nacional de 20/11 como dia útil da Home', () => {
+    expect(capoHolidayOn('2026-11-20')).toMatchObject({ scope: 'nacional' })
+    expect(administrativeAgendaDates(new Date('2026-11-19T15:00:00-03:00'))).toEqual({
+      first: '2026-11-19', second: '2026-11-23', isToday: true,
     })
+    expect(administrativeAgendaDates(new Date('2026-11-20T15:00:00-03:00'))).toEqual({
+      first: '2026-11-23', second: '2026-11-24', isToday: false,
+    })
+  })
+  it('exclui Corpus Christi, padroeiro e emancipação municipais', () => {
+    expect(capoHolidayOn('2026-06-04')).toMatchObject({ scope: 'municipal', name: 'Corpus Christi' })
+    expect(capoHolidayOn('2026-08-06')?.scope).toBe('municipal')
+    expect(capoHolidayOn('2026-10-19')?.scope).toBe('municipal')
+    expect(capoNextBusinessDay('2026-06-03')).toBe('2026-06-05')
+    expect(capoNextBusinessDay('2026-10-18')).toBe('2026-10-20')
+  })
+  it('reconhece data móvel anual e Data Magna de Minas Gerais', () => {
+    expect(capoHolidayOn('2026-04-03')?.scope).toBe('nacional')
+    expect(capoHolidayOn('2027-03-26')?.name).toBe('Sexta-Feira da Paixão')
+    expect(capoHolidayOn('2027-05-27')?.name).toBe('Corpus Christi')
+    expect(capoHolidayOn('2026-04-21')?.name).toContain('Data Magna')
+    expect(capoIsBusinessDay('2026-04-21')).toBe(false)
+    expect(capoHolidaysForYear(2026).every((h, i, arr) => i === 0 || h.date !== arr[i - 1].date)).toBe(true)
+  })
+  it('mantém pontos facultativos como dias úteis até decisão institucional', () => {
+    expect(capoIsBusinessDay('2026-02-17')).toBe(true)
+    expect(capoIsBusinessDay('2026-10-28')).toBe(true)
+    expect(capoIsBusinessDay('2026-11-21')).toBe(false)
   })
   it('durante o fim de semana apresenta segunda e terça', () => {
     for (const date of ['2026-11-21T12:00:00-03:00', '2026-11-22T12:00:00-03:00']) {
