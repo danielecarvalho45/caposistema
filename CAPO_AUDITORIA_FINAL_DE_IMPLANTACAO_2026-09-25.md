@@ -248,3 +248,22 @@
 **Proteção contra regressões:** preservar a posição do quadro, sua finalidade apenas informativa, a grade ativa, Notificações, Faltosos, prontuários, fluxos de remarcação e demais componentes já homologados. Não iniciar alterações preventivas ou reestruturação. Uma nova manutenção nesta frente exige erro concreto e autorização específica (`VERDE`) da Titular.
 
 **Limite de evidência:** a aprovação relatada é um teste de comportamento **no ambiente de homologação**. Não equivale a afirmar testes autenticados no perfil real de cada profissional, execução de Vitest/build ou publicação Cloudflare confirmada por ferramentas neste registro. A pendência anterior de aceite do termo legal da conta Danilo não foi alterada.
+
+---
+
+## 19/11/2026 — VERDE: isolamento do feedback individual do suporte no sininho Gestor/Titular
+
+**Relato e VERDE da Titular:** o sininho do Gestor/Titular exibia o feedback do chamado técnico aberto pelo clínico Ilton, apesar de o feedback ter sido produzido pelo próprio perfil Gestor e destinado ao solicitante. Houve VERDE expresso para investigar e corrigir pontualmente, sem reconstruir Notificações, suporte ou TI.
+
+**Evidência Supabase anterior:** chamado `d723e5c4-549a-411b-958a-59e1bd5d4f6a`, estado `aguardando_teste`, feedback administrativo “por favor recarregue a pagina do capo e teste o botão novamente”. A notificação `technical_support_test_requested` tinha `user_id` do login `ilton`, `target_role='usuario'`, não havia duplicação para o Gestor. As três RPCs `get_my_notifications_for_interface`, `get_my_notifications_by_state_for_interface`, `get_my_notifications_by_category_for_interface` permitiam `or 'administrador'=any(v_roles)`, fazendo o Gestor enxergar mesmo notificações individualmente endereçadas a outro usuário. A RPC `update_my_notification_for_interface` tinha autorização ampla equivalente, permitindo potencialmente leitura/resolução indevidas.
+
+**Implementação:** migração `supabase/migrations/20261119183000_notification_direct_recipient_guard.sql`, commit `b45636e765ca0c1575d96548d3f93f89ffac89d3`, **aplicada com sucesso ao Supabase**. Nas quatro RPCs foi acrescentada a verificação obrigatória `(n.user_id is null or n.user_id=auth.uid())` antes da autorização por papéis. Destinatários individuais ficam exclusivos; notificações institucionais sem `user_id` continuam sujeitas ao filtro de papéis, inclusive o acesso amplo legítimo do Gestor/Titular. Permanecem os filtros de paciente, ambiente de homologação e ticket de suporte já homologados. Sem alteração de estado ou exclusão de notificações, sem alteração de frontend ou fluxos do módulo TI.
+
+**Validação realizada com identidade simulada em transação, sem persistir alterações:**
+1. Consulta como `daniele` a `get_my_notifications_for_interface`, `get_my_notifications_by_state_for_interface('all')` e `get_my_notifications_by_category_for_interface('general','all')`: 0 ocorrências do feedback individual do Ilton.
+2. As mesmas três consultas como `ilton`: 1 ocorrência da notificação individual.
+3. Aviso institucional `technical_support_new` para `administrador`: mantido visível no Gestor.
+4. Ação `update_my_notification_for_interface` como `daniele` contra o aviso individual do Ilton: **negada com SQLSTATE 42501**, testada dentro de transação revertida. Nota: uma tentativa prévia de executar ação em transação `read only` foi bloqueada por `SELECT FOR UPDATE` antes de validar a regra; repetido corretamente em transação revertida.
+5. Reconsultado o registro: `read_at IS NULL`, `resolved_at IS NULL`, e as quatro RPCs contêm a guarda de destinatário.
+
+**Limites:** testes SQL funcionais concluídos, porém testes de interface autenticada do sininho e deploy Cloudflare não foram executados neste turno. A regra já está no banco em uso, sem necessidade de implantação do frontend. Proteção contra regressões: não interferir nos Quadros de Avisos de Manutenção, Comunicação Interna, Agenda, Faltosos, nem nas notificações institucionais por papel. Acompanhamento operacional pela Titular antes de homologação visual final.
