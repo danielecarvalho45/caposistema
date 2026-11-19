@@ -47,7 +47,9 @@ function width(text: string, size: number): number {
   return Array.from(printable(text)).reduce((sum, character) => sum + glyphWidth(character), 0) * size / 1000
 }
 function encode(text: string): Uint8Array {
-  return Uint8Array.from(Array.from(printable(text)).map(c => c.charCodeAt(0) & 255))
+  // Estrutura PDF mantém CR/LF e separadores de objetos/streams sem normalização.
+  // Só o conteúdo textual de Tj passa por printable()/pdfEscape().
+  return Uint8Array.from(Array.from(text).map(c => c.charCodeAt(0) & 255))
 }
 function concat(parts: readonly Uint8Array[]): Uint8Array {
   const output = new Uint8Array(parts.reduce((n, part) => n + part.length, 0))
