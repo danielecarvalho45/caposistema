@@ -288,6 +288,7 @@ export function AppShell({
             <p className="app-user-caption">{userCaption}</p>
           </div>
           <div className="app-header-actions">
+            <CommunicationUnreadLink accessContext={accessContext} />
             <button
               className="app-back-button"
               type="button"
