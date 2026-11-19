@@ -208,7 +208,8 @@ describe('RenewalPrescriptionPage', () => {
 
     expect(await screen.findByText('Renovação de Receita — Solicitações Recebidas')).toBeVisible()
     expect(service.getPrescriptionRenewalDoctors).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: /Paciente real/ }))
+    await user.selectOptions(screen.getByLabelText('Situação'), 'medical_in_progress')
+    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
     await user.type(
       screen.getByLabelText('Onde retirar a receita *'),
       'Farmácia do CAPO',
@@ -221,6 +222,90 @@ describe('RenewalPrescriptionPage', () => {
       'Receita pronta',
       'Farmácia do CAPO',
     )
+  })
+
+  it('mantém a solicitação selecionada e abre as decisões médicas após Recebido', async () => {
+    const user = userEvent.setup()
+    const renewal = {
+      renewal_id: 'renewal-id',
+      patient_id: 'patient-id',
+      patient_name: 'Paciente do fluxo',
+      patient_number: 'CAPO-10',
+      cms: null,
+      doctor_id: 'doctor-id',
+      doctor_name: 'Médico Clínico',
+      status: 'awaiting_medical',
+      request_note: 'Continuidade do tratamento',
+      medical_feedback: null,
+      administrative_feedback: null,
+      created_at: '2026-11-19T12:00:00Z',
+      updated_at: '2026-11-19T12:00:00Z',
+      completed_at: null,
+      cancelled_at: null,
+      total_count: 1,
+    }
+    const service = renewalService({ status: 'success', data: [renewal] })
+    service.getPrescriptionRenewals.mockImplementation(async (filter: string | null) => ({
+      status: 'success',
+      data: filter === 'medical_in_progress'
+        ? [{ ...renewal, status: 'medical_in_progress' }]
+        : filter === 'awaiting_medical' ? [renewal] : [],
+    }))
+    service.managePrescriptionRenewalMedical.mockResolvedValue({
+      status: 'success',
+      data: { success: true, request_id: 'renewal-id', status: 'medical_in_progress' },
+    })
+
+    render(<RenewalPrescriptionPage accessContext={professionalContext} service={service} />)
+
+    await user.click(await screen.findByRole('button', { name: /Paciente do fluxo/ }))
+    await user.click(screen.getByRole('button', { name: 'Recebido' }))
+
+    expect(await screen.findByRole('button', { name: 'Receita pronta' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Necessita consulta' })).toBeVisible()
+    expect(screen.getByLabelText('Situação')).toHaveValue('medical_in_progress')
+    expect(screen.getByRole('heading', { name: 'Detalhes' })).toBeVisible()
+    expect(service.managePrescriptionRenewalMedical).toHaveBeenCalledWith(
+      'renewal-id', 'start', null, null,
+    )
+    expect(screen.queryByRole('button', { name: 'Cancelar solicitação' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Nova solicitação' })).not.toBeInTheDocument()
+  })
+
+  it('mantém acompanhamento administrativo disponível para Gestor/Titular e AO', async () => {
+    const renewal = {
+      renewal_id: 'renewal-id',
+      patient_id: 'patient-id',
+      patient_name: 'Paciente do fluxo',
+      patient_number: 'CAPO-10',
+      cms: null,
+      doctor_id: 'doctor-id',
+      doctor_name: 'Médico Clínico',
+      status: 'awaiting_admin',
+      request_note: 'Continuidade do tratamento',
+      medical_feedback: 'Receita pronta',
+      administrative_feedback: null,
+      pickup_location: 'Recepção CAPO',
+      created_at: '2026-11-19T12:00:00Z',
+      updated_at: '2026-11-19T15:00:00Z',
+      completed_at: null,
+      cancelled_at: null,
+      total_count: 1,
+    }
+    for (const role of ['administrador', 'administrativo_operacional'] as const) {
+      const context: AccessContext = {
+        ...administrativeContext,
+        roles: [{ code: role, name: role }],
+        primary_context: { ...administrativeContext.primary_context, code: role, name: role },
+      }
+      const service = renewalService({ status: 'success', data: [renewal] })
+      const { unmount } = render(<RenewalPrescriptionPage accessContext={context} service={service} />)
+      expect(await screen.findByRole('heading', { name: 'Nova solicitação' })).toBeVisible()
+      expect(await screen.findByRole('button', { name: /Paciente do fluxo/ })).toBeVisible()
+      expect(service.getPrescriptionRenewals).toHaveBeenCalledWith(null, 100, 0)
+      expect(service.getPrescriptionRenewalDoctors).toHaveBeenCalled()
+      unmount()
+    }
   })
 
   it('não expõe controles administrativos no contexto profissional com papel administrativo acumulado', async () => {
