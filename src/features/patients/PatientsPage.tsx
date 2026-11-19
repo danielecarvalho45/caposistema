@@ -198,6 +198,7 @@ ADMINISTRATIVO DO CAPO`
         setOfferFeedback(null)
         setFeedback(null)
         setNextRegistrationReady(true)
+        setRegistrationKind('')
         window.requestAnimationFrame(() => {
           const field = document.querySelector<HTMLInputElement>(
             '.patients-register input[placeholder="Nome completo do paciente"]',
@@ -239,7 +240,7 @@ ADMINISTRATIVO DO CAPO`
     setDuplicateReviewKey('')
     setOfferFeedback(null)
     setNextRegistrationReady(false)
-    setRegistrationKind('preexistente')
+    setRegistrationKind('')
     setActiveView('register')
     setFeedback(`Cadastro ${number ? `Nº CAPO ${number}` : 'preexistente'} finalizado. Pronto para cadastrar o próximo paciente.`)
     window.requestAnimationFrame(() => {
@@ -577,6 +578,7 @@ ADMINISTRATIVO DO CAPO`
             aria-pressed={activeView === 'register'}
             onClick={() => {
               setActiveView('register')
+              setRegistrationKind('')
               setEditingPatientId(null)
               setEditForm({})
               setAppointmentHistoryOpen(false)
@@ -634,20 +636,34 @@ ADMINISTRATIVO DO CAPO`
               A abertura do WhatsApp não confirma o envio da mensagem nem o aceite.
             </p>
           )}
-          {!preexistingPatientReady && <fieldset className="patients-registration-kind">
-            <legend>Tipo de cadastro *</legend>
-            <label>
-              <input type="radio" name="registration-kind" checked={registrationKind === 'novo'}
-                onChange={() => { setRegistrationKind('novo'); setPatientCapoStartDate(''); setCreatedPatientId(null); setCreatedPatientNumber(null); setCreatedPatientAt(null) }} />
-              Paciente novo
-            </label>
-            <label>
-              <input type="radio" name="registration-kind" checked={registrationKind === 'preexistente'}
-                onChange={() => { setRegistrationKind('preexistente'); setCreatedPatientId(null); setCreatedPatientNumber(null); setCreatedPatientAt(null) }} />
-              Paciente preexistente — já utiliza o CAPO
-            </label>
-          </fieldset>}
-          {!registrationKind && <p role="status">Selecione o tipo de cadastro para continuar.</p>}
+          {!preexistingPatientReady && !registrationKind && (
+            <div className="patients-registration-kind" role="group" aria-label="Tipo de cadastro">
+              <p>Selecione o tipo de cadastro para abrir o formulário correspondente.</p>
+              <div className="patients-form-actions">
+                <button type="button" onClick={() => {
+                  setRegistrationKind('novo')
+                  setPatientCapoStartDate('')
+                  setCreatedPatientId(null)
+                  setCreatedPatientNumber(null)
+                  setCreatedPatientAt(null)
+                }}>Cadastro Novo</button>
+                <button type="button" onClick={() => {
+                  setRegistrationKind('preexistente')
+                  setCreatedPatientId(null)
+                  setCreatedPatientNumber(null)
+                  setCreatedPatientAt(null)
+                }}>Cadastro Existente</button>
+              </div>
+            </div>
+          )}
+          {registrationKind && !preexistingPatientReady && (
+            <div className="patients-form-actions">
+              <strong>{registrationKind === 'novo' ? 'Cadastro Novo' : 'Cadastro Existente'}</strong>
+              <button type="button" onClick={() => setRegistrationKind('')}>
+                Voltar aos tipos de cadastro
+              </button>
+            </div>
+          )}
           {registrationKind && !preexistingPatientReady && <>
           <div className="patients-form-grid">
             <label className="patients-span-2">
