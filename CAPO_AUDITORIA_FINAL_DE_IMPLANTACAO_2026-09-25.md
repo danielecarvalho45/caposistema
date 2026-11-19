@@ -445,3 +445,16 @@
 **Regressão versionada:** `tests/unit/no-shows-page.test.tsx` commit `86f9ef79f772043733e469112ea14d349cf0179e`, com cobertura de Link `Agendar` e ausência de criação de solicitação ao clicar; testes existentes recebem contexto de navegação.
 
 **Verificação:** migrações Supabase retornaram `success=true`; existência do gatilho real e cláusulas de encerramento/notificação verificadas no banco; ocorrência já regularizada de Angelo Aparecido Piva segue `encerrado`, com consulta anterior `remarcado` e novo retorno de 25/11 às 10h30 mantido. Nenhum agendamento real de teste foi feito; **a execução de build, Vitest, navegação autenticada, entrega do aviso e publicação Cloudflare permanece pendente de homologação**. Não alterar dados de pacientes reais para teste.
+
+
+---
+
+## 19/11/2026 — VERDE: quatro abas funcionais no módulo Faltosos
+
+**Autorização:** Titular identificou na imagem botões "Acompanhar faltas", "Contatos", "Motivo / providência" e "Remanejamento / Remarcação" aparentemente estáticos, solicitou consulta ao Documento Estrutural e Documento Base e autorizou com `VERDE` a correção pontual para cada aba exibir sua função. Referências: `CAPO_ESPECIFICACAO_FUNCIONAL_ESTRUTURAL_DA_INTERFACE_2026-09-12.md`, `CAPO_ESPECIFICACAO_ESTRUTURAL_DA_INTERFACE_2026-09-12.md` e `CAPO_MATRIZ_FUNCIONAL_DE_PERFIS_E_AUTOMACOES_2026-09-12.md`.
+
+**Causa comprovada:** `NoShowsPage.tsx` mantinha estado `view` e alternava `setView`, mas a área à direita não utilizava o estado para selecionar os formulários; os quatro botões eram visualmente clicáveis, sem separar seus conteúdos.
+
+**Mudança cirúrgica:** `src/features/no-shows/NoShowsPage.tsx` commit `98750a3bb4b3aa68dfce4d0b3ff41c07648f17b2`: mantém lista de ocorrências selecionáveis e resumo operacional; vista `faltas` mostra acompanhamento e histórico; `contatos` mostra WhatsApp, método, resultado, aceitação, situação e histórico; `motivo` mostra formulário de resultado/estado/próximo contato/próxima ação/observação e histórico; `remarcar` mostra somente o link Agendar para a Agenda Geral filtrada pelo profissional original, ou aviso de ocorrência encerrada. Operações existentes `registerNoShowContact`, `getNoShowContacts` e remarcação por `/agenda` não foram modificadas. Para ocorrências encerradas, os formulários de escrita deixam de aparecer, mas o histórico continua consultável. Nenhuma tabela, perfil ou permissão do Supabase foi alterada.
+
+**Testes atualizados:** `tests/unit/no-shows-page.test.tsx` commit `a42f0c383fe95de0180c9c7720b1bb7e6ff9d303` adaptou os testes existentes à seleção de abas e acrescentou verificações de conteúdo condicional, botão Agendar exclusivo da remarcação e proteção dos registros encerrados. **Execução de testes automatizados, build, publicação Cloudflare e homologação autenticada não foram comprovados nesta etapa.** A correção é alteração de interface e precisa ser publicada antes de ser vista na tela do usuário.
