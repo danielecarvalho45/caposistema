@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AgendaScheduleSlot, type AsyncState } from '../../lib/supabase/rpc'
 import { DailyTeamAgendaRows } from './DailyTeamAgendaRows'
+import { capoIsBusinessDay, capoNextBusinessDay } from '../../lib/calendar/capo-holidays'
 import './daily-team-agenda.css'
 
 type AgendaLoader = (
@@ -10,24 +11,14 @@ type AgendaLoader = (
   professionalId: string | null,
 ) => Promise<AsyncState<readonly AgendaScheduleSlot[]>>
 
-function nextBusinessDay(date: string) {
-  const [year, month, day] = date.split('-').map(Number)
-  const next = new Date(Date.UTC(year, month - 1, day + 1, 12))
-  while (next.getUTCDay() === 0 || next.getUTCDay() === 6) {
-    next.setUTCDate(next.getUTCDate() + 1)
-  }
-  return next.toISOString().slice(0, 10)
-}
-
 export function administrativeAgendaDates(now = new Date()) {
   const today = now.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
-  // Em sábados e domingos a Home antecipa os dois próximos dias úteis.
-  const [year, month, day] = today.split('-').map(Number)
-  const weekday = new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay()
-  const first = weekday === 0 || weekday === 6
-    ? nextBusinessDay(new Date(Date.UTC(year, month - 1, day - 1, 12)).toISOString().slice(0, 10))
-    : today
-  return { first, second: nextBusinessDay(first), isToday: first === today }
+  // Não contar sábado, domingo nem feriados oficiais de Pouso Alegre/MG/Brasil.
+  // As exceções reais de agenda não são alteradas por esta seleção visual.
+  const first = capoIsBusinessDay(today)
+    ? today
+    : capoNextBusinessDay(today)
+  return { first, second: capoNextBusinessDay(first), isToday: first === today }
 }
 
 function displayDate(date: string) {
