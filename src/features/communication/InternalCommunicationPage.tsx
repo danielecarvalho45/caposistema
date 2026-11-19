@@ -4,13 +4,13 @@ import { getSupabaseClient } from '../../lib/supabase/client'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import './internal-communication.css'
 
-type Recipient = { account_id: string; name: string; function_title: string }
+type Recipient = { account_id: string; name: string; function_title: string; can_receive_admin_demand: boolean }
 type Message = { id: string; author_id: string; body: string; created_at: string }
 type Thread = {
   id: string; kind: 'recado' | 'demanda_administrativa'; subject: string; body: string
   status: string; sender_id: string; recipient_id: string; sender_name: string
   recipient_name: string; patient_id: string | null; patient_name: string | null
-  updated_at: string; unread: boolean; messages: Message[]
+  updated_at: string; unread: boolean; recipient_read_at: string | null; messages: Message[]
 }
 type View = 'recebidas' | 'enviadas'
 function rows<T>(value: unknown): T[] { return Array.isArray(value) ? value as T[] : [] }
@@ -148,17 +148,18 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
       {newOpen && <div className="capo-comm-compose">
         <h3>Nova comunicação</h3>
         <label>Tipo
-          <select value={kind} onChange={e => setKind(e.target.value as typeof kind)}>
+          <select value={kind} onChange={e => { setKind(e.target.value as typeof kind); setRecipientIds([]) }}>
             <option value="recado">Mensagem ou recado</option>
             {isAdmin && <option value="demanda_administrativa">Demanda oficial do Administrativo</option>}
           </select>
         </label>
+        {!isAdmin && <p className="capo-comm-hint">Para solicitar providências ao Administrativo, utilize o módulo Solicitações. Mensagens entre profissionais não representam pedidos oficiais.</p>}
         <p className="capo-comm-hint">{kind === 'recado'
           ? 'Recados não geram solicitações nem autorizam mudanças de agenda.'
           : 'Somente o Administrativo pode direcionar uma demanda oficial; o destinatário registra resposta e o Administrativo conclui.'}</p>
         <fieldset><legend>Destinatários (respostas individuais)</legend>
           <div className="capo-comm-people">
-            {recipients.map(r => <label key={r.account_id}>
+            {recipients.filter(r => kind === 'recado' || r.can_receive_admin_demand).map(r => <label key={r.account_id}>
               <input type="checkbox" checked={recipientIds.includes(r.account_id)}
                 onChange={e => setRecipientIds(ids => e.target.checked ? [...ids,r.account_id] : ids.filter(id=>id!==r.account_id))} />
               <span>{r.name} <small>· {r.function_title}</small></span>
@@ -200,6 +201,7 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
             <p><strong>De:</strong> {selected.sender_name} · <strong>Para:</strong> {selected.recipient_name}</p>
             <p><strong>Tipo:</strong> {selected.kind === 'recado' ? 'Recado' : 'Demanda do Administrativo'}
               {selected.patient_name ? ' · Paciente: '+selected.patient_name : ''}</p>
+            {selected.sender_id === myAccountId && <p><strong>Leitura pelo destinatário:</strong> {selected.recipient_read_at ? 'Visualizada em '+stamp(selected.recipient_read_at) : 'Aguardando leitura'}</p>}
             {selected.kind === 'demanda_administrativa' && <p><strong>Situação:</strong> {selected.status.replace('_',' ')}</p>}
             <div className="capo-comm-conversation">
               {selected.messages.map(m => <div key={m.id} className={m.author_id === myAccountId ? 'is-own' : ''}>
@@ -212,7 +214,7 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
               <button type="button" disabled={busy || !reply.trim()} onClick={() => void act('responder')}>Enviar resposta</button>
               {selected.kind === 'demanda_administrativa' && selected.recipient_id === myAccountId && selected.status === 'pendente' &&
                 <button type="button" disabled={busy} onClick={() => void act('iniciar')}>Iniciar atendimento da demanda</button>}
-              {selected.kind === 'demanda_administrativa' && isAdmin && selected.sender_id === myAccountId && selected.status !== 'concluida' &&
+              {selected.kind === 'demanda_administrativa' && isAdmin && selected.sender_id === myAccountId && selected.status === 'respondida' &&
                 <button type="button" disabled={busy} onClick={() => void act('concluir')}>Concluir demanda</button>}
             </div>
           </>}
