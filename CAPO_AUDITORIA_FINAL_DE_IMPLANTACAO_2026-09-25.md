@@ -618,3 +618,18 @@
 **Verificações:** `pg_get_functiondef` confirma a nova ramificação e assinatura original no Supabase. Reconsulta de `agenda_configs` confirmou grade ativa de 30 minutos. Reconsulta estatística de `patient_appointments` confirmou agendamentos anteriores com tempos de 30/60 minutos mantidos, sem migração de pacientes; nenhuma linha real foi criada, remarcada ou alterada para o teste. Testes de contrato **somente-leitura** registrados em `tests/sql/nutrition-first-consultation-readonly.sql`, commits `0bb9849e9357a371dd3eb187ee75cb1f2c5a83ce` e `9436615fdbde897f42b5643a641c16202f349d7b`: **7 de 7 verificações SQL passaram** (incluindo criação estendida, escopo de tipos, duração do retorno, sobreposição e remarcação). Esses testes são estruturais, **não equivalem a um teste autenticado de reserva real**.
 
 **Limitações de homologação:** execução Vitest/build, implantação Cloudflare e prova de ponta a ponta com conta administrativa em ambiente de homologação ainda não foram confirmadas. Recomenda-se verificar dois horários livres, um segundo horário ocupado, intervalo/bloqueio entre eles, retorno normal, remarcação de primeira consulta, mensagem WhatsApp e visão profissional sem duplicação. Manutenção permanece **implementada e auditada**, mas não declarada homologada sem prova da Titular.
+
+
+---
+
+## 19/11/2026 — VERDE: adequação pontual de três primeiras consultas já agendadas na Nutrição (23/11/2026)
+
+**Autorização:** a Titular, após investigação que identificou três agendamentos futuros de 30 minutos na agenda da nutricionista Juliana Teixeira Rios Camargo, determinou intervenção **cirúrgica** e autorizou com **VERDE** a ampliação para 60 minutos, sem remarcação ou alteração dos dados originais.
+
+**Escopo exato:** `patient_appointments` de 23/11/2026, profissional `a15e4860-82be-44cf-965c-2d76fb66c062`, especialidade Nutrição. Agendamentos: `dc002413-f8b6-47af-9123-0721353da9a6` (primeiro CAPO, 13h10–14h10), `ab2f1060-d3a3-4179-bd68-89968b08a69e` (primeiro especialidade, 14h10–15h10) e `4360b6c3-3fb7-4e4c-b38f-1b7056f2c08f` (primeiro especialidade, 16h30–17h30). Antes da alteração, cada um tinha 30 minutos de duração, todos status `agendado`.
+
+**Execução controlada:** SQL transacional no Supabase `fftebavlhbfcrvrtnrld`, com bloqueio consultivo por profissional/data compatível com proteção da agenda, validação obrigatória de exatamente três registros alvo, especialidade, status, dia, duração inicial, grade ativa de 30 minutos, ausência de sobreposição com agendamentos do paciente/profissional, ausência de bloqueios/intervalos e ausência de exceções de agenda. Para cada registro, aplicado **somente** `UPDATE public.patient_appointments SET appointment_end = appointment_date + interval '60 minutes'`, mantendo os demais campos sem mutação explícita. Atualização de todos os três na mesma transação, com `RAISE EXCEPTION` e rollback em qualquer falha. Triggers de validação, sobreposição e auditoria permanecem atuantes.
+
+**Prova pós-gravação:** consulta `SELECT` confirmou os três registros com início original, fim respectivamente 14h10, 15h10 e 17h30, duração exatamente **60 minutos**, tipos intactos e status **agendado**. Verificação dos registros em `audit_logs` comprovou existência de entradas `UPDATE` para os três identificadores. Não foram criados novos agendamentos nem modificados os registros cancelados/remarcados/passados. A interface, as grades, os bloqueios, mensagens WhatsApp e regras de demais especialidades não foram alterados.
+
+**Status:** correção de dados aplicada e verificada no banco real. A conferência visual autenticada da agenda profissional e do Administrativo ainda depende de homologação pela Titular; não confundir prova SQL com homologação de interface.
