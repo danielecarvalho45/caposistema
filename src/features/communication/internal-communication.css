@@ -1,3 +1,5 @@
+.capo-communication-unread {display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:#165a93;background:#eef8ff;border:1px solid #c7e3f5;border-radius:9px;padding:5px 8px;font-size:.78rem;white-space:nowrap}
+.capo-communication-unread strong {display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:50%;background:#b5dafa;color:#144779;font-size:.7rem}
 .capo-comm-page {display:grid;gap:16px;min-width:0;color:#17365f}
 .capo-comm-heading {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
 .capo-comm-heading h2 {font-size:1.4rem}
