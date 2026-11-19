@@ -157,6 +157,7 @@ export function NutritionPage({
   const [searchingPatients, setSearchingPatients] = useState(false)
   const [plan, setPlan] = useState<NutritionPlan>(emptyPlan)
   const [planLoaded, setPlanLoaded] = useState(false)
+  const [planDirty, setPlanDirty] = useState(false)
   const [canEditPlan, setCanEditPlan] = useState(false)
   const [vulnerabilityAlert, setVulnerabilityAlert] = useState<NutritionRecord | null>(null)
   const [document, setDocument] = useState<NutritionRecord | null>(null)
@@ -275,7 +276,7 @@ export function NutritionPage({
   }
 
   async function selectNutritionPatient(id: string, name: string) {
-    setFeedback(null); setPatientId(''); setPatientIdentification(null); setPreviewVisible(false); setPlanLoaded(false); setDocument(null); setVulnerabilityAlert(null)
+    setFeedback(null); setPatientId(''); setPatientIdentification(null); setPreviewVisible(false); setPlanDirty(false); setPlanLoaded(false); setDocument(null); setVulnerabilityAlert(null)
     const result = await getRpcService().getNutritionContext(id)
     if (result.status !== 'success') {
       setFeedback(result.status === 'error' ? result.error.message : 'O contexto nutricional do paciente não foi retornado.')
@@ -283,7 +284,7 @@ export function NutritionPage({
     }
     const loaded = planFromContext(result.data)
     const context = asRecord(result.data)
-    setPlan(loaded.plan); setCanEditPlan(loaded.canEdit); setPlanLoaded(true)
+    setPlan(loaded.plan); setPlanDirty(false); setCanEditPlan(loaded.canEdit); setPlanLoaded(true)
     setPatientIdentification(asRecord(context?.patient))
     setVulnerabilityAlert(asRecord(context?.vulnerability_alert))
     setPatientId(id); setSelectedPatientName(name)
@@ -324,7 +325,7 @@ export function NutritionPage({
       const reloaded = await getRpcService().getNutritionContext(patientId)
       if (reloaded.status === 'success') {
         const loaded = planFromContext(reloaded.data)
-        setPlan(loaded.plan); setCanEditPlan(loaded.canEdit)
+        setPlan(loaded.plan); setPlanDirty(false); setCanEditPlan(loaded.canEdit)
       }
       setFeedback(reloaded.status === 'success' ? 'Plano alimentar salvo e contexto recarregado do banco.' : reloaded.status === 'error' ? `Plano salvo, mas a recarga falhou: ${reloaded.error.message}` : 'Plano salvo, mas o contexto não foi retornado.')
     } else setFeedback(result.status === 'error' ? result.error.message : 'Plano não retornou confirmação.')
@@ -332,8 +333,8 @@ export function NutritionPage({
   }
 
   async function generateDocument() {
-    if (!patientId || !planLoaded || !canEditPlan || busy) {
-      setFeedback('Selecione um paciente real da Nutrição com Plano Alimentar atual.')
+    if (!patientId || !planLoaded || !canEditPlan || busy || planDirty) {
+      setFeedback(planDirty ? 'Salve as alterações do plano antes de emitir o PDF oficial.' : 'Selecione um paciente real da Nutrição com Plano Alimentar atual.')
       return
     }
     setBusy(true)
@@ -611,7 +612,7 @@ export function NutritionPage({
               <label className="nutrition-document-title-field">
                 Título do documento
                 <input type="text" maxLength={250} value={plan.title} disabled={!patientId || !canEditPlan}
-                  onChange={(event) => setPlan((current) => ({ ...current, title: event.target.value }))} />
+                  onChange={(event) => { setPlanDirty(true); setPlan((current) => ({ ...current, title: event.target.value })) }} />
               </label>
               {nutritionSections.map(({ key, label, rows }) => (
                 <label className="nutrition-document-section" key={key}>
@@ -619,14 +620,15 @@ export function NutritionPage({
                   <textarea rows={rows} maxLength={5000} value={plan[key]}
                     disabled={!patientId || !canEditPlan}
                     placeholder="Digite livremente as orientações para este paciente"
-                    onChange={(event) => setPlan((current) => ({ ...current, [key]: event.target.value }))} />
+                    onChange={(event) => { setPlanDirty(true); setPlan((current) => ({ ...current, [key]: event.target.value })) }} />
                 </label>
               ))}
             </div>
+            {planDirty && <p className="nutrition-document-unsaved" role="status">Alterações não salvas. Salve o plano antes de gerar o documento oficial.</p>}
             <div className="nutrition-document-actions">
               <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void savePlan()}>Salvar / atualizar plano</button>
               <button type="button" disabled={!patientId || !planLoaded} onClick={() => setPreviewVisible((current) => !current)}>{previewVisible ? 'Ocultar prévia' : 'Visualizar prévia'}</button>
-              <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void generateDocument()}>Gerar documento nutricional oficial</button>
+              <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy || planDirty} onClick={() => void generateDocument()}>Gerar documento nutricional oficial</button>
             </div>
             {previewVisible && patientId && (
               <article className="nutrition-document-preview" aria-label="Prévia do Plano Alimentar">
