@@ -419,10 +419,12 @@ export function TechnicalPage({
 
       {activeTab === 'painel' && (
         <MaintenanceNoticeBoard
-          source={state.status === 'success' ? state.data.supportRequests : undefined}
           onOpen={(requestId) => {
             setActiveTab('chamados')
-            void openHistory(requestId)
+            void (async () => {
+              setState(await loadSnapshot())
+              await openHistory(requestId)
+            })()
           }}
         />
       )}
