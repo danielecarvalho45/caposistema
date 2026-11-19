@@ -33,6 +33,18 @@ const statusLabels: Readonly<Record<string, string>> = {
   encerrado: 'Encerrado',
 }
 
+const noShowColumns = [
+  { id: 'novas', title: 'Ocorrências novas', empty: 'Nenhuma ocorrência nova.' },
+  { id: 'pendentes', title: 'Ocorrências pendentes', empty: 'Nenhuma ocorrência pendente.' },
+  { id: 'encerradas', title: 'Ocorrências encerradas', empty: 'Nenhuma ocorrência encerrada.' },
+] as const
+
+function noShowColumn(status: string): typeof noShowColumns[number]['id'] {
+  if (status === 'pendente') return 'novas'
+  if (status === 'encerrado') return 'encerradas'
+  return 'pendentes'
+}
+
 const methodLabels: Readonly<Record<string, string>> = {
   phone: 'Telefone',
   whatsapp: 'WhatsApp',
@@ -78,7 +90,7 @@ export function NoShowsPage({
   const [view, setView] = useState<
     'faltas' | 'contatos' | 'motivo' | 'remarcar'
   >('faltas')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [loadedCount] = useState(100)
   const [followups, setFollowups] =
     useState<AsyncState<readonly NoShowFollowup[]>>(loadingState)
   const [selectedId, setSelectedId] = useState<string | null>(initialContextId)
@@ -101,8 +113,8 @@ export function NoShowsPage({
 
   const loadFollowups = useCallback(async () => {
     setFollowups(loadingState())
-    setFollowups(await service.getNoShowFollowups(statusFilter || null))
-  }, [service, statusFilter])
+    setFollowups(await service.getNoShowFollowups(null, loadedCount, 0))
+  }, [service, loadedCount])
 
   const loadContacts = useCallback(
     async (followupId: string) => {
@@ -116,12 +128,12 @@ export function NoShowsPage({
     if (!authorized) return
     let active = true
     void service
-      .getNoShowFollowups(statusFilter || null)
+      .getNoShowFollowups(null, loadedCount, 0)
       .then((state) => active && setFollowups(state))
     return () => {
       active = false
     }
-  }, [authorized, service, statusFilter])
+  }, [authorized, service, loadedCount])
 
   useEffect(() => {
     if (!authorized || !selectedId) return
@@ -213,24 +225,6 @@ export function NoShowsPage({
           </p>
         </div>
         <div className="no-shows-toolbar">
-          <label htmlFor="noShowStatus">Situação</label>
-          <select
-            id="noShowStatus"
-            value={statusFilter}
-            onChange={(event) => {
-              setSelectedId(null)
-              setContacts({ status: 'empty' })
-              setFollowups(loadingState())
-              setStatusFilter(event.target.value)
-            }}
-          >
-            <option value="">Todas</option>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
           <button type="button" onClick={() => void loadFollowups()}>
             Atualizar
           </button>
@@ -255,53 +249,43 @@ export function NoShowsPage({
         ))}
       </div>
 
-      <div className="no-shows-layout">
-        <article
-          className="no-shows-card"
-          aria-labelledby="no-shows-list-title"
-        >
-          <h3 id="no-shows-list-title">Ocorrências</h3>
-          {followups.status === 'loading' && <p>Carregando faltosos…</p>}
-          {followups.status === 'error' && (
-            <p role="alert">
-              Não foi possível carregar: {followups.error.message}
-            </p>
-          )}
-          {(followups.status === 'empty' ||
-            (followups.status === 'success' &&
-              followups.data.length === 0)) && (
-            <p>Nenhum faltoso encontrado para o filtro atual.</p>
-          )}
-          {followups.status === 'success' && followups.data.length > 0 && (
-            <div className="no-shows-list">
-              {followups.data.map((item) => (
-                <button
-                  key={item.followup_id}
-                  type="button"
-                  className={
-                    item.followup_id === selectedId ? 'is-selected' : ''
-                  }
-                  onClick={() => {
-                    setFeedback(null)
-                    setContacts(loadingState())
-                    setSelectedId(item.followup_id)
-                  }}
-                >
-                  <strong>{item.patient_name}</strong>
-                  <span>
-                    {statusLabels[item.active_search_status] ??
-                      item.active_search_status}
-                  </span>
-                  <small>
-                    Falta em {formatDate(item.no_show_date)} ·{' '}
-                    {item.professional_name ?? 'Profissional não informado'}
-                  </small>
-                </button>
-              ))}
-            </div>
-          )}
-        </article>
+      <div className="no-shows-board" aria-label="Ocorrências por etapa">
+        {noShowColumns.map((column) => {
+          const occurrences = followups.status === 'success'
+            ? followups.data.filter((item) => noShowColumn(item.active_search_status) === column.id)
+            : []
+          return (
+            <article className="no-shows-card no-shows-column" key={column.id}>
+              <h3>{column.title} <span className="no-shows-count">{occurrences.length}</span></h3>
+              {followups.status === 'loading' && <p>Carregando faltosos…</p>}
+              {followups.status === 'error' && <p role="alert">Não foi possível carregar: {followups.error.message}</p>}
+              {(followups.status === 'empty' || (followups.status === 'success' && occurrences.length === 0)) && (
+                <p className="no-shows-empty">{column.empty}</p>
+              )}
+              {occurrences.length > 0 && (
+                <div className="no-shows-list">
+                  {occurrences.map((item) => (
+                    <button key={item.followup_id} type="button"
+                      aria-pressed={item.followup_id === selectedId}
+                      className={item.followup_id === selectedId ? 'is-selected' : ''}
+                      onClick={() => {
+                        setFeedback(null)
+                        setContacts(loadingState())
+                        setSelectedId(item.followup_id)
+                      }}>
+                      <strong>{item.patient_name}</strong>
+                      <span>{statusLabels[item.active_search_status] ?? item.active_search_status}</span>
+                      <small>Falta em {formatDate(item.no_show_date)} · {item.professional_name ?? 'Profissional não informado'}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </article>
+          )
+        })}
+      </div>
 
+      <div className="no-shows-layout">
         <article
           className="no-shows-card"
           aria-labelledby="no-show-detail-title"
