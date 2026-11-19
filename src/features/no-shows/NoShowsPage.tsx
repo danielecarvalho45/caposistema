@@ -176,6 +176,15 @@ export function NoShowsPage({
       ? (followups.data.find((item) => item.followup_id === selectedId) ?? null)
       : null
 
+  // Os links de notificações podem apontar para ocorrências fora do primeiro lote.
+  // Carrega os lotes seguintes apenas até localizar a ocorrência solicitada.
+  useEffect(() => {
+    if (!authorized || !selectedId || followups.status !== 'success'
+      || followups.data.some((item) => item.followup_id === selectedId)
+      || !hasMoreOccurrences || loadingMoreOccurrences) return
+    void loadMoreFollowups()
+  }, [authorized, selectedId, followups, hasMoreOccurrences, loadingMoreOccurrences])
+
   async function reloadSelected() {
     await loadFollowups()
     if (selectedId) await loadContacts(selectedId)
