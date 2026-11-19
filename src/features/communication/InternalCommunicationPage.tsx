@@ -6,11 +6,12 @@ import './internal-communication.css'
 
 type Recipient = { account_id: string; name: string; function_title: string; can_receive_admin_demand: boolean }
 type Message = { id: string; author_id: string; body: string; created_at: string }
+type Event = { id: string; event_type: string; actor_id: string; from_status: string | null; to_status: string; created_at: string }
 type Thread = {
   id: string; kind: 'recado' | 'demanda_administrativa'; subject: string; body: string
   status: string; sender_id: string; recipient_id: string; sender_name: string
   recipient_name: string; patient_id: string | null; patient_name: string | null
-  updated_at: string; unread: boolean; recipient_read_at: string | null; messages: Message[]
+  updated_at: string; unread: boolean; recipient_read_at: string | null; messages: Message[]; events: Event[]
 }
 type View = 'recebidas' | 'enviadas'
 function rows<T>(value: unknown): T[] { return Array.isArray(value) ? value as T[] : [] }
@@ -56,11 +57,7 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
     let active = true
     void (async () => {
       try {
-        const { data: userResult, error: authError } = await getSupabaseClient().auth.getUser()
-        if (authError) throw authError
-        const authId = userResult.user?.id
-        if (!authId) throw new Error('Sessão indisponível.')
-        // O identificador da conta interna é obtido de RPC, não por consulta direta à tabela protegida.
+        // A RPC identifica a conta e verifica a sessão sem leitura direta da tabela protegida.
         const { data: who, error: whoError } = await getSupabaseClient().rpc('get_my_internal_communication_identity_for_interface')
         if (whoError) throw whoError
         const id = who && typeof who === 'object' && !Array.isArray(who) && typeof who.account_id === 'string' ? who.account_id : ''
@@ -95,6 +92,9 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
   async function send() {
     if (busy || !recipientIds.length || subject.trim().length < 3 || body.trim().length < 3) {
       setFeedback('Selecione destinatários e preencha assunto e mensagem.'); return
+    }
+    if (kind === 'demanda_administrativa' && (!isAdmin || recipientIds.some(id => !recipients.some(r => r.account_id === id && r.can_receive_admin_demand)))) {
+      setFeedback('Demandas oficiais exigem destinatários assistenciais autorizados.'); return
     }
     setBusy(true); setFeedback('')
     try {
@@ -209,6 +209,13 @@ export function InternalCommunicationPage({ accessContext }: Readonly<{ accessCo
                 <p>{m.body}</p>
               </div>)}
             </div>
+            {selected.kind === 'demanda_administrativa' && <section className="capo-comm-events" aria-label="Histórico das etapas">
+              <h4>Histórico de andamento</h4>
+              <ol>{(selected.events ?? []).map(event =>
+                <li key={event.id}><strong>{event.event_type === 'criada' ? 'Demanda criada' : 'Situação: ' + event.to_status.replace('_',' ')}</strong>
+                  <small>{stamp(event.created_at)} · {event.actor_id === myAccountId ? 'Você' : event.actor_id === selected.sender_id ? selected.sender_name : selected.recipient_name}</small>
+                </li>)}</ol>
+            </section>}
             <label>Responder<textarea value={reply} rows={3} maxLength={2000} onChange={e => setReply(e.target.value)} /></label>
             <div className="capo-comm-actions">
               <button type="button" disabled={busy || !reply.trim()} onClick={() => void act('responder')}>Enviar resposta</button>
