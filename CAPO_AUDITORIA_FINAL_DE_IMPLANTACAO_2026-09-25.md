@@ -419,3 +419,14 @@
 **Proteção preventiva no frontend `main`:** `src/features/agenda/AgendaPage.tsx` commits `da6ea09c42de97d5b286aa8ab17668e647e7c180` e `04dc831bd250590bf33baccbb32ed85537725dbd`. Antes de gravar novo agendamento administrativo, consulta o histórico autorizado do paciente; quando existe outro agendamento futuro ativo com o mesmo profissional, exige confirmação explícita de que a nova consulta é **adicional** e que as duas devem permanecer; caso substitua a anterior, instrui usar a rotina homologada de **Remarcação**, que torna a antiga `remarcado` e vincula as duas na transação. Sem consulta do histórico ou profissional validado, impede gravação; verificação é refeita no clique. O usuário pode manter dois horários legítimos (ex.: dois slots consecutivos), mas não por aceitação silenciosa. Não foi introduzido cancelamento automático de consultas distintas por apenas coincidirem paciente/profissional, preservando retornos recorrentes legítimos.
 
 **Estado de verificação:** ajustes dos registros de produção confirmados com SELECT e audit_logs. Proteção da interface escrita no GitHub, mas **sem evidência ainda de build, Vitest, publicação Cloudflare ou teste autenticado e homologação da Titular**. Não declarar proteção totalmente homologada até conferir alerta em novo agendamento com consulta ativa, remarcação normal e possibilidade consciente de consulta adicional.
+
+
+---
+
+## 19/11/2026 — VERDE: somente rótulo do botão de Faltosos (Gestor/AO)
+
+**Autorização:** substituir exclusivamente o texto visível do botão `Solicitar remarcação` por `Agendar` na tela administrativa de Faltosos. A Titular confirmou expressamente que o fluxo atual deve ser mantido, sem introduzir um fluxo novo para Assistência Social.
+
+**Execução:** `src/features/no-shows/NoShowsPage.tsx`, branch `main`, commit `09246c5d812fde025c10ae3736812ef94556c9b6`: alterada uma única ocorrência do texto do botão. Não houve alteração de evento `onClick`, chamada de RPC `requestNoShowRescheduling`, permissões, banco, agendamento, filas, estados ou componentes de outros perfis.
+
+**Comportamento preservado e ressalva funcional:** o botão agora é rotulado `Agendar`, mas continua executando a solicitação administrativa de remarcação e encaminhando-a à fila, **sem abrir a Agenda Geral diretamente**. Essa correspondência entre texto e ação foi informada à Titular antes da autorização. Nenhum teste em navegador, build ou publicação Cloudflare foi confirmado nesta etapa.
