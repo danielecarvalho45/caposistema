@@ -23,14 +23,17 @@ export function ManualConfirmationCorrection({
     setBusy(true)
     setFeedback('')
     try {
-      const { data, error } = await getSupabaseClient().rpc('correct_manual_previsit_confirmation_for_interface', {
+      const client = getSupabaseClient() as unknown as {
+        rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>
+      }
+      const { data, error } = await client.rpc('correct_manual_previsit_confirmation_for_interface', {
         p_appointment_id: appointmentId,
         p_kind: kind,
         p_result: result === 'correcao_pendente' ? 'pendente' : result,
         p_reason: reason.trim(),
       })
       if (error) throw error
-      if (!data || typeof data !== 'object' || Array.isArray(data) || data.success !== true) {
+      if (!data || typeof data !== 'object' || Array.isArray(data) || (data as Record<string, unknown>).success !== true) {
         throw new Error('O banco não confirmou a correção.')
       }
       await onCorrected(result)
