@@ -247,7 +247,19 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
             ? 'Receita marcada como pronta. O local de retirada foi enviado automaticamente ao Administrativo.'
             : 'Necessidade de consulta registrada. Retorno enviado ao Administrativo para agendamento.',
       )
-      await loadItems()
+      if (action === 'start') {
+        // Após a confirmação do banco, abrir imediatamente a etapa seguinte.
+        // Mantém a mesma solicitação selecionada; a consulta oficial do novo filtro
+        // é refeita pelo efeito, sem exigir que o Clínico a procure outra vez.
+        const renewalId = selected.renewal_id
+        setItems((current) => current
+          .filter((item) => item.renewal_id === renewalId)
+          .map((item) => ({ ...item, status: 'medical_in_progress' })))
+        setSelectedId(renewalId)
+        setStatus('medical_in_progress')
+      } else {
+        await loadItems()
+      }
     } else setFeedback(errorMessage(result))
     setBusy(false)
   }
