@@ -11,6 +11,16 @@ export type Database = {
     Tables: Record<never, never>
     Views: Record<never, never>
     Functions: {
+      get_internal_communication_recipients_for_interface: { Args: Record<never, never>; Returns: Json }
+      get_internal_communications_for_interface: { Args: { p_limit?: number }; Returns: Json }
+      create_internal_communication_for_interface: {
+        Args: { p_recipient_ids: string[]; p_kind: string; p_subject: string; p_body: string; p_patient_id?: string | null }
+        Returns: Json
+      }
+      update_internal_communication_for_interface: {
+        Args: { p_communication_id: string; p_action: string; p_body?: string | null }
+        Returns: Json
+      }
       apply_agenda_change_request_for_interface: {
         Args: { p_request_id: string }
         Returns: Json
