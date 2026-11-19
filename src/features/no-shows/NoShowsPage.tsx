@@ -306,7 +306,12 @@ export function NoShowsPage({
           className="no-shows-card"
           aria-labelledby="no-show-detail-title"
         >
-          <h3 id="no-show-detail-title">Acompanhamento</h3>
+          <h3 id="no-show-detail-title">{{
+            faltas: 'Acompanhamento',
+            contatos: 'Contatos',
+            motivo: 'Motivo / providência',
+            remarcar: 'Remanejamento / Remarcação',
+          }[view]}</h3>
           {!selected && (
             <p>
               Selecione uma ocorrência para consultar e registrar providências.
@@ -344,15 +349,22 @@ export function NoShowsPage({
                 </div>
               </dl>
 
-              {canExecuteContact && (
+              {view === 'faltas' && (
+                <p className="no-show-feedback">Selecione Contatos para registrar a comunicação, Motivo / providência para registrar o desfecho, ou Remanejamento / Remarcação para agendar.</p>
+              )}
+
+              {view === 'contatos' && canExecuteContact && (
                 <PatientWhatsAppButton
                   patientId={selected.patient_id}
                   label="WhatsApp do paciente"
                 />
               )}
 
-              {canExecuteContact && <><form className="no-show-form" onSubmit={submitContact}>
-                <h4>Registrar contato ou providência</h4>
+              {canExecuteContact && (view === 'contatos' || view === 'motivo') && (
+                selected.active_search_status === 'encerrado'
+                  ? <p className="no-show-feedback">Acompanhamento encerrado. Os registros anteriores permanecem no histórico.</p>
+                  : <form className="no-show-form" onSubmit={submitContact}>
+                <h4>{view === 'contatos' ? 'Registrar contato' : 'Registrar motivo e providência'}</h4>
                 <label>
                   Meio de contato
                   <select
@@ -374,7 +386,7 @@ export function NoShowsPage({
                     onChange={(event) => setContactResult(event.target.value)}
                   />
                 </label>
-                <label>
+                {view === 'contatos' && <label>
                   Aceitou o serviço
                   <select
                     value={acceptedService}
@@ -384,7 +396,7 @@ export function NoShowsPage({
                     <option value="sim">Sim</option>
                     <option value="nao">Não</option>
                   </select>
-                </label>
+                </label>}
                 <label>
                   Nova situação
                   <select
@@ -404,36 +416,37 @@ export function NoShowsPage({
                     ))}
                   </select>
                 </label>
-                <label>
+                {view === 'motivo' && <label>
                   Próximo contato
                   <CapoDateInput
                     
                     value={nextContactDate}
                     onChange={(event) => setNextContactDate(event.target.value)}
                   />
-                </label>
-                <label className="span-all">
+                </label>}
+                {view === 'motivo' && <label className="span-all">
                   Próxima ação
                   <textarea
                     value={nextAction}
                     maxLength={500}
                     onChange={(event) => setNextAction(event.target.value)}
                   />
-                </label>
-                <label className="span-all">
+                </label>}
+                {view === 'motivo' && <label className="span-all">
                   Observação administrativa
                   <textarea
                     value={notes}
                     maxLength={1000}
                     onChange={(event) => setNotes(event.target.value)}
                   />
-                </label>
+                </label>}
                 <button type="submit" disabled={busy}>
-                  Registrar acompanhamento
+                  {view === 'contatos' ? 'Registrar contato' : 'Registrar providência'}
                 </button>
               </form>
+              )}
 
-              <div className="no-show-reschedule">
+              {view === 'remarcar' && <div className="no-show-reschedule">
                 <h4>Remarcação</h4>
                 {selected.active_search_status === 'encerrado' ? (
                   <p>Ocorrência encerrada. Consulte o histórico de remarcação.</p>
@@ -456,16 +469,14 @@ export function NoShowsPage({
                     </Link>
                   </>
                 )}
-              </div>
-
-              </>}
+              </div>}
               {feedback && (
                 <p className="no-show-feedback" role="status">
                   {feedback}
                 </p>
               )}
 
-              <div className="no-show-history">
+              {(view === 'contatos' || view === 'motivo' || view === 'faltas') && <div className="no-show-history">
                 <h4>Histórico de contatos</h4>
                 {contacts.status === 'loading' && <p>Carregando histórico…</p>}
                 {contacts.status === 'error' && (
@@ -511,7 +522,7 @@ export function NoShowsPage({
                       {contact.notes && <p>{contact.notes}</p>}
                     </article>
                   ))}
-              </div>
+              </div>}
             </>
           )}
         </article>
