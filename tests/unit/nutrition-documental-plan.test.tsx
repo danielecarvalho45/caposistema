@@ -49,7 +49,7 @@ beforeEach(() => {
   })
   rpc.getBirthdays.mockResolvedValue({ status: 'empty' })
   rpc.getNutritionContext.mockResolvedValue({ status: 'success', data: nutritionContext })
-  rpc.saveDetailedNutritionPlan.mockResolvedValue({ status: 'success', data: { success: true } })
+  rpc.saveDetailedNutritionPlan.mockResolvedValue({ status: 'success', data: { success: true, plan_id: 'test-plan-id' } })
 })
 afterEach(() => { cleanup(); vi.clearAllMocks() })
 
@@ -77,6 +77,46 @@ describe('Plano Alimentar documental — Nutrição', () => {
         p_document_title: 'PLANO ALIMENTAR ORAL',
       }),
     ))
+  })
+
+  it('informa erro real de salvamento e mantém os textos editados na tela', async () => {
+    const user = userEvent.setup()
+    rpc.saveDetailedNutritionPlan.mockResolvedValue({
+      status: 'error', error: { message: 'Falha simulada na gravação' },
+    })
+    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
+    await user.type(screen.getByLabelText('Sobremesa (almoço)'), 'Texto livre a preservar')
+    await user.click(screen.getByRole('button', { name: 'Salvar / atualizar plano' }))
+    expect(await screen.findByText(/Não foi possível salvar o plano: Falha simulada na gravação/)).toBeVisible()
+    expect(screen.getByLabelText('Sobremesa (almoço)')).toHaveValue('Texto livre a preservar')
+    expect(screen.getByRole('button', { name: 'Gerar documento nutricional oficial' })).toBeDisabled()
+  })
+
+  it('não declara sucesso sem confirmação do plano pelo banco', async () => {
+    const user = userEvent.setup()
+    rpc.saveDetailedNutritionPlan.mockResolvedValue({ status: 'success', data: { success: true } })
+    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
+    await user.type(screen.getByLabelText('Sobremesa (almoço)'), 'Conferência necessária')
+    await user.click(screen.getByRole('button', { name: 'Salvar / atualizar plano' }))
+    expect(await screen.findByText(/O banco não confirmou o plano salvo/)).toBeVisible()
+    expect(screen.getByLabelText('Sobremesa (almoço)')).toHaveValue('Conferência necessária')
+  })
+
+  it('não permite edição quando o plano atual pertence a outro profissional', async () => {
+    const user = userEvent.setup()
+    rpc.getNutritionContext.mockResolvedValue({
+      status: 'success',
+      data: { ...nutritionContext, current_plan: { owned_by_me: false } },
+    })
+    render(<MemoryRouter><NutritionPage accessContext={accessContext} homeOnly /></MemoryRouter>)
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText(/O plano atual pertence a outro profissional/)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Salvar / atualizar plano' })).toBeDisabled()
+    expect(rpc.saveDetailedNutritionPlan).not.toHaveBeenCalled()
   })
 
   it('não oferece geração de documento sem paciente confirmado', async () => {
