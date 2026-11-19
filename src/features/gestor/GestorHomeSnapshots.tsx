@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState, type TechnicalSystemStatus } from '../../lib/supabase/rpc'
 
 type AuditEntry = Readonly<Record<string, unknown>>
-type Metric = Readonly<{ name: string; value: string }>
 const auditActions: Record<string, string> = { INSERT: 'Registro criado', UPDATE: 'Registro atualizado', DELETE: 'Registro excluído' }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -21,29 +20,6 @@ function auditEntries(value: unknown): readonly AuditEntry[] {
   const data = asRecord(value)
   const list = data?.items
   return Array.isArray(list) ? list.filter((item): item is AuditEntry => asRecord(item) !== null) : []
-}
-function summaryMetrics(value: unknown): readonly Metric[] {
-  const source = asRecord(value)
-  if (!source) return []
-  const patients = asRecord(source.patients)
-  const agenda = asRecord(source.agenda)
-  const definitions: readonly [Record<string, unknown> | null, string, string][] = [
-    [patients, 'active_current', 'Pacientes ativos'],
-    [patients, 'registered_period', 'Pacientes cadastrados no mês'],
-    [agenda, 'realized_period', 'Consultas realizadas no mês'],
-    [agenda, 'no_show_period', 'Faltas no mês'],
-  ]
-  return definitions.flatMap(([record, key, name]) => {
-    const value = record?.[key]
-    return typeof value === 'number' ? [{ name, value: String(value) }] : []
-  })
-}
-function currentCapoDateParts() {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(new Date())
-  const part = (name: string) => parts.find((item) => item.type === name)?.value ?? ''
-  return { year: part('year'), month: part('month'), day: part('day') }
 }
 function useHomeRefresh<T>(load: () => Promise<AsyncState<T>>) {
   const [state, setState] = useState<AsyncState<T>>(loadingState)
@@ -99,26 +75,33 @@ function AuditRecentActivities() {
   )
 }
 function HomeIndicatorSummary() {
-  const load = useCallback(() => {
-    const { year, month, day } = currentCapoDateParts()
-    return getRpcService().getReportsDashboard(
-      `${year}-${month}-01`,
-      `${year}-${month}-${day}`,
-      null,
-    )
-  }, [])
+  const load = useCallback(() => getRpcService().getHomePatientStatusCounts(), [])
   const { state, refresh } = useHomeRefresh(load)
-  const metrics = state.status === 'success' ? summaryMetrics(state.data) : []
+  const data = state.status === 'success' ? asRecord(state.data) : null
+  const definitions = [
+    ['registered', 'Pacientes cadastrados'],
+    ['active', 'Pacientes ativos'],
+    ['awaiting_response', 'Aguardando resposta'],
+    ['closed', 'Encerrados'],
+  ] as const
   return (
     <article className="gestor-panel gestor-home-snapshot">
       <header><h3>Indicadores do Sistema</h3><button type="button" onClick={() => void refresh()}>Atualizar</button></header>
-      <p>Resumo gerencial do mês atual, conforme registros autorizados.</p>
+      <p>Quantidade atual de pacientes no CAPO, sem duplicidade entre situações.</p>
       {state.status === 'loading' && <p>Carregando indicadores…</p>}
       {state.status === 'error' && <p role="alert">Indicadores indisponíveis: {state.error.message}</p>}
-      {(state.status === 'empty' || (state.status === 'success' && metrics.length === 0)) && <p>Nenhum indicador disponível neste período.</p>}
-      {metrics.length > 0 && <dl className="gestor-home-metrics">{metrics.map((metric) =>
-        <div key={metric.name}><dt>{metric.name}</dt><dd>{metric.value}</dd></div>,
-      )}</dl>}
+      {state.status === 'empty' && <p>Nenhum indicador autorizado retornado.</p>}
+      {data && (
+        <dl className="gestor-home-metrics">
+          {definitions.map(([key, name]) => (
+            <div key={key}>
+              <dt>{name}</dt>
+              <dd>{typeof data[key] === 'number' ? String(data[key]) : '—'}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <small>Ativos: pacientes em acompanhamento; aguardando resposta: Oferta CAPO ou Resgate em aberto; encerrados: registros inativos, encerrados ou por óbito.</small>
       <Link to="/relatorios">Ver relatórios e indicadores</Link>
     </article>
   )
