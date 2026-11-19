@@ -304,3 +304,14 @@
 **Garantias:** nenhuma migração, atualização ou criação de registro no Supabase nesta manutenção; nenhum paciente fictício; consulta e escrita já protegidas pela RPC oficial que restringe a agenda e o contexto; o bloco continua único, coletivo e com motoristas responsáveis pela rota; ações do Gestor/Titular/Administrativo e fluxo de configuração dos bloqueios não foram modificados.
 
 **Status:** implementação versionada em `main`. Teste unitário adicionado ao repositório, mas **não foi executado nesta sessão**; build, publicação Cloudflare e teste autenticado da Home da profissional ainda não confirmados. Solicitar à Titular teste operacional em ambiente de homologação antes de declarar aprovação/homologação.
+
+
+---
+
+## 19/11/2026 — VERDE: escolha inicial de Cadastro Novo / Cadastro Existente
+
+**Autorização:** apresentar primeiro apenas as opções Cadastro Novo e Cadastro Existente; ao selecionar, abrir o mesmo formulário atual. Preservar integralmente dados, campos, regras, obrigatoriedades, duplicidade, oferta, permissões e RPCs.
+
+**Código:** src/features/patients/PatientsPage.tsx, commit 0096ae0b80f604975e75d48a15a870367714ef13 (main). Seletor inicial por botões antes dos campos; título do tipo escolhido e opção de voltar à seleção. A reabertura da aba Cadastrar e a finalização dos fluxos de cadastro retornam à escolha inicial. Sem alteração nos campos, persistência ou no banco.
+
+**Estado:** versionado em main; testes automatizados, build, publicação Cloudflare e homologação visual não confirmados. Homologação operacional em manuteste pendente.
