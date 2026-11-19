@@ -647,7 +647,12 @@ ADMINISTRATIVO DO CAPO`
                   setCreatedPatientNumber(null)
                   setCreatedPatientAt(null)
                 }}>
-                  <span className="patients-registration-icon" aria-hidden="true">👤</span>
+                  <span className="patients-registration-icon" aria-hidden="true">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+                      <circle cx="12" cy="7.5" r="3.5" />
+                      <path d="M5.2 20v-1.8a6.8 6.8 0 0 1 13.6 0V20" />
+                    </svg>
+                  </span>
                   <strong>Cadastro Novo</strong>
                   <span>Paciente iniciando no CAPO</span>
                   <span className="patients-registration-select">Selecionar →</span>
