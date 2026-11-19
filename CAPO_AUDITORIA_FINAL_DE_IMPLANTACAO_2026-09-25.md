@@ -352,3 +352,14 @@
 **Correção cirúrgica no GitHub main:** commit `7083215e03699bbe7bac87cd50238188748b92bf`: status inicial `pending`, e comando Recebidas agora usa `pending`. Mantidos filtros e ações das demais abas. Teste de regressão versionado em `tests/unit/requests-page.test.tsx`, commit `42bcee41b18543a6dbc7e02a0c6510dcaef9a0fb`, confere botão Recebidas selecionado, filtro em pending e RPC invocada com pending. Nenhuma alteração de Supabase, registros ou permissões.
 
 **Situação:** código e teste versionados; execução de Vitest/build, publicação Cloudflare e homologação operacional ainda não comprovadas. Não declarar manutenção homologada sem confirmação da Titular.
+
+
+---
+
+## 19/11/2026 — VERDE: simplificação exclusiva do descritivo da tela Transporte
+
+**Autorização expressa da Titular:** manter o fluxo de Transporte como está — inclusive necessidade ativa, vínculo obrigatório a agendamento, PDF e permissões — e substituir somente a lista extensa “Como solicitar transporte”, considerada visualmente inadequada, por orientação breve no padrão visual existente.
+
+**Alteração cirúrgica:** em `src/features/transport/TransportPage.tsx`, substituída somente a lista de etapas pela orientação “Solicitação de Transporte — Selecione o paciente e um agendamento válido para registrar a solicitação. A necessidade de transporte permanecerá ativa até seu cancelamento formal.” Reaproveitado o contêiner `home-ops` já usado no CAPO, sem nova paleta, CSS, componente ou comportamento. Commit `79f41593c187a562b7323027ff28221c6ea13ee4` na branch `main`.
+
+**Preservação:** nenhum SQL, Supabase, formulário, pesquisa, consulta, agendamento, autorização, validação, PDF, salvamento ou fluxo de processamento foi modificado. **Verificação:** alteração do código registrada; build, testes automatizados, publicação Cloudflare e homologação visual ainda não confirmados.
