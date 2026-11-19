@@ -46,7 +46,7 @@ export function capoHolidaysForYear(year: number): readonly CapoHoliday[] {
   if (!Number.isInteger(year) || year < 1900 || year > 2199) return []
   const fixed: readonly [string, string, CapoHoliday['scope']][] = [
     ['01-01', 'Confraternização Universal', 'nacional'],
-    ['04-21', 'Tiradentes — Data Magna de Minas Gerais', 'estadual'],
+    ['04-21', 'Tiradentes — Data Magna de Minas Gerais', 'nacional'],
     ['05-01', 'Dia do Trabalho', 'nacional'],
     ['09-07', 'Independência do Brasil', 'nacional'],
     ['10-12', 'Nossa Senhora Aparecida', 'nacional'],
@@ -61,11 +61,10 @@ export function capoHolidaysForYear(year: number): readonly CapoHoliday[] {
   const dates: CapoHoliday[] = fixed.map(([monthDay, name, scope]) => ({
     date: yearPrefix + monthDay, name, scope,
   }))
-  // A Paixão de Cristo também consta da lei municipal; classificar como
-  // feriado municipal evita confundir ponto facultativo federal com feriado local.
+  // A Paixão de Cristo é nacional em 2026 e também consta da lei municipal.
   const easter = easterSunday(year)
   dates.push(
-    { date: formatUtcDate(plusDays(easter, -2)), name: 'Sexta-Feira da Paixão', scope: 'municipal' },
+    { date: formatUtcDate(plusDays(easter, -2)), name: 'Sexta-Feira da Paixão', scope: 'nacional' },
     { date: formatUtcDate(plusDays(easter, 60)), name: 'Corpus Christi', scope: 'municipal' },
   )
   return dates.sort((left, right) => left.date.localeCompare(right.date))
