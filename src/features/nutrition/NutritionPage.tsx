@@ -5,7 +5,7 @@ import { AgendaPage } from '../agenda/AgendaPage'
 import { Link, useLocation } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
-import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
+import { buildNutritionDocumentPdf } from '../../lib/pdf/nutrition-document-pdf'
 import './nutrition-document.css'
 
 type NutritionRecord = Readonly<Record<string, unknown>>
@@ -58,73 +58,6 @@ function field(record: NutritionRecord | null, ...keys: string[]) {
     if (typeof value === 'string' && value.trim()) return value
   }
   return null
-}
-
-function nutritionPdfWrap(value: string, width = 76) {
-  // Preservar as quebras que a Nutricionista digitou; nunca inserir dietas prontas.
-  const lines: string[] = []
-  for (const paragraph of value.replace(/\r\n?/g, '\n').split('\n')) {
-    if (!paragraph.trim()) { lines.push(''); continue }
-    let current = ''
-    for (const word of paragraph.trim().split(/\s+/)) {
-      if (current && (current + ' ' + word).length > width) {
-        lines.push(current)
-        current = word
-      } else current = current ? current + ' ' + word : word
-    }
-    if (current) lines.push(current)
-  }
-  return lines
-}
-
-function buildNutritionPdf(document: NutritionRecord) {
-  const snapshot = asRecord(document.plan_snapshot)
-  const formatDate = (value: unknown) => {
-    const date = typeof value === 'string' ? new Date(value) : new Date()
-    return Number.isNaN(date.getTime()) ? 'Não informada' : date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-  }
-  const title = typeof snapshot?.document_title === 'string' && snapshot.document_title.trim()
-    ? snapshot.document_title.trim() : 'PLANO ALIMENTAR ORAL'
-  const sections = [
-    ['breakfast','CAFÉ DA MANHÃ'], ['lunch','ALMOÇO'],
-    ['dessert_lunch','SOBREMESA (ALMOÇO)'], ['snack','LANCHE DA TARDE'],
-    ['dinner','JANTAR'], ['dessert_dinner','SOBREMESA (JANTAR)'],
-    ['hydration','HIDRATAÇÃO'], ['nutritional_supplement','SUPLEMENTAÇÃO NUTRICIONAL'],
-    ['other_guidance','OUTRAS ORIENTAÇÕES'],
-    ['oncology_guidance','ORIENTAÇÕES NUTRICIONAIS EM TRATAMENTO ONCOLÓGICO'],
-    ['additional_notes','OBSERVAÇÕES COMPLEMENTARES'],
-  ] as const
-  const author = field(document, 'author_name') ?? 'Nutricionista responsável'
-  const lines = [
-    'SECRETARIA MUNICIPAL DE SAÚDE — CAPO',
-    'SERVIÇO DE NUTRIÇÃO',
-    'Nutricionista responsável: ' + author,
-    'Registro profissional: ' + (field(document, 'author_registration') ?? 'Não informado'),
-    'Pouso Alegre/MG, ' + formatDate(document.created_at),
-    '',
-    'Paciente: ' + (field(document, 'patient_name') ?? 'Não informado'),
-    'Nº CAPO: ' + (field(document, 'patient_number') ?? 'Não informado'),
-    'CMS: ' + (field(document, 'cms') ?? 'Não informado'),
-    '',
-    title.toUpperCase(),
-    '____________________________________________________________',
-    '',
-  ]
-  for (const [key, label] of sections) {
-    const value = typeof snapshot?.[key] === 'string' ? String(snapshot[key]).trim() : ''
-    if (value) lines.push(label, ...nutritionPdfWrap(value), '')
-  }
-  lines.push(
-    '____________________________________________________________',
-    'Responsável: ' + author,
-    'Registro profissional: ' + (field(document, 'author_registration') ?? 'Não informado'),
-    'Revisão: ' + String(document.revision_no ?? '—'),
-    'Documento emitido em: ' + formatDate(document.created_at),
-  )
-  return buildCapoDocumentPdf(lines, {
-    fontSize: 10, lineHeight: 15, linesPerPage: 37,
-    generatedBy: author, generatedByRole: 'Nutricionista',
-  })
 }
 
 export function NutritionPage({
@@ -364,7 +297,7 @@ export function NutritionPage({
     }
 
     const officialDocument = loaded.data as NutritionRecord
-    const blob = buildNutritionPdf(officialDocument)
+    const blob = buildNutritionDocumentPdf(officialDocument)
     const storagePath = `nutrition/${documentId}/plano-alimentar-${Date.now()}.pdf`
     const { error: uploadError } = await getSupabaseClient()
       .storage.from('capo-documents')
@@ -435,7 +368,7 @@ export function NutritionPage({
     }
 
     const officialDocument = loaded.data as NutritionRecord
-    const blob = buildNutritionPdf(officialDocument)
+    const blob = buildNutritionDocumentPdf(officialDocument)
     const storagePath = `nutrition/${documentId}/plano-alimentar-${Date.now()}.pdf`
     const { error: uploadError } = await getSupabaseClient()
       .storage.from('capo-documents')
