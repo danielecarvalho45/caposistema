@@ -90,7 +90,8 @@ export function NoShowsPage({
   const [view, setView] = useState<
     'faltas' | 'contatos' | 'motivo' | 'remarcar'
   >('faltas')
-  const [loadedCount] = useState(100)
+  const [hasMoreOccurrences, setHasMoreOccurrences] = useState(false)
+  const [loadingMoreOccurrences, setLoadingMoreOccurrences] = useState(false)
   const [followups, setFollowups] =
     useState<AsyncState<readonly NoShowFollowup[]>>(loadingState)
   const [selectedId, setSelectedId] = useState<string | null>(initialContextId)
@@ -113,8 +114,27 @@ export function NoShowsPage({
 
   const loadFollowups = useCallback(async () => {
     setFollowups(loadingState())
-    setFollowups(await service.getNoShowFollowups(null, loadedCount, 0))
-  }, [service, loadedCount])
+    const result = await service.getNoShowFollowups(null, 100, 0)
+    setFollowups(result)
+    setHasMoreOccurrences(result.status === 'success' && result.data.length === 100)
+  }, [service])
+
+  async function loadMoreFollowups() {
+    if (loadingMoreOccurrences || followups.status !== 'success' || !hasMoreOccurrences) return
+    setLoadingMoreOccurrences(true)
+    const next = await service.getNoShowFollowups(null, 100, followups.data.length)
+    if (next.status === 'success') {
+      const existing = new Set(followups.data.map((item) => item.followup_id))
+      const extra = next.data.filter((item) => !existing.has(item.followup_id))
+      setFollowups({ status: 'success', data: [...followups.data, ...extra] })
+      setHasMoreOccurrences(next.data.length === 100 && extra.length > 0)
+    } else if (next.status === 'empty') {
+      setHasMoreOccurrences(false)
+    } else if (next.status === 'error') {
+      setFeedback('Não foi possível carregar mais ocorrências: ' + next.error.message)
+    }
+    setLoadingMoreOccurrences(false)
+  }
 
   const loadContacts = useCallback(
     async (followupId: string) => {
@@ -128,12 +148,16 @@ export function NoShowsPage({
     if (!authorized) return
     let active = true
     void service
-      .getNoShowFollowups(null, loadedCount, 0)
-      .then((state) => active && setFollowups(state))
+      .getNoShowFollowups(null, 100, 0)
+      .then((state) => {
+        if (!active) return
+        setFollowups(state)
+        setHasMoreOccurrences(state.status === 'success' && state.data.length === 100)
+      })
     return () => {
       active = false
     }
-  }, [authorized, service, loadedCount])
+  }, [authorized, service])
 
   useEffect(() => {
     if (!authorized || !selectedId) return
@@ -284,6 +308,13 @@ export function NoShowsPage({
           )
         })}
       </div>
+
+      {hasMoreOccurrences && followups.status === 'success' && (
+        <button type="button" className="no-shows-load-more"
+          disabled={loadingMoreOccurrences} onClick={() => void loadMoreFollowups()}>
+          {loadingMoreOccurrences ? 'Carregando ocorrências…' : 'Carregar mais ocorrências'}
+        </button>
+      )}
 
       <div className="no-shows-layout">
         <article
