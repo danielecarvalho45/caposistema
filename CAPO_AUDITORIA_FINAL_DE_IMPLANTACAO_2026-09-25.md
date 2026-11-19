@@ -185,3 +185,22 @@
 **Escopo preservado:** nenhum SQL, tabela, RLS, RPC de Supabase, registro real, solicitação existente, permissão, agenda, Comunicação Interna ou Notificação Geral alterado. `RequestsPage.tsx` permanece intacto. O chamado de Ilton permanece sujeito ao procedimento normal de TI; não marcar como resolvido antes de homologação.
 
 **Estado:** CORREÇÃO DE CÓDIGO APLICADA EM `main`; COMPILAÇÃO/PUBLICAÇÃO E TESTE OPERACIONAL DO ILTON PENDENTES.
+
+---
+
+## 19/11/2026 — VERDE: quadro de avisos de manutenção no Gestor/Titular e TI
+
+**VERDE expresso da Titular:** colocar quadro próprio de **Avisos de Manutenção** abaixo de **Atividades Recentes** na Home Gestor/Titular e disponibilizar o mesmo quadro no Painel do perfil TI. Não confundir chamados de suporte técnico com Solicitações Administrativas e não misturar ambientes reais/homologação.
+
+**Implementação versionada em `main`:**
+- `src/features/technical/MaintenanceNoticeBoard.tsx` (commit `19ebf6c9755b3351a0cc6c728244f682621ed237`): componente reutilizável que consulta `getTechnicalSupportRequests(null,100,0)` da camada CAPO protegida pelas RPCs de isolamento lógico. Somente chamados em `pendente`, `em_atendimento` e `aguardando_teste` aparecem, por data de criação mais recente. Exibe assunto, solicitante, situação, data, contador, até oito avisos e link de abertura; exibe vazio ou erro sem dados fictícios. Atualiza a cada 30 segundos enquanto aba está visível, ao focar e ao retornar à aba; permite atualização manual.
+- Estilo próprio `src/features/technical/maintenance-notice-board.css` (commit `81a29840c2101242d99feb5135e2309960bc0983`) sem alterar o estilo antigo da Home ou do Painel Técnico.
+- `src/features/gestor/GestorDashboard.tsx` (commit `4d1129f023c82abf116f1f5eab271155d8b41285`): quadro inserido na lateral da Home, **imediatamente depois do card Atividades Recentes**, preservados aniversário, agenda, acessos rápidos e resumo da gestão.
+- `src/features/technical/TechnicalPage.tsx` (commits `61c3b99201a710653545e0ea9ab579a00e50bd13`, `630bf0fac4d3b559b8605aaf904ae834a7788ac8`): mesmo quadro no painel técnico, sem alterar comandos de execução do chamado; ao clicar abre aba Chamados e histórico, recarregando a lista. Link da Home Gestor direciona a `/tecnica?chamado=ID` para abrir a ocorrência correspondente.
+- Testes de regressão versionados em `tests/unit/maintenance-notice-board.test.ts` (commit `c4f8114959264be436f04bb9be3f92b8d717a092`): estados pendentes/atendimento/aguardando teste, exclusão de resolvidos e cancelados e lista vazia.
+
+**Invariantes:** sem criar tabela, migração, trigger ou notificação duplicada. A identificação do ambiente continua responsabilidade da RPC existente de suporte técnico, com isolamento já corrigido e verificado na manutenção anterior. Gestor/Titular real vê somente chamados do ambiente real; TI de homologação (`manuteste`) vê apenas chamados criados no ambiente de teste. Perfil TI real também vê os registros reais autorizados. Os chamados concluídos permanecem consultáveis na Área Técnica e histórico, não no quadro de pendências.
+
+**Verificação:** foi conferida no GitHub a presença das importações, quadro nas duas telas, link de abertura, filtro de pendências e testes escritos. **Não foi comprovada execução de Vitest/build, publicação Cloudflare nem teste visual autenticado nesta manutenção**; não declarar como homologada até o teste nos dois perfis. Nenhum registro de atendimento ou de suporte foi modificado durante a implantação.
+
+**Situação:** CÓDIGO DE INTERFACE VERSIONADO; HOMOLOGAÇÃO OPERACIONAL PENDENTE.
