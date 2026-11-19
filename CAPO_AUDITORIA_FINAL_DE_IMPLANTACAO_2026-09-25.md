@@ -326,3 +326,14 @@
 **Implementação em main:** src/features/patients/PatientsPage.tsx commit 7f11f6142cb1d912965d683a37a04e65855317af; src/features/patients/patients-page.css commit 1a2ae61859f41f01dc3222b852eb021b6e0eee82. Botões Cadastro Novo e Cadastro Existente em cartões clicáveis, layout responsivo com uma coluna no celular; ambos abrem o formulário atual já condicionado a registrationKind.
 
 **Invariantes:** sem mexer no formulário, dados, campos, obrigatoriedades, banco, RPCs, oferta inicial, duplicidade ou permissões. Apenas apresentação da seleção inicial. **Status:** código versionado; homologação visual, build e deploy não confirmados nesta sessão.
+
+
+---
+
+## 19/11/2026 — Ajuste pontual do bonequinho no cartão Cadastro Novo
+
+**Solicitação da Titular:** manter o bonequinho, porém com desenho mais bonito, sem modificar as cores e definições homologadas do Manual da Interface.
+
+**Implementação:** somente o emoji de pessoa no cartão Cadastro Novo foi substituído por SVG vetorial discreto, de linhas finas e cor herdada do tema, no arquivo src/features/patients/PatientsPage.tsx, commit 06d65cdf732fc911cab5c86d57924cfcf52d24a3. O cartão Cadastro Existente, as cores, estilos globais, formulários, regras e banco permanecem sem alteração.
+
+**Estado:** código versionado em main; publicação Cloudflare e homologação visual pendentes de confirmação.
