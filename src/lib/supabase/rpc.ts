@@ -4050,7 +4050,7 @@ function createSupabaseTransport(
           p_patient_id:
             typeof args?.p_patient_id === 'string'
               ? args.p_patient_id
-              : undefined,
+              : null,
           p_subject: String(args?.p_subject ?? ''),
           p_description: String(args?.p_description ?? ''),
         })
