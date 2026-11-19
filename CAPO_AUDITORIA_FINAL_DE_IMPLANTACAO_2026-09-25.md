@@ -204,3 +204,13 @@
 **Verificação:** foi conferida no GitHub a presença das importações, quadro nas duas telas, link de abertura, filtro de pendências e testes escritos. **Não foi comprovada execução de Vitest/build, publicação Cloudflare nem teste visual autenticado nesta manutenção**; não declarar como homologada até o teste nos dois perfis. Nenhum registro de atendimento ou de suporte foi modificado durante a implantação.
 
 **Situação:** CÓDIGO DE INTERFACE VERSIONADO; HOMOLOGAÇÃO OPERACIONAL PENDENTE.
+
+---
+
+## 19/11/2026 — HOMOLOGAÇÃO OPERACIONAL: avisos de manutenção Gestor/Titular e TI
+
+**Confirmação da Titular:** “testado ok”. O quadro de Avisos de Manutenção, implementado mediante VERDE, foi **testado e aprovado operacionalmente** no fluxo solicitado para Gestor/Titular e perfil TI. A manutenção anterior estava registrada como implementação versionada e pendente de teste visual; o presente registro atualiza o estado para **HOMOLOGADO PELA TITULAR / ENCERRADO**.
+
+**Escopo aprovado:** quadro abaixo de `Atividades Recentes` na Home Gestor/Titular; quadro no Painel Técnico do TI; acompanhamento de chamados técnicos pendentes, em atendimento e aguardando teste, consulta do histórico e acesso ao chamado. Preservados o isolamento real/homologação, a tabela e RPC existentes, as solicitações administrativas, as notificações gerais e as rotinas previamente homologadas.
+
+**Regra de estabilidade:** não alterar ou reconstruir essa funcionalidade homologada sem nova falha comprovada e autorização específica da Titular. Quaisquer futuras manutenções deverão ser cirúrgicas e não regressivas. Esta confirmação diz respeito ao **teste operacional informado pela Titular**; não equivale a afirmar que CI, Vitest ou build foram executados neste turno.
