@@ -236,35 +236,61 @@ export function NutritionPage({
   }
 
   async function savePlan() {
-    if (!patientId || !planLoaded || !canEditPlan || busy) {
-      setFeedback('Selecione um paciente real da Nutrição.')
+    if (!patientId || !planLoaded) {
+      setFeedback('Abra o Plano Alimentar de um paciente autorizado antes de salvar.')
       return
     }
-    setBusy(true); setFeedback(null)
-    const result = await getRpcService().saveDetailedNutritionPlan({
-      p_patient_id: patientId,
-      p_breakfast: plan.breakfast,
-      p_lunch: plan.lunch,
-      p_snack: plan.snack,
-      p_dinner: plan.dinner,
-      p_hydration: plan.hydration,
-      p_nutritional_supplement: plan.supplement,
-      p_other_guidance: plan.other,
-      p_dessert_lunch: plan.dessertLunch,
-      p_dessert_dinner: plan.dessertDinner,
-      p_oncology_guidance: plan.oncology,
-      p_additional_notes: plan.notes,
-      p_document_title: plan.title,
-    })
-    if (result.status === 'success') {
-      const reloaded = await getRpcService().getNutritionContext(patientId)
-      if (reloaded.status === 'success') {
-        const loaded = planFromContext(reloaded.data)
-        setPlan(loaded.plan); setPlanDirty(false); setCanEditPlan(loaded.canEdit)
+    if (!canEditPlan) {
+      setFeedback('Este plano pertence a outro profissional. Edição não autorizada.')
+      return
+    }
+    if (busy) return
+    setBusy(true)
+    setFeedback('Salvando Plano Alimentar no CAPO…')
+    try {
+      const result = await getRpcService().saveDetailedNutritionPlan({
+        p_patient_id: patientId,
+        p_breakfast: plan.breakfast,
+        p_lunch: plan.lunch,
+        p_snack: plan.snack,
+        p_dinner: plan.dinner,
+        p_hydration: plan.hydration,
+        p_nutritional_supplement: plan.supplement,
+        p_other_guidance: plan.other,
+        p_dessert_lunch: plan.dessertLunch,
+        p_dessert_dinner: plan.dessertDinner,
+        p_oncology_guidance: plan.oncology,
+        p_additional_notes: plan.notes,
+        p_document_title: plan.title,
+      })
+      if (result.status !== 'success') {
+        setFeedback(result.status === 'error'
+          ? `Não foi possível salvar o plano: ${result.error.message}`
+          : 'O banco não confirmou o salvamento. Seus textos continuam na tela.')
+        return
       }
-      setFeedback(reloaded.status === 'success' ? 'Plano alimentar salvo e contexto recarregado do banco.' : reloaded.status === 'error' ? `Plano salvo, mas a recarga falhou: ${reloaded.error.message}` : 'Plano salvo, mas o contexto não foi retornado.')
-    } else setFeedback(result.status === 'error' ? result.error.message : 'Plano não retornou confirmação.')
-    setBusy(false)
+      const response = asRecord(result.data)
+      if (response?.success !== true || typeof response.plan_id !== 'string') {
+        setFeedback('O banco não confirmou o plano salvo. Seus textos continuam na tela.')
+        return
+      }
+      const reloaded = await getRpcService().getNutritionContext(patientId)
+      if (reloaded.status !== 'success') {
+        setFeedback(reloaded.status === 'error'
+          ? `Plano gravado, mas a conferência falhou: ${reloaded.error.message}. Confira antes de emitir o PDF.`
+          : 'Plano gravado, mas não foi possível conferir o retorno do banco. Não emita o PDF antes de recarregar.')
+        return
+      }
+      const loaded = planFromContext(reloaded.data)
+      setPlan(loaded.plan)
+      setPlanDirty(false)
+      setCanEditPlan(loaded.canEdit)
+      setFeedback('Plano alimentar salvo e atualizado no banco com sucesso.')
+    } catch (error) {
+      setFeedback(`Falha ao salvar o plano: ${error instanceof Error ? error.message : 'erro inesperado'}. Os textos continuam na tela.`)
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function generateDocument() {
@@ -535,7 +561,8 @@ export function NutritionPage({
             {patients.length > 0 && <select value={patients.some((item) => item.patient_id === patientId) ? patientId : ''} onChange={(event) => { const patient = patients.find((item) => item.patient_id === event.target.value); if (patient) void selectNutritionPatient(patient.patient_id, patient.full_name) }}><option value="">Selecionar paciente</option>{patients.map((patient) => <option key={patient.patient_id} value={patient.patient_id}>{patient.full_name} · {patient.patient_number ?? 'Nº CAPO não informado'}</option>)}</select>}
             {patientId && <p>Paciente selecionado: {selectedPatientName}</p>}
             {patientId && <PatientDischargeProximityIndicator patientId={patientId} />}
-            {planLoaded && !canEditPlan && <p role="status">O plano atual pertence a outro profissional; edição indisponível neste contexto.</p>}
+            {planLoaded && !canEditPlan && <p role="status">O plano atual pertence a outro profissional; edição indisponível neste contexto. Nenhuma alteração será gravada.</p>}
+            {!patientId && <p role="status">Para salvar, selecione um paciente autorizado ou confirme sua presença na agenda.</p>}
             <div className="nutrition-document-editor" aria-label="Edição documental do Plano Alimentar">
               <header className="nutrition-document-heading">
                 <strong>Secretaria Municipal de Saúde — CAPO</strong>
@@ -561,7 +588,7 @@ export function NutritionPage({
             </div>
             {planDirty && <p className="nutrition-document-unsaved" role="status">Alterações não salvas. Salve o plano antes de gerar o documento oficial.</p>}
             <div className="nutrition-document-actions">
-              <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void savePlan()}>Salvar / atualizar plano</button>
+              <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy} onClick={() => void savePlan()}>{busy ? 'Salvando plano…' : 'Salvar / atualizar plano'}</button>
               <button type="button" disabled={!patientId || !planLoaded} onClick={() => setPreviewVisible((current) => !current)}>{previewVisible ? 'Ocultar prévia' : 'Visualizar prévia'}</button>
               <button type="button" disabled={!patientId || !planLoaded || !canEditPlan || busy || planDirty} onClick={() => void generateDocument()}>Gerar documento nutricional oficial</button>
             </div>
