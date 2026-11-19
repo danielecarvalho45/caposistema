@@ -88,10 +88,27 @@ describe('ReferralsPage', () => {
         'Receber, encaminhar e acompanhar providências administrativas autorizadas.',
       ),
     ).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Recebidos' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Recebidos' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enviados' })).toHaveAttribute('aria-pressed', 'true')
+    expect(service.getInterprofessionalReferrals).toHaveBeenCalledWith('sent', null, 100, 0)
     expect(screen.getByRole('button', { name: 'Enviados' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Em andamento' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Concluídos' })).toBeVisible()
+  })
+
+  it('Gestor inicia em Recebidos e pode encaminhar para agenda, sem ações profissionais', async () => {
+    const service = referralService({ status: 'empty' })
+    const managerContext: AccessContext = {
+      ...professionalContext,
+      roles: [{ code: 'administrador', name: 'Gestor' }],
+      capabilities: [],
+      professional_id: null,
+    }
+    renderWithRouter(
+      <ReferralsPage accessContext={managerContext} service={service} />,
+    )
+    expect(await screen.findByRole('button', { name: 'Recebidos' })).toHaveAttribute('aria-pressed', 'true')
+    expect(service.getInterprofessionalReferrals).toHaveBeenCalledWith('received', null, 100, 0)
   })
 
   it('exibe o estado vazio retornado pelo contrato', async () => {
