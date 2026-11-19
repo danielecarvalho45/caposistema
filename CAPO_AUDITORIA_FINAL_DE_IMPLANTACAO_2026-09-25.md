@@ -145,3 +145,27 @@
 **Verificações e homologação pendente:** reconsultados no GitHub os pontos alterados e o contrato da RPC no Supabase antes da manutenção. Os testes foram escritos e versionados; não declarados como executados. Confirmar em teste operacional duas contas ativas: AO/Gestor envia → profissional abre e responde → AO/Gestor vê indicador → abre Recebidas → lê (contador desaparece); Administrativo responde → profissional é avisado. Verificar também que envio inicial não notifica o próprio autor, que mensagens profissionais entre si continuam apenas recados e que `/solicitacoes` e Notificações Gerais não sofreram regressão.
 
 **Estado:** CORREÇÃO PONTUAL VERSIONADA EM `main`; PUBLICAÇÃO E HOMOLOGAÇÃO ENTRE CONTAS AINDA NÃO CONFIRMADAS.
+
+---
+
+## 19/11/2026 — VERDE: isolamento de suporte técnico e notificações TI (manuteste)
+
+**Relato da Titular:** uma notificação de suporte técnico gerada em produção apareceu no ambiente TI da conta de homologação `manuteste`. **VERDE explícito** para correção pontual do isolamento, mantendo um único Supabase e componentes compartilhados, sem apagar, mover ou alterar dados operacionais.
+
+**Evidência consultada antes da manutenção:** chamado real do profissional Ilton, assunto “Botão de solicitação não está funcionando”, criado em 19/11/2026 às 11h26 (BRT), categoria `erro_interface`, id `d723e5c4-549a-411b-958a-59e1bd5d4f6a`, `requester_account_id` real. Dois avisos `technical_support_new` gerados: `target_role=administrador` e `target_role=administrador_tecnico`, sem destinatário individual. O aviso para TI foi marcado como lido, sem prova individual de quem o leu. A auditoria do chamado mostra passagem de pendente para `em_atendimento` pela conta real de Gestor/Titular, não por `manuteste`.
+
+**Causa raiz:** as três RPCs de leitura de notificações permitiam `target_role='administrador_tecnico'` para notificações sem paciente mesmo em contexto de homologação; a leitura/listagem/histórico e as ações do suporte verificavam papel, mas não a origem real/homologação do **solicitante do chamado**. Assim, registros reais sem paciente podiam atravessar a separação lógica.
+
+**Correção aplicada ao Supabase oficial** `fftebavlhbfcrvrtnrld` e versionada em `main`:
+- Migration: `supabase/migrations/20261119123000_isolate_technical_support_notifications_homologation.sql`; commit GitHub `b9dcf3f52c6452c7eb2e5dd98a77a995990e95af`.
+- Nova função interna `private.capo_support_ticket_visible_in_context(uuid)` compara `is_homologation_account` da conta **que abriu o chamado** com a do usuário autenticado. Para homologação, exige ainda contexto habilitado. Para produção, rejeita registros de teste.
+- Aplicado filtro contextual em `get_technical_support_requests_for_interface`, `get_technical_support_requests_detailed_for_interface`, `get_technical_support_history_for_interface`, `process_technical_support_request_for_interface`, `submit_technical_support_test_for_interface`.
+- Aplicado em `get_my_notifications_for_interface`, `get_my_notifications_by_state_for_interface`, `get_my_notifications_by_category_for_interface` e `update_my_notification_for_interface` às notificações `entity_type='technical_support_requests'`, cobrindo recebimento, marcação de leitura e resolução indevida entre ambientes.
+- A exceção ampla para `administrador_tecnico` em avisos sem paciente foi restrita ao tipo de suporte sujeito ao **novo filtro de isolamento**.
+- **Não alterar** a tabela de notificações nem o fluxo oficial de outras solicitações; preservar Gestor/Titular real no acesso ao suporte, sem concessão indevida ao `manuteste`.
+
+**Verificação executada:** transação SQL `BEGIN READ ONLY ... ROLLBACK` com contexto de autenticação controlado: o chamado real de Ilton foi **invisível ao `manuteste`** (inclusive quando o contexto de homologação estava habilitado), e **visível à conta real de Ilton e à conta real Gestor/Titular**. O teste SQL conferiu ainda os nove contratos de RPC com proteção presente, sem escrever dados. Arquivo de regressão `tests/sql/technical_support_notifications_isolation_readonly.sql`, commit `f1030649ad7fa150cdf00d041982c8052f372216`, executado sem erro.
+
+**Homologação operacional pendente:** confirmar em login real e manuteste na interface a ausência de avisos de produção em `Notificações` e chamados reais em `TI`; confirmar que TI em homologação pode trabalhar somente sobre chamados gerados naquele contexto. Não afirmar execução de Vitest/build, navegação autenticada e Cloudflare apenas pelos testes SQL.
+
+**Estado:** CORREÇÃO DE SEGURANÇA APLICADA E TESTADA NO BANCO; HOMOLOGAÇÃO VISUAL PENDENTE.
