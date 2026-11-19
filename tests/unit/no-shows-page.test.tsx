@@ -115,6 +115,7 @@ describe('NoShowsPage', () => {
     const user = userEvent.setup()
     render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
     await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    await user.click(screen.getByRole('button', { name: 'Remanejamento / Remarcação' }))
     const action = await screen.findByRole('link', { name: 'Agendar' })
     expect(action).toHaveAttribute('href', '/agenda')
     expect(service.requestNoShowRescheduling).not.toHaveBeenCalled()
@@ -170,10 +171,11 @@ describe('NoShowsPage', () => {
     await user.click(
       await screen.findByRole('button', { name: /Paciente real/ }),
     )
+    await user.click(screen.getByRole('button', { name: 'Contatos' }))
     await screen.findByText('Nenhum contato registrado.')
     await user.type(screen.getByLabelText('Resultado'), 'Contato realizado')
     await user.click(
-      screen.getByRole('button', { name: 'Registrar acompanhamento' }),
+      screen.getByRole('button', { name: 'Registrar contato' }),
     )
 
     expect(service.registerNoShowContact).toHaveBeenCalledWith(
@@ -188,6 +190,47 @@ describe('NoShowsPage', () => {
       await screen.findByText('Contato e providência registrados no CAPO.'),
     ).toBeVisible()
     expect(service.getNoShowFollowups).toHaveBeenCalledTimes(2)
+  })
+
+  it('separa as quatro abas sem modificar a ocorrência selecionada', async () => {
+    const user = userEvent.setup()
+    const service = serviceWithFollowups({ status: 'success', data: [followup] })
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
+    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+
+    expect(screen.getByRole('heading', { name: 'Acompanhamento' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Agendar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Registrar contato' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Contatos' }))
+    expect(screen.getByRole('heading', { name: 'Registrar contato' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Registrar contato' })).toBeVisible()
+    expect(screen.getByLabelText('Aceitou o serviço')).toBeVisible()
+    expect(screen.queryByLabelText('Próxima ação')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Motivo / providência' }))
+    expect(screen.getByRole('heading', { name: 'Registrar motivo e providência' })).toBeVisible()
+    expect(screen.getByLabelText('Próxima ação')).toBeVisible()
+    expect(screen.getByLabelText('Observação administrativa')).toBeVisible()
+    expect(screen.queryByLabelText('Aceitou o serviço')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Remanejamento / Remarcação' }))
+    expect(screen.getByRole('link', { name: 'Agendar' })).toHaveAttribute('href', '/agenda')
+    expect(screen.queryByRole('button', { name: 'Registrar providência' })).not.toBeInTheDocument()
+  })
+
+  it('consulta histórico mas impede novas ações numa ocorrência encerrada', async () => {
+    const user = userEvent.setup()
+    const service = serviceWithFollowups({
+      status: 'success', data: [{ ...followup, active_search_status: 'encerrado' }],
+    })
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
+    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    await user.click(screen.getByRole('button', { name: 'Contatos' }))
+    expect(screen.queryByRole('button', { name: 'Registrar contato' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Remanejamento / Remarcação' }))
+    expect(screen.queryByRole('link', { name: 'Agendar' })).not.toBeInTheDocument()
+    expect(screen.getByText('Ocorrência encerrada. Consulte o histórico de remarcação.')).toBeVisible()
   })
 
   it('exibe os campos administrativos preservados no histórico', async () => {
@@ -218,6 +261,8 @@ describe('NoShowsPage', () => {
     await userEvent
       .setup()
       .click(await screen.findByRole('button', { name: /Paciente real/ }))
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Contatos' }))
 
     expect(
       await screen.findByText('Situação registrada: aguardando_retorno'),
