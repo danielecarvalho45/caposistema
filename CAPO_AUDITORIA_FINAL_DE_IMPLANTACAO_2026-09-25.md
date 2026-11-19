@@ -285,3 +285,22 @@
 **Comportamento contratado:** atualização do Supabase entra em vigor nas próximas consultas e não depende do novo mecanismo. Atualização de frontend depende primeiro da publicação pelo Cloudflare Pages. O cliente detecta o novo manifesto e recarrega **somente em condição conservadora e segura**, preferindo a segurança de informações não salvas à atualização imediata. O aviso pode permanecer pendente até a próxima situação segura ou clique consciente do usuário. O mecanismo não promete reconhecer todo processo assíncrono ou auto-salvamento como seguro; por isso restringe a recarga automática à Home ociosa e nunca força reload nas telas assistenciais.
 
 **Status da verificação:** código e testes foram versionados no GitHub. Ainda não há prova, neste registro, de execução automatizada de Vitest, build Vite, publicação Cloudflare ou teste operacional autenticado. Não declarar o comportamento homologado antes da verificação da Titular em produção/homologação. Manutenção nova não altera banco Supabase.
+
+
+---
+
+## 19/11/2026 — VERDE: agendamento de visita domiciliar no próprio bloqueio da Home da Assistência Social
+
+**Autorização expressa da Titular (VERDE):** manter a Home de Assistência Social com a mesma agenda visual dos demais profissionais, retirar painel separado e textos longos de `Agendar Visita Domiciliar`, e oferecer inclusão de pacientes **diretamente no período de Visita Domiciliar previamente bloqueado**, como no fluxo de Gestão/Titular. Preservar os bloqueios, pacientes vinculados, histórico, Agenda Dia/Semana/Mês e a regra de horários coletivos.
+
+**Inspeção prévia:** a Home `src/features/social/SocialPage.tsx` já compartilha `AgendaPage embeddedHome`; a agenda exibia adicionalmente um `SocialHomeVisits mode="schedule"` separado, com avisos desnecessários. A grade canônica usa `get_agenda_schedule_grid_for_interface` e o módulo existente `manage_social_home_visits_for_interface` é responsável por adicionar paciente ao bloqueio `visita_domiciliar`. A agenda da profissional Natália apresentou bloco ativo do dia 18/11/2026 09h–12h com um paciente (leitura anterior, sem alteração de dados).
+
+**Mudanças cirúrgicas GitHub `main`:**
+- `src/features/agenda/AgendaPage.tsx`, commits `6584b099ec22fc34466dee9a414b0fb08c9d8e4c` e `8c4192b53f0f0d09283b321d662688d03e8e779c`: removido o painel separado `SocialHomeVisits mode="schedule"` apenas do fluxo da profissional de Assistência Social; inserido botão `Adicionar paciente` diretamente no cartão de período de Visita Domiciliar exibido na agenda, com formulário compacto expandível; filtradas as linhas redundantes de bloqueio de mesmo período quando esse bloco coletivo já está representado. Dia/Semana/Mês e os demais perfis utilizam os componentes homologados sem mudanças.
+- `src/features/agenda/SocialHomeVisits.tsx`, commit `81b5e4e4c6069e5389c6992794a953f64685e9f9`: acrescentadas props opcionais `onlyBlockId` (somente o bloco clicado) e `compact` (sem longas explicações e listagem duplicada). A chamada existente ao Supabase `manage_social_home_visits_for_interface`, ação `add`, permanece a mesma, com `p_block_id` do bloqueio e `p_visit_time: null`, sem agendamento paralelo.
+- `src/features/agenda/agenda-page.css`, commit `e9878ef9c17f25ff644b17fbd4fa58dc4abdfa21`: formulário compacto integrado visualmente ao cartão do período.
+- `tests/unit/social-home-visits.test.tsx`, commit `92f943d005c123b4694d477c6f2bad705e65767f`: acrescido cenário de inclusão de paciente somente no bloco clicado, sem ação `create`, com ausência de painel explicativo no modo compacto.
+
+**Garantias:** nenhuma migração, atualização ou criação de registro no Supabase nesta manutenção; nenhum paciente fictício; consulta e escrita já protegidas pela RPC oficial que restringe a agenda e o contexto; o bloco continua único, coletivo e com motoristas responsáveis pela rota; ações do Gestor/Titular/Administrativo e fluxo de configuração dos bloqueios não foram modificados.
+
+**Status:** implementação versionada em `main`. Teste unitário adicionado ao repositório, mas **não foi executado nesta sessão**; build, publicação Cloudflare e teste autenticado da Home da profissional ainda não confirmados. Solicitar à Titular teste operacional em ambiente de homologação antes de declarar aprovação/homologação.
