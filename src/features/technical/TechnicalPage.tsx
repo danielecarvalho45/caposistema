@@ -1,5 +1,6 @@
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   loadingState,
   type AsyncState,
@@ -16,6 +17,7 @@ import {
   createTechnicalIntegration,
   type CAPOTechnicalIntegration,
 } from './technical-integration'
+import { MaintenanceNoticeBoard } from './MaintenanceNoticeBoard'
 import './technical-page.css'
 
 const defaultIntegration = createTechnicalIntegration()
@@ -179,7 +181,9 @@ export function TechnicalPage({
   accessContext: AccessContext
   integration?: CAPOTechnicalIntegration
 }>) {
-  const [activeTab, setActiveTab] = useState<TechnicalTab>('painel')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedSupportId = searchParams.get('chamado')
+  const [activeTab, setActiveTab] = useState<TechnicalTab>(requestedSupportId ? 'chamados' : 'painel')
   const [startDate, setStartDate] = useState(initialStartDate)
   const [endDate, setEndDate] = useState(() => inputDate(new Date()))
   const [severity, setSeverity] = useState('')
@@ -293,6 +297,19 @@ export function TechnicalPage({
     setHistoryState(await integration.loadSupportHistory(requestId))
   }
 
+  useEffect(() => {
+    if (!requestedSupportId || state.status !== 'success') return
+    if (!state.data.supportRequests.some(request => request.request_id === requestedSupportId)) return
+    setActiveTab('chamados')
+    void openHistory(requestedSupportId)
+    // A URL identifica o chamado; a tela permanece na aba para evitar repetição da leitura.
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous)
+      next.delete('chamado')
+      return next
+    }, { replace: true })
+  }, [requestedSupportId, state.status, state, setSearchParams])
+
   async function processSupport(
     request: TechnicalSupportRequest,
     action: 'iniciar' | 'solicitar_teste' | 'resolver' | 'cancelar',
@@ -400,6 +417,15 @@ export function TechnicalPage({
         </div>
       </nav>
 
+      {activeTab === 'painel' && (
+        <MaintenanceNoticeBoard
+          source={state.status === 'success' ? state.data.supportRequests : undefined}
+          onOpen={(requestId) => {
+            setActiveTab('chamados')
+            void openHistory(requestId)
+          }}
+        />
+      )}
       <StateMessage state={state} />
 
       {state.status === 'success' && activeTab === 'painel' && (() => {
