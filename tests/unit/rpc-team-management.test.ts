@@ -33,6 +33,19 @@ describe('team management RPC contracts', () => {
     )
   })
 
+  it('consulta contadores de pacientes por ambiente sem enviar filtros do cliente', async () => {
+    const transport = vi.fn().mockResolvedValue({
+      data: { registered: 84, active: 45, awaiting_response: 38, closed: 1, scope: 'production' },
+      error: null,
+    })
+    const result = await createRpcService(transport).getHomePatientStatusCounts()
+    expect(transport).toHaveBeenCalledWith('get_home_patient_status_counts_for_interface', undefined)
+    expect(result).toEqual({
+      status: 'success',
+      data: { registered: 84, active: 45, awaiting_response: 38, closed: 1, scope: 'production' },
+    })
+  })
+
   it('encaminha os contratos transversais oficiais pelo adaptador central', async () => {
     const transport = vi.fn().mockResolvedValue({ data: {}, error: null })
     const service = createRpcService(transport)
