@@ -110,6 +110,32 @@ describe('NoShowsPage', () => {
     ).toBeVisible()
   })
 
+  it('distribui ocorrências em novas, pendentes e encerradas sem filtro de situação', async () => {
+    const service = serviceWithFollowups({
+      status: 'success',
+      data: [
+        followup,
+        { ...followup, followup_id: 'em-contato-id', patient_name: 'Paciente em contato', active_search_status: 'em_contato' },
+        { ...followup, followup_id: 'encerrado-id', patient_name: 'Paciente encerrado', active_search_status: 'encerrado' },
+      ],
+    })
+    const user = userEvent.setup()
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
+
+    expect(await screen.findByText('Paciente em contato')).toBeVisible()
+    expect(screen.getByRole('heading', { name: /Ocorrências novas/ })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /Ocorrências pendentes/ })).toBeVisible()
+    expect(screen.getByRole('heading', { name: /Ocorrências encerradas/ })).toBeVisible()
+    expect(screen.queryByLabelText('Situação')).not.toBeInTheDocument()
+    expect(screen.getByText('Paciente encerrado')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: /Paciente encerrado/ }))
+    expect(screen.getByRole('heading', { name: 'Acompanhamento' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Remanejamento / Remarcação' }))
+    expect(screen.queryByRole('link', { name: 'Agendar' })).not.toBeInTheDocument()
+    expect(service.getNoShowFollowups).toHaveBeenCalledWith(null, 100, 0)
+  })
+
   it('Agendar abre a Agenda Geral do profissional da falta sem criar solicitação', async () => {
     const service = serviceWithFollowups({ status: 'success', data: [followup] })
     const user = userEvent.setup()
@@ -127,7 +153,7 @@ describe('NoShowsPage', () => {
     render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     expect(
-      await screen.findByText('Nenhum faltoso encontrado para o filtro atual.'),
+      await screen.findByText('Nenhuma ocorrência nova.'),
     ).toBeVisible()
   })
 
