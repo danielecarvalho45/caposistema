@@ -1,0 +1,39 @@
+.capo-comm-page {display:grid;gap:16px;min-width:0;color:#17365f}
+.capo-comm-heading {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.capo-comm-heading h2 {font-size:1.4rem}
+.capo-comm-heading p {font-size:.84rem;color:#587595}
+.capo-comm-page button {cursor:pointer}
+.capo-comm-heading > button,.capo-comm-compose > button:last-child,.capo-comm-actions button {border-radius:8px;padding:7px 11px;min-height:34px}
+.capo-comm-feedback {background:#eef7ff;border:1px solid #bedcf5;border-radius:8px;padding:8px 12px;white-space:pre-wrap}
+.capo-comm-compose,.capo-comm-detail {background:#fff;border:1px solid #d9e7f3;border-radius:12px;padding:14px;min-width:0}
+.capo-comm-compose {display:grid;gap:11px}
+.capo-comm-compose label,.capo-comm-detail label {display:grid;gap:5px;font-size:.86rem;font-weight:600}
+.capo-comm-compose input:not([type=checkbox]),.capo-comm-compose select,.capo-comm-compose textarea,.capo-comm-detail textarea {width:100%;box-sizing:border-box;min-height:35px;padding:8px;border:1px solid #ccddea;border-radius:8px;background:white;color:#17365f}
+.capo-comm-hint {font-size:.78rem;color:#54718d}
+.capo-comm-compose fieldset {border:1px solid #d9e7f3;border-radius:9px;padding:9px}
+.capo-comm-compose legend {font-size:.82rem;font-weight:700}
+.capo-comm-people {display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:7px;max-height:150px;overflow:auto}
+.capo-comm-people label {display:flex;align-items:center;gap:9px;background:#f6faff;padding:6px;border-radius:7px;font-size:.82rem}
+.capo-comm-people input {width:17px;min-width:17px;min-height:17px}
+.capo-comm-people small {color:#6d829a;font-size:.74rem}
+.capo-comm-clear {background:#edf6ff!important;color:#174a78!important}
+.capo-comm-patients {display:grid;gap:4px;max-height:170px;overflow:auto}
+.capo-comm-patients button {background:#f5faff;text-align:left;color:#17365f;border:1px solid #e2edf6}
+.capo-comm-tabs {display:flex;gap:7px;flex-wrap:wrap}
+.capo-comm-tabs button {padding:6px 11px;border-radius:8px;border:1px solid #c5daeb;background:#fff;color:#27517b}
+.capo-comm-tabs button[aria-current=page] {background:#e9f4ff;border-color:#8ec2e8;font-weight:700}
+.capo-comm-layout {display:grid;grid-template-columns:minmax(215px,.85fr) minmax(0,1.55fr);gap:12px;align-items:start}
+.capo-comm-list {display:grid;gap:7px;max-height:540px;overflow:auto;min-width:0}
+.capo-comm-list > button {display:grid;gap:3px;min-width:0;text-align:left;border-radius:9px;padding:10px;border:1px solid #e2ebf4;background:#f8fbff;color:#23496e}
+.capo-comm-list > button.is-selected {background:#e7f3ff;border-color:#88bee9}
+.capo-comm-list button span,.capo-comm-list button small {font-size:.77rem;color:#627d99}
+.capo-comm-detail {display:grid;gap:11px}
+.capo-comm-detail h3 {font-size:1.12rem}
+.capo-comm-detail > p {font-size:.85rem}
+.capo-comm-conversation {display:grid;gap:9px;max-height:330px;overflow:auto}
+.capo-comm-conversation > div {background:#f4f8fd;border:1px solid #e3ecf4;border-radius:9px;padding:9px;max-width:95%}
+.capo-comm-conversation > div.is-own {background:#edf7ff;margin-left:auto}
+.capo-comm-conversation small {color:#6b819a;font-size:.7rem}
+.capo-comm-conversation p {font-size:.86rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.capo-comm-actions {display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:780px){.capo-comm-layout {grid-template-columns:1fr}.capo-comm-list {max-height:230px}}
