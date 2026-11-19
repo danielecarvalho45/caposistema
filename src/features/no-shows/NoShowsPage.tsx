@@ -9,7 +9,6 @@ import {
   type NoShowContactInput,
   type NoShowContactRegistration,
   type NoShowFollowup,
-  type NoShowReschedulingRequest,
 } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
@@ -20,7 +19,6 @@ type NoShowsService = Pick<
   | 'getNoShowFollowups'
   | 'getNoShowContacts'
   | 'registerNoShowContact'
-  | 'requestNoShowRescheduling'
 >
 
 const defaultService = getRpcService()
@@ -94,7 +92,6 @@ export function NoShowsPage({
   const [notes, setNotes] = useState('')
   const [nextContactDate, setNextContactDate] = useState('')
   const [newStatus, setNewStatus] = useState('contatado')
-  const [reschedulingNotes, setReschedulingNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const authorized = canManageNoShows(accessContext)
@@ -189,34 +186,6 @@ export function NoShowsPage({
     setBusy(false)
   }
 
-  async function requestRescheduling() {
-    if (!selectedId || reschedulingNotes.trim().length < 5) {
-      setFeedback(
-        'Informe uma justificativa de remarcação com pelo menos 5 caracteres.',
-      )
-      return
-    }
-
-    setBusy(true)
-    setFeedback(null)
-    const result: AsyncState<NoShowReschedulingRequest> =
-      await service.requestNoShowRescheduling(
-        selectedId,
-        reschedulingNotes.trim(),
-      )
-    if (result.status !== 'success') {
-      setFeedback(
-        stateError(result) ?? 'Não foi possível solicitar a remarcação.',
-      )
-      setBusy(false)
-      return
-    }
-
-    setReschedulingNotes('')
-    setFeedback('Remarcação encaminhada para a fila administrativa.')
-    await reloadSelected()
-    setBusy(false)
-  }
 
   if (!authorized) {
     return (
@@ -466,9 +435,13 @@ export function NoShowsPage({
 
               <div className="no-show-reschedule">
                 <h4>Remarcação</h4>
-                {selected.rescheduling_requested ? (
+                {selected.active_search_status === 'encerrado' ? (
+                  <p>Ocorrência encerrada. Consulte o histórico de remarcação.</p>
+                ) : (
                   <>
-                    <p>Remarcação já solicitada para esta ocorrência.</p>
+                    {selected.rescheduling_requested && (
+                      <p>Remarcação já solicitada. Abra a agenda do profissional para concluir.</p>
+                    )}
                     <Link
                       to="/agenda"
                       state={{
@@ -479,28 +452,8 @@ export function NoShowsPage({
                         origin: 'no_show_reschedule',
                       }}
                     >
-                      Abrir Agenda para remarcação
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <label>
-                      Justificativa
-                      <textarea
-                        value={reschedulingNotes}
-                        maxLength={500}
-                        onChange={(event) =>
-                          setReschedulingNotes(event.target.value)
-                        }
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void requestRescheduling()}
-                    >
                       Agendar
-                    </button>
+                    </Link>
                   </>
                 )}
               </div>
