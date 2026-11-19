@@ -35,7 +35,7 @@ describe('GestorDashboard', () => {
     const sidebar = document.querySelector('.gestor-side-stack')
     const agenda = document.querySelector('.gestor-dashboard-grid > .capo-two-day-home')
     const approved = document.querySelector('.gestor-approved-agenda-changes')
-    const maintenance = sidebar?.querySelector('.maintenance-notice-board')
+    const maintenance = sidebar?.querySelector('.capo-maintenance-notices')
     expect(sidebar).toContainElement(approved)
     expect(document.querySelectorAll('.gestor-approved-agenda-changes')).toHaveLength(1)
     expect(agenda).toBeInTheDocument()
