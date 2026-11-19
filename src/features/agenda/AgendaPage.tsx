@@ -47,12 +47,12 @@ type HomeVisitBlock = Readonly<{
   patients: readonly HomeVisitPatient[]
 }>
 
-// Somente visualização: não cria slot de consulta, duplicidade nem atendimento.
-function HomeVisitCalendarCard({ visit }: Readonly<{ visit: HomeVisitBlock }>) {
+// Período coletivo na agenda oficial; inclusão de pacientes no próprio bloqueio.
+function HomeVisitCalendarCard({ visit, actions }: Readonly<{ visit: HomeVisitBlock; actions?: ReactNode }>) {
   return (
     <div className="agenda-home-visit-card" aria-label={`Visita Domiciliar — ${visit.date}`}>
       <strong>{visit.start_time.slice(0, 5)}–{visit.end_time.slice(0, 5)} · Visita Domiciliar</strong>
-      <small>{visit.patients.length} paciente(s) programado(s) · período coletivo, sem horário individual</small>
+      <small>{visit.patients.length} paciente(s) programado(s)</small>
       {visit.patients.map((patient) => (
         <div className="agenda-home-visit-person" key={patient.patient_id}>
           <span>{patient.patient_name}</span>
@@ -62,6 +62,7 @@ function HomeVisitCalendarCard({ visit }: Readonly<{ visit: HomeVisitBlock }>) {
           {patient.phone && <small>Telefone: {patient.phone}</small>}
         </div>
       ))}
+      {actions}
     </div>
   )
 }
@@ -383,6 +384,7 @@ export function HomeScheduleGrid({
   groupSessions,
   familyAppointments,
   homeVisits = [],
+  renderVisitActions,
   renderAdministrativeActions,
   renderFamilyReturnAction,
   showProfessional = false,
@@ -403,6 +405,7 @@ export function HomeScheduleGrid({
   groupSessions?: readonly PsychologyGroupSession[]
   familyAppointments?: readonly Record<string, unknown>[]
   homeVisits?: readonly HomeVisitBlock[]
+  renderVisitActions?: (visit: HomeVisitBlock) => ReactNode
   showProfessional?: boolean
   renderAdministrativeActions?: (appointmentId: string) => ReactNode
   renderFamilyReturnAction?: (appointmentId: string) => ReactNode
@@ -567,7 +570,7 @@ export function HomeScheduleGrid({
             {homeVisits.filter((visit) => visit.date === days[0]).map((visit) => (
               <tr key={`home-visit:${visit.block_id}`} className="agenda-home-visit-row">
                 <td data-label="Horário">{visit.start_time.slice(0, 5)}–{visit.end_time.slice(0, 5)}</td>
-                <td data-label="Paciente"><HomeVisitCalendarCard visit={visit} /></td>
+                <td data-label="Paciente"><HomeVisitCalendarCard visit={visit} actions={renderVisitActions?.(visit)} /></td>
                 <td data-label="Especialidades">Assistência Social</td>
                 <td data-label="Tipo">Visita Domiciliar</td>
                 <td data-label="Situação">{visit.patients.length} paciente(s)</td>
@@ -597,7 +600,7 @@ export function HomeScheduleGrid({
             <div className="agenda-schedule-slots">
                 {daySlots.length === 0 && !homeVisits.some((visit) => visit.date === day) && <small className="agenda-schedule-no-hours">Sem horários</small>}
                 {homeVisits.filter((visit) => visit.date === day).map((visit) => (
-                  <HomeVisitCalendarCard key={visit.block_id} visit={visit} />
+                  <HomeVisitCalendarCard key={visit.block_id} visit={visit} actions={renderVisitActions?.(visit)} />
                 ))}
                 {daySlots.map((slot) => {
                   const group = groupSessions?.find((item) => item.date === slot.slot_date
@@ -928,6 +931,7 @@ export function AgendaPage({
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [socialVisitMode, setSocialVisitMode] = useState(false)
+  const [activeHomeVisitId, setActiveHomeVisitId] = useState('')
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('')
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState('')
   const [schedulingCatalog, setSchedulingCatalog] = useState<AsyncState<unknown>>(loadingState)
@@ -2756,12 +2760,6 @@ export function AgendaPage({
           )}
         </div>
 
-        {isSocialWorkerAgenda && (
-          <SocialHomeVisits professionalId={professionalId} mode="schedule"
-            onChanged={() => setHomeVisitRevision((current) => current + 1)} />
-        )}
-
-
         {!isProfessional && (
           <>
             <div className="agenda-actions" aria-label="Operações da agenda">
@@ -3654,6 +3652,18 @@ export function AgendaPage({
               appointments={calendarAppointments}
               showProfessional={!professionalId}
               homeVisits={visibleHomeVisits}
+              renderVisitActions={isSocialWorkerAgenda ? (visit) => (
+                <div className="agenda-home-visit-actions">
+                  <button type="button" className="agenda-slot-schedule-button" aria-expanded={activeHomeVisitId === visit.block_id}
+                    onClick={() => setActiveHomeVisitId(current => current === visit.block_id ? '' : visit.block_id)}>
+                    {activeHomeVisitId === visit.block_id ? 'Fechar' : 'Adicionar paciente'}
+                  </button>
+                  {activeHomeVisitId === visit.block_id && (
+                    <SocialHomeVisits professionalId={professionalId} mode="schedule" compact onlyBlockId={visit.block_id}
+                      onChanged={() => setHomeVisitRevision(current => current + 1)} />
+                  )}
+                </div>
+              ) : undefined}
               attendanceOverrides={attendanceOverrides}
               onAttendance={canRegisterAttendance ? updateAttendance : undefined}
               onReturn={isProfessional ? prepareProfessionalReturn : undefined}
