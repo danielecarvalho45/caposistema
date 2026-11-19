@@ -984,6 +984,7 @@ export function AgendaPage({
   }> | null>(null)
   const [prefillWaitingListId, setPrefillWaitingListId] = useState('')
   const [prefillRenewalId, setPrefillRenewalId] = useState('')
+  const [prefillReferralId, setPrefillReferralId] = useState('')
   const [attendanceNotes, setAttendanceNotes] = useState('')
   const [attendanceReason, setAttendanceReason] = useState('')
   const [cancelAppointmentId, setCancelAppointmentId] = useState('')
@@ -1822,6 +1823,21 @@ export function AgendaPage({
         }
         setPrefillRenewalId('')
       }
+      if (prefillReferralId && appointmentId) {
+        const linked = await getRpcService().completeInterprofessionalReferralScheduling(
+          prefillReferralId,
+          appointmentId,
+        )
+        if (linked.status !== 'success') {
+          setAppointmentFeedback(
+            'Consulta salva, mas não foi possível concluir o vínculo com o encaminhamento: ' +
+              (linked.status === 'error' ? linked.error.message : 'confirmação não recebida do banco.'),
+          )
+          await load()
+          return
+        }
+        setPrefillReferralId('')
+      }
       setAppointmentFeedback(locationWarning
         ? 'Agendamento criado, mas o local de atendimento não foi confirmado. Cadastre o endereço do profissional antes de enviar o WhatsApp.'
         : whatsappFeedback || 'Agendamento criado. Agenda recarregada do banco.')
@@ -2381,6 +2397,8 @@ export function AgendaPage({
       typeof stateValue?.waitingListId === 'string' ? stateValue.waitingListId : ''
     const renewalId =
       typeof stateValue?.renewalId === 'string' ? stateValue.renewalId : ''
+    const referralId =
+      typeof stateValue?.referralId === 'string' ? stateValue.referralId : ''
     const origin = typeof stateValue?.origin === 'string' ? stateValue.origin : ''
     if (origin === 'patient_link_cancellation' || origin === 'family_link_cancellation') return
     const requestedSlotDate =
@@ -2518,9 +2536,12 @@ export function AgendaPage({
     setAppointmentPatientQuery(patientName)
     setPrefillWaitingListId(waitingListId)
     setPrefillRenewalId(renewalId)
+    setPrefillReferralId(origin === 'interprofessional_referral' ? referralId : '')
     setAppointmentOrigin(
       origin === 'waiting_list'
         ? 'fila_de_espera'
+        : origin === 'interprofessional_referral'
+          ? 'encaminhamento_interprofissional'
         : origin === 'prescription_renewal'
           ? 'renovacao_receita_consulta'
           : origin === 'patient_record'
