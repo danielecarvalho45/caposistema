@@ -1,0 +1,18 @@
+.agenda-home-cancellations {
+  display: grid;
+  gap: .5rem;
+  min-width: 0;
+  padding: .85rem;
+  border: 1px solid var(--color-border, #d9e7f3);
+  border-radius: var(--radius-medium, 9px);
+  background: var(--color-surface, #fff);
+  overflow-wrap: anywhere;
+}
+.agenda-home-cancellations header {display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.agenda-home-cancellations header span {font-size:.9rem;font-weight:700}
+.agenda-home-cancellations header strong {font-size:1.2rem;color:var(--color-brand-blue,#1765a2)}
+.agenda-home-cancellations ul {list-style:none;padding:0;margin:0;display:grid;gap:.6rem}
+.agenda-home-cancellations li {display:grid;gap:.3rem;padding:.6rem;border:1px solid var(--color-border,#e4edf5);border-radius:7px;background:var(--color-background,#f8fbff)}
+.agenda-home-cancellations li strong {font-size:.82rem}
+.agenda-home-cancellations p {margin:0;font-size:.78rem;line-height:1.45}
+.agenda-home-cancellations small {font-size:.72rem;color:var(--color-muted,#66758b)}
