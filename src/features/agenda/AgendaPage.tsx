@@ -27,6 +27,7 @@ import { getNotificationsService } from '../notifications/notifications-integrat
 import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
 import { ProfessionalDailyCancellations } from './ProfessionalDailyCancellations'
 import { CapoIcon } from '../../components/icons/CapoIcon'
+import { ManualConfirmationCorrection } from './ManualConfirmationCorrection'
 import './agenda-page.css'
 
 type AgendaView = 'day' | 'week' | 'month'
@@ -152,6 +153,7 @@ function previsitIndicator(result?: string) {
     case 'aguardando_paciente': return '◌ Aguardando confirmação pelo link'
     case 'avisado': return '💬 Avisado previamente'
     case 'confirmou': return '✓ Avisado · Confirmado manualmente pelo Administrativo'
+    case 'correcao_pendente': return 'Confirmação manual corrigida · Aguardando resposta'
     case 'sem_resposta': return '◌ Aviso sem resposta'
     case 'solicitou_cancelamento': return '✕ Solicitou cancelamento'
     case 'solicitou_remarcacao': return '↻ Solicitou remarcação'
@@ -3585,6 +3587,14 @@ export function AgendaPage({
                               onClick={() => void registerPrevisitContact(item.appointment_id)}
                             >{(contact?.result === 'avisado' || contact?.result === 'confirmou') && !previsitOutcomes[item.appointment_id]
                               ? '✓ Aviso registrado' : '✓ Registrar aviso'}</button>
+                            {contact?.result === 'confirmou' && (
+                              <ManualConfirmationCorrection appointmentId={item.appointment_id} kind="patient"
+                                patientName={item.patient_name} disabled={previsitBusyId !== null}
+                                onCorrected={async () => {
+                                  await loadPrevisitContacts()
+                                  setPrevisitFeedback('Confirmação corrigida sem alterar agendamento ou presença.')
+                                }} />
+                            )}
                             <button type="button" onClick={() => preparePrevisitReschedule(item)}>↻ Remarcar</button>
                             <button type="button" onClick={() => prepareAdministrativeReturn(item)}><CapoIcon name="calendar" /> Retorno</button>
                             <button type="button" onClick={() => prepareCancellation(item.appointment_id)}><CapoIcon name="block" /> Cancelar</button>
@@ -3602,6 +3612,8 @@ export function AgendaPage({
                       <td>{item.confirmation_decision === 'comparecera'
                         ? '✓ Presença confirmada pelo link'
                         : notice === 'confirmou' ? '✓ Avisado · Confirmado manualmente pelo Administrativo'
+                        : notice === 'correcao_pendente' ? 'Confirmação manual corrigida · Pendente'
+                        : notice === 'sem_resposta' ? 'Contato sem resposta'
                         : notice === 'avisado' ? '✓ Paciente avisado'
                         : notice === 'solicitou_cancelamento' ? 'Solicitou cancelamento'
                         : 'Ainda sem registro de contato prévio'}</td>
@@ -3616,6 +3628,16 @@ export function AgendaPage({
                         </select>
                         <button type="button" disabled={!previsitOutcomes[aid] || previsitBusyId !== null}
                           onClick={() => void registerFamilyPrevisitContact(item)}>✓ Registrar aviso</button>
+                        {notice === 'confirmou' && item.confirmation_decision !== 'comparecera' && (
+                          <ManualConfirmationCorrection appointmentId={aid} kind="family"
+                            patientName={String(item.family_name ?? 'Familiar')} disabled={previsitBusyId !== null}
+                            onCorrected={(result) => {
+                              setFamilyPsychologyCards((current) => current.map((row) =>
+                                String(row.appointment_id) === aid
+                                  ? { ...row, last_notice_result: result } : row))
+                              setPrevisitFeedback('Confirmação familiar corrigida, histórico preservado.')
+                            }} />
+                        )}
                         <button type="button" onClick={() => prepareFamilyReschedule(aid)}>↻ Remarcar</button>
                         <button type="button" onClick={() => prepareCancellation(aid)}>Cancelar</button>
                         {familyRescheduleId === aid && (
