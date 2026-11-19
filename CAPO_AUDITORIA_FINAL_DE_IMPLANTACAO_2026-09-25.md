@@ -233,3 +233,18 @@
 **Invariantes:** nenhuma alteração em `patient_appointments`, grade ativa, `get_agenda_schedule_grid_for_interface`, Notificações, Faltosos, filas, óbito, retorno, remarcações, agenda recorrente, componentes existentes, permissões ou ambiente de homologação. Nenhuma duplicação de dados, criação de segundo banco, alteração de status de consulta ou aviso automático ao profissional (este último é demanda distinta).
 
 **Pendente de homologação:** execução automatizada de Vitest/build, publicação Cloudflare e teste visual após login/aceite do termo de cada profissional. Não declarar homologado até confirmação da Titular.
+
+
+---
+
+## 19/11/2026 — HOMOLOGAÇÃO APROVADA: Cancelamentos do Dia na Home profissional
+
+**Manifestação da Titular:** após verificar a alteração na interface do ambiente de teste (`manuteste`), a Titular declarou expressamente: **“testado o comportamento no ambiente teste e foi aprovado”**.
+
+**Status:** **HOMOLOGADO E APROVADO NO AMBIENTE DE TESTE; MANUTENÇÃO ENCERRADA.**
+
+**Escopo homologado informado pela Titular:** quadro `Cancelamentos do Dia` imediatamente abaixo de `Faltosos` na lateral da agenda da Home profissional compartilhada, com informações de cancelamento e motivo, sem reocupar o slot cancelado e mantendo o histórico. A implementação utiliza a leitura individual do profissional e respeita a separação lógica entre produção e homologação.
+
+**Proteção contra regressões:** preservar a posição do quadro, sua finalidade apenas informativa, a grade ativa, Notificações, Faltosos, prontuários, fluxos de remarcação e demais componentes já homologados. Não iniciar alterações preventivas ou reestruturação. Uma nova manutenção nesta frente exige erro concreto e autorização específica (`VERDE`) da Titular.
+
+**Limite de evidência:** a aprovação relatada é um teste de comportamento **no ambiente de homologação**. Não equivale a afirmar testes autenticados no perfil real de cada profissional, execução de Vitest/build ou publicação Cloudflare confirmada por ferramentas neste registro. A pendência anterior de aceite do termo legal da conta Danilo não foi alterada.
