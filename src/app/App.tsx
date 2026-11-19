@@ -11,6 +11,7 @@ import { resolveProfessionalScreenKind } from '../features/professional/professi
 import { NutritionPage } from '../features/nutrition/NutritionPage'
 import { QueuePage } from '../features/queues/QueuePage'
 import { RequestsPage } from '../features/requests/RequestsPage'
+import { InternalCommunicationPage } from '../features/communication/InternalCommunicationPage'
 import { ReferralsPage } from '../features/referrals/ReferralsPage'
 import { ReportsPage } from '../features/reports/ReportsPage'
 import { TechnicalPage } from '../features/technical/TechnicalPage'
@@ -152,6 +153,7 @@ export function App() {
   const isQueueRoute = location.pathname === '/fila'
   const isNoShowsRoute = location.pathname === '/faltosos'
   const isRequestsRoute = location.pathname === '/solicitacoes'
+  const isCommunicationRoute = location.pathname === '/comunicacao'
   const isTransportRoute = location.pathname === '/transporte'
   const isRenewalRoute = location.pathname === '/receita'
   const isReferralsRoute = location.pathname === '/encaminhamentos'
@@ -269,6 +271,8 @@ export function App() {
     <QueuePage accessContext={accessContext} />
   ) : isNoShowsRoute ? (
     <NoShowsPage accessContext={accessContext} initialContextId={pendingContextId} />
+  ) : isCommunicationRoute ? (
+    <InternalCommunicationPage accessContext={accessContext} />
   ) : isRequestsRoute ? (
     <RequestsPage accessContext={accessContext} initialContextId={pendingContextId} />
   ) : isTransportRoute ? (
