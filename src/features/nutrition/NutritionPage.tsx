@@ -98,6 +98,8 @@ function buildNutritionPdf(document: NutritionRecord) {
   const lines = [
     'SECRETARIA MUNICIPAL DE SAÚDE — CAPO',
     'SERVIÇO DE NUTRIÇÃO',
+    'Nutricionista responsável: ' + author,
+    'Registro profissional: ' + (field(document, 'author_registration') ?? 'Não informado'),
     'Pouso Alegre/MG, ' + formatDate(document.created_at),
     '',
     'Paciente: ' + (field(document, 'patient_name') ?? 'Não informado'),
