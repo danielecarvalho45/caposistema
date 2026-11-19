@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import {
   getRpcService,
@@ -28,7 +28,7 @@ type Props = Readonly<{ accessContext: AccessContext; service?: Service }>
 const statusLabels: Record<string, string> = {
   pending_approval: 'Aguardando triagem',
   approved: 'Aprovado / atribuído',
-  in_progress: 'Em atendimento',
+  in_progress: 'Aguardando agendamento',
   completed: 'Concluído',
   rejected: 'Recusado',
   cancelled: 'Cancelado',
@@ -60,8 +60,9 @@ export function ReferralsPage({
   service = getRpcService(),
 }: Props) {
   const location = useLocation()
-  const [view, setView] = useState('recebidos')
-  const [direction, setDirection] = useState('all')
+  const navigate = useNavigate()
+  const [view, setView] = useState(accessContext.roles.some((role) => ['administrador', 'administrativo_operacional'].includes(role.code)) ? 'recebidos' : 'enviados')
+  const [direction, setDirection] = useState(accessContext.roles.some((role) => ['administrador', 'administrativo_operacional'].includes(role.code)) ? 'received' : 'sent')
   const [status, setStatus] = useState('')
   const [items, setItems] = useState<readonly InterprofessionalReferral[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -86,15 +87,13 @@ export function ReferralsPage({
     [accessContext.roles],
   )
   const canManage = roleCodes.some((role) =>
-    ['administrador', 'administrativo_operacional', 'coordenador'].includes(role),
+    ['administrador', 'administrativo_operacional'].includes(role),
   )
   const canCreate =
     Boolean(accessContext.professional_id) &&
     accessContext.capabilities.includes('encaminhamento_interprofissional')
   const isRequester =
     selected?.requesting_professional_id === accessContext.professional_id
-  const isRecipient =
-    selected?.target_professional_id === accessContext.professional_id
 
   const loadItems = useCallback(async () => {
     setLoading(true)
@@ -254,6 +253,17 @@ export function ReferralsPage({
       action === 'approve' ? targetId : null,
     )
     if (result.status === 'success') {
+      if (action === 'approve' && targetId) {
+        navigate('/agenda', { state: {
+          origin: 'interprofessional_referral',
+          referralId: selected.referral_id,
+          patientId: selected.patient_id,
+          patientName: selected.patient_name,
+          specialtyId: selected.requested_specialty_id,
+          professionalId: targetId,
+        } })
+        return
+      }
       setDetail('')
       setFeedback('Encaminhamento atualizado e registrado no histórico.')
       await loadItems()
@@ -288,7 +298,7 @@ export function ReferralsPage({
             >
               <option value="all">Todos</option>
               <option value="sent">Enviados</option>
-              <option value="received">Recebidos</option>
+              {canManage && <option value="received">Recebidos</option>}
             </select>
           </label>
           <label>
@@ -315,7 +325,7 @@ export function ReferralsPage({
 
       <nav className="referrals-status-tabs" aria-label="Visões de encaminhamentos">
         {[
-          ['recebidos', 'Recebidos', 'received', ''],
+          ...(canManage ? [['recebidos', 'Recebidos', 'received', '']] : []),
           ['enviados', 'Enviados', 'sent', ''],
           ['andamento', 'Em andamento', 'all', 'in_progress'],
           ['concluidos', 'Concluídos', 'all', 'completed'],
@@ -502,7 +512,7 @@ export function ReferralsPage({
                 </section>
               )}
 
-              {open && (canManage || isRequester || isRecipient) && (
+              {open && (canManage || isRequester) && (
                 <div className="referral-actions">
                   {canManage && selected.status === 'pending_approval' && (
                     <label>
@@ -543,7 +553,7 @@ export function ReferralsPage({
                         disabled={busy}
                         onClick={() => void act('approve')}
                       >
-                        Aprovar e atribuir
+                        Aprovar e abrir agenda
                       </button>
                     )}
                     {canManage && selected.status === 'pending_approval' && (
@@ -554,33 +564,22 @@ export function ReferralsPage({
                         Recusar
                       </button>
                     )}
-                    {(canManage || isRecipient) &&
-                      selected.status === 'approved' && (
-                        <button
-                          disabled={busy}
-                          onClick={() => void act('start')}
-                        >
-                          Iniciar atendimento
-                        </button>
-                      )}
-                    {(canManage || isRecipient) &&
-                      selected.status === 'in_progress' && (
-                        <button
-                          disabled={busy}
-                          onClick={() => void act('record')}
-                        >
-                          Registrar providência
-                        </button>
-                      )}
-                    {(canManage || isRecipient) &&
-                      ['approved', 'in_progress'].includes(selected.status) && (
-                        <button
-                          disabled={busy}
-                          onClick={() => void act('complete')}
-                        >
-                          Concluir
-                        </button>
-                      )}
+                    {canManage && ['approved', 'in_progress'].includes(selected.status) && selected.target_professional_id && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => navigate('/agenda', { state: {
+                          origin: 'interprofessional_referral',
+                          referralId: selected.referral_id,
+                          patientId: selected.patient_id,
+                          patientName: selected.patient_name,
+                          specialtyId: selected.requested_specialty_id,
+                          professionalId: selected.target_professional_id,
+                        } })}
+                      >
+                        Abrir agenda para agendamento
+                      </button>
+                    )}
                     {(canManage ||
                       (isRequester &&
                         selected.status === 'pending_approval')) && (
