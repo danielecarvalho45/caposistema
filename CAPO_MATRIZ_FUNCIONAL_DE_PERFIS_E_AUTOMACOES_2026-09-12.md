@@ -1284,3 +1284,64 @@ O Gestor pode possuir outros módulos adicionais por suas permissões de governa
 **Atualização controlada:** após confirmar a alteração do local para a consulta e registrar o aviso ao paciente, o endereço associado ao agendamento passa a refletir o novo local. A auditoria preserva o endereço anterior, o novo, o responsável e os horários de alteração/comunicação. Agendamentos novos já recebem o novo endereço e não entram indevidamente na pendência dos antigos. A lista não gera duplicidades para a mesma consulta e mudança de local.
 
 **Escopo e preservação:** reutilizar cadastro de equipe, agenda, componente existente de WhatsApp e painel de notificações; nenhuma alteração em condutas clínicas, Faltosos, Busca Ativa, fila de espera, aceite da Oferta CAPO ou agendamentos passados. Ambiente manuteste deve respeitar a separação de dados vigente. Implementação deve abranger contrato Supabase, interface e testes de regressão antes de declarar homologação.
+
+---
+
+# 19. ATUALIZAÇÃO APROVADA EM 19/11/2026 — COMUNICAÇÃO INTERNA
+
+**Autorização de execução: VERDE expresso da Titular em 19/11/2026.** Esta atualização agrega uma função ao CAPO sem alterar o fluxo já homologado de Solicitações Administrativas (Profissional → Administrativo Operacional/Gestor). Também preserva os módulos oficiais de Notificações, Encaminhamentos e Agenda Geral.
+
+## 19.1 Regras obrigatórias de hierarquia
+
+- **Gestor/Titular:** exerce as mesmas ações administrativas do Administrativo Operacional no recebimento, encaminhamento, acompanhamento e conclusão de demandas formais, além das atribuições próprias de gestão. A interface e o Supabase devem aplicar a mesma permissão administrativa, sem divergência ou segunda versão do processo.
+- **Administrativo Operacional:** pode enviar recados e abrir **demandas administrativas direcionadas a profissionais assistenciais ativos**; recebe feedback e conclui após resposta.
+- **Profissionais assistenciais:** podem trocar **mensagens e recados** diretamente entre si e com o Administrativo; não podem criar demandas ou solicitações oficiais diretamente para outro profissional. Para solicitar providência ao Administrativo, manter o módulo oficial `/solicitacoes`.
+- **Limites:** nenhum recado, demanda ou confirmação de leitura autoriza ato clínico, visita, encaixe, bloqueio ou agendamento de forma automática. O registro assistencial próprio e o fluxo de Agenda Geral são preservados.
+
+## 19.2 Fluxos distintos
+
+```text
+RECADO / MENSAGEM INTERNA
+Administrativo OU Profissional
+        ↓
+Destinatário(s) ativo(s) no mesmo ambiente
+        ↓
+Leitura individual + resposta livre (quando necessário)
+        ↓
+Histórico de mensagens (sem abrir solicitação oficial)
+
+DEMANDA FORMAL A PROFISSIONAL
+Gestor/Titular OU Administrativo Operacional
+        ↓
+Profissional assistencial destinatário
+        ↓
+Recebe aviso da Comunicação Interna
+        ↓
+Inicia atendimento da demanda
+        ↓
+Envia feedback / justificativa
+        ↓
+Administrativo que originou recebe retorno e conclui
+        ↓
+Histórico de estados imutável e mensagens preservadas
+
+SOLICITAÇÃO ADMINISTRATIVA OFICIAL EXISTENTE (INTACTA)
+Profissional → Administrativo Operacional/Gestor
+       ↓
+Aceite / providência / devolução / conclusão
+       ↓
+Notificações e auditoria oficiais já homologadas
+```
+
+## 19.3 Dados e interface
+
+- O paciente é **opcional** em uma comunicação, inclusive para avisos de agenda, recados e comunicações de equipe.
+- Permitir destinatário único ou múltiplos, com comunicação e confirmação individual por destinatário; não repetir uma resposta como se fosse resposta de toda a equipe.
+- Armazenamento, permissões e avisos da Comunicação Interna são **fisicamente separados** de `administrative_requests` e das notificações oficiais; não há gatilhos entre domínios.
+- A autoria é sempre a conta CAPO autenticada; resposta, leitura, transições de situação e datas são persistidas.
+- Somente perfis ativos e destinatários efetivamente elegíveis podem participar. Conta `manuteste` permanece isolada de contas reais; preservar o papel simulado autorizado e separação de pacientes de teste/reais.
+- A interface terá uma área própria `/comunicacao` com mensagens **Recebidas/Enviadas**, redação, seleção de destinatários, paciente opcional, leitura, resposta, andamento e histórico; o cabeçalho exibirá aviso próprio de mensagens não lidas, independente do sino oficial de Notificações.
+
+**Fontes técnicas:** Documento Mestre `CAPO_AUDITORIA_FINAL_DE_IMPLANTACAO_2026-09-25.md` (registro de 19/11/2026), novas migrations `20261119*_internal_communication*.sql` e `20261119103000_create_capo_internal_communication_isolated.sql`, componentes `src/features/communication`.
+
+**Homologação:** alterações estruturais autorizadas e aplicadas no código/banco; validação de comportamento real com contas distintas, CI/build e teste visual ainda necessária. Não tratar a nova função como homologada enquanto não houver teste real confirmado pela Titular.
