@@ -185,6 +185,7 @@ export function GestorShell({
             <p>Administrador do Sistema / Titular</p>
           </div>
           <div className="gestor-header-actions">
+            <CommunicationUnreadLink accessContext={accessContext} />
             <button type="button" onClick={goBack}>← <span>Voltar</span></button>
             {canAccessAppRoute(accessContext, '/notificacoes') && (
               <button className="gestor-notice-button" type="button" onClick={() => navigate('/notificacoes')}>
