@@ -247,7 +247,9 @@ export function App() {
           ? (appointment) => navigate('/atuacao', { state: { confirmedAppointmentId: appointment.appointment_id } })
           : primaryContextCode === 'profissional' && professionalScreen === 'assistencia_social'
             ? (appointment) => navigate('/assistencia-social', { state: { confirmedAppointmentId: appointment.appointment_id } })
-            : undefined
+            : primaryContextCode === 'profissional' && professionalScreen === 'nutricao'
+              ? (appointment) => navigate('/nutricao', { state: { confirmedAppointmentId: appointment.appointment_id } })
+              : undefined
       }
     />
   ) : isManageOwnAgendaRoute ? (
