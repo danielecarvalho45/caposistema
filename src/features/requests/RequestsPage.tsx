@@ -76,7 +76,7 @@ export function RequestsPage({
 }: Props) {
   const location = useLocation()
   const [view, setView] = useState('recebidas')
-  const [status, setStatus] = useState<string>('')
+  const [status, setStatus] = useState<string>('pending')
   const [items, setItems] = useState<readonly AdministrativeRequest[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(initialContextId)
   const [events, setEvents] = useState<readonly AdministrativeRequestEvent[]>(
@@ -388,7 +388,7 @@ export function RequestsPage({
 
       <nav className="requests-status-tabs" aria-label="Visões de solicitações">
         {[
-          ['recebidas', 'Recebidas', ''],
+          ['recebidas', 'Recebidas', 'pending'],
           ['atendimento', 'Aceitas / Em atendimento', 'in_progress'],
           ['concluidas', 'Concluídas', 'completed'],
           ['devolvidas', 'Devolvidas / pendentes', 'returned'],
