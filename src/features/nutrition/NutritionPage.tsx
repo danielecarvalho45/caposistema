@@ -203,7 +203,7 @@ export function NutritionPage({
       }
       const appointment = result.data
       const isNutrition = appointment.specialty_name.normalize('NFD')
-        .replace(/[\\u0300-\\u036f]/g, '').toLowerCase() === 'nutricao'
+        .replace(/\p{M}/gu, '').toLowerCase() === 'nutricao'
       if (appointment.attendance_status !== 'confirmado'
         || appointment.professional_id !== accessContext.professional_id || !isNutrition) {
         setFeedback('O agendamento não corresponde a um atendimento de Nutrição confirmado neste perfil.')
