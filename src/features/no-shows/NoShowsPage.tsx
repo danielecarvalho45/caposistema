@@ -499,7 +499,7 @@ export function NoShowsPage({
                       disabled={busy}
                       onClick={() => void requestRescheduling()}
                     >
-                      Solicitar remarcação
+                      Agendar
                     </button>
                   </>
                 )}
