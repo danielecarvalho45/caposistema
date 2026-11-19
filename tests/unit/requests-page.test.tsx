@@ -81,6 +81,9 @@ describe('RequestsPage', () => {
       ),
     ).toBeVisible()
     expect(screen.getByRole('button', { name: 'Recebidas' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Recebidas' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('combobox', { name: 'Situação' })).toHaveValue('pending')
+    expect(service.getAdministrativeRequests).toHaveBeenCalledWith('pending', 100, 0)
     expect(
       screen.getByRole('button', { name: 'Aceitas / Em atendimento' }),
     ).toBeVisible()
