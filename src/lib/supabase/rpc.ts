@@ -3846,6 +3846,11 @@ export function createRpcService(transport: RpcTransport) {
   }
 }
 
+// Mantém o terceiro argumento obrigatório da RPC mesmo em solicitações gerais.
+export function administrativeRequestRpcPatientId(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
 function createSupabaseTransport(
   client: SupabaseClient<Database>,
 ): RpcTransport {
@@ -4047,10 +4052,7 @@ function createSupabaseTransport(
         })
       case 'create_administrative_request_for_interface':
         return client.rpc(operation, {
-          p_patient_id:
-            typeof args?.p_patient_id === 'string'
-              ? args.p_patient_id
-              : null,
+          p_patient_id: administrativeRequestRpcPatientId(args?.p_patient_id),
           p_subject: String(args?.p_subject ?? ''),
           p_description: String(args?.p_description ?? ''),
         })
