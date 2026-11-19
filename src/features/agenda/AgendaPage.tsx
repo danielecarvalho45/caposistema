@@ -956,6 +956,12 @@ export function AgendaPage({
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
+  // Evita que um novo retorno seja confundido com remarcação de consulta ainda ativa.
+  const [additionalAppointmentApproval, setAdditionalAppointmentApproval] = useState('')
+  const [existingAppointmentWarning, setExistingAppointmentWarning] = useState<{
+    key: string
+    dates: readonly string[]
+  } | null>(null)
   const [awaitingNextAppointmentChoice, setAwaitingNextAppointmentChoice] = useState(false)
   const [returnNoticeAcknowledged, setReturnNoticeAcknowledged] = useState(false)
   const [queueInclusionBusy, setQueueInclusionBusy] = useState(false)
@@ -1692,6 +1698,39 @@ export function AgendaPage({
       setAppointmentFeedback('Selecione paciente, especialidade, profissional, horário e tipo de atendimento.')
       return
     }
+    // Conferência obrigatória da agenda existente, antes da reserva e da gravação.
+    // Permite consultas extras legítimas (inclusive slots consecutivos), mas exige
+    // confirmação explícita quando o paciente já tem consulta ativa com o profissional.
+    if (!isProfessional) {
+      const checkKey = [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':')
+      const history = await getRpcService().getPatientAppointmentHistory(appointmentPatientId, 100, 0)
+      if (history.status === 'error' || history.status === 'loading') {
+        setAppointmentFeedback(history.status === 'error'
+          ? 'Não foi possível conferir as consultas existentes: ' + history.error.message
+          : 'Consulta ao histórico ainda não concluída. Tente novamente.')
+        return
+      }
+      const professionalName = professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1]
+      const conflicts = (history.status === 'success' ? history.data : []).filter((item) =>
+        ['agendado', 'confirmado'].includes(item.attendance_status)
+        && item.professional_name === professionalName
+        && new Date(item.appointment_date).getTime() >= Date.now()
+        && new Date(item.appointment_date).getTime() !== new Date(validSlotStart).getTime(),
+      )
+      if (conflicts.length > 0 && additionalAppointmentApproval !== checkKey) {
+        setExistingAppointmentWarning({
+          key: checkKey,
+          dates: conflicts.map((item) => new Date(item.appointment_date).toLocaleString('pt-BR', {
+            timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short',
+          })),
+        })
+        setAppointmentFeedback('Já existe consulta ativa com este profissional. Para substituir a anterior, use Remarcação. Só confirme uma nova consulta se for atendimento adicional.')
+        return
+      }
+      setExistingAppointmentWarning(null)
+      setAdditionalAppointmentApproval('')
+    }
+
     // A reserva precisa ocorrer no clique, antes da primeira chamada assíncrona.
     // O WhatsApp só recebe destino/mensagem se a consulta for realmente gravada.
     const whatsappReservation = !isProfessional ? reserveCapoWhatsAppTab() : null
@@ -3109,8 +3148,22 @@ export function AgendaPage({
                 <textarea rows={3} value={appointmentNotes} onChange={(event) => setAppointmentNotes(event.target.value)} />
               </label>
             </div>
+            {existingAppointmentWarning && existingAppointmentWarning.key ===
+              [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && (
+              <div className="agenda-contract-note" role="alert">
+                <strong>Consulta anterior ainda ativa</strong>
+                <p>Este paciente já possui consulta com o mesmo profissional: {existingAppointmentWarning.dates.join('; ')}.</p>
+                <p>Se a nova data substitui a anterior, utilize <strong>Remarcação</strong> para liberar o horário antigo e preservar o histórico. Não faça um novo agendamento independente.</p>
+                <label>
+                  <input type="checkbox"
+                    checked={additionalAppointmentApproval === existingAppointmentWarning.key}
+                    onChange={(event) => setAdditionalAppointmentApproval(event.target.checked ? existingAppointmentWarning.key : '')} />
+                  Esta consulta é adicional. Manter os dois agendamentos.
+                </label>
+              </div>
+            )}
             <div className="agenda-form-actions">
-              <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType} onClick={() => void createAppointment()}>
+              <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType || Boolean(existingAppointmentWarning && existingAppointmentWarning.key === [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && additionalAppointmentApproval !== existingAppointmentWarning.key)} onClick={() => void createAppointment()}>
                 Confirmar agendamento
               </button>
               {!isProfessional && awaitingNextAppointmentChoice && appointmentType === 'Retorno' && !returnNoticeAcknowledged && (
