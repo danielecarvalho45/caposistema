@@ -7,6 +7,7 @@ import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
 import { agendaBlockText } from '../../components/icons/AgendaBlockIndicator'
 import { AdministrativeTwoDayAgenda } from '../home/AdministrativeTwoDayAgenda'
 import { MaintenanceNoticeBoard } from '../technical/MaintenanceNoticeBoard'
+import { AuditRecentActivities, HomeIndicatorSummary, HomeTechnicalStatus } from './GestorHomeSnapshots'
 
 
 type AgendaChangeRow = Readonly<Record<string, unknown>>
@@ -41,6 +42,7 @@ const quickAccess = [
   ['/pacientes', 'people', 'Pacientes', 'Cadastrar e consultar', 'blue'],
   ['/agenda', 'calendar', 'Agenda', 'Consultar agendas dos profissionais', 'green'],
   ['/gestor/equipe', 'people', 'Equipe', 'Gerenciar profissionais', 'blue'],
+  ['/gestor/administracao', 'people', 'Cadastrar profissional', 'Cadastro e permissões', 'cadastro'],
   ['/gestor/busca-ativa?tipo=oferta', 'search', 'Busca Ativa', 'Pendências da Oferta Inicial', 'violet'],
   ['/gestor/equipe?aba=agenda', 'clock', 'Ampliar horário', 'Abrir horário adicional na agenda', 'blue'],
   ['/fila', 'list', 'Filas', 'Pacientes e familiares', 'mint'],
@@ -115,10 +117,9 @@ export function GestorDashboard() {
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
           {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
         </article>
-        <Link className="gestor-panel" to="/gestor/timeline"><h3><CapoIcon name="clock" /> Atividades Recentes</h3><p>Consultar os eventos operacionais registrados.</p></Link><MaintenanceNoticeBoard /></aside>
+        <AuditRecentActivities /><MaintenanceNoticeBoard /></aside>
       </section>
       <section className="gestor-summary-grid" aria-label="Resumo do sistema">
-        <Link className="gestor-panel" to="/gestor/administracao"><h3><CapoIcon name="people" /> Cadastro de Profissional</h3><p>Gerenciar profissionais e permissões</p><b>›</b></Link>
         <article className="gestor-panel gestor-approved-agenda-changes">
           <header>
             <div>
@@ -157,8 +158,8 @@ export function GestorDashboard() {
             ))}
           {agendaChangeFeedback && <p role="status">{agendaChangeFeedback}</p>}
         </article>
-        <Link className="gestor-panel" to="/relatorios"><h3><CapoIcon name="chart" /> Indicadores do Sistema</h3><p>Consultar indicadores reais no relatório gerencial</p></Link>
-        <Link className="gestor-panel" to="/tecnica"><h3><CapoIcon name="settings" /> Status do Sistema</h3><p>Consultar estado técnico e integrações autorizadas.</p></Link>
+        <HomeIndicatorSummary />
+        <HomeTechnicalStatus />
       </section>
     </section>
   )
