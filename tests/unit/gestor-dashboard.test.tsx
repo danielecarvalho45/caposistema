@@ -20,8 +20,18 @@ describe('GestorDashboard', () => {
 
     expect(screen.getByRole('heading', { name: 'Painel Geral do CAPO' })).toBeVisible()
     expect(screen.getAllByRole('link', { name: /Agenda/ }).some((link) => link.getAttribute('href') === '/agenda')).toBe(true)
-    expect(screen.getByRole('link', { name: /Indicadores do Sistema/ })).toHaveAttribute('href', '/relatorios')
-    expect(screen.getByRole('link', { name: /Status do Sistema/ })).toHaveAttribute('href', '/tecnica')
+    expect(screen.getByRole('link', { name: /Cadastrar profissional/ })).toHaveAttribute('href', '/gestor/administracao')
+    const quickLinks = Array.from(document.querySelectorAll('.gestor-quick-grid a'))
+    const teamIndex = quickLinks.findIndex((item) => item.getAttribute('href') === '/gestor/equipe')
+    expect(teamIndex).toBeGreaterThanOrEqual(0)
+    expect(quickLinks[teamIndex + 1]).toHaveAttribute('href', '/gestor/administracao')
+    expect(quickLinks[teamIndex + 1]).toHaveClass('gestor-quick-cadastro')
+    expect(screen.getByRole('heading', { name: 'Atividades Recentes' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Indicadores do Sistema' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Status do Sistema' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Ver auditoria completa' })).toHaveAttribute('href', '/gestor/auditoria')
+    expect(screen.getByRole('link', { name: 'Ver relatórios e indicadores' })).toHaveAttribute('href', '/relatorios')
+    expect(screen.getByRole('link', { name: 'Abrir diagnóstico técnico' })).toHaveAttribute('href', '/tecnica')
   })
 
   it('edita um profissional retornado pelo backend e recarrega a equipe', async () => {
