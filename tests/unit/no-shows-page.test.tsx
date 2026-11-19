@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { NoShowsPage } from '../../src/features/no-shows/NoShowsPage'
@@ -89,7 +90,7 @@ describe('NoShowsPage', () => {
   it('preserva os rótulos do index físico do módulo Faltosos', async () => {
     const service = serviceWithFollowups({ status: 'empty' })
 
-    render(<NoShowsPage accessContext={context} service={service} />)
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     expect(await screen.findByRole('heading', { name: 'Faltosos' })).toBeVisible()
     expect(
@@ -109,10 +110,20 @@ describe('NoShowsPage', () => {
     ).toBeVisible()
   })
 
+  it('Agendar abre a Agenda Geral do profissional da falta sem criar solicitação', async () => {
+    const service = serviceWithFollowups({ status: 'success', data: [followup] })
+    const user = userEvent.setup()
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
+    await user.click(await screen.findByRole('button', { name: /Paciente real/ }))
+    const action = await screen.findByRole('link', { name: 'Agendar' })
+    expect(action).toHaveAttribute('href', '/agenda')
+    expect(service.requestNoShowRescheduling).not.toHaveBeenCalled()
+  })
+
   it('exibe o estado vazio retornado pelo contrato', async () => {
     const service = serviceWithFollowups({ status: 'empty' })
 
-    render(<NoShowsPage accessContext={context} service={service} />)
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     expect(
       await screen.findByText('Nenhum faltoso encontrado para o filtro atual.'),
@@ -129,7 +140,7 @@ describe('NoShowsPage', () => {
       }),
     })
 
-    render(<NoShowsPage accessContext={context} service={service} />)
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Serviço temporariamente indisponível.',
@@ -154,7 +165,7 @@ describe('NoShowsPage', () => {
       },
     })
 
-    render(<NoShowsPage accessContext={context} service={service} />)
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     await user.click(
       await screen.findByRole('button', { name: /Paciente real/ }),
@@ -202,7 +213,7 @@ describe('NoShowsPage', () => {
       ],
     })
 
-    render(<NoShowsPage accessContext={context} service={service} />)
+    render(<MemoryRouter><NoShowsPage accessContext={context} service={service} /></MemoryRouter>)
 
     await userEvent
       .setup()
