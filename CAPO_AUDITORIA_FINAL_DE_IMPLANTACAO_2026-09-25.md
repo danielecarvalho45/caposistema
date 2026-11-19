@@ -471,3 +471,18 @@
 **Frontend, branch main:** `src/features/no-shows/NoShowsPage.tsx` commit `40a78145a9927c7f31de27c7d5a361aac572931e` introduz as três colunas e retira `statusFilter` e o seletor `Situação/Todas`; os cartões selecionáveis carregam o mesmo registro na área de acompanhamento abaixo. Commit `365fe114085f67674b1912c38e607744c1327e4b` passa a consultar lotes de até 100 ocorrências pelo contrato existente, com `Carregar mais ocorrências` quando necessário, sem ocultar filas acima de 100 registros. `src/features/no-shows/no-shows-page.css` commit `66cbe0bb6db782bb51480ee80e0ae6fc21fdd9af` estabelece três colunas iguais em desktop, empilhamento responsivo e acompanhamento abaixo, sem alterar estilos de outras páginas. `tests/unit/no-shows-page.test.tsx` commit `91026b0db1519f47e21b7ddaea8c593a8f72bc41` adiciona cobertura de agrupamento, remoção do filtro, seleção de ocorrência encerrada e consulta sem filtro no serviço.
 
 **Escopo:** não foram alterados Supabase, status de pacientes, ocorrências, regras de remarcação, notificações ou permissões; fluxo da Assistência Social preservado. **Pendente:** execução de testes/build, confirmação de deploy Cloudflare e homologação visual autenticada da Titular; não declarar testado ou publicado sem evidência.
+
+
+---
+
+## 19/11/2026 — VERDE: ocorrência de Faltosos em página separada, sem rolagem longa
+
+**Solicitação:** a Titular determinou que, ao clicar no nome em uma das três colunas de Faltosos, o CAPO abra outra página de acompanhamento, para evitar formulário extenso abaixo da lista; inserir `Voltar para Faltosos`. VERDE concedido nesta conversa.
+
+**Implementação na branch main:** `src/features/no-shows/NoShowsPage.tsx` commit `437dfd54cda553d32496db97ed7f924538b3e7e0` cria navegação por URL dentro da rota existente `/faltosos`, utilizando `?ocorrencia=<followup_id>`. A página principal mostra **apenas as três colunas** de Novas, Pendentes e Encerradas; nomes são links e não mais seletores que estendem a mesma página. Ao acessar `/faltosos?ocorrencia=...`, apresenta somente o acompanhamento da ocorrência e suas quatro abas já homologadas, ocultando as três colunas; `Voltar para Faltosos` remove o contexto e retorna à página principal. A rota existente e suas proteções de acesso são preservadas. IDs enviados por notificações via `initialContextId` continuam aceitos, e a navegação de retorno limpa `contextId` no estado. A consulta e o histórico permanecem vinculados ao mesmo `followup_id`. Commit `646bdeb941cedd58a979fdd8df45ec5c49ca963e` permite localizar ocorrências profundas em lotes de 100; commit `5a0aee66febfebe26fc96170a947c3bed68d2ebe` limita repetição automática em caso de erro de paginação.
+
+**Estilo:** `src/features/no-shows/no-shows-page.css` commit `5135b36bcf9779c533493e39ce4eaeabaa6893e2` torna os cartões de ocorrências links e estiliza o botão Voltar, mantendo layout responsivo da lista.
+
+**Regressões:** `tests/unit/no-shows-page.test.tsx` commit `2425bbd6624bbb4b8204a61e0180cb2aa605ecd7` atualiza seleção pelo link, verifica separação entre quadro e acompanhamento e retorno às colunas, sem mudar contratos de RPC. **Nenhuma modificação no Supabase**, nos status, nas remarcações, no disparo de notificações, nas permissões ou na Assistência Social.
+
+**Limites:** alterações versionadas e inspecionadas no GitHub; execução de Vitest, build, publicação Cloudflare e teste visual autenticado ainda não foram confirmados. Não declarar homologação da interface sem essas evidências.
