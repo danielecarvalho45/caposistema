@@ -1867,3 +1867,34 @@
 .agenda-schedule-grid--month .agenda-home-visit-card {
   max-width: 100%;
 }
+
+
+/* Assistência Social: incluir pacientes diretamente no período bloqueado,
+   sem painel paralelo ou textos explicativos na Home. */
+.agenda-home-visit-actions {
+  display: grid;
+  gap: .4rem;
+  min-width: 0;
+  margin-top: .35rem;
+}
+.agenda-home-visit-actions > button {
+  justify-self: start;
+}
+.agenda-home-visit-actions .agenda-pointual-actions {
+  margin: 0;
+  padding: .4rem 0 0;
+  min-width: 0;
+}
+.agenda-home-visit-actions .agenda-pointual-actions > .assistential-card,
+.agenda-home-visit-actions .agenda-pointual-actions article.assistential-card {
+  margin: 0;
+  padding: .45rem 0 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.agenda-home-visit-actions input,
+.agenda-home-visit-actions select {
+  max-width: 100%;
+  min-width: 0;
+}
