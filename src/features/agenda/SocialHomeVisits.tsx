@@ -38,6 +38,8 @@ export function SocialHomeVisits({
   preselectedPatientName = '',
   mode = 'manage',
   onChanged,
+  onlyBlockId = '',
+  compact = false,
 }: Readonly<{
   professionalId?: string | null
   administrative?: boolean
@@ -45,6 +47,8 @@ export function SocialHomeVisits({
   preselectedPatientName?: string
   mode?: 'configure' | 'manage' | 'schedule'
   onChanged?: () => void
+  onlyBlockId?: string
+  compact?: boolean
 }>) {
   const target = professionalId ?? ''
   const [visits, setVisits] = useState<Visit[]>([])
@@ -182,10 +186,10 @@ export function SocialHomeVisits({
 
   return (
     <section className="agenda-pointual-actions" aria-label="Visita Domiciliar — Assistência Social">
-      <h3>{mode === 'schedule' ? 'Agendar Visita Domiciliar' : 'Bloqueio — Visita Domiciliar'}</h3>
-      <p>{mode === 'schedule'
+      {!compact && <h3>{mode === 'schedule' ? 'Agendar Visita Domiciliar' : 'Bloqueio — Visita Domiciliar'}</h3>}
+      {!compact && <p>{mode === 'schedule'
         ? 'Escolha um período já bloqueado e inclua o paciente. A organização da rota e dos horários cabe ao motorista.'
-        : 'Reserve o período para visitas externas na agenda oficial. Os pacientes não precisam de horário individual: o motorista organiza a rota.'}</p>
+        : 'Reserve o período para visitas externas na agenda oficial. Os pacientes não precisam de horário individual: o motorista organiza a rota.'}</p>}
       {Boolean(target || professionalId) && (
         <>
           {mode !== 'schedule' && (<>
@@ -199,12 +203,13 @@ export function SocialHomeVisits({
           </label>
           <button type="button" disabled={busy} onClick={() => void create()}>Bloquear para Visita Domiciliar</button>
           </>)}
-          <h4>{mode === 'schedule' ? 'Períodos bloqueados para visita' : 'Visitas programadas e bloqueios existentes'}</h4>
-          {visits.length === 0 && <p role="status">{mode === 'schedule'
+          {!compact && <h4>{mode === 'schedule' ? 'Períodos bloqueados para visita' : 'Visitas programadas e bloqueios existentes'}</h4>}
+          {visits.length === 0 && !compact && <p role="status">{mode === 'schedule'
             ? 'Não há período de Visita Domiciliar disponível nesta agenda. Antes de incluir o paciente, abra a Configuração de Agenda da profissional e use Ajustes pontuais → Bloquear para Visita Domiciliar. Um bloqueio comum, mesmo com a descrição "Visita Domiciliar", não permite inclusão de pacientes e não será convertido automaticamente.'
             : 'Nenhum bloqueio específico de Visita Domiciliar encontrado. Use esta ação para reservar data e período; o bloqueio comum não habilita o agendamento de visitas.'}</p>}
-          {visits.map((visit) => (
+          {visits.filter(visit => !onlyBlockId || visit.block_id === onlyBlockId).map((visit) => (
             <article key={visit.block_id} className="assistential-card">
+              {!compact && <>
               <strong>Visita Domiciliar — {visit.date} · {String(visit.start_time).slice(0,5)}–{String(visit.end_time).slice(0,5)}</strong>
               <p>{visit.patients.length ? `${visit.patients.length} paciente(s) programado(s)` : 'Programação em aberto — sem pacientes'}</p>
               {visit.description && <p>{visit.description}</p>}
@@ -246,6 +251,7 @@ export function SocialHomeVisits({
                   </>)}
                 </div>
               ))}
+              </>}
               {mode !== 'configure' && preselectedPatientId && !visit.patients.some((patient) => patient.patient_id === preselectedPatientId) && (
                 <button type="button" disabled={busy}
                   onClick={() => void changePatient(visit.block_id, preselectedPatientId, 'add')}>
