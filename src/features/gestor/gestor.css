@@ -441,17 +441,17 @@
 
 /* Home Gestor — atalhos e resumos reais sem alterar a agenda e a lateral homologadas. */
 .gestor-dashboard .gestor-quick-cadastro {
-  color: #fff;
-  background: #1769aa;
-  border-color: #155a94;
-  box-shadow: 0 3px 10px rgb(23 105 170 / 18%);
+  color: #006bd9;
+  background: rgb(232 246 255 / 82%);
+  border-color: #006bd9;
+  box-shadow: 0 2px 9px rgb(31 67 104 / 2.5%);
 }
 .gestor-dashboard .gestor-quick-cadastro:hover,
 .gestor-dashboard .gestor-quick-cadastro:focus-visible {
-  color: #fff;
-  background: #105487;
+  color: #006bd9;
+  background: #d7edff;
 }
-.gestor-dashboard .gestor-quick-cadastro small { color: #eef7ff; }
+.gestor-dashboard .gestor-quick-cadastro small { color: #006bd9; }
 .gestor-dashboard .gestor-summary-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
