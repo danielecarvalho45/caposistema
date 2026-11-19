@@ -564,3 +564,21 @@
 **Preservação:** nenhuma alteração no registro real do Ilton, em pacientes, termos, Auth, permissões, decisão clínica, conteúdo da prescrição, procedimentos de atendimento, agendamento, contato com pacientes, isolamento de homologação ou Supabase.
 
 **Limites:** inspeção do código e das RPCs concluída. Testes automatizados foram acrescidos, **mas execução Vitest/build, validação visual autenticada em Ilton/AO/Gestor e publicação Cloudflare ainda não comprovadas**; não declarar a correção homologada na produção sem essas evidências.
+
+
+---
+
+## 19/11/2026 — VERDE: calendário oficial de feriados não conta como dia útil na Home administrativa
+
+**Autorização:** a Titular solicitou reconhecer feriados nacionais, de Minas Gerais e do município de Pouso Alegre para que, em particular, o bloqueio de agendas feito em 20/11/2026 não seja interpretado como um dia útil no quadro de dois dias da Home do Gestor/Titular e do Administrativo Operacional. **VERDE** recebido. Bloqueio anterior, justificativa e agendamentos reais intocados.
+
+**Confronto prévio:** `src/features/home/AdministrativeTwoDayAgenda.tsx` calculava dia útil considerando somente sábado e domingo, causando exibição de feriados na Home. Buscas no repositório identificaram esse cálculo `nextBusinessDay` como ponto concreto de dependência da regra de dia útil. O banco já tem o tipo de exceção `feriado` para bloqueios reais de agenda; esse mecanismo não deve ser substituído nem ativado automaticamente apenas pelo calendário.
+
+**Implementação versionada:**
+- `src/lib/calendar/capo-holidays.ts`, commits `60e9aadcba79ed20ba8436087f9fca8ed314c985` e `fa076d6535e761c1b8a1be1b82560411c4363950`: utilitário compartilhável com `capoHolidaysForYear`, `capoHolidayOn`, `capoIsBusinessDay`, `capoNextBusinessDay`. Combina datas nacionais fixas, Paixão de Cristo (data móvel), feriados municipais (Corpus Christi móvel, Senhor Bom Jesus em 06/08 e São Paulo da Cruz/Emancipação em 19/10). Tiradentes em 21/04 também é Data Magna de Minas Gerais: uma única data contada como não útil, sem duplicidade. Computus gregoriano calcula datas móveis por ano, inclusive viradas. Fonte principal municipal: Lei Ordinária Pouso Alegre 5.070/2011, arts. 1º e 2º, https://www.legislador.com.br/legisladorweb.asp?ID=122&WCI=LeiTexto&aaLei=2011&inEspecieLei=1&nrLei=5070 ; feriados nacionais 2026 e distinção de pontos facultativos: https://agenciagov.ebc.com.br/noticias/202512/confira-o-calendario-oficial-de-feriados-nacionais-e-pontos-facultativos-em-2026 ; 20/11 Lei 14.759/2023. Pontos facultativos do município ou do estado **não são automaticamente feriados nem bloqueios CAPO**.
+- `src/features/home/AdministrativeTwoDayAgenda.tsx`, commit `310692172a21a70c8a14c15717227f5bd0066da0`: usa utilitário para selecionar os dois próximos dias úteis na Home administrativa compartilhada, sem alterar RPCs, slots, horários nem banco. Em 19/11/2026 mostra 19/11 + 23/11; em 20/11/2026 apresenta 23/11 + 24/11; sábados/domingos continuam ignorados.
+- `tests/unit/administrative-two-day-home.test.tsx`, commit `d3023a5772f3804f94498fcaaf736bc2a4c2cd2a`: ajusta expectativa antiga que considerava 20/11 útil e cobre feriados nacionais, feriados municipais móveis/fixos, Data Magna MG, pontos facultativos e fim de semana.
+
+**Não escalar indevidamente:** o VERDE não autoriza cancelar/agendar/remanejar pacientes automaticamente, criar bloqueios gerais, modificar o calendário das grades profissionais ou alterar a governança de dispensa. O cálculo visual da Home não substitui a grade real (que permanece consultável em Agenda Geral), nem impõe calendário de pontos facultativos não homologados. O utilitário agora está disponível para outras funções que explicitamente necessitem de *dia útil*, mas a integração atual foi restrita ao consumidor identificado e aprovado.
+
+**Verificação:** arquivos inspecionados e gravados no GitHub `main`; testes unitários escritos, porém sua execução, build, deploy Cloudflare e homologação autenticada ainda não foram confirmados.
