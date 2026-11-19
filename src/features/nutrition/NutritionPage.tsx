@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type AgendaAppointment, type ReferralPatient } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { AgendaPage } from '../agenda/AgendaPage'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
@@ -82,6 +82,7 @@ export function NutritionPage({
   accessContext,
   homeOnly = false,
 }: Readonly<{ accessContext: AccessContext; homeOnly?: boolean }>) {
+  const location = useLocation()
   const [specialtyResult, setSpecialtyResult] = useState<{ professionalId: string; hasNutritionSpecialty: boolean } | null>(null)
   const eligibleForSpecialty = accessContext.is_active && Boolean(accessContext.professional_id) && accessContext.roles.some((role) => role.code === 'profissional')
   const hasNutritionSpecialty = !eligibleForSpecialty ? false : specialtyResult?.professionalId === accessContext.professional_id ? specialtyResult.hasNutritionSpecialty : null
@@ -180,6 +181,46 @@ export function NutritionPage({
     return () => { active = false }
   }, [isNutritionProfessional])
 
+  // Ao confirmar na rota /agenda, recebemos somente o ID do agendamento.
+  // O banco revalida a consulta, a presença e o vínculo profissional antes
+  // de selecionar o paciente: não confiar em dados clínicos do estado da rota.
+  useEffect(() => {
+    if (homeOnly || !isNutritionProfessional) return
+    const routeState = location.state && typeof location.state === 'object'
+      ? location.state as Record<string, unknown>
+      : null
+    const confirmedAppointmentId = routeState?.confirmedAppointmentId
+    if (typeof confirmedAppointmentId !== 'string' || !confirmedAppointmentId) return
+
+    let active = true
+    void getRpcService().getProfessionalAppointmentContext(confirmedAppointmentId).then((result) => {
+      if (!active) return
+      if (result.status !== 'success') {
+        setFeedback(result.status === 'error'
+          ? result.error.message
+          : 'Não foi possível abrir o atendimento confirmado.')
+        return
+      }
+      const appointment = result.data
+      const isNutrition = appointment.specialty_name.normalize('NFD')
+        .replace(/[\\u0300-\\u036f]/g, '').toLowerCase() === 'nutricao'
+      if (appointment.attendance_status !== 'confirmado'
+        || appointment.professional_id !== accessContext.professional_id || !isNutrition) {
+        setFeedback('O agendamento não corresponde a um atendimento de Nutrição confirmado neste perfil.')
+        return
+      }
+      void selectNutritionPatient(appointment.patient_id, appointment.patient_name)
+    })
+    return () => { active = false }
+  }, [homeOnly, isNutritionProfessional, location.state, accessContext.professional_id])
+
+  // Depois que o paciente foi carregado, a seção existe no DOM inclusive
+  // na Home, onde é renderizada condicionalmente.
+  useEffect(() => {
+    if (!patientId || !planLoaded) return
+    globalThis.document.getElementById('nutrition-plan-title')?.scrollIntoView?.({ block: 'start' })
+  }, [patientId, planLoaded])
+
   async function openConfirmedPatient(appointment: AgendaAppointment) {
     await selectNutritionPatient(appointment.patient_id, appointment.patient_name)
   }
@@ -196,7 +237,6 @@ export function NutritionPage({
     setPlan(loaded.plan); setCanEditPlan(loaded.canEdit); setPlanLoaded(true)
     setVulnerabilityAlert(asRecord(context?.vulnerability_alert))
     setPatientId(id); setSelectedPatientName(name)
-    globalThis.document.getElementById('nutrition-plan-title')?.scrollIntoView?.({ block: 'start' })
   }
 
   async function searchPatients() {
