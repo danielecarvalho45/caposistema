@@ -6,6 +6,7 @@ import { CareLocationNotices } from '../home/CareLocationNotices'
 import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
 import { agendaBlockText } from '../../components/icons/AgendaBlockIndicator'
 import { AdministrativeTwoDayAgenda } from '../home/AdministrativeTwoDayAgenda'
+import { MaintenanceNoticeBoard } from '../technical/MaintenanceNoticeBoard'
 
 
 type AgendaChangeRow = Readonly<Record<string, unknown>>
@@ -114,7 +115,7 @@ export function GestorDashboard() {
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
           {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
         </article>
-        <Link className="gestor-panel" to="/gestor/timeline"><h3><CapoIcon name="clock" /> Atividades Recentes</h3><p>Consultar os eventos operacionais registrados.</p></Link></aside>
+        <Link className="gestor-panel" to="/gestor/timeline"><h3><CapoIcon name="clock" /> Atividades Recentes</h3><p>Consultar os eventos operacionais registrados.</p></Link><MaintenanceNoticeBoard /></aside>
       </section>
       <section className="gestor-summary-grid" aria-label="Resumo do sistema">
         <Link className="gestor-panel" to="/gestor/administracao"><h3><CapoIcon name="people" /> Cadastro de Profissional</h3><p>Gerenciar profissionais e permissões</p><b>›</b></Link>
