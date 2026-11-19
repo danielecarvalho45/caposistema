@@ -1,6 +1,6 @@
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   getRpcService,
   loadingState,
@@ -90,11 +90,12 @@ export function NoShowsPage({
   const [view, setView] = useState<
     'faltas' | 'contatos' | 'motivo' | 'remarcar'
   >('faltas')
+  const [searchParams] = useSearchParams()
+  const selectedId = searchParams.get('ocorrencia') || initialContextId
   const [hasMoreOccurrences, setHasMoreOccurrences] = useState(false)
   const [loadingMoreOccurrences, setLoadingMoreOccurrences] = useState(false)
   const [followups, setFollowups] =
     useState<AsyncState<readonly NoShowFollowup[]>>(loadingState)
-  const [selectedId, setSelectedId] = useState<string | null>(initialContextId)
   const [contacts, setContacts] = useState<
     AsyncState<readonly NoShowContact[]>
   >({ status: 'empty' })
@@ -242,20 +243,23 @@ export function NoShowsPage({
       <header className="no-shows-header">
         <div>
           <p className="eyebrow">Atendimento e Acompanhamento</p>
-          <h2 id="no-shows-title">Faltosos</h2>
+          <h2 id="no-shows-title">{selectedId ? 'Acompanhamento de Faltosos' : 'Faltosos'}</h2>
           <p>
             Fluxo originado pela Falta registrada na agenda profissional. Não é
             Busca Ativa.
           </p>
         </div>
         <div className="no-shows-toolbar">
+          {selectedId && <Link className="no-shows-back" to="/faltosos" state={{ contextId: null }}>
+            Voltar para Faltosos
+          </Link>}
           <button type="button" onClick={() => void loadFollowups()}>
             Atualizar
           </button>
         </div>
       </header>
 
-      <div className="no-shows-status-tabs" aria-label="Visões de faltosos">
+      {selectedId && <div className="no-shows-status-tabs" aria-label="Visões de faltosos">
         {[
           ['faltas', 'Acompanhar faltas'],
           ['contatos', 'Contatos'],
@@ -271,9 +275,9 @@ export function NoShowsPage({
             {label}
           </button>
         ))}
-      </div>
+      </div>}
 
-      <div className="no-shows-board" aria-label="Ocorrências por etapa">
+      {!selectedId && <div className="no-shows-board" aria-label="Ocorrências por etapa">
         {noShowColumns.map((column) => {
           const occurrences = followups.status === 'success'
             ? followups.data.filter((item) => noShowColumn(item.active_search_status) === column.id)
@@ -289,34 +293,29 @@ export function NoShowsPage({
               {occurrences.length > 0 && (
                 <div className="no-shows-list">
                   {occurrences.map((item) => (
-                    <button key={item.followup_id} type="button"
-                      aria-pressed={item.followup_id === selectedId}
-                      className={item.followup_id === selectedId ? 'is-selected' : ''}
-                      onClick={() => {
-                        setFeedback(null)
-                        setContacts(loadingState())
-                        setSelectedId(item.followup_id)
-                      }}>
+                    <Link key={item.followup_id}
+                      to={`/faltosos?ocorrencia=${encodeURIComponent(item.followup_id)}`}
+                      className="no-shows-occurrence-link">
                       <strong>{item.patient_name}</strong>
                       <span>{statusLabels[item.active_search_status] ?? item.active_search_status}</span>
                       <small>Falta em {formatDate(item.no_show_date)} · {item.professional_name ?? 'Profissional não informado'}</small>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               )}
             </article>
           )
         })}
-      </div>
+      </div>}
 
-      {hasMoreOccurrences && followups.status === 'success' && (
+      {!selectedId && hasMoreOccurrences && followups.status === 'success' && (
         <button type="button" className="no-shows-load-more"
           disabled={loadingMoreOccurrences} onClick={() => void loadMoreFollowups()}>
           {loadingMoreOccurrences ? 'Carregando ocorrências…' : 'Carregar mais ocorrências'}
         </button>
       )}
 
-      <div className="no-shows-layout">
+      {selectedId && <div className="no-shows-layout">
         <article
           className="no-shows-card"
           aria-labelledby="no-show-detail-title"
@@ -328,8 +327,10 @@ export function NoShowsPage({
             remarcar: 'Remanejamento / Remarcação',
           }[view]}</h3>
           {!selected && (
-            <p>
-              Selecione uma ocorrência para consultar e registrar providências.
+            <p role="status">
+              {followups.status === 'loading'
+                ? 'Carregando acompanhamento…'
+                : 'Ocorrência não encontrada nesta consulta. Volte para Faltosos e atualize a lista.'}
             </p>
           )}
           {selected && (
@@ -541,7 +542,7 @@ export function NoShowsPage({
             </>
           )}
         </article>
-      </div>
+      </div>}
     </section>
   )
 }
