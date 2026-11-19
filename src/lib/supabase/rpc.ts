@@ -3180,6 +3180,13 @@ export function createRpcService(transport: RpcTransport) {
         },
         parse: parseReferralMutation,
       }),
+    completeInterprofessionalReferralScheduling: (referralId: string, appointmentId: string) =>
+      execute({
+        transport,
+        operation: 'complete_interprofessional_referral_scheduling_for_interface',
+        args: { p_referral_id: referralId, p_appointment_id: appointmentId },
+        parse: parseReferralMutation,
+      }),
     getMyAssistentialSpecialties: () =>
       execute({
         transport,
@@ -4117,6 +4124,11 @@ function createSupabaseTransport(
             typeof args?.p_target_professional_id === 'string'
               ? args.p_target_professional_id
               : undefined,
+        })
+      case 'complete_interprofessional_referral_scheduling_for_interface':
+        return client.rpc(operation, {
+          p_referral_id: String(args?.p_referral_id ?? ''),
+          p_appointment_id: String(args?.p_appointment_id ?? ''),
         })
       case 'search_my_patients_for_interface':
         return client.rpc(operation, {
