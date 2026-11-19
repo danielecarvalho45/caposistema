@@ -4,6 +4,7 @@ import { getSupabaseClient } from '../../lib/supabase/client'
 import { getRpcService, type AgendaScheduleSlot } from '../../lib/supabase/rpc'
 import { AgendaBlockIndicator } from '../../components/icons/AgendaBlockIndicator'
 import { CapoIcon } from '../../components/icons/CapoIcon'
+import { ManualConfirmationCorrection } from '../agenda/ManualConfirmationCorrection'
 import './daily-team-agenda.css'
 
 type LinkCancellation = AgendaScheduleSlot & { link_cancelled: true; appointment_kind: string }
@@ -36,6 +37,7 @@ function stateLabel(slot: AgendaScheduleSlot | LinkCancellation, status: Status)
   if (decision === 'nao_comparecera' || contact === 'solicitou_cancelamento' || contact === 'solicitou_remarcacao')
     return 'Solicitou remarcação'
   if (contact === 'confirmou') return 'Avisado · Confirmado manualmente'
+  if (contact === 'correcao_pendente') return 'Confirmação manual corrigida · Aguardando resposta'
   if (contact === 'avisado') return 'Avisado · Aguardando confirmação'
   if (contact === 'sem_resposta') return 'Contato realizado · Sem resposta'
   return 'Confirmação pendente'
@@ -202,6 +204,16 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
                       aria-label={`Confirmar manualmente ${slot.patient_name ?? 'paciente'}`}
                       disabled={!canConfirm || busy !== null}
                       onClick={() => void confirmManual(id, isFamily)}><CapoIcon name="check" size={15} /> Confirmar</button>
+                    {contact === 'confirmou' && decision !== 'comparecera' && !requestedChange && (
+                      <ManualConfirmationCorrection appointmentId={id} kind={isFamily ? 'family' : 'patient'}
+                        patientName={slot.patient_name ?? 'paciente'} disabled={busy !== null}
+                        onCorrected={(result) => {
+                          setState((current) => ({
+                            ...current, contacts: { ...current.contacts, [id]: result },
+                          }))
+                          setFeedback('Confirmação corrigida. Consulta mantida; histórico preservado.')
+                        }} />
+                    )}
                     {canReschedule ? (
                       <Link className="capo-team-day-action" to="/agenda"
                         state={isLinkCancellation
