@@ -457,15 +457,15 @@ export function TransportPage({ accessContext }: Props) {
         <p>Solicitação, documento oficial e acompanhamento da providência.</p>
       </div>
 
-      {canCreateRequest && <div className="home-ops" aria-label="Etapas da solicitação de transporte">
-        <h2>Como solicitar transporte</h2>
-        <ol>
-          <li>Localizar paciente.</li><li>Reconhecer necessidade de transporte, quando necessário.</li>
-          <li>Selecionar atendimento.</li><li>Preencher motivo.</li><li>Salvar solicitação.</li>
-          <li>Gerar PDF com o Gestor.</li><li>Assinar PDF com o Gestor.</li>
-          <li>Encaminhar para continuidade administrativa.</li>
-        </ol>
-      </div>}
+      {canCreateRequest && (
+        <div className="home-ops" aria-label="Orientação sobre a solicitação de transporte">
+          <h2>Solicitação de Transporte</h2>
+          <p>
+            Selecione o paciente e um agendamento válido para registrar a solicitação.
+            A necessidade de transporte permanecerá ativa até seu cancelamento formal.
+          </p>
+        </div>
+      )}
 
       {feedback && <p role="status">{feedback}</p>}
 
