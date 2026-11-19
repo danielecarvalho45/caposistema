@@ -506,3 +506,35 @@
   .gestor-dashboard .gestor-summary-grid { grid-template-columns: 1fr; }
   .gestor-home-metrics { grid-template-columns: 1fr 1fr; }
 }
+
+
+/* Home Gestor — agenda principal ampliada, sem impactar a Home operacional. */
+.gestor-dashboard .gestor-dashboard-grid {
+  grid-template-columns: minmax(0, 3.2fr) minmax(285px, 0.9fr);
+  align-items: start;
+}
+.gestor-dashboard .gestor-dashboard-grid > .capo-two-day-home {
+  min-width: 0;
+  grid-column: 1;
+}
+.gestor-dashboard .gestor-side-stack {
+  min-width: 0;
+}
+.gestor-dashboard .gestor-side-stack > .gestor-approved-agenda-changes {
+  min-width: 0;
+}
+.gestor-dashboard .gestor-side-stack > .gestor-approved-agenda-changes header {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.gestor-dashboard .gestor-side-stack > .gestor-approved-agenda-changes button {
+  max-width: 100%;
+}
+@media (max-width: 1150px) {
+  .gestor-dashboard .gestor-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gestor-dashboard .gestor-dashboard-grid > .capo-two-day-home {
+    grid-column: auto;
+  }
+}
