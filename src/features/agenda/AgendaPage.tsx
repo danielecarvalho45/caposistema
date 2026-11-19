@@ -425,6 +425,14 @@ export function HomeScheduleGrid({
         })
       })()
     : periodDays
+  // Um bloco de visita deve ocupar uma única faixa coletiva, não repetir linhas de bloqueio.
+  const ordinarySlots = slots.filter(slot => !homeVisits.some(visit =>
+    slot.slot_status === 'bloqueado'
+    && slot.block_type === 'visita_domiciliar'
+    && slot.slot_date === visit.date
+    && slotClock(slot.slot_start) >= visit.start_time.slice(0, 5)
+    && slotClock(slot.slot_start) < visit.end_time.slice(0, 5)
+  ))
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
     weekday: 'long',
     day: '2-digit',
@@ -436,7 +444,7 @@ export function HomeScheduleGrid({
   }
 
   if (view === 'day') {
-    const daySlots = slots.filter((slot) => slot.slot_date === days[0])
+    const daySlots = ordinarySlots.filter((slot) => slot.slot_date === days[0])
     return (
       <div className="assistential-table-wrap agenda-day-table-wrap">
         <table className="assistential-table agenda-day-table">
@@ -593,7 +601,7 @@ export function HomeScheduleGrid({
       aria-label="Grade efetiva da agenda"
     >
       {days.map((day) => {
-        const daySlots = slots.filter((slot) => slot.slot_date === day)
+        const daySlots = ordinarySlots.filter((slot) => slot.slot_date === day)
         return (
           <article className={`agenda-schedule-day${view === 'month' && localDate(day).getMonth() !== localDate(startDate).getMonth() ? ' is-outside' : ''}`} key={day}>
             <h3>{dateFormatter.format(localDate(day))}</h3>
