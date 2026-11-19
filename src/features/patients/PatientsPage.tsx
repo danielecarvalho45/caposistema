@@ -637,22 +637,32 @@ ADMINISTRATIVO DO CAPO`
             </p>
           )}
           {!preexistingPatientReady && !registrationKind && (
-            <div className="patients-registration-kind" role="group" aria-label="Tipo de cadastro">
-              <p>Selecione o tipo de cadastro para abrir o formulário correspondente.</p>
-              <div className="patients-form-actions">
-                <button type="button" onClick={() => {
+            <div className="patients-registration-choice" role="group" aria-label="Escolha do tipo de cadastro">
+              <p>Selecione o tipo de cadastro para continuar.</p>
+              <div className="patients-registration-cards">
+                <button type="button" className="patients-registration-card" onClick={() => {
                   setRegistrationKind('novo')
                   setPatientCapoStartDate('')
                   setCreatedPatientId(null)
                   setCreatedPatientNumber(null)
                   setCreatedPatientAt(null)
-                }}>Cadastro Novo</button>
-                <button type="button" onClick={() => {
+                }}>
+                  <span className="patients-registration-icon" aria-hidden="true">👤</span>
+                  <strong>Cadastro Novo</strong>
+                  <span>Paciente iniciando no CAPO</span>
+                  <span className="patients-registration-select">Selecionar →</span>
+                </button>
+                <button type="button" className="patients-registration-card" onClick={() => {
                   setRegistrationKind('preexistente')
                   setCreatedPatientId(null)
                   setCreatedPatientNumber(null)
                   setCreatedPatientAt(null)
-                }}>Cadastro Existente</button>
+                }}>
+                  <span className="patients-registration-icon" aria-hidden="true">📋</span>
+                  <strong>Cadastro Existente</strong>
+                  <span>Paciente que já utilizava o CAPO</span>
+                  <span className="patients-registration-select">Selecionar →</span>
+                </button>
               </div>
             </div>
           )}
