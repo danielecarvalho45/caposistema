@@ -267,3 +267,21 @@
 5. Reconsultado o registro: `read_at IS NULL`, `resolved_at IS NULL`, e as quatro RPCs contêm a guarda de destinatário.
 
 **Limites:** testes SQL funcionais concluídos, porém testes de interface autenticada do sininho e deploy Cloudflare não foram executados neste turno. A regra já está no banco em uso, sem necessidade de implantação do frontend. Proteção contra regressões: não interferir nos Quadros de Avisos de Manutenção, Comunicação Interna, Agenda, Faltosos, nem nas notificações institucionais por papel. Acompanhamento operacional pela Titular antes de homologação visual final.
+
+
+---
+
+## 19/11/2026 — VERDE: atualização automática e protegida de versão do CAPO
+
+**Solicitação e VERDE da Titular:** atualizar automaticamente o CAPO quando uma nova versão das telas for publicada, sem impor `Ctrl+R` e **sem interromper consultas, agendamentos, formulários ou registros assistenciais não salvos**. Preservar todos os perfis e o isolamento dos dados, sem alteração de operações de banco.
+
+**Implementação cirúrgica em GitHub `main`:**
+- `vite.config.ts`, commit `a76258717b7839a83e0bf276c5591a7618fcbe4a`: em cada build Vite, gera um identificador único `capoBuildVersion` embutido no JavaScript e publica um arquivo estático `/capo-version.json` com o mesmo ID. O servidor Cloudflare Pages precisa concluir a publicação do novo build antes que o navegador detecte a mudança.
+- `src/components/system/CapoAutomaticVersionUpdate.tsx`, commit `76468f3c6701a27752068077f07f05466d08f2cb`: consulta `/capo-version.json` a cada 60s somente com aba visível e conexão disponível (`cache: no-store`), também ao voltar para a aba; compara com a versão do bundle atual. Ao detectar mudança, exibe aviso discreto `Nova versão do CAPO disponível`. **Recarga automática somente na rota Home `/`, após 120s sem interação, com aba visível, online, sem qualquer campo editado na sessão, sem editor em foco e sem diálogo/modal aberto**. Em qualquer outra tela ou sessão com edição, mantém o aviso de atualização manual; se houve edição, o clique exige confirmação explícita antes do recarregamento. A verificação não modifica dados, autenticação, agendas ou prontuários.
+- `src/components/system/automatic-version-update.css`, commit `20ec8c5019fa0c5301248fbbee7b91ddea75e466`: aviso discreto e responsivo.
+- `src/app/providers.tsx`, commit `5c1bac5fa383da6c4cd47dd7f0ca119054e8408c`: mecanismo único para todos os perfis, dentro de `AccessGate`; fluxo público de confirmação `/confirmar-consulta` permanece independente e não recebe atualização automática.
+- `tests/unit/capo-automatic-version-update.test.ts`, commit `df3086cf4000a98c9a920e25d8784bbff310a81b`: testes de segurança de rota, tempo de ociosidade, edição, campos ativos, modal, conexão e visibilidade.
+
+**Comportamento contratado:** atualização do Supabase entra em vigor nas próximas consultas e não depende do novo mecanismo. Atualização de frontend depende primeiro da publicação pelo Cloudflare Pages. O cliente detecta o novo manifesto e recarrega **somente em condição conservadora e segura**, preferindo a segurança de informações não salvas à atualização imediata. O aviso pode permanecer pendente até a próxima situação segura ou clique consciente do usuário. O mecanismo não promete reconhecer todo processo assíncrono ou auto-salvamento como seguro; por isso restringe a recarga automática à Home ociosa e nunca força reload nas telas assistenciais.
+
+**Status da verificação:** código e testes foram versionados no GitHub. Ainda não há prova, neste registro, de execução automatizada de Vitest, build Vite, publicação Cloudflare ou teste operacional autenticado. Não declarar o comportamento homologado antes da verificação da Titular em produção/homologação. Manutenção nova não altera banco Supabase.
