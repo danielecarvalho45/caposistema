@@ -169,3 +169,19 @@
 **Homologação operacional pendente:** confirmar em login real e manuteste na interface a ausência de avisos de produção em `Notificações` e chamados reais em `TI`; confirmar que TI em homologação pode trabalhar somente sobre chamados gerados naquele contexto. Não afirmar execução de Vitest/build, navegação autenticada e Cloudflare apenas pelos testes SQL.
 
 **Estado:** CORREÇÃO DE SEGURANÇA APLICADA E TESTADA NO BANCO; HOMOLOGAÇÃO VISUAL PENDENTE.
+
+---
+
+## 19/11/2026 — VERDE: correção pontual da criação de solicitação geral no perfil Ilton
+
+**Relato e evidência:** chamado real de suporte `d723e5c4-549a-411b-958a-59e1bd5d4f6a`, profissional Ilton, erro `Could not find the function public.create_administrative_request_for_interface(p_description, p_subject) in the schema cache`. A conta `ilton` está ativa, vinculada ao profissional ativo e possui os papéis `profissional` (principal) e `coordenador` (acumulado). A função existente no Supabase é `create_administrative_request_for_interface(p_patient_id uuid,p_subject text,p_description text)` e permite paciente `NULL`. O código em `src/lib/supabase/rpc.ts` omitia `p_patient_id` quando ausente, transmitindo `undefined`, o que fazia o PostgREST procurar uma assinatura com apenas os dois campos de texto.
+
+**VERDE explícito da Titular:** correção pontual da criação de solicitação sem paciente, sem alterar módulos estabilizados ou autorizações do Ilton.
+
+**Correção aplicada:** `src/lib/supabase/rpc.ts`, commit `962deda30c0d48c67473d3266e40161123307ead`, substituiu `undefined` por `null` no parâmetro `p_patient_id`. Refinamento de testabilidade no mesmo arquivo, commit `f17d9d9ddb974bb72b748e319f5b220bae358dc8`, utiliza função determinística `administrativeRequestRpcPatientId` para serializar o paciente opcional: `null` ou `undefined` → `null`; UUID fornecido → UUID preservado. **A RPC sempre recebe os três nomes de parâmetros**, mantendo o comportamento de solicitação geral e solicitação vinculada a paciente.
+
+**Teste de regressão adicionado:** `tests/unit/administrative-request-rpc-args.test.ts`, commit `5da94fb1b457a7abb30af189a4c408c171c9317e`, cobrindo ausência e presença de paciente. O teste de interface pré-existente `tests/unit/requests-page.test.tsx` já confere envio de solicitação geral por profissional com `patientId=null`. Testes versionados, mas **sem prova de execução Vitest, build, login autenticado do Ilton ou publicação Cloudflare neste turno**; não declarar homologação funcional até teste real.
+
+**Escopo preservado:** nenhum SQL, tabela, RLS, RPC de Supabase, registro real, solicitação existente, permissão, agenda, Comunicação Interna ou Notificação Geral alterado. `RequestsPage.tsx` permanece intacto. O chamado de Ilton permanece sujeito ao procedimento normal de TI; não marcar como resolvido antes de homologação.
+
+**Estado:** CORREÇÃO DE CÓDIGO APLICADA EM `main`; COMPILAÇÃO/PUBLICAÇÃO E TESTE OPERACIONAL DO ILTON PENDENTES.
