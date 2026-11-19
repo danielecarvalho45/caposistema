@@ -4,12 +4,13 @@ import { join, relative } from 'node:path'
 
 // Apenas entradas que compõem o frontend publicado. Auditorias, testes,
 // migrations e documentos não alteram o identificador de atualização do navegador.
-const BUILD_DIRECTORIES = ['src', 'public', 'scripts'] as const
+const BUILD_DIRECTORIES = ['src', 'public'] as const
 const BUILD_FILES = [
   'index.html',
   'package.json',
   'package-lock.json',
   'vite.config.ts',
+  'scripts/capo-build-version.ts',
 ] as const
 
 export function createCapoSourceVersion(root = process.cwd()): string {
