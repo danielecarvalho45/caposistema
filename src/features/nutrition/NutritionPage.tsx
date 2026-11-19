@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type AgendaAppointment, type ReferralPatient } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { AgendaPage } from '../agenda/AgendaPage'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
 import { buildNutritionDocumentPdf } from '../../lib/pdf/nutrition-document-pdf'
@@ -65,6 +65,8 @@ export function NutritionPage({
   homeOnly = false,
 }: Readonly<{ accessContext: AccessContext; homeOnly?: boolean }>) {
   const location = useLocation()
+  const navigate = useNavigate()
+  const returnTo = location.state && typeof location.state === 'object' && 'returnTo' in location.state && location.state.returnTo === '/agenda' ? '/agenda' : '/'
   const [specialtyResult, setSpecialtyResult] = useState<{ professionalId: string; hasNutritionSpecialty: boolean } | null>(null)
   const eligibleForSpecialty = accessContext.is_active && Boolean(accessContext.professional_id) && accessContext.roles.some((role) => role.code === 'profissional')
   const hasNutritionSpecialty = !eligibleForSpecialty ? false : specialtyResult?.professionalId === accessContext.professional_id ? specialtyResult.hasNutritionSpecialty : null
@@ -199,15 +201,15 @@ export function NutritionPage({
     return () => { active = false }
   }, [homeOnly, isNutritionProfessional, location.state, accessContext.professional_id])
 
-  // Depois que o paciente foi carregado, a seção existe no DOM inclusive
-  // na Home, onde é renderizada condicionalmente.
+  // A Home jamais exibe o formulário. Ao confirmar na agenda embutida,
+  // navegar para a tela exclusiva com o ID da consulta para revalidação no banco.
   useEffect(() => {
-    if (!patientId || !planLoaded) return
+    if (homeOnly || !patientId || !planLoaded) return
     globalThis.document.getElementById('nutrition-plan-title')?.scrollIntoView?.({ block: 'start' })
-  }, [patientId, planLoaded])
+  }, [homeOnly, patientId, planLoaded])
 
-  async function openConfirmedPatient(appointment: AgendaAppointment) {
-    await selectNutritionPatient(appointment.patient_id, appointment.patient_name)
+  function openConfirmedPatient(appointment: AgendaAppointment) {
+    navigate('/nutricao', { state: { confirmedAppointmentId: appointment.appointment_id, returnTo: '/' } })
   }
 
   async function selectNutritionPatient(id: string, name: string) {
@@ -513,14 +515,14 @@ export function NutritionPage({
 
   return (
     <section className="home-page home-mobile-standard" aria-labelledby="nutrition-title">
-      {isNutritionProfessional && (
+      {isNutritionProfessional && homeOnly && (
         <>
           <nav className="home-profile home-profile-standard" aria-label="Acessos rápidos da Nutrição">
             <h2>Acessos rápidos</h2>
             <div className="home-profile-grid">
               <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
               <Link className="home-profile-card quick-purple" to="/minha-agenda/solicitar-alteracao"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
-              <Link className="home-profile-card quick-green" to="/nutricao"><span className="home-profile-icon" aria-hidden="true">◉</span><strong>Planejamento Alimentar</strong><span>Abrir o módulo da Nutrição</span></Link>
+              <Link className="home-profile-card quick-green" to="/nutricao" state={{ returnTo: '/' }}><span className="home-profile-icon" aria-hidden="true">◉</span><strong>Planejamento Alimentar</strong><span>Abrir o módulo da Nutrição</span></Link>
               <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Demandas da própria atuação</span></Link>
               <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores da Nutrição</span></Link>
               <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true">?</span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
@@ -541,8 +543,12 @@ export function NutritionPage({
 ))}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<h3>Equipe CAPO</h3>{birthdays.data.team.length ? <ul>{birthdays.data.team.map((member) => <li key={member.professional_id}>{member.full_name}</li>)}</ul> : <p>Nenhum integrante da equipe faz aniversário hoje.</p>}</>}
           </section>
 
-          {(!homeOnly || patientId) && (
-          <section className="home-profile" aria-labelledby="nutrition-plan-title">
+        </>
+      )}
+
+      {!homeOnly && isNutritionProfessional && (
+        <section className="home-profile" aria-labelledby="nutrition-plan-title">
+            <Link to={returnTo} className="nutrition-back-link">← Voltar {returnTo === '/agenda' ? 'à agenda' : 'à Home'}</Link>
             <p className="eyebrow">Planejamento Alimentar</p>
             <h2 id="nutrition-plan-title">Plano Alimentar e PDF oficial</h2>
             {patientId && (
@@ -618,11 +624,9 @@ export function NutritionPage({
               </div>
             )}
           </section>
-          )}
-        </>
       )}
 
-      {canManageDeliveries && (
+      {!homeOnly && canManageDeliveries && (
         <section className="home-profile" aria-labelledby="nutrition-admin-title">
           <p className="eyebrow">Gestão administrativa</p>
           <h2 id="nutrition-admin-title">Entregas nutricionais</h2>
@@ -659,7 +663,7 @@ export function NutritionPage({
         </section>
       )}
 
-      {canConsultDocuments && (
+      {!homeOnly && canConsultDocuments && (
         <section className="home-profile" aria-labelledby="nutrition-management-title">
           <p className="eyebrow">Consulta gerencial</p>
           <h2 id="nutrition-management-title">Documentos nutricionais oficiais</h2>
