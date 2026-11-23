@@ -3546,7 +3546,7 @@ export function AgendaPage({
         {!isProfessional && familyLinkRebookingId && roleCodes.some((role) =>
           ['administrador', 'administrativo_operacional'].includes(role)) && (
           <FamilyLinkRebookingAction appointmentId={familyLinkRebookingId}
-            accessContext={accessContext} onSaved={() => { void load() }} />
+            accessContext={accessContext} notifyAdministrativeOnly={isProfessional} onSaved={() => { void load() }} />
         )}
 
         {familyReturnNotice && (
