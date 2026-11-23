@@ -107,14 +107,8 @@
   transform:rotate(-10deg);
   pointer-events:none;
 }
-.gestor-slogan-approved{
-  position:relative;
-  z-index:2;
-  min-width:255px;
-  padding-right:10px;
-  font-size:18px;
-  line-height:1.02;
-}
+/* Lema institucional: prevalece o padrão visual original acima (23px,
+   junto ao coração; 20px na largura reduzida). */
 .gestor-main{padding-top:10px}
 @media(max-width:820px){
   .gestor-welcome-approved{margin:8px 12px 0}
