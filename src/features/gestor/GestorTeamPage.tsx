@@ -393,6 +393,10 @@ export function GestorTeamPage({
       }
       const value = (result.data as Record<string, unknown>).greeting_treatment
       setGreetingTreatment(value === 'feminino' || value === 'masculino' ? value : null)
+    }).catch(() => {
+      if (!active) return
+      setGreetingLoading(false)
+      setFeedback('Não foi possível consultar a forma de tratamento no banco. Selecione novamente.')
     })
     return () => { active = false }
   }, [selected?.professionalId, service])
@@ -752,7 +756,10 @@ export function GestorTeamPage({
         <label>Forma de tratamento na saudação
           <select aria-label="Forma de tratamento na saudação"
             value={greetingTreatment ?? ''} disabled={greetingLoading}
-            onChange={(event) => setGreetingTreatment(event.target.value === 'feminino' || event.target.value === 'masculino' ? event.target.value : null)}>
+            onChange={(event) => {
+              const value = event.target.value
+              setGreetingTreatment(value === 'feminino' || value === 'masculino' ? value : null)
+            }}>
             <option value="">Não informado — Boas-vindas</option>
             <option value="feminino">Feminino — Bem-vinda</option>
             <option value="masculino">Masculino — Bem-vindo</option>
