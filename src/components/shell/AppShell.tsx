@@ -343,8 +343,8 @@ export function AppShell({
         >
           <section className="app-welcome-approved" aria-label="Boas-vindas">
             <div className="app-welcome-copy">
-              <h1>{greeting}</h1>
-              <p>Tenha um ótimo dia de trabalho.</p>
+              <h1><span className="capo-greeting-time">{greeting.slice(0, greeting.indexOf('!') + 1)}</span><span className="capo-greeting-message">{greeting.slice(greeting.indexOf('!') + 2)}</span></h1>
+              <p className="capo-welcome-workday"><span>Tenha um ótimo dia de trabalho!</span><img src="/assets/capo-girassol-natural.svg" alt="" aria-hidden="true" width="32" height="42" /></p>
             </div>
             <span className="app-welcome-heart" aria-hidden="true">♡</span>
             <div className="app-slogan-approved" aria-label="Mensagem institucional">
