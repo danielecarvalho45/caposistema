@@ -217,10 +217,12 @@
 }
 
 .app-user-caption {
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--color-muted);
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .app-context-label {
