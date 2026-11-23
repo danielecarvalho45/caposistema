@@ -937,3 +937,16 @@ A Titular especificou a denominação **“Sistema de Agendamento do CAPO”** p
 **Testes de regressão:** `tests/unit/gestor-team-page.test.tsx` possui casos de persistência isolada com leitura posterior e confirmação, ausência de chamada à atualização geral do perfil, reapresentação da escolha e falha de gravação sem falso positivo (commits `a17f775669880517b7719b9653fa3018fc0e64aa` e `81ea33110d421b1d37c5aa12a1edf1d8bde838ea`).
 
 **Restrições e homologação:** nenhuma escrita em registro de profissional real foi feita durante a manutenção; o formato do campo e as funções do banco permanecem os mesmos. **Ainda não foi confirmado build/Vitest, publicação no Cloudflare, execução autenticada de clique/salvamento no navegador, nem uso final na Home de profissional.** Homologar pelo Gestor/Titular: selecionar profissional → alterar forma de tratamento → `Salvar forma de tratamento` → mensagem de sucesso após releitura → selecionar novamente profissional → observar escolha persistida → entrar na Home desse profissional e conferir a concordância. Não marcar como homologado antes do teste funcional.
+
+
+---
+
+## 23/11/2026 — VERDE — restauração do tamanho original do lema institucional
+
+**Autorização:** Titular solicitou que “Cuidar hoje. Mais possibilidades amanhã.” voltasse ao tamanho e à proximidade originais do coração, sem modificar a saudação, girassol ou demais componentes; concedeu VERDE.
+
+**Diagnóstico:** nos arquivos `src/components/shell/app-shell.css` e `src/features/gestor/gestor.css` havia uma regra original `.app-slogan-approved` / `.gestor-slogan-approved` com fonte **23px**, `min-width:310px`, `padding-right:28px` e responsividade de **20px** abaixo de 820px, mas um bloco posterior sobrepunha a fonte com **18px**, `min-width:255px` e `padding-right:10px`. Esse sobrescrito diminuía o lema e alterava sua ocupação de espaço junto ao coração.
+
+**Correção pontual:** removidos somente os blocos CSS posteriores de sobrescrita do lema, fazendo prevalecer os estilos originais de 23px (20px em tela intermediária). O coração, seu posicionamento `right:31%`, `top:-10px`, formato e cor não foram alterados. Também não houve modificação no JSX da saudação, no girassol ou nas funções de cadastro. Commits `879e776ede2f9cc8568ce4cf34d0972940affd7d` e `2b6db240e75278dafda694d9556e118e3f292eeb`, na branch `main`.
+
+**Validação:** comparação e alteração dos arquivos do GitHub concluída. Não há confirmação, nesta etapa, de publicação do Cloudflare ou verificação visual autenticada; conferir Home profissional e Gestor/Titular em desktop e mobile antes da homologação.
