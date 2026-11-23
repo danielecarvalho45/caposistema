@@ -204,8 +204,8 @@ export function GestorShell({
         </header>
         <section className="gestor-welcome-approved" aria-label="Boas-vindas">
           <div className="gestor-welcome-copy">
-            <h2>{greeting}</h2>
-            <p>Tenha um ótimo dia de trabalho.</p>
+            <h2><span className="capo-greeting-time">{greeting.slice(0, greeting.indexOf('!') + 1)}</span><span className="capo-greeting-message">{greeting.slice(greeting.indexOf('!') + 2)}</span></h2>
+            <p className="capo-welcome-workday"><span>Tenha um ótimo dia de trabalho!</span><img src="/assets/capo-girassol-natural.svg" alt="" aria-hidden="true" width="32" height="42" /></p>
           </div>
           <span className="gestor-welcome-heart" aria-hidden="true">♡</span>
           <div className="gestor-slogan-approved" aria-label="Mensagem institucional">
