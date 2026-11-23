@@ -405,7 +405,7 @@ export function GestorTeamPage({
       setFeedback('Não foi possível consultar a forma de tratamento no banco. Selecione novamente.')
     })
     return () => { active = false }
-  }, [selected?.professionalId, service])
+  }, [selected, service])
 
   function chooseMember(member: TeamMember) {
     setCapabilities([])
