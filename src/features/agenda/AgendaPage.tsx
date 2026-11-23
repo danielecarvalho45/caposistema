@@ -436,7 +436,7 @@ export function HomeScheduleGrid({
     && slotClock(slot.slot_start) < visit.end_time.slice(0, 5)
   ))
   const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
+    weekday: view === 'month' ? 'short' : 'long',
     day: '2-digit',
     month: '2-digit',
   })
