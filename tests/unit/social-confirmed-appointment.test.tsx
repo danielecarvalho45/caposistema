@@ -9,6 +9,7 @@ import type { ClosuresIntegration } from '../../src/features/closures/closures-i
 const backend = vi.hoisted(() => ({
   getProfessionalAppointmentContext: vi.fn(),
   getSocialVulnerabilityIndicator: vi.fn(),
+  setSocialVulnerabilityIndicator: vi.fn(),
 }))
 
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => {
@@ -91,6 +92,25 @@ describe('Assistência Social — confirmação e continuidade de atendimento', 
     expect(await screen.findByText('Paciente confirmado na agenda: Paciente autorizado')).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Iniciar acompanhamento social' }))
     expect(integration.startSocial).toHaveBeenCalledWith('patient-1', 'appointment-1')
+  })
+
+  it('não presume verde sem avaliação e permite salvar a classificação escolhida', async () => {
+    backend.getSocialVulnerabilityIndicator.mockResolvedValue({ status: 'empty' })
+    backend.setSocialVulnerabilityIndicator.mockResolvedValue({ status: 'success', data: { level: 'amarelo' } })
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <SocialPage accessContext={context} mode="home" integration={integration} />
+      </MemoryRouter>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Confirmar consulta social' }))
+    const save = await screen.findByRole('button', { name: 'Salvar indicador' })
+    expect(save).toBeDisabled()
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Nível' }), 'amarelo')
+    expect(save).toBeEnabled()
+    await user.click(save)
+    await waitFor(() => expect(backend.setSocialVulnerabilityIndicator).toHaveBeenCalledWith('patient-1', 'amarelo'))
+    expect(await screen.findByText(/Indicador de vulnerabilidade atualizado/)).toBeVisible()
   })
 
   it('na rota separada relê a consulta do backend antes de abrir atendimento', async () => {
