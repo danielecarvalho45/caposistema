@@ -272,6 +272,45 @@ describe('AgendaPage', () => {
     )
   })
 
+
+  it('abre remarcação vinda da Home com tipo certo, sem efetivar movimentação', async () => {
+    const manager: AccessContext = {
+      ...accessContext, professional_id: null,
+      roles: [{ code: 'administrador', name: 'Administrador' }],
+      primary_context: { ...accessContext.primary_context, code: 'administrador', name: 'Administrador' },
+    }
+    const initial = { pathname: '/agenda', state: {
+      origin: 'home_reschedule_appointment',
+      appointmentId: 'appointment-id', patientId: 'patient-id',
+      patientName: 'Paciente autorizado', professionalId: 'professional-id',
+      slotDate: '2026-09-17',
+    } }
+    render(<MemoryRouter initialEntries={[initial]}>
+      <AgendaPage accessContext={manager} loadAgenda={vi.fn().mockResolvedValue({ status: 'success', data: [appointment] })} />
+    </MemoryRouter>)
+    expect(await screen.findByRole('heading', { name: 'Remarcação / Retorno' })).toBeVisible()
+    expect(screen.getByLabelText(/Tipo de movimentação/)).toHaveValue('remarcacao')
+    expect(screen.getByRole('button', { name: 'Aplicar remarcação' })).toBeDisabled()
+  })
+
+  it('abre cancelamento vindo da Home exigindo motivo e confirmação', async () => {
+    const manager: AccessContext = {
+      ...accessContext, professional_id: null,
+      roles: [{ code: 'administrador', name: 'Administrador' }],
+      primary_context: { ...accessContext.primary_context, code: 'administrador', name: 'Administrador' },
+    }
+    const initial = { pathname: '/agenda', state: {
+      origin: 'home_cancel_appointment', appointmentId: 'appointment-id',
+      professionalId: 'professional-id', slotDate: '2026-09-17',
+    } }
+    render(<MemoryRouter initialEntries={[initial]}>
+      <AgendaPage accessContext={manager} loadAgenda={vi.fn().mockResolvedValue({ status: 'success', data: [appointment] })} />
+    </MemoryRouter>)
+    expect(await screen.findByRole('heading', { name: 'Cancelar agendamento' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Confirmar cancelamento' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Manter agendamento' })).toBeEnabled()
+  })
+
   it('apresenta os dados reais nas visualizações de dia, semana e mês', async () => {
     const loadAgenda = vi.fn().mockResolvedValue({
       status: 'success',
