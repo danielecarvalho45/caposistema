@@ -766,3 +766,23 @@
 **Limite:** conferência estrutural de integração no GitHub e prova SQL de confirmação sob contexto de teste realizados; não houve execução de Vitest/build de interface, publicação Cloudflare comprovada ou clique real autenticado pós-publicação. O botão na interface ainda necessita homologação operacional da Titular, inclusive para novo paciente de teste, preservando isolamento e auditabilidade.
 
 **Regra preservada:** mesma agenda e comportamento base em `manuteste` e nos perfis reais; a sincronização automática da seleção de paciente é **exceção específica do ambiente de homologação**, para manter a invariante de escrita de paciente teste selecionado. Produção não recebe alteração de comportamento.
+
+
+---
+
+## 23/11/2026 — VERDE — Assistência Social: transporte de contexto e indicador de vulnerabilidade
+
+**Ocorrência e autorização:** após confirmar a presença e iniciar pela Agenda, a tela de Acompanhamento Social exibiu `Resposta inválida de get_professional_appointment_context_for_interface: RPC não cadastrada na camada CAPO`. A Titular apontou também a necessidade de preservar a marcação de vulnerabilidade operacional e concedeu **VERDE** específico para esta correção.
+
+**Investigação documental e física:** Matriz Funcional §9.2 prevê Agenda → paciente confirmado → contexto do paciente → acompanhamento, sinalizações e providências; Manual da Interface §17.1 prevê níveis verde/amarelo/vermelho, com compartilhamento mínimo e sem Estudo Social no CAPO. Em `src/features/social/SocialPage.tsx`, já existiam a abertura do paciente a partir do contexto validado, leitura e gravação de vulnerabilidade; `src/lib/supabase/rpc.ts` expunha `getProfessionalAppointmentContext` mas não incluía a operação na whitelist do `createSupabaseTransport`. As RPCs `get_social_vulnerability_indicator_for_interface` e `set_social_vulnerability_indicator_for_interface` já estavam autorizadas. A seleção iniciava indevidamente em verde antes da leitura do indicador.
+
+**Correções cirúrgicas realizadas na branch `main`:**
+1. `src/lib/supabase/rpc.ts`: acrescentado exclusivamente o caso `get_professional_appointment_context_for_interface` ao grupo existente do transporte validado, sem mudar assinatura ou segurança; commit `fca9c0c7c450b0bf7b16e313e88b3a5676bd0d29`.
+2. `src/features/social/SocialPage.tsx`: indicador inicial vazio e reiniciado ao selecionar outro agendamento; leitura de nível existente continua preservada; salvar exige seleção explícita, sem assumir `verde` para paciente sem avaliação; commit `2e80e4f677933bafbdbc4c414a82b5b32c1693cf`.
+3. `tests/unit/social-confirmed-appointment.test.tsx`: teste acrescido para paciente sem indicador previamente carregado, botão salvar inicialmente desabilitado e escolha/salvamento explícitos de `amarelo`; commit `f3fa4dda35d3a6a790552f89a531b1bcd319ba48`.
+
+**Preservação:** nenhum SQL/migration/RLS/ACL ou dado de paciente modificado; acompanhamento social, familiares, luto, retorno, fechamento, nutrição e segregação produção/`manuteste` permanecem com os mesmos contratos. Não foi criada nova função ou fluxo paralelo.
+
+**Limites de validação:** os arquivos foram conferidos por leitura estática do GitHub após versionamento. Teste de regressão escrito, mas não declarar Vitest/typecheck/build/CI/deploy Cloudflare ou clique autenticado como executados sem evidência específica. Homologação operacional pendente: confirmar Agenda → Iniciar → paciente correto e nível existente ou vazio; salvar e recarregar a classificação autorizada no `manuteste`, sem vazamento de dados reais; observar sinalização mínima para Nutrição. A atualização da whitelist não garante por si só autorização backend, que permanece independente.
+
+**Status:** CORREÇÃO PONTUAL VERSIONADA NA MAIN; HOMOLOGAÇÃO OPERACIONAL PENDENTE.
