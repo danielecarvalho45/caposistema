@@ -803,3 +803,20 @@
 **Pendência:** atendimento ainda está **agendado para 23/11 às 13h10**. Gestor/AO deve selecionar horário efetivamente disponível e executar a **remarcação canônica**, que preserva histórico e gera o novo agendamento conforme as regras existentes. Não declarar remarcação efetuada, comunicação ao paciente, publicação, testes automatizados ou homologação de interface como realizados.
 
 **Escopo:** correção excepcional de dado real explicitamente autorizada; sem mudança em contratos RPC, RLS, módulos homologados, frontend ou isolamento de `manuteste`.
+
+
+---
+
+## 23/11/2026 — VERDE — visualização mensal da Home profissional: sete colunas acessíveis
+
+**Ocorrência:** a Titular enviou captura da Home da Nutrição em visualização **Mês / novembro de 2026**, com grade cortada horizontalmente após quinta-feira e mostrando inicialmente apenas as semanas de 26/10 e 02/11. Solicitou expressamente verificar impacto nos demais profissionais e deu **VERDE** para adequar todos onde o erro fosse compartilhado.
+
+**Causa confirmada no código `main`:** `HomeScheduleGrid` em `src/features/agenda/AgendaPage.tsx` calcula corretamente 42 datas (6 linhas × 7 colunas), preservando filtro por profissional e período. O CSS posterior de `src/features/agenda/agenda-page.css`, seção §28.214, força `grid-template-columns: repeat(7,minmax(128px,1fr))` e `overflow-x:auto` tanto na semana como no mês. O mínimo total de 896 px, incompatível com a largura efetiva da Home com indicadores laterais, causa corte parcial/rolagem lateral da grade, agravado pelos cabeçalhos extensos. O componente `AgendaPage embeddedHome` é reutilizado pela Nutrição, Assistência Social e `AssistentialPage` dos demais profissionais: risco transversal. Isso não é perda de dados de agendamento.
+
+**Alteração cirúrgica aprovada e aplicada no GitHub `main`:**
+- `src/features/agenda/AgendaPage.tsx`: apenas para visualização mensal, `Intl.DateTimeFormat` usa `weekday:'short'` em vez de `long`; vistas diária/semanal permanecem inalteradas. Commit `e9efe95a2fcc179c1d34d451610afe66e9fd7576`.
+- `src/features/agenda/agenda-page.css`: regras adicionais restritas a `.agenda-home-card .agenda-schedule-grid--month` sobrescrevem `minmax(128px,1fr)` por `repeat(7,minmax(0,1fr))`, `width:100%` e `overflow-x:visible`, com espaçamento compacto, títulos/ações quebrando linhas e lista interna de horários por dia com altura máxima e rolagem vertical. Inclui ajuste de espaçamento para tela até 760px. Sem mexer na vista semanal, Agenda Geral ou grades do backend. Commit `a071e84898d69feddb604ed86ec978d627c6c9f8`.
+
+**Restrições preservadas:** calendário com 42 datas; todos os slots/horários reais continuam carregados e acessíveis, sem ocultar as ações; bloqueios, presença/falta, retorno, cancelamento e permissões permanecem intactos. Nenhuma alteração no Supabase, RLS, pacientes ou agendamentos. O mesmo componente CSS compartilhado atende às Homes profissionais de Nutrição, Assistência Social e demais especialidades.
+
+**Validação:** leitura posterior dos dois arquivos `main` confirma as edições; consulta de status combinado do último commit não retornou verificações de CI. **Não há evidência de build, teste Vitest, publicação no Cloudflare ou inspeção autenticada visual desktop/mobile após a mudança**. Homologação pendente: Nutrição/Home/Mês de novembro exibindo segunda a domingo e 6 semanas, inclusive 23/11; conferir largura, rolagem por dia e acesso aos botões; repetir em Assistência Social, Psicologia/Fisioterapia/Clínico e telas mobile/tablet; verificar Dia/Semana inalterados. Não declarar aprovado antes do teste pela Titular.
