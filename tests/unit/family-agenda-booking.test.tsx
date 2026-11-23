@@ -26,7 +26,8 @@ vi.mock('../../src/components/contact/whatsapp-tab', () => ({
   openCapoWhatsAppTab: vi.fn(),
 }))
 vi.mock('../../src/features/agenda/FamilyPsychologyReturnAction', () => ({
-  FamilyPsychologyReturnAction: () => <button type="button">Agendar retorno</button>,
+  FamilyPsychologyReturnAction: ({ presetSlot }: { presetSlot?: string }) =>
+    <button type="button">{presetSlot ? 'Confirmar agendamento' : 'Agendar retorno'}</button>,
 }))
 const family = {
   family_member_id: 'family-1', full_name: 'Familiar Autorizado',
@@ -93,13 +94,22 @@ describe('Agendamento familiar pela pesquisa canônica da Agenda', () => {
       p_family_member_id: 'family-1',
     })
   })
+  it('bloqueia o retorno em psicólogo diferente e mantém a regra de vínculo', async () => {
+    mocks.rpc.mockResolvedValue({ data: context({
+      appointment_id: 'completed-1', professional_id: 'different-psychologist',
+      attendance_status: 'realizado', appointment_date: '2026-11-20T13:10:00-03:00',
+    }), error: null })
+    mount()
+    expect(await screen.findByText(/selecione o mesmo psicólogo do atendimento anterior/)).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Confirmar agendamento' })).not.toBeInTheDocument()
+  })
   it('oferece retorno pela função existente quando consulta anterior está concluída', async () => {
     mocks.rpc.mockResolvedValue({ data: context({
       appointment_id: 'completed-1', professional_id: 'psychologist-1',
       attendance_status: 'realizado', appointment_date: '2026-11-20T13:10:00-03:00',
     }), error: null })
     mount()
-    expect(await screen.findByRole('button', { name: 'Agendar retorno' })).toBeVisible()
+    expect(await screen.findByRole('button', { name: 'Confirmar agendamento' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Confirmar agendamento do familiar' })).not.toBeInTheDocument()
   })
 })
