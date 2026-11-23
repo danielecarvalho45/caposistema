@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   createRpcService,
+  createSupabaseTransport,
   loadingState,
   type RpcTransport,
 } from '../../src/lib/supabase/rpc'
@@ -57,6 +58,34 @@ function transportWith(data: unknown, error: unknown = null): RpcTransport {
 }
 
 describe('camada de RPCs CAPO', () => {
+
+  it('autoriza no transporte a leitura e gravação da forma de tratamento da saudação', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { greeting_treatment: 'feminino' }, error: null })
+    const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
+    const service = createRpcService(createSupabaseTransport(client))
+
+    const read = await service.getProfessionalGreetingTreatment('profissional-1')
+    const saved = await service.setProfessionalGreetingTreatment('profissional-1', 'feminino')
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'get_professional_greeting_treatment_for_interface',
+      { p_professional_id: 'profissional-1' })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'set_professional_greeting_treatment_for_interface',
+      { p_professional_id: 'profissional-1', p_treatment: 'feminino' })
+    expect(read).toMatchObject({ status: 'success', data: { greeting_treatment: 'feminino' } })
+    expect(saved).toMatchObject({ status: 'success', data: { greeting_treatment: 'feminino' } })
+  })
+
+  it('permite a seleção neutra sem presumir o gênero', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { greeting_treatment: null }, error: null })
+    const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
+    const result = await createRpcService(createSupabaseTransport(client))
+      .setProfessionalGreetingTreatment('profissional-1', null)
+    expect(rpc).toHaveBeenCalledWith('set_professional_greeting_treatment_for_interface',
+      { p_professional_id: 'profissional-1', p_treatment: null })
+    expect(result).toMatchObject({ status: 'success', data: { greeting_treatment: null } })
+  })
+
+
   it('encaminha consultas e reservas de terapia em grupo às RPCs oficiais', async () => {
     const transport = vi.fn()
       .mockResolvedValueOnce({ data: [], error: null })
