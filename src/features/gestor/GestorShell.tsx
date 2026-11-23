@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useBackToPreviousFunction } from '../../lib/navigation/back'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { AccessContext } from '../../types/access'
+import { useCapoGreeting } from '../../components/shell/useCapoGreeting'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { getNotificationsService, NOTIFICATIONS_UPDATED_EVENT } from '../notifications/notifications-integration'
@@ -81,6 +82,7 @@ export function GestorShell({
   onLogout,
 }: GestorShellProps) {
   const navigate = useNavigate()
+  const greeting = useCapoGreeting(accessContext)
   const goBack = useBackToPreviousFunction()
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'available' | 'unavailable'>('checking')
   const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
@@ -202,7 +204,7 @@ export function GestorShell({
         </header>
         <section className="gestor-welcome-approved" aria-label="Boas-vindas">
           <div className="gestor-welcome-copy">
-            <h2>Olá, seja bem-vinda ao CAPO.</h2>
+            <h2>{greeting}</h2>
             <p>Tenha um ótimo dia de trabalho.</p>
           </div>
           <span className="gestor-welcome-heart" aria-hidden="true">♡</span>
