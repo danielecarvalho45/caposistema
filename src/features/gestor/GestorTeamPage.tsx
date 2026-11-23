@@ -240,6 +240,8 @@ export function GestorTeamPage({
   const [careLocationLoading, setCareLocationLoading] = useState(false)
   const [greetingTreatment, setGreetingTreatment] = useState<'feminino' | 'masculino' | null>(null)
   const [greetingLoading, setGreetingLoading] = useState(false)
+  const [greetingSaving, setGreetingSaving] = useState(false)
+  const [greetingPersisted, setGreetingPersisted] = useState<'feminino' | 'masculino' | null>(null)
   const [temporaryPassword, setTemporaryPassword] = useState('')
   const [showTemporaryPassword, setShowTemporaryPassword] = useState(false)
   const [passwordResetReason, setPasswordResetReason] = useState('')
@@ -374,11 +376,13 @@ export function GestorTeamPage({
   useEffect(() => {
     if (!selected?.professionalId) {
       setGreetingTreatment(null)
+      setGreetingPersisted(null)
       setGreetingLoading(false)
       return
     }
     let active = true
     setGreetingTreatment(null)
+    setGreetingPersisted(null)
     if (!service.getGreetingTreatment) {
       setGreetingLoading(false)
       return
@@ -392,7 +396,9 @@ export function GestorTeamPage({
         return
       }
       const value = (result.data as Record<string, unknown>).greeting_treatment
-      setGreetingTreatment(value === 'feminino' || value === 'masculino' ? value : null)
+      const normalized = value === 'feminino' || value === 'masculino' ? value : null
+      setGreetingTreatment(normalized)
+      setGreetingPersisted(normalized)
     }).catch(() => {
       if (!active) return
       setGreetingLoading(false)
@@ -429,9 +435,50 @@ export function GestorTeamPage({
     })
   }
 
+  async function saveGreetingOnly() {
+    if (!selected || greetingLoading || greetingSaving || submitting) return
+    if (!service.setGreetingTreatment || !service.getGreetingTreatment) {
+      setFeedback('O serviço de gravação da saudação está indisponível.')
+      return
+    }
+    const professionalId = selected.professionalId
+    const desired = greetingTreatment
+    setGreetingSaving(true)
+    setFeedback(null)
+    try {
+      const saved = await service.setGreetingTreatment(professionalId, desired)
+      if (saved.status !== 'success' || !saved.data || typeof saved.data !== 'object' ||
+          (saved.data as Record<string, unknown>).greeting_treatment !== desired) {
+        setFeedback('O Supabase não confirmou a gravação da forma de tratamento. ' +
+          (errorMessage(saved) ?? 'Tente novamente.'))
+        return
+      }
+      const verified = await service.getGreetingTreatment(professionalId)
+      if (verified.status !== 'success' || !verified.data || typeof verified.data !== 'object' ||
+          (verified.data as Record<string, unknown>).greeting_treatment !== desired) {
+        setFeedback('A gravação foi enviada, mas a conferência do valor no banco falhou. Consulte o cadastro novamente.')
+        return
+      }
+      setGreetingPersisted(desired)
+      setFeedback('Forma de tratamento salva e conferida no Supabase. A saudação será atualizada ao entrar novamente na Home.')
+    } catch {
+      setFeedback('Não foi possível salvar a forma de tratamento no Supabase. Tente novamente.')
+    } finally {
+      setGreetingSaving(false)
+    }
+  }
+
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (submitting) return
+    if (submitting || greetingSaving) return
+    // Mudança isolada da saudação: não passa por validações de e-mail, especialidade,
+    // senha nem endereço, e não altera os demais campos do cadastro.
+    if (selected && !temporaryPassword &&
+        greetingTreatment !== greetingPersisted &&
+        JSON.stringify(profile) === JSON.stringify(memberInput(selected))) {
+      await saveGreetingOnly()
+      return
+    }
     // Uma senha digitada isoladamente é gravada diretamente no Auth, sem depender
     // das validações cadastrais nem da consulta do endereço de atendimento.
     // Quando outros campos mudaram, mantém o fluxo cadastral anterior.
@@ -755,7 +802,7 @@ export function GestorTeamPage({
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
         <label>Forma de tratamento na saudação
           <select aria-label="Forma de tratamento na saudação"
-            value={greetingTreatment ?? ''} disabled={greetingLoading}
+            value={greetingTreatment ?? ''} disabled={greetingLoading || greetingSaving}
             onChange={(event) => {
               const value = event.target.value
               setGreetingTreatment(value === 'feminino' || value === 'masculino' ? value : null)
@@ -766,6 +813,13 @@ export function GestorTeamPage({
           </select>
           <small>Usado somente na saudação da Home. Não define permissões ou especialidades.</small>
         </label>
+        {selected && service.setGreetingTreatment && <div>
+          <button type="button" onClick={() => void saveGreetingOnly()}
+            disabled={greetingLoading || greetingSaving || submitting || greetingTreatment === greetingPersisted}>
+            {greetingSaving ? 'Salvando forma de tratamento…' : 'Salvar forma de tratamento'}
+          </button>
+          <small>Salva esta opção diretamente no Supabase, sem alterar o cadastro, endereço ou senha.</small>
+        </div>}
         <label>Conta de acesso: senha provisória
           <input type={showTemporaryPassword ? 'text' : 'password'} autoComplete="new-password"
             required={!selected} value={temporaryPassword}
@@ -803,7 +857,7 @@ export function GestorTeamPage({
         <button className="gestor-primary-action" type="submit"
           formNoValidate={Boolean(selected?.userAccountId && temporaryPassword &&
             JSON.stringify(profile) === JSON.stringify(memberInput(selected)))}
-          disabled={submitting || greetingLoading || (careLocationLoading && !(
+          disabled={submitting || greetingSaving || greetingLoading || (careLocationLoading && !(
             selected?.userAccountId && temporaryPassword &&
             JSON.stringify(profile) === JSON.stringify(memberInput(selected))
           ))}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
