@@ -14,12 +14,13 @@ const obj = (value: unknown): RecordValue | null =>
 const val = (value: unknown): string => typeof value === 'string' ? value : ''
 
 export function FamilyAgendaBookingPanel({
-  family, professionalId, slotStart, isPsychology, accessContext, onBooked,
+  family, professionalId, slotStart, isPsychology, generalNotes, accessContext, onBooked,
 }: Readonly<{
   family: Family
   professionalId: string
   slotStart: string
   isPsychology: boolean
+  generalNotes?: string
   accessContext: AccessContext
   onBooked: () => void
 }>) {
@@ -107,7 +108,7 @@ export function FamilyAgendaBookingPanel({
         throw new Error('Este familiar não é o próximo elegível para o profissional e horário selecionados. Confira a prioridade na fila de Psicologia.')
       }
       const result = await getRpcService().createFamilyPsychologyAppointment({
-        waitingListId: queueId, professionalId, slotStart, generalNotes: null,
+        waitingListId: queueId, professionalId, slotStart, generalNotes: generalNotes?.trim() || null,
       })
       if (result.status !== 'success' || obj(result.data)?.success === false) {
         throw new Error(result.status === 'error' ? result.error.message : 'O banco não confirmou o agendamento familiar.')
@@ -181,6 +182,13 @@ export function FamilyAgendaBookingPanel({
         {status === 'agendado'
           ? ' Utilize a consulta existente, sem criar outra.'
           : ' Retorno disponível apenas conforme os critérios do atendimento anterior.'}</p>}
+      {activeAppointment && appointment && val(appointment.appointment_date) &&
+        <p><Link to="/agenda" state={{
+          origin: 'home_professional_schedule',
+          professionalId: val(appointment.professional_id),
+          slotDate: new Date(val(appointment.appointment_date))
+            .toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }),
+        }}>Abrir dia da consulta familiar na agenda oficial</Link></p>}
       {canReturn && appointment && <FamilyPsychologyReturnAction
         family={appointment} accessContext={accessContext} onSaved={() => { onBooked(); void refresh() }}
         onFeedback={setFeedback} />}
