@@ -628,3 +628,17 @@
   .app-welcome-copy h1{font-size:20px}
   .app-welcome-copy p{font-size:14px}
 }
+
+/* 23/11/2026 — Especialidade abaixo do nome do profissional, legível.
+   Regra após o cabeçalho compacto homologado: evita sobrescrita por 10px.
+   Não altera a legenda dos demais contextos administrativos. */
+.app-user .app-user-caption--specialty {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
