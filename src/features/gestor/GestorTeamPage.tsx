@@ -234,6 +234,8 @@ export function GestorTeamPage({
   const [profile, setProfile] = useState<TeamMemberProfileInput>(blankProfile)
   const [careLocation, setCareLocation] = useState('')
   const [careLocationLoading, setCareLocationLoading] = useState(false)
+  const [greetingTreatment, setGreetingTreatment] = useState<'feminino' | 'masculino' | null>(null)
+  const [greetingLoading, setGreetingLoading] = useState(false)
   const [temporaryPassword, setTemporaryPassword] = useState('')
   const [showTemporaryPassword, setShowTemporaryPassword] = useState(false)
   const [passwordResetReason, setPasswordResetReason] = useState('')
@@ -365,6 +367,28 @@ export function GestorTeamPage({
     return () => { active = false }
   }, [selected?.professionalId])
 
+  useEffect(() => {
+    if (!selected?.professionalId) {
+      setGreetingTreatment(null)
+      setGreetingLoading(false)
+      return
+    }
+    let active = true
+    setGreetingTreatment(null)
+    setGreetingLoading(true)
+    void getRpcService().getProfessionalGreetingTreatment(selected.professionalId).then((result) => {
+      if (!active) return
+      setGreetingLoading(false)
+      if (result.status !== 'success' || !result.data || typeof result.data !== 'object') {
+        setFeedback('Não foi possível carregar a forma de tratamento deste profissional. Tente selecionar novamente.')
+        return
+      }
+      const value = (result.data as Record<string, unknown>).greeting_treatment
+      setGreetingTreatment(value === 'feminino' || value === 'masculino' ? value : null)
+    })
+    return () => { active = false }
+  }, [selected?.professionalId])
+
   function chooseMember(member: TeamMember) {
     setCapabilities([])
     setCapabilitiesStatus('loading')
@@ -404,8 +428,8 @@ export function GestorTeamPage({
       await resetPasswordForSelected()
       return
     }
-    if (careLocationLoading) {
-      setFeedback('Aguarde a consulta do endereço salvo antes de alterar o cadastro.')
+    if (careLocationLoading || greetingLoading) {
+      setFeedback('Aguarde a consulta dos dados salvos antes de alterar o cadastro.')
       return
     }
     if (!profile.fullName.trim()) { setFeedback('Informe o nome completo.'); return }
@@ -491,6 +515,17 @@ export function GestorTeamPage({
         await reload()
         setFeedback('Cadastro criado; não foi possível identificar o profissional para gravar o endereço. Consulte antes de agendar.')
         return
+      }
+
+      if (professionalId) {
+        const treatmentSave = await getRpcService().setProfessionalGreetingTreatment(professionalId, greetingTreatment)
+        if (treatmentSave.status !== 'success' ||
+            !treatmentSave.data || typeof treatmentSave.data !== 'object' ||
+            (treatmentSave.data as Record<string, unknown>).greeting_treatment !== greetingTreatment) {
+          await reload()
+          setFeedback('Cadastro profissional salvo, mas a forma de tratamento NÃO foi confirmada no banco. Selecione o profissional e salve novamente.')
+          return
+        }
       }
 
       if (selected) {
@@ -706,6 +741,16 @@ export function GestorTeamPage({
       <form className="gestor-panel gestor-team-form" onSubmit={(event) => void saveProfile(event)}>
         <div className="gestor-team-heading"><h3>{selected ? 'Editar profissional' : 'Cadastrar profissional'}</h3>{selected && <button type="button" onClick={() => { setSelected(null); setProfile(blankProfile()) }}>Cancelar edição</button>}</div>
         <label>Nome completo<input required value={profile.fullName} onChange={(event) => setProfile({ ...profile, fullName: event.target.value })} /></label>
+        <label>Forma de tratamento na saudação
+          <select aria-label="Forma de tratamento na saudação"
+            value={greetingTreatment ?? ''} disabled={greetingLoading}
+            onChange={(event) => setGreetingTreatment(event.target.value === 'feminino' || event.target.value === 'masculino' ? event.target.value : null)}>
+            <option value="">Não informado — Boas-vindas</option>
+            <option value="feminino">Feminino — Bem-vinda</option>
+            <option value="masculino">Masculino — Bem-vindo</option>
+          </select>
+          <small>Usado somente na saudação da Home. Não define permissões ou especialidades.</small>
+        </label>
         <label>Conta de acesso: senha provisória
           <input type={showTemporaryPassword ? 'text' : 'password'} autoComplete="new-password"
             required={!selected} value={temporaryPassword}
@@ -743,7 +788,7 @@ export function GestorTeamPage({
         <button className="gestor-primary-action" type="submit"
           formNoValidate={Boolean(selected?.userAccountId && temporaryPassword &&
             JSON.stringify(profile) === JSON.stringify(memberInput(selected)))}
-          disabled={submitting || (careLocationLoading && !(
+          disabled={submitting || greetingLoading || (careLocationLoading && !(
             selected?.userAccountId && temporaryPassword &&
             JSON.stringify(profile) === JSON.stringify(memberInput(selected))
           ))}>{submitting ? 'Salvando…' : selected ? 'Salvar alterações' : 'Cadastrar profissional'}</button>
