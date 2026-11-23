@@ -296,7 +296,7 @@ export function AppShell({
           </button>
           <div className="app-user">
             <p className="app-user-name">{displayName}</p>
-            <p className="app-user-caption">{userCaption}</p>
+            <p className={`app-user-caption${professionalSpecialty ? " app-user-caption--specialty" : ""}`}>{userCaption}</p>
           </div>
           <div className="app-header-actions">
             <CommunicationUnreadLink accessContext={accessContext} />
