@@ -1432,6 +1432,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_family_agenda_booking_context_for_interface: {
+        Args: { p_family_member_id: string }
+        Returns: Json
+      }
       search_family_caregivers_in_patient_search_for_interface: {
         Args: { p_query: string; p_limit?: number }
         Returns: {
