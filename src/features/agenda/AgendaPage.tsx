@@ -14,6 +14,7 @@ import {
 import type { AccessContext } from '../../types/access'
 import { OwnAgendaManager } from './OwnAgendaManager'
 import { FamilyPsychologyReturnAction } from './FamilyPsychologyReturnAction'
+import { FamilyAgendaBookingPanel } from './FamilyAgendaBookingPanel'
 import { FamilyLinkRebookingAction } from './FamilyLinkRebookingAction'
 import { SocialHomeVisits } from './SocialHomeVisits'
 import { resolveProfessionalScreenKind } from '../professional/professional-screen'
@@ -954,6 +955,13 @@ export function AgendaPage({
   const [appointmentPatientQuery, setAppointmentPatientQuery] = useState('')
   const [appointmentPatientId, setAppointmentPatientId] = useState('')
   const [appointmentPatients, setAppointmentPatients] = useState<readonly { patient_id: string; full_name: string; patient_number: string | null; cms: string | null }[]>([])
+  type FamilySearchRow = Readonly<{
+    family_member_id: string; full_name: string; capo_number: string | null;
+    cms: string | null; source_patient_name: string
+  }>
+  const [appointmentFamilyResults, setAppointmentFamilyResults] = useState<readonly FamilySearchRow[]>([])
+  const [selectedAppointmentFamily, setSelectedAppointmentFamily] = useState<FamilySearchRow | null>(null)
+  const appointmentSearchRequest = useRef(0)
   const [appointmentType, setAppointmentType] = useState('')
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
@@ -1651,24 +1659,40 @@ export function AgendaPage({
       return
     }
 
-    const result = await getRpcService().searchReferralPatients(query, 20, 0)
-    const patients = result.status === 'success' ? result.data : []
+    const request = ++appointmentSearchRequest.current
+    const [patientResult, familyResult] = await Promise.allSettled([
+      getRpcService().searchReferralPatients(query, 20, 0),
+      getSupabaseClient().rpc('search_family_caregivers_in_patient_search_for_interface', {
+        p_query: query, p_limit: 20,
+      }),
+    ])
+    if (request !== appointmentSearchRequest.current) return
+    const result = patientResult.status === 'fulfilled' ? patientResult.value : null
+    const patients = result?.status === 'success' ? result.data : []
+    const families = familyResult.status === 'fulfilled' && !familyResult.value.error &&
+      Array.isArray(familyResult.value.data)
+      ? familyResult.value.data.filter((item: unknown): item is FamilySearchRow => {
+        if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+        const row = item as Record<string, unknown>
+        return typeof row.family_member_id === 'string' && typeof row.full_name === 'string'
+          && typeof row.source_patient_name === 'string'
+      }) : []
     setAppointmentPatients(patients)
-
-    if (patients.length === 1) {
+    setAppointmentFamilyResults(families)
+    setSelectedAppointmentFamily(null)
+    if (patients.length === 1 && families.length === 0) {
       setAppointmentPatientId(patients[0].patient_id)
       setAppointmentPatientQuery(patients[0].full_name)
       setAppointmentFeedback(null)
       return
     }
-
     setAppointmentPatientId('')
-    if (patients.length === 0) {
-      setAppointmentFeedback(
-        result.status === 'error' ? result.error.message : 'Nenhum paciente encontrado.',
-      )
+    if (patients.length + families.length > 0) {
+      setAppointmentFeedback('Selecione a identidade correta: Paciente ou Familiar/Cuidador.')
+    } else if (familyResult.status === 'fulfilled' && familyResult.value.error) {
+      setAppointmentFeedback('A busca de familiares não foi concluída: ' + familyResult.value.error.message)
     } else {
-      setAppointmentFeedback('Selecione o paciente correto entre os resultados encontrados.')
+      setAppointmentFeedback(result?.status === 'error' ? result.error.message : 'Nenhum paciente ou familiar encontrado.')
     }
   }
 
@@ -1680,7 +1704,32 @@ export function AgendaPage({
   }) {
     setAppointmentPatientId(patient.patient_id)
     setAppointmentPatientQuery(patient.full_name)
+    setSelectedAppointmentFamily(null)
+    setAppointmentFamilyResults([])
     setAppointmentFeedback(null)
+  }
+
+  function selectAppointmentFamily(family: FamilySearchRow) {
+    setSelectedAppointmentFamily(family)
+    setAppointmentPatientId('')
+    setAppointmentPatientQuery(family.full_name)
+    setAppointmentPatients([])
+    setAppointmentFamilyResults([family])
+    setAppointmentType('')
+    setSocialVisitMode(false)
+    const psychology = catalogRows.find((item) =>
+      item.specialty_name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().includes('psicolog'))
+    if (psychology) {
+      setSelectedSpecialtyId(psychology.specialty_id)
+      if (selectedProfessionalId &&
+        !catalogRows.some((item) => item.professional_id === selectedProfessionalId &&
+          item.specialty_id === psychology.specialty_id)) {
+        setSelectedProfessionalId('')
+        setSelectedSlotStart('')
+      }
+    }
+    setAppointmentFeedback('Familiar selecionado. Atendimento exclusivamente na agenda oficial da Psicologia.')
   }
 
   async function addSelectedPatientToQueue() {
@@ -3025,6 +3074,9 @@ export function AgendaPage({
                     if (!isProfessional) {
                       setAppointmentPatientId('')
                       setAppointmentPatients([])
+                      setAppointmentFamilyResults([])
+                      setSelectedAppointmentFamily(null)
+                      appointmentSearchRequest.current += 1
                     }
                   }}
                   onKeyDown={(event) => {
@@ -3050,6 +3102,19 @@ export function AgendaPage({
                     <span>
                       Nº CAPO {appointmentPatients[0].patient_number ?? '—'} · CMS {appointmentPatients[0].cms ?? '—'}
                     </span>
+                  </div>
+                )}
+                {!isProfessional && appointmentFamilyResults.length > 0 && (
+                  <div className="agenda-patient-results" aria-label="Familiares/Cuidadores encontrados">
+                    {appointmentFamilyResults.map((family) => (
+                      <button key={family.family_member_id} type="button"
+                        className={selectedAppointmentFamily?.family_member_id === family.family_member_id ? 'is-selected' : ''}
+                        aria-pressed={selectedAppointmentFamily?.family_member_id === family.family_member_id}
+                        onClick={() => selectAppointmentFamily(family)}>
+                        <strong>{family.full_name} — Familiar/Cuidador</strong>
+                        <span>CAPO {family.capo_number ?? 'Pendente'} · CMS {family.cms ?? '—'} · Vinculado a {family.source_patient_name}</span>
+                      </button>
+                    ))}
                   </div>
                 )}
                 {!isProfessional && appointmentPatients.length > 1 && (
@@ -3206,12 +3271,12 @@ export function AgendaPage({
               ) : (
                 <label>
                   Tipo *
-                  <select value={appointmentType} disabled={movementKind === 'retorno'} onChange={(event) => setAppointmentType(event.target.value)}>
+                  {selectedAppointmentFamily ? <input readOnly value="Familiar/Cuidador — Psicologia" /> : <select value={appointmentType} disabled={movementKind === 'retorno'} onChange={(event) => setAppointmentType(event.target.value)}>
                     <option value="">Selecionar</option>
                     <option>Primeiro atendimento no CAPO</option>
                     <option>Primeiro atendimento na especialidade</option>
                     <option>Retorno</option>
-                  </select>
+                  </select>}
                 </label>
               )}
               {!isProfessional && (
@@ -3225,6 +3290,17 @@ export function AgendaPage({
                 <textarea rows={3} value={appointmentNotes} onChange={(event) => setAppointmentNotes(event.target.value)} />
               </label>
             </div>
+            {selectedAppointmentFamily && !isProfessional && (
+              <FamilyAgendaBookingPanel
+                family={selectedAppointmentFamily}
+                professionalId={selectedProfessionalId}
+                slotStart={validSlotStart}
+                isPsychology={Boolean(specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1]
+                  .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog'))}
+                accessContext={accessContext}
+                onBooked={() => { void loadProfessionalConsultation() }}
+              />
+            )}
             {existingAppointmentWarning && existingAppointmentWarning.key ===
               [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && (
               <div className="agenda-contract-note" role="alert">
@@ -3240,9 +3316,9 @@ export function AgendaPage({
               </div>
             )}
             <div className="agenda-form-actions">
-              <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType || Boolean(existingAppointmentWarning && existingAppointmentWarning.key === [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && additionalAppointmentApproval !== existingAppointmentWarning.key)} onClick={() => void createAppointment()}>
+              {!selectedAppointmentFamily && <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType || Boolean(existingAppointmentWarning && existingAppointmentWarning.key === [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && additionalAppointmentApproval !== existingAppointmentWarning.key)} onClick={() => void createAppointment()}>
                 Confirmar agendamento
-              </button>
+              </button>}
               {!isProfessional && awaitingNextAppointmentChoice && appointmentType === 'Retorno' && !returnNoticeAcknowledged && (
                 <div className="agenda-contract-note" role="group" aria-label="Aviso obrigatório de retorno agendado">
                   <strong>Retorno agendado — avisar paciente antes de continuar</strong>
