@@ -26,6 +26,8 @@ export type TeamManagementService = Readonly<{
   getContext: (query: string | null, status: string | null, limit: number, offset: number) => Promise<AsyncState<unknown>>
   create: (input: TeamMemberProfileInput, temporaryPassword: string, initiallyActive?: boolean, inactiveReason?: string, existingProfessionalId?: string) => Promise<AsyncState<unknown>>
   update: (professionalId: string, input: TeamMemberProfileInput) => Promise<AsyncState<unknown>>
+  getGreetingTreatment?: (professionalId: string) => Promise<AsyncState<unknown>>
+  setGreetingTreatment?: (professionalId: string, treatment: 'feminino' | 'masculino' | null) => Promise<AsyncState<unknown>>
   resetTemporaryPassword?: (professionalId: string, temporaryPassword: string, reason: string) => Promise<AsyncState<unknown>>
   setActive: (professionalId: string, active: boolean, reason: string) => Promise<AsyncState<unknown>>
   setPrimaryContext: (userAccountId: string, roleCode: string) => Promise<AsyncState<unknown>>
@@ -41,6 +43,8 @@ export function createTeamManagementService(): TeamManagementService {
   const rpc = getRpcService()
   return {
     getContext: (query, status, limit, offset) => rpc.getTeamManagementContext(query, status, limit, offset),
+    getGreetingTreatment: (professionalId) => rpc.getProfessionalGreetingTreatment(professionalId),
+    setGreetingTreatment: (professionalId, treatment) => rpc.setProfessionalGreetingTreatment(professionalId, treatment),
     create: async (input, temporaryPassword, initiallyActive = true, inactiveReason = '', existingProfessionalId) => {
       try {
         const { data, error } = await getSupabaseClient().functions.invoke('create-team-member', {
@@ -375,8 +379,12 @@ export function GestorTeamPage({
     }
     let active = true
     setGreetingTreatment(null)
+    if (!service.getGreetingTreatment) {
+      setGreetingLoading(false)
+      return
+    }
     setGreetingLoading(true)
-    void getRpcService().getProfessionalGreetingTreatment(selected.professionalId).then((result) => {
+    void service.getGreetingTreatment(selected.professionalId).then((result) => {
       if (!active) return
       setGreetingLoading(false)
       if (result.status !== 'success' || !result.data || typeof result.data !== 'object') {
@@ -387,7 +395,7 @@ export function GestorTeamPage({
       setGreetingTreatment(value === 'feminino' || value === 'masculino' ? value : null)
     })
     return () => { active = false }
-  }, [selected?.professionalId])
+  }, [selected?.professionalId, service])
 
   function chooseMember(member: TeamMember) {
     setCapabilities([])
@@ -517,8 +525,8 @@ export function GestorTeamPage({
         return
       }
 
-      if (professionalId) {
-        const treatmentSave = await getRpcService().setProfessionalGreetingTreatment(professionalId, greetingTreatment)
+      if (professionalId && service.setGreetingTreatment) {
+        const treatmentSave = await service.setGreetingTreatment(professionalId, greetingTreatment)
         if (treatmentSave.status !== 'success' ||
             !treatmentSave.data || typeof treatmentSave.data !== 'object' ||
             (treatmentSave.data as Record<string, unknown>).greeting_treatment !== greetingTreatment) {
