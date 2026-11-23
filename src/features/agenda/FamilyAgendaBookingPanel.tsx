@@ -72,7 +72,10 @@ export function FamilyAgendaBookingPanel({
   const queueStatus = val(queue?.status)
   const queueId = val(queue?.waiting_list_id)
   const familyLinkId = val(context?.family_link_id)
-  const activeAppointment = ['agendado', 'confirmado'].includes(status)
+  const previousDate = val(appointment?.appointment_date)
+  const previousIsPast = Boolean(previousDate && new Date(previousDate).getTime() < Date.now())
+  const pendingPreviousAttendance = status === 'agendado' && previousIsPast
+  const activeAppointment = status === 'confirmado' || (status === 'agendado' && !previousIsPast)
   const canReturn = ['confirmado', 'realizado'].includes(status)
   const previousProfessionalId = val(appointment?.professional_id)
   const matchingProfessional = Boolean(professionalId && professionalId === previousProfessionalId)
@@ -80,11 +83,30 @@ export function FamilyAgendaBookingPanel({
 
   useEffect(() => {
     if (!context) return
-    const kind = canReturn ? 'Retorno' : activeAppointment
+    const kind = canReturn ? 'Retorno' : pendingPreviousAttendance
+      ? 'Aguardando confirmação do atendimento anterior' : activeAppointment
       ? 'Consulta já agendada' : queueStatus === 'waiting'
         ? 'Primeiro atendimento — fila de Psicologia' : 'Avaliar situação do vínculo'
     onKindResolved?.(kind)
-  }, [context, canReturn, activeAppointment, queueStatus, onKindResolved])
+  }, [context, canReturn, activeAppointment, pendingPreviousAttendance, queueStatus, onKindResolved])
+
+  async function confirmPreviousAttendance() {
+    if (!pendingPreviousAttendance || !appointment || busy) return
+    const previousId = val(appointment.appointment_id)
+    if (!previousId) return
+    setBusy(true)
+    setFeedback('')
+    try {
+      const { data, error } = await getSupabaseClient().rpc('update_family_psychology_attendance_for_interface', {
+        p_appointment_id: previousId, p_action: 'confirmado', p_reason: null, p_notes: null,
+      })
+      if (error || obj(data)?.success !== true) throw new Error(error?.message ?? 'O banco não confirmou a presença.')
+      await refresh()
+      setFeedback('Presença anterior confirmada. Agora selecione a vaga de retorno e confirme o agendamento.')
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Não foi possível confirmar a presença anterior.')
+    } finally { setBusy(false) }
+  }
 
   async function includeInQueue() {
     if (!familyLinkId || busy) return
@@ -191,6 +213,13 @@ export function FamilyAgendaBookingPanel({
     {loading && <p role="status">Verificando vínculo, fila e histórico familiar…</p>}
     {!loading && !context && <p role="alert">Não foi possível validar o familiar. Nenhum agendamento será efetuado.</p>}
     {context && <>
+      {pendingPreviousAttendance && <div role="status">
+        <p>A consulta anterior foi em {new Date(previousDate).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}, mas continua registrada como agendada. Isso não significa que exista uma vaga ocupada na data escolhida.</p>
+        <p>Se o familiar compareceu e foi atendido nessa consulta, confirme a presença anterior para liberar o retorno. Se não compareceu, utilize o fluxo de falta/remarcação, sem registrar presença indevida.</p>
+        <button type="button" disabled={busy} onClick={() => void confirmPreviousAttendance()}>
+          {busy ? 'Confirmando…' : 'Confirmar presença da consulta anterior'}
+        </button>
+      </div>}
       {activeAppointment && <p>Consulta familiar existente: {val(appointment?.appointment_date)
         ? new Date(val(appointment?.appointment_date)).toLocaleString('pt-BR', {
           timeZone: 'America/Sao_Paulo', hour12: false,
@@ -219,7 +248,7 @@ export function FamilyAgendaBookingPanel({
           onSaved={() => { onBooked(); void refresh() }}
           onFeedback={setFeedback} />}
       </>}
-      {!activeAppointment && !canReturn && queueStatus === 'waiting' && <>
+      {!pendingPreviousAttendance && !activeAppointment && !canReturn && queueStatus === 'waiting' && <>
         <p>Familiar aguardando na fila de Psicologia. Escolha a especialidade Psicologia,
           um profissional elegível e um horário disponível acima.</p>
         <button type="button" disabled={busy || !professionalId || !slotStart || !isPsychology}
@@ -227,10 +256,10 @@ export function FamilyAgendaBookingPanel({
           {busy ? 'Validando…' : 'Confirmar agendamento do familiar'}
         </button>
       </>}
-      {!activeAppointment && !canReturn && ['called', 'paused'].includes(queueStatus) &&
+      {!pendingPreviousAttendance && !activeAppointment && !canReturn && ['called', 'paused'].includes(queueStatus) &&
         <p>Familiar com fila {queueStatus === 'paused' ? 'pausada' : 'já chamada'}.
           Regularize a situação na Fila de Psicologia antes de gravar o agendamento.</p>}
-      {!activeAppointment && !canReturn &&
+      {!pendingPreviousAttendance && !activeAppointment && !canReturn &&
         !['waiting', 'called', 'paused'].includes(queueStatus) && <>
         <p>Não há encaminhamento familiar aguardando agendamento.
           A inclusão na fila é necessária para a primeira consulta; o histórico será preservado.</p>
