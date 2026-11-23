@@ -3877,6 +3877,7 @@ function createSupabaseTransport(
   ) => Promise<{ data: unknown; error: unknown }>
   return async (operation, args) => {
     switch (operation) {
+      case 'get_professional_appointment_context_for_interface':
       case 'get_social_vulnerability_indicator_for_interface':
       case 'set_social_vulnerability_indicator_for_interface':
       case 'get_nutrition_context_for_interface':
