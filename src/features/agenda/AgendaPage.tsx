@@ -995,6 +995,8 @@ export function AgendaPage({
   const [prefillReferralId, setPrefillReferralId] = useState('')
   const [attendanceNotes, setAttendanceNotes] = useState('')
   const [attendanceReason, setAttendanceReason] = useState('')
+  const cancelPanelRef = useRef<HTMLElement | null>(null)
+  const reschedulePanelRef = useRef<HTMLElement | null>(null)
   const [cancelAppointmentId, setCancelAppointmentId] = useState('')
   const [cancelReason, setCancelReason] = useState('')
   const [busyAppointmentId, setBusyAppointmentId] = useState<string | null>(null)
@@ -1006,6 +1008,17 @@ export function AgendaPage({
   const [rescheduleOrigin, setRescheduleOrigin] = useState('')
   const [rescheduleNotes, setRescheduleNotes] = useState('')
   const [rescheduleTargetDate, setRescheduleTargetDate] = useState(() => capoTodayIso())
+
+  // Ações abertas pela Home devem chegar ao formulário, não apenas à página Agenda.
+  // A navegação nunca grava ou cancela um atendimento sem confirmação do operador.
+  useEffect(() => {
+    if (cancelAppointmentId) cancelPanelRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
+  }, [cancelAppointmentId])
+  useEffect(() => {
+    if (showRescheduleForm && !isProfessional) {
+      reschedulePanelRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
+    }
+  }, [showRescheduleForm, isProfessional])
   const [rescheduleSlotResult, setRescheduleSlotResult] = useState<{
     key: string
     rows: readonly AvailableAppointmentSlot[]
@@ -2573,6 +2586,7 @@ export function AgendaPage({
       setAppointmentPatientQuery(patientName)
       setSelectedProfessionalId(requestedProfessionalId)
       setSelectedReschedulableId(requestedAppointmentId)
+      setMovementKind('remarcacao')
       setRescheduleOrigin('manual')
       setRescheduleReason('')
       setRescheduleTargetDate(capoTodayIso())
@@ -3326,7 +3340,7 @@ export function AgendaPage({
         )}
 
         {showRescheduleForm && !isProfessional && (
-          <section className="agenda-schedule-form" aria-labelledby="reschedule-title">
+          <section ref={reschedulePanelRef} className="agenda-schedule-form" aria-labelledby="reschedule-title">
             <div className="agenda-section-heading">
               <p className="eyebrow">Atendimento e Acompanhamento</p>
               <h3 id="reschedule-title">
@@ -3760,10 +3774,10 @@ export function AgendaPage({
         )}
 
         {cancelAppointmentId && (
-          <section className="agenda-cancel-panel" aria-labelledby="agenda-cancel-title">
+          <section ref={cancelPanelRef} className="agenda-cancel-panel" aria-labelledby="agenda-cancel-title">
             <div>
               <h3 id="agenda-cancel-title">Cancelar agendamento</h3>
-              <p>O cancelamento exige motivo e mantém o registro para auditoria.</p>
+              <p>O cancelamento exige motivo e mantém o registro para auditoria. Nenhuma consulta será cancelada antes de confirmar abaixo.</p>
             </div>
             <label>
               Motivo do cancelamento *
