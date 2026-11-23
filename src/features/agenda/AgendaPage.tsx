@@ -3280,7 +3280,7 @@ export function AgendaPage({
                   </select>}
                 </label>
               )}
-              {!isProfessional && (
+              {!isProfessional && !selectedAppointmentFamily && (
                 <label>
                   Origem
                   <input type="text" placeholder="Origem da demanda" value={appointmentOrigin} onChange={(event) => setAppointmentOrigin(event.target.value)} />
@@ -3293,9 +3293,11 @@ export function AgendaPage({
             </div>
             {selectedAppointmentFamily && !isProfessional && (
               <FamilyAgendaBookingPanel
+                key={selectedAppointmentFamily.family_member_id}
                 family={selectedAppointmentFamily}
                 professionalId={selectedProfessionalId}
                 slotStart={validSlotStart}
+                generalNotes={appointmentNotes}
                 isPsychology={Boolean(specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1]
                   .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog'))}
                 accessContext={accessContext}
