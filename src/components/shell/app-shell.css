@@ -642,3 +642,48 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* 23/11/2026 — VERDE: composição apenas da saudação (lema e coração preservados). */
+.app-welcome-copy {
+  min-width: 0;
+  flex: 1 1 0;
+}
+.app-welcome-copy .capo-greeting-time,
+.app-welcome-copy .capo-greeting-message {
+  display: block;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.app-welcome-copy .capo-greeting-time {
+  font-size: 18px;
+  line-height: 1.22;
+  font-weight: 500;
+}
+.app-welcome-copy .capo-greeting-message {
+  margin-top: 3px;
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 400;
+}
+.app-welcome-copy .capo-welcome-workday {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 7px;
+  margin-top: 4px;
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 500;
+}
+.app-welcome-copy .capo-welcome-workday img {
+  display: inline-block;
+  width: 30px;
+  height: 39px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+@media (max-width: 520px) {
+  .app-welcome-copy .capo-greeting-time { font-size: 18px; }
+  .app-welcome-copy .capo-greeting-message { font-size: 16px; }
+  .app-welcome-copy .capo-welcome-workday { font-size: 16px; }
+}
