@@ -2259,6 +2259,52 @@ export function AgendaPage({
       }
       return
     }
+    // Homologação da Assistência Social: a seleção de um NOVO paciente de teste
+    // para iniciar atendimento deve atualizar o contexto técnico para esse paciente.
+    // A lista de opções do backend comprova que é paciente de teste. Nunca ampliar
+    // a proteção global de escrita nem aceitar pacientes reais neste fluxo.
+    const testContext = accessContext.homologation_context
+    if (action === 'confirmado' && accessContext.is_homologation_account &&
+        testContext?.enabled && testContext.role_code === 'profissional' &&
+        testContext.specialty_name === 'Assistência Social') {
+      const appointment = (state.status === 'success'
+        ? state.data.find(item => item.appointment_id === appointmentId)
+        : undefined)
+      const slot = scheduleGrid.status === 'success'
+        ? scheduleGrid.data.find(item => item.appointment_id === appointmentId)
+        : undefined
+      const patientId = appointment?.patient_id ?? slot?.patient_id
+      if (!patientId) {
+        setAppointmentFeedback('Não foi possível identificar o paciente da consulta para iniciar o atendimento.')
+        setBusyAppointmentId(null)
+        return
+      }
+      if (testContext.test_patient_id !== patientId) {
+        const options = await getRpcService().getHomologationOptions()
+        if (options.status !== 'success' ||
+            !options.data.test_patients.some(patient => patient.patient_id === patientId) ||
+            !testContext.professional_id || !testContext.specialty_id ||
+            testContext.professional_id !== accessContext.professional_id) {
+          setAppointmentFeedback('Atendimento bloqueado pelo isolamento da homologação. Selecione um paciente de teste autorizado no contexto de manutenção.')
+          setBusyAppointmentId(null)
+          return
+        }
+        const switched = await getRpcService().setHomologationContext({
+          roleCode: 'profissional',
+          professionalId: testContext.professional_id,
+          specialtyId: testContext.specialty_id,
+          testPatientId: patientId,
+          reason: 'Início de atendimento da Assistência Social: selecionar paciente de teste da consulta na homologação.',
+        })
+        if (switched.status !== 'success') {
+          setAppointmentFeedback(switched.status === 'error'
+            ? 'Não foi possível selecionar o paciente de teste: ' + switched.error.message
+            : 'O contexto de homologação não confirmou a seleção do paciente.')
+          setBusyAppointmentId(null)
+          return
+        }
+      }
+    }
     const result = await getRpcService().updateAppointmentAttendance({
       appointmentId,
       action,
