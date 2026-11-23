@@ -36,7 +36,7 @@ export function SocialPage({
   const [selectedAppointment, setSelectedAppointment] = useState<AgendaAppointment | null>(null)
   const [reason, setReason] = useState('')
   const [vulnerabilityLevel, setVulnerabilityLevel] =
-    useState<'verde' | 'amarelo' | 'vermelho'>('verde')
+    useState<'verde' | 'amarelo' | 'vermelho' | ''>('')
   const [vulnerabilityFeedback, setVulnerabilityFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -99,6 +99,7 @@ export function SocialPage({
     setSelectedAppointment(appointment)
     setFeedback(null)
     setVulnerabilityFeedback(null)
+    setVulnerabilityLevel('')
     void getRpcService()
       .getSocialVulnerabilityIndicator(appointment.patient_id)
       .then((result) => {
@@ -164,7 +165,7 @@ export function SocialPage({
   }, [mode, canOperateSocial, location.state])
 
   async function saveVulnerability() {
-    if (!selectedAppointment || busy) return
+    if (!selectedAppointment || busy || !vulnerabilityLevel) return
     setBusy(true)
     setVulnerabilityFeedback(null)
     const result = await getRpcService().setSocialVulnerabilityIndicator(
@@ -281,12 +282,13 @@ export function SocialPage({
                     )
                   }
                 >
+                  <option value="" disabled>Selecione a classificação</option>
                   <option value="verde">Verde</option>
                   <option value="amarelo">Amarelo</option>
                   <option value="vermelho">Vermelho</option>
                 </select>
               </label>
-              <button type="button" disabled={busy} onClick={() => void saveVulnerability()}>
+              <button type="button" disabled={busy || !vulnerabilityLevel} onClick={() => void saveVulnerability()}>
                 Salvar indicador
               </button>
               {vulnerabilityFeedback && <p role="status">{vulnerabilityFeedback}</p>}
