@@ -8,6 +8,7 @@ import { getNotificationsService, NOTIFICATIONS_UPDATED_EVENT } from '../../feat
 import { getRpcService } from '../../lib/supabase/rpc'
 import { ProfileShortcuts } from './ProfileShortcuts'
 import { CommunicationUnreadLink } from '../../features/communication/CommunicationUnreadLink'
+import { useCapoGreeting } from './useCapoGreeting'
 import './app-shell.css'
 
 type AppShellProps = Readonly<{
@@ -31,6 +32,7 @@ export function AppShell({
   activePath = '/',
 }: AppShellProps) {
   const goBack = useBackToPreviousFunction()
+  const greeting = useCapoGreeting(accessContext)
   const [loggingOut, setLoggingOut] = useState(false)
   const [menuOpenedAtPath, setMenuOpenedAtPath] = useState<string | null>(null)
   const menuOpen = menuOpenedAtPath === activePath
@@ -341,7 +343,7 @@ export function AppShell({
         >
           <section className="app-welcome-approved" aria-label="Boas-vindas">
             <div className="app-welcome-copy">
-              <h1>Olá, seja bem-vinda ao CAPO.</h1>
+              <h1>{greeting}</h1>
               <p>Tenha um ótimo dia de trabalho.</p>
             </div>
             <span className="app-welcome-heart" aria-hidden="true">♡</span>
