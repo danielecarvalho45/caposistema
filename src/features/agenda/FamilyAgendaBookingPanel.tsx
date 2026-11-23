@@ -14,7 +14,7 @@ const obj = (value: unknown): RecordValue | null =>
 const val = (value: unknown): string => typeof value === 'string' ? value : ''
 
 export function FamilyAgendaBookingPanel({
-  family, professionalId, slotStart, isPsychology, generalNotes, accessContext, onBooked,
+  family, professionalId, slotStart, isPsychology, generalNotes, accessContext, onBooked, onKindResolved,
 }: Readonly<{
   family: Family
   professionalId: string
@@ -23,6 +23,7 @@ export function FamilyAgendaBookingPanel({
   generalNotes?: string
   accessContext: AccessContext
   onBooked: () => void
+  onKindResolved?: (kind: string) => void
 }>) {
   const [context, setContext] = useState<RecordValue | null>(null)
   const [loading, setLoading] = useState(true)
@@ -73,6 +74,17 @@ export function FamilyAgendaBookingPanel({
   const familyLinkId = val(context?.family_link_id)
   const activeAppointment = ['agendado', 'confirmado'].includes(status)
   const canReturn = ['confirmado', 'realizado'].includes(status)
+  const previousProfessionalId = val(appointment?.professional_id)
+  const matchingProfessional = Boolean(professionalId && professionalId === previousProfessionalId)
+  const eligibleReturnSlot = Boolean(canReturn && matchingProfessional && isPsychology && slotStart)
+
+  useEffect(() => {
+    if (!context) return
+    const kind = canReturn ? 'Retorno' : activeAppointment
+      ? 'Consulta já agendada' : queueStatus === 'waiting'
+        ? 'Primeiro atendimento — fila de Psicologia' : 'Avaliar situação do vínculo'
+    onKindResolved?.(kind)
+  }, [context, canReturn, activeAppointment, queueStatus, onKindResolved])
 
   async function includeInQueue() {
     if (!familyLinkId || busy) return
@@ -193,9 +205,20 @@ export function FamilyAgendaBookingPanel({
           slotDate: new Date(val(appointment.appointment_date))
             .toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }),
         }}>Abrir dia da consulta familiar na agenda oficial</Link></p>}
-      {canReturn && appointment && <FamilyPsychologyReturnAction
-        family={appointment} accessContext={accessContext} onSaved={() => { onBooked(); void refresh() }}
-        onFeedback={setFeedback} />}
+      {canReturn && appointment && <>
+        {!matchingProfessional && <p role="status">
+          Para o retorno, selecione o mesmo psicólogo do atendimento anterior.
+          Se for necessário mudar de profissional, utilize o encaminhamento ou a remarcação autorizados.
+        </p>}
+        {matchingProfessional && (!isPsychology || !slotStart) &&
+          <p role="status">Selecione uma vaga livre na agenda de Psicologia para confirmar o retorno.</p>}
+        {eligibleReturnSlot && <FamilyPsychologyReturnAction
+          family={appointment}
+          presetSlot={slotStart}
+          accessContext={accessContext}
+          onSaved={() => { onBooked(); void refresh() }}
+          onFeedback={setFeedback} />}
+      </>}
       {!activeAppointment && !canReturn && queueStatus === 'waiting' && <>
         <p>Familiar aguardando na fila de Psicologia. Escolha a especialidade Psicologia,
           um profissional elegível e um horário disponível acima.</p>
