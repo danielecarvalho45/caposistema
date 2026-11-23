@@ -1009,16 +1009,6 @@ export function AgendaPage({
   const [rescheduleNotes, setRescheduleNotes] = useState('')
   const [rescheduleTargetDate, setRescheduleTargetDate] = useState(() => capoTodayIso())
 
-  // Ações abertas pela Home devem chegar ao formulário, não apenas à página Agenda.
-  // A navegação nunca grava ou cancela um atendimento sem confirmação do operador.
-  useEffect(() => {
-    if (cancelAppointmentId) cancelPanelRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
-  }, [cancelAppointmentId])
-  useEffect(() => {
-    if (showRescheduleForm && !isProfessional) {
-      reschedulePanelRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
-    }
-  }, [showRescheduleForm, isProfessional])
   const [rescheduleSlotResult, setRescheduleSlotResult] = useState<{
     key: string
     rows: readonly AvailableAppointmentSlot[]
@@ -1089,6 +1079,17 @@ export function AgendaPage({
   const professionalId = isProfessional
     ? accessContext.professional_id
     : selectedProfessionalId || null
+  // Ações abertas pela Home devem chegar ao formulário, não apenas à página Agenda.
+  // A navegação nunca grava ou cancela um atendimento sem confirmação do operador.
+  useEffect(() => {
+    if (cancelAppointmentId) cancelPanelRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
+  }, [cancelAppointmentId])
+  useEffect(() => {
+    if (showRescheduleForm && !isProfessional) {
+      reschedulePanelRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' })
+    }
+  }, [showRescheduleForm, isProfessional])
+
   const navigationState = location.state && typeof location.state === 'object'
     ? location.state as Record<string, unknown>
     : null
