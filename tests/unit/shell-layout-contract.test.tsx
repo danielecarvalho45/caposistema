@@ -36,11 +36,51 @@ describe('estrutura dos cabeçalhos por contexto', () => {
       <h1>Minha Agenda</h1>
     </AppShell></MemoryRouter>)
     expect(screen.getByRole('heading', { name: 'Minha Agenda' })).toBeVisible()
+    expect(screen.getByText('Clínica Geral')).toHaveClass('app-user-caption')
     expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveAttribute('aria-controls', 'app-sidebar')
     expect(screen.getByLabelText(/Conexão/)).toBeInTheDocument()
     expect(screen.getByText(/Sistema CAPO — Gestão Administrativa e Operacional/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: /Perfil: Profissional/ }))
     expect(screen.getByRole('navigation', { name: 'Atalhos das funções autorizadas' }).getElementsByTagName('a')[1]).toHaveAttribute('href', '/coordenacao')
+  })
+
+
+  it('mostra especialidade do contexto profissional sem atribuí-la ao perfil administrativo', () => {
+    const admin: AccessContext = {
+      ...professional,
+      primary_context: { ...professional.primary_context, code: 'administrador', name: 'Administrador' },
+    }
+    render(<MemoryRouter><AppShell accessContext={admin} activePath="/" onLogout={async () => {}}>
+      <h1>Início administrativo</h1>
+    </AppShell></MemoryRouter>)
+    expect(screen.getByText('Administrador')).toHaveClass('app-user-caption')
+    expect(screen.queryByText('Clínica Geral')).not.toBeInTheDocument()
+  })
+
+  it('mostra especialidade simulada apenas no contexto profissional de homologação', () => {
+    const testContext: AccessContext = {
+      ...professional,
+      primary_specialty_name: null,
+      specialties: [],
+      is_homologation_account: true,
+      homologation_context: {
+        enabled: true,
+        role_code: 'profissional',
+        role_name: 'Profissional',
+        professional_id: 'nutrition-homologation',
+        professional_name: 'Homologação — Nutrição',
+        specialty_id: 'nutrition',
+        specialty_name: 'Nutrição',
+        test_patient_id: 'test-patient',
+        test_patient_name: 'Paciente teste',
+        reason: 'Teste autorizado',
+        started_at: null,
+      },
+    }
+    render(<MemoryRouter><AppShell accessContext={testContext} activePath="/" onLogout={async () => {}}>
+      <h1>Início profissional</h1>
+    </AppShell></MemoryRouter>)
+    expect(screen.getByText('Nutrição')).toHaveClass('app-user-caption')
   })
 
   it('mostra menu móvel funcional e atalho profissional no contexto da titular', async () => {
