@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { getRpcService } from '../../lib/supabase/rpc'
-import { reserveCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
-import { movementWhatsAppMessage } from './appointment-communication'
+import { openCapoWhatsAppTab, reserveCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
+import { capoGreeting } from './appointment-communication'
 import { FamilyPsychologyReturnAction } from './FamilyPsychologyReturnAction'
 
 type Family = Readonly<{ family_member_id: string; full_name: string; capo_number: string | null; cms: string | null; source_patient_name: string }>
@@ -138,11 +138,17 @@ export function FamilyAgendaBookingPanel({
         || accessContext.primary_context.name?.trim() || 'Equipe CAPO'
       const prepared = {
         phone: '55' + national,
-        text: movementWhatsAppMessage('agendamento', {
-          patientName: family.full_name,
-          professionalName: val(first?.professional_name),
-          newStart: slotStart, careLocation: address, senderName, senderTitle,
-        }),
+        text: [
+          capoGreeting() + ', ' + family.full_name + '! 💙', '',
+          'Sua consulta de *Psicologia* no CAPO foi agendada.', '',
+          '📅 *Data:* ' + new Date(slotStart).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+          '🕒 *Horário:* ' + new Date(slotStart).toLocaleTimeString('pt-BR', {
+            timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit',
+          }),
+          '👩‍⚕️ *Profissional:* ' + (val(first?.professional_name) || 'Psicologia'),
+          '📍 *Local:* ' + address, '',
+          'Estamos à disposição!', '', senderName + ' — ' + senderTitle + ' — CAPO',
+        ].join('\n'),
       }
       setNotice(prepared)
       const url = 'https://web.whatsapp.com/send?phone='
@@ -158,7 +164,7 @@ export function FamilyAgendaBookingPanel({
     if (!notice) return
     const url = 'https://web.whatsapp.com/send?phone='
       + encodeURIComponent(notice.phone) + '&text=' + encodeURIComponent(notice.text)
-    window.open(url, 'capo-whatsapp')
+    openCapoWhatsAppTab(url)
   }
 
   return <div className="agenda-contract-note" aria-label="Agendamento de Familiar/Cuidador">
@@ -197,7 +203,7 @@ export function FamilyAgendaBookingPanel({
         </button>
       </>}
       {queueId && ['waiting', 'called'].includes(queueStatus) &&
-        <p><Link to={'/filas?queueKind=family&waitingListId=' + encodeURIComponent(queueId)}>
+        <p><Link to={'/fila?queueKind=family&waitingListId=' + encodeURIComponent(queueId)}>
           Consultar prioridade e elegibilidade na fila de familiares
         </Link></p>}
     </>}
