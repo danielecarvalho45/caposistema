@@ -281,7 +281,7 @@ describe('App', () => {
     renderShell()
 
     expect(
-      screen.getByRole('heading', { name: /Boas-vindas ao CAPO\./ }),
+      screen.getByRole('heading', { name: /Boas-vindas ao sistema de agendamento do CAPO\./ }),
     ).toBeVisible()
     expect(document.getElementById('profile-panel-title')).toHaveTextContent(
       'Painel Operacional',
