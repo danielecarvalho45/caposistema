@@ -80,7 +80,7 @@ export function FamilyAgendaBookingPanel({
     setFeedback('')
     try {
       const result = await getRpcService().addFamilyToWaitingList(familyLinkId, 3, null)
-      if (result.status !== 'success' || obj(result.data)?.success === false) {
+      if (result.status !== 'success' || obj(result.data)?.success !== true) {
         throw new Error(result.status === 'error' ? result.error.message : 'O banco não confirmou a inclusão na fila.')
       }
       await refresh()
@@ -96,6 +96,7 @@ export function FamilyAgendaBookingPanel({
     const reservation = reserveCapoWhatsAppTab()
     setBusy(true)
     setFeedback('')
+    let created = false
     try {
       // A vaga, a prioridade e a incompatibilidade com o psicólogo do paciente
       // são obrigatoriamente validadas pelo mesmo contrato usado na Fila.
@@ -110,12 +111,13 @@ export function FamilyAgendaBookingPanel({
       const result = await getRpcService().createFamilyPsychologyAppointment({
         waitingListId: queueId, professionalId, slotStart, generalNotes: generalNotes?.trim() || null,
       })
-      if (result.status !== 'success' || obj(result.data)?.success === false) {
+      if (result.status !== 'success' || obj(result.data)?.success !== true) {
         throw new Error(result.status === 'error' ? result.error.message : 'O banco não confirmou o agendamento familiar.')
       }
+      created = true
       setFeedback('Consulta familiar registrada na agenda oficial da Psicologia.')
       onBooked()
-      await refresh()
+      try { await refresh() } catch { setFeedback('Consulta familiar salva, mas não foi possível atualizar o histórico na tela.') }
 
       const raw = val(context?.family_phone).replace(/\D/g, '')
       const national = raw.startsWith('55') && raw.length >= 12 ? raw.slice(2) : raw
@@ -157,7 +159,9 @@ export function FamilyAgendaBookingPanel({
       if (!reservation?.open(url)) setFeedback('Consulta salva. Abra o WhatsApp manualmente pelo botão abaixo.')
     } catch (error) {
       reservation?.cancel()
-      setFeedback(error instanceof Error ? error.message : 'Não foi possível agendar este familiar.')
+      setFeedback(created
+        ? 'Consulta familiar salva. Não foi possível concluir o aviso: ' + (error instanceof Error ? error.message : 'erro de comunicação.')
+        : error instanceof Error ? error.message : 'Não foi possível agendar este familiar.')
     } finally { setBusy(false) }
   }
 
@@ -200,17 +204,18 @@ export function FamilyAgendaBookingPanel({
           {busy ? 'Validando…' : 'Confirmar agendamento do familiar'}
         </button>
       </>}
-      {!activeAppointment && !canReturn && queueStatus === 'called' &&
-        <p>Familiar já chamado na fila. Regularize o contato na Fila de Psicologia antes de gravar o agendamento.</p>}
+      {!activeAppointment && !canReturn && ['called', 'paused'].includes(queueStatus) &&
+        <p>Familiar com fila {queueStatus === 'paused' ? 'pausada' : 'já chamada'}.
+          Regularize a situação na Fila de Psicologia antes de gravar o agendamento.</p>}
       {!activeAppointment && !canReturn &&
-        !['waiting', 'called'].includes(queueStatus) && <>
+        !['waiting', 'called', 'paused'].includes(queueStatus) && <>
         <p>Não há encaminhamento familiar aguardando agendamento.
           A inclusão na fila é necessária para a primeira consulta; o histórico será preservado.</p>
         <button type="button" disabled={busy || !familyLinkId} onClick={() => void includeInQueue()}>
           {busy ? 'Registrando…' : 'Incluir familiar na fila de Psicologia'}
         </button>
       </>}
-      {queueId && ['waiting', 'called'].includes(queueStatus) &&
+      {queueId && ['waiting', 'called', 'paused'].includes(queueStatus) &&
         <p><Link to={'/fila?queueKind=family&waitingListId=' + encodeURIComponent(queueId)}>
           Consultar prioridade e elegibilidade na fila de familiares
         </Link></p>}
