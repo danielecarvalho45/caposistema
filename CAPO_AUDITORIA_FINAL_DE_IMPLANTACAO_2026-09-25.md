@@ -820,3 +820,16 @@
 **Restrições preservadas:** calendário com 42 datas; todos os slots/horários reais continuam carregados e acessíveis, sem ocultar as ações; bloqueios, presença/falta, retorno, cancelamento e permissões permanecem intactos. Nenhuma alteração no Supabase, RLS, pacientes ou agendamentos. O mesmo componente CSS compartilhado atende às Homes profissionais de Nutrição, Assistência Social e demais especialidades.
 
 **Validação:** leitura posterior dos dois arquivos `main` confirma as edições; consulta de status combinado do último commit não retornou verificações de CI. **Não há evidência de build, teste Vitest, publicação no Cloudflare ou inspeção autenticada visual desktop/mobile após a mudança**. Homologação pendente: Nutrição/Home/Mês de novembro exibindo segunda a domingo e 6 semanas, inclusive 23/11; conferir largura, rolagem por dia e acesso aos botões; repetir em Assistência Social, Psicologia/Fisioterapia/Clínico e telas mobile/tablet; verificar Dia/Semana inalterados. Não declarar aprovado antes do teste pela Titular.
+
+
+---
+
+## 23/11/2026 — VERDE — ampliação pontual da logo do CAPO no menu lateral
+
+**Autorização e escopo:** Titular pediu logo institucional maior e mais visível na mesma posição do início da página após login; autorizou **VERDE**. Não alterar a logo da autenticação, PDFs ou timbres; manter o cabeçalho/sidebar homologados e a proporção do arquivo original.
+
+**Verificação:** `src/components/shell/AppShell.tsx` usa `.app-brand img` e `src/features/gestor/GestorShell.tsx` usa `.gestor-brand img`, ambos com `/assets/capo-logo.jpg`. Os estilos tinham `width:170px;max-height:86px`; sidebars de 248px em desktop, 220px em telas menores e navegação lateral móvel.
+
+**Correção mínima em `main`:** `src/components/shell/app-shell.css` aumentou somente a imagem do menu para `width:205px;max-width:100%;height:auto;max-height:105px`, mantendo centralização e `object-fit:contain` (commit `4dc3eade73e1ed51c2a1fb1007aa2193872e7dce`). `src/features/gestor/gestor.css` aplicou os mesmos valores à logo no menu Gestor/Titular (commit `6bc5044ca46faecaa0d34ccc93023b10582079f3`). Os limites `max-width:100%` evitam exceder o espaço disponível na sidebar responsiva; nenhuma mudança de layout, posição ou ativo de imagem.
+
+**Verificação e limites:** releitura dos dois CSS no `main` confirmou exatamente os novos valores. Não houve alteração no banco, login, rotas, autorização, dados de pacientes, PDFs ou tela de autenticação. **Build, testes visuais autenticados (desktop/mobile) e publicação do Cloudflare não comprovados nesta etapa**; homologação visual ainda necessária.
