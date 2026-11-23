@@ -2463,6 +2463,20 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_professional_id: professionalId, ...teamProfileArgs(input) },
         parse: parseConfirmedJson,
       }),
+    getProfessionalGreetingTreatment: (professionalId: string | null = null) =>
+      execute({
+        transport,
+        operation: 'get_professional_greeting_treatment_for_interface',
+        args: { p_professional_id: professionalId },
+        parse: parseConfirmedJson,
+      }),
+    setProfessionalGreetingTreatment: (professionalId: string, treatment: 'feminino' | 'masculino' | null) =>
+      execute({
+        transport,
+        operation: 'set_professional_greeting_treatment_for_interface',
+        args: { p_professional_id: professionalId, p_treatment: treatment },
+        parse: parseConfirmedJson,
+      }),
     getProfessionalCareLocation: (professionalId: string) =>
       execute({
         transport,
