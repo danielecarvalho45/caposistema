@@ -253,6 +253,7 @@ export function OwnAgendaManager({
   const [structuralFeedback, setStructuralFeedback] = useState<string | null>(null)
   const [structuralBusy, setStructuralBusy] = useState(false)
   const [recurringType, setRecurringType] = useState<RecurringAgendaType>('intervalo')
+  const [intervalViewWeekday, setIntervalViewWeekday] = useState('')
   const [recurringStartTime, setRecurringStartTime] = useState('')
   const [recurringEndTime, setRecurringEndTime] = useState('')
   const [recurringWeekdays, setRecurringWeekdays] = useState<number[]>([])
@@ -600,6 +601,18 @@ export function OwnAgendaManager({
 
     if (recurringWeekdays.some((weekday) => !structuralWeekdays.includes(weekday))) {
       setRecurringFeedback('O intervalo só pode ser aplicado aos dias ativos da agenda.')
+      return
+    }
+
+    // Orienta sem duplicar o bloqueio existente; a validação canônica permanece no banco.
+    const overlap = recurringIntervals.find((item) =>
+      recurringWeekdays.includes(numberValue(item.weekday, -1)) &&
+      timeHHMM(item.start_time) < recurringEndTime &&
+      timeHHMM(item.end_time) > recurringStartTime)
+    if (overlap) {
+      setRecurringFeedback(
+        `Já existe ${recurringAgendaTypeLabel(overlap.block_type)} em ${weekdayLabels[numberValue(overlap.weekday, -1)] ?? 'dia'} (${timeHHMM(overlap.start_time)}–${timeHHMM(overlap.end_time)}). Selecione outro horário ou consulte o intervalo existente; nenhum bloqueio duplicado foi criado.`,
+      )
       return
     }
 
@@ -955,6 +968,23 @@ export function OwnAgendaManager({
 
           <div className="agenda-structural-pattern-picker">
             <label>
+              Consultar intervalos do dia
+              <select value={intervalViewWeekday} onChange={(event) => {
+                const day = Number(event.target.value)
+                setIntervalViewWeekday(event.target.value)
+                if (event.target.value === '') return
+                const matching = activeConfigurations
+                  .filter((item) => weekdayValues(item.weekdays).includes(day))
+                  .sort((a, b) => stringValue(b.start_date).localeCompare(stringValue(a.start_date)))[0]
+                if (matching) selectStructuralConfiguration(stringValue(matching.config_id))
+              }}>
+                <option value="">Escolha um dia da semana</option>
+                {Object.entries(weekdayLabels).map(([day, label]) =>
+                  <option key={day} value={day}>{label}</option>)}
+              </select>
+              <small>Mostra o padrão ativo e seus intervalos. Pode selecionar vários dias ao criar um novo intervalo.</small>
+            </label>
+            <label>
               Padrão semanal
               <select
                 value={structuralConfigId}
@@ -977,6 +1007,14 @@ export function OwnAgendaManager({
               Novo padrão semanal
             </button>
           </div>
+          {selectedStructuralConfiguration && <p className="agenda-structural-hint" role="status">
+            Padrão selecionado: {weekdaySummary(selectedStructuralConfiguration.weekdays)} ·
+            {' '}{timeHHMM(selectedStructuralConfiguration.start_time)}–{timeHHMM(selectedStructuralConfiguration.end_time)}.
+            {' '}Intervalos registrados: {recurringIntervals.length}.
+            {recurringIntervals.some((item) => item.block_type === 'alimentacao')
+              ? ' Almoço já cadastrado neste padrão; não é necessário criar outro.'
+              : ''}
+          </p>}
           <p className="agenda-structural-hint">
             Selecione um padrão existente para alterar somente aquele grupo de dias.
             Use “Novo padrão semanal” para criar outro horário sem apagar os anteriores.
