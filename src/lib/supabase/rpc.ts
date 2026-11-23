@@ -3880,7 +3880,7 @@ export function administrativeRequestRpcPatientId(value: unknown): string | null
   return typeof value === 'string' ? value : null
 }
 
-function createSupabaseTransport(
+export function createSupabaseTransport(
   client: SupabaseClient<Database>,
 ): RpcTransport {
   // SupabaseClient.rpc uses `this.rest` internally. Bind it before passing it
@@ -3985,6 +3985,8 @@ function createSupabaseTransport(
       case 'get_patient_contact_for_interface':
       case 'get_appointment_previsit_contacts_for_interface':
       case 'register_appointment_previsit_contact_for_interface':
+      case 'get_professional_greeting_treatment_for_interface':
+      case 'set_professional_greeting_treatment_for_interface':
       case 'get_professional_care_location_for_interface':
       case 'set_professional_care_location_for_interface':
       case 'get_appointment_care_location_for_interface':
