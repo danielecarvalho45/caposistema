@@ -786,3 +786,20 @@
 **Limites de validação:** os arquivos foram conferidos por leitura estática do GitHub após versionamento. Teste de regressão escrito, mas não declarar Vitest/typecheck/build/CI/deploy Cloudflare ou clique autenticado como executados sem evidência específica. Homologação operacional pendente: confirmar Agenda → Iniciar → paciente correto e nível existente ou vazio; salvar e recarregar a classificação autorizada no `manuteste`, sem vazamento de dados reais; observar sinalização mínima para Nutrição. A atualização da whitelist não garante por si só autorização backend, que permanece independente.
 
 **Status:** CORREÇÃO PONTUAL VERSIONADA NA MAIN; HOMOLOGAÇÃO OPERACIONAL PENDENTE.
+
+
+---
+
+## 23/11/2026 — VERDE — correção pontual de presença confirmada indevidamente: Luiz Aparecido Martinez
+
+**Ocorrência e autorização:** a Titular informou ter clicado por engano no início/confirmação da consulta da Nutrição do paciente real **Luiz Aparecido Martinez** (profissional **Juliana Teixeira Rios Camargo**), marcada para **23/11/2026 às 13h10 (America/Sao_Paulo)**, e solicitou regularização para posterior remarcação. Autorizou expressamente **VERDE**. A consulta tinha ID `dc002413-f8b6-47af-9123-0721353da9a6`, presença `confirmado` desde 11h22 locais, sem motivo/notas de atendimento. A confirmação indevida estava preservada no histórico `audit_logs`.
+
+**Investigação obrigatória:** a RPC `update_appointment_attendance_for_interface` aceita `confirmado`, `realizado`, `faltou` e `cancelado`, sem ação de reversão para `agendado`. A função `reschedule_appointment_for_interface` permite `confirmado` → `remarcado` apenas quando um novo horário válido é escolhido e executado por Administrativo autorizado; nenhum novo horário foi fornecido. A correção anterior de confirmação manual de pré-visita é outro fluxo e não resolve presença assistencial.
+
+**Execução pontual e auditável no Supabase oficial:** após pré-check da identidade exata do paciente real, profissional, consulta, estado `confirmado` e timestamp da confirmação, operação transacional única restaurou `attendance_status='agendado'`, limpou os metadados de presença indevida `attendance_updated_at` e `attendance_updated_by` e manteve a data, horário, tipo, profissional, ciclo, especialidade e vínculo original. A trigger `trg_audit_patient_appointments` gravou o diff imutável de `confirmado` para `agendado`; também foi inserido evento explícito `CORRECAO_CONFIRMACAO_INDEVIDA` na tabela `audit_logs` com `old_data`, `new_data`, motivo e a autorização VERDE. Como a intervenção SQL foi feita sem sessão autenticada do usuário final, a autoria operacional não foi atribuída artificialmente; a descrição registra a autorização expressa da Titular e a natureza técnica da execução. O histórico anterior `agendado` → `confirmado` permanece intacto.
+
+**Pós-check físico:** `patient_appointments.attendance_status='agendado'`, campos `attendance_updated_at`/`attendance_updated_by` nulos; auditoria contém o evento técnico e atualização automática, além da confirmação original. Nenhum horário novo, falta, atendimento realizado, cancelamento, mudança de agenda ou alteração em outros pacientes foi criado.
+
+**Pendência:** atendimento ainda está **agendado para 23/11 às 13h10**. Gestor/AO deve selecionar horário efetivamente disponível e executar a **remarcação canônica**, que preserva histórico e gera o novo agendamento conforme as regras existentes. Não declarar remarcação efetuada, comunicação ao paciente, publicação, testes automatizados ou homologação de interface como realizados.
+
+**Escopo:** correção excepcional de dado real explicitamente autorizada; sem mudança em contratos RPC, RLS, módulos homologados, frontend ou isolamento de `manuteste`.
