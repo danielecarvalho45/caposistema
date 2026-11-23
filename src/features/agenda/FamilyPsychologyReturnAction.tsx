@@ -16,12 +16,15 @@ export function FamilyPsychologyReturnAction({
   onSaved,
   onNotice,
   onFeedback,
+  presetSlot,
 }: Readonly<{
   family: Family
   accessContext: AccessContext
   onSaved: () => void
   onNotice?: (notice: { phone: string; text: string }) => void
   onFeedback?: (message: string) => void
+  /** Vaga já escolhida no formulário canônico da Agenda Geral. */
+  presetSlot?: string
 }>) {
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState('')
@@ -58,14 +61,15 @@ export function FamilyPsychologyReturnAction({
   }
 
   async function save() {
-    if (!slot || busy) return
+    const chosenSlot = presetSlot || slot
+    if (!chosenSlot || busy) return
     setBusy(true)
     setFeedback('')
     let created = false
     try {
       const { data, error } = await getSupabaseClient().rpc('create_family_psychology_return_for_interface', {
         p_previous_appointment_id: appointmentId,
-        p_slot_start: slot,
+        p_slot_start: chosenSlot,
       })
       if (error) throw error
       if (!data || typeof data !== 'object' || Array.isArray(data)
@@ -99,7 +103,7 @@ export function FamilyPsychologyReturnAction({
         || accessContext.primary_context.name?.trim() || 'Equipe CAPO'
       const text = movementWhatsAppMessage('retorno', {
         patientName: value(family, 'family_name') || 'Familiar',
-        newStart: slot,
+        newStart: chosenSlot,
         careLocation: address,
         professionalName: value(family, 'professional_name'),
         senderName: sender,
@@ -118,10 +122,18 @@ export function FamilyPsychologyReturnAction({
   }
 
   return <span className="agenda-family-return-action">
-    <button type="button" disabled={busy} onClick={() => setOpen((current) => !current)}>
-      Agendar retorno
-    </button>
-    {open && <span className="agenda-form-grid" aria-label="Agendar retorno do Familiar/Cuidador">
+    {presetSlot ? (
+      <span className="agenda-form-actions">
+        <button type="button" disabled={busy} onClick={() => void save()}>
+          {busy ? 'Confirmando retorno…' : 'Confirmar agendamento'}
+        </button>
+      </span>
+    ) : (
+      <button type="button" disabled={busy} onClick={() => setOpen((current) => !current)}>
+        Agendar retorno
+      </button>
+    )}
+    {!presetSlot && open && <span className="agenda-form-grid" aria-label="Agendar retorno do Familiar/Cuidador">
       <label>Nova data <CapoDateInput value={date}
         onChange={(event) => { setDate(event.target.value); setSlots([]); setSlot('') }} /></label>
       <button type="button" disabled={!date || busy} onClick={() => void search()}>Buscar vagas de retorno</button>
