@@ -846,3 +846,16 @@
 **Correção pontual na branch `main`:** `src/components/shell/app-shell.css` commit `26c9fbbbb9535d7e9ab0c13b23c456441bcb951b` e `src/features/gestor/gestor.css` commit `a5cc1b15a6d06385af0b3b519ce27c4d46427f20`. Nas duas versões do menu, somente a marca visual passou a `width:100%; max-width:100%; min-width:0; height:auto; max-height:none; object-fit:contain`; a faixa superior teve seu padding lateral reduzido a zero e o padding inferior a 12px. A logo ocupa a largura disponível com proporção preservada, flexível também quando o botão de fechar menu estiver visível no mobile. Não foi trocado, recortado nem modificado o arquivo de imagem.
 
 **Preservação:** larguras das sidebars, navegação, botões de fechar, logo do login, PDFs/timbres, dados e acessos no Supabase permanecem inalterados. Releitura dos dois CSS após commit confirmou as declarações. **Ainda não foram executados testes de build ou validações visuais autenticadas em desktop/mobile, nem confirmado deploy Cloudflare.** A Titular deverá homologar a percepção do tamanho da logo na interface publicada.
+
+
+---
+
+## 23/11/2026 — VERDE — especialidade profissional legível abaixo do nome no cabeçalho
+
+**Solicitação/autorização:** Titular pediu que abaixo do nome do profissional na página inicial apareça sua especialidade em tamanho legível. Deu **VERDE** específico. Escopo restrito ao cabeçalho compartilhado; não alterar perfis administrativos, gestão, dados, agendamentos, telas clínicas, logotipos ou estrutura homologada.
+
+**Implementação `main`:** em `src/components/shell/AppShell.tsx`, o texto `.app-user-caption` abaixo do nome usa a especialidade efetiva somente quando `primary_context.code==='profissional'`. Prioriza `primary_specialty_name`, depois especialidade marcada como principal em `specialties`, depois a especialidade única, e, quando habilitada homologação, o nome da especialidade simulada como último recurso. Se não houver especialidade validada, permanece o rótulo anterior; outros contextos (administrador/AO/coordenador) seguem exibindo o papel original. Commit `2705cfd9da24837f2a93b9a34dda22a1db442035`. Em `src/components/shell/app-shell.css`, legenda passou a fonte `0.9rem`, peso `600`, `line-height:1.35` e quebra de texto responsiva, mantendo a posição imediatamente abaixo do nome. Commit `c54186ba70c5a826357bc0e6202ba660c35a0dca`.
+
+**Cobertura adicionada:** `tests/unit/shell-layout-contract.test.tsx` passou a verificar especialidade de Clínica Geral no contexto profissional, preservação do rótulo Administrador quando a mesma conta está no contexto administrativo, e especialidade simulada Nutrição no ambiente de homologação (commit `6d6ba6988269f324ce075e665eb1bfafeae0661e`).
+
+**Validação/limites:** arquivos versionados no GitHub `main`, sem mudanças no Supabase. **Execução de Vitest/build, publicação Cloudflare e homologação visual autenticada não foram confirmadas nesta etapa**. Após publicação, conferir nos perfis profissionais, na Home/mobile e no contexto de homologação que a especialidade correta é exibida, sem quebra do cabeçalho.
