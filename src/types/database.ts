@@ -408,6 +408,10 @@ export type Database = {
         Args: { p_professional_id: string; p_slot_start: string; p_limit?: number }
         Returns: Json
       }
+      create_family_psychology_return_for_interface: {
+        Args: { p_previous_appointment_id: string; p_slot_start: string }
+        Returns: Json
+      }
       create_family_psychology_appointment_for_interface: {
         Args: {
           p_waiting_list_id: string
