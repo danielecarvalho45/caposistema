@@ -40,8 +40,10 @@
 }
 
 .app-brand img {
-  width: 170px;
-  max-height: 86px;
+  width: 205px;
+  max-width: 100%;
+  height: auto;
+  max-height: 105px;
   margin: 0 auto;
   object-fit: contain;
 }
