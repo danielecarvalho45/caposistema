@@ -961,6 +961,7 @@ export function AgendaPage({
   }>
   const [appointmentFamilyResults, setAppointmentFamilyResults] = useState<readonly FamilySearchRow[]>([])
   const [selectedAppointmentFamily, setSelectedAppointmentFamily] = useState<FamilySearchRow | null>(null)
+  const [familyAppointmentKind, setFamilyAppointmentKind] = useState('')
   const appointmentSearchRequest = useRef(0)
   const [appointmentType, setAppointmentType] = useState('')
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
@@ -1680,6 +1681,7 @@ export function AgendaPage({
     setAppointmentPatients(patients)
     setAppointmentFamilyResults(families)
     setSelectedAppointmentFamily(null)
+    setFamilyAppointmentKind('')
     if (patients.length === 1 && families.length === 0) {
       setAppointmentPatientId(patients[0].patient_id)
       setAppointmentPatientQuery(patients[0].full_name)
@@ -1705,12 +1707,14 @@ export function AgendaPage({
     setAppointmentPatientId(patient.patient_id)
     setAppointmentPatientQuery(patient.full_name)
     setSelectedAppointmentFamily(null)
+    setFamilyAppointmentKind('')
     setAppointmentFamilyResults([])
     setAppointmentFeedback(null)
   }
 
   function selectAppointmentFamily(family: FamilySearchRow) {
     setSelectedAppointmentFamily(family)
+    setFamilyAppointmentKind('')
     setAppointmentPatientId('')
     setAppointmentPatientQuery(family.full_name)
     setAppointmentPatients([])
@@ -3076,6 +3080,7 @@ export function AgendaPage({
                       setAppointmentPatients([])
                       setAppointmentFamilyResults([])
                       setSelectedAppointmentFamily(null)
+                      setFamilyAppointmentKind('')
                       appointmentSearchRequest.current += 1
                     }
                   }}
@@ -3272,7 +3277,7 @@ export function AgendaPage({
               ) : (
                 <label>
                   Tipo *
-                  {selectedAppointmentFamily ? <input readOnly value="Familiar/Cuidador — Psicologia" /> : <select value={appointmentType} disabled={movementKind === 'retorno'} onChange={(event) => setAppointmentType(event.target.value)}>
+                  {selectedAppointmentFamily ? <input readOnly value={familyAppointmentKind || 'Consultando histórico do Familiar/Cuidador…'} /> : <select value={appointmentType} disabled={movementKind === 'retorno'} onChange={(event) => setAppointmentType(event.target.value)}>
                     <option value="">Selecionar</option>
                     <option>Primeiro atendimento no CAPO</option>
                     <option>Primeiro atendimento na especialidade</option>
@@ -3301,6 +3306,7 @@ export function AgendaPage({
                 isPsychology={Boolean(specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1]
                   .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes('psicolog'))}
                 accessContext={accessContext}
+                onKindResolved={setFamilyAppointmentKind}
                 onBooked={() => { void loadProfessionalConsultation() }}
               />
             )}
