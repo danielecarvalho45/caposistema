@@ -17,6 +17,7 @@ export function FamilyPsychologyReturnAction({
   onNotice,
   onFeedback,
   presetSlot,
+  notifyAdministrativeOnly = false,
 }: Readonly<{
   family: Family
   accessContext: AccessContext
@@ -25,6 +26,7 @@ export function FamilyPsychologyReturnAction({
   onFeedback?: (message: string) => void
   /** Vaga já escolhida no formulário canônico da Agenda Geral. */
   presetSlot?: string
+  notifyAdministrativeOnly?: boolean
 }>) {
   const [open, setOpen] = useState(false)
   const [date, setDate] = useState('')
@@ -79,6 +81,11 @@ export function FamilyPsychologyReturnAction({
       created = true
       setFeedback('Retorno registrado na mesma agenda da Psicologia.')
       setOpen(false)
+      if (notifyAdministrativeOnly) {
+        setFeedback('Retorno registrado. O Administrativo receberá uma notificação para avisar o familiar.')
+        onFeedback?.('Retorno familiar registrado. Aviso encaminhado ao Administrativo.')
+        return
+      }
       const rawPhone = value(family, 'family_phone').replace(/\D/g, '')
       const national = rawPhone.startsWith('55') && rawPhone.length >= 12 ? rawPhone.slice(2) : rawPhone
       if (!/^[1-9][0-9]{9,10}$/.test(national)) {
