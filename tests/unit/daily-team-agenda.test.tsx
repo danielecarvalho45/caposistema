@@ -72,12 +72,13 @@ describe('Home administrativa — agenda compartilhada por horário', () => {
     expect(await screen.findByText('Avisado · Confirmado manualmente')).toBeVisible()
     expect(button).toBeDisabled()
   })
-  it('não oferece confirmação ou remarcação para quem confirmou pelo link', async () => {
+  it('mantém remarcação administrativa possível após confirmação pelo link', async () => {
     setup([], [{ appointment_id: 'appt-1', decision: 'comparecera', responded_at: '2026-11-18T10:00:00Z' }])
     mount([early])
     expect(await screen.findByText('Avisado · Confirmado pelo link')).toBeVisible()
     expect(screen.getByRole('button', { name: 'Confirmar manualmente Paciente Cedo' })).toBeDisabled()
-    expect(screen.queryByRole('link', { name: /Remarcar/ })).not.toBeInTheDocument()
+    const action = screen.getByRole('link', { name: /Remarcar/ })
+    expect(action).toHaveAttribute('href', '/agenda')
   })
   it('mostra consulta cancelada pelo link e mantém remarcação na rota canônica', async () => {
     setup([], [], [{
@@ -115,8 +116,15 @@ describe('Home administrativa — agenda compartilhada por horário', () => {
     ))
     expect(await screen.findByText('Avisado · Confirmado manualmente')).toBeVisible()
     expect(button).toBeDisabled()
-    const remarca = screen.getByRole('button', { name: /Remarcar/ })
-    expect(remarca).toBeDisabled()
+    const remarca = screen.getByRole('link', { name: /Remarcar/ })
+    expect(remarca).toHaveAttribute('href', '/agenda')
+  })
+
+  it('não bloqueia remarcação de agendamento com confirmação manual antiga já corrigida', async () => {
+    setup([{ appointment_id: 'appt-1', result: 'correcao_pendente' }])
+    mount([early])
+    expect(await screen.findByRole('link', { name: /Remarcar/ })).toHaveAttribute('href', '/agenda')
+    expect(screen.getByRole('link', { name: /Cancelar/ })).toHaveAttribute('href', '/agenda')
   })
 
 })
