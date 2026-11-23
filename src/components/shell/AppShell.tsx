@@ -44,7 +44,18 @@ export function AppShell({
     normalized(accessContext.full_name) ?? accessContext.username
   const contextName =
     normalized(accessContext.primary_context.name) ?? 'Contexto autorizado'
+  const professionalSpecialty = accessContext.primary_context.code === 'profissional'
+    ? normalized(accessContext.primary_specialty_name)
+      ?? normalized(accessContext.specialties?.find((specialty) => specialty.is_primary)?.specialty_name)
+      ?? (accessContext.specialties?.length === 1
+        ? normalized(accessContext.specialties[0].specialty_name)
+        : null)
+      ?? (accessContext.homologation_context?.enabled
+        ? normalized(accessContext.homologation_context.specialty_name)
+        : null)
+    : null
   const userCaption =
+    professionalSpecialty ??
     normalized(accessContext.primary_context.name) ??
     normalized(accessContext.function_title) ??
     contextName
