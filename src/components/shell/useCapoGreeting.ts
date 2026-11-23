@@ -11,9 +11,9 @@ export function capoGreeting(treatment: GreetingTreatment, now = new Date()): st
     hourCycle: 'h23',
   }).format(now))
   const salutation = hour < 12 ? 'Bom dia!' : hour < 18 ? 'Boa tarde!' : 'Boa noite!'
-  if (treatment === 'feminino') return `${salutation} Seja bem-vinda ao CAPO.`
-  if (treatment === 'masculino') return `${salutation} Seja bem-vindo ao CAPO.`
-  return `${salutation} Boas-vindas ao CAPO.`
+  if (treatment === 'feminino') return `${salutation} Seja bem-vinda ao Sistema CAPO.`
+  if (treatment === 'masculino') return `${salutation} Seja bem-vindo ao Sistema CAPO.`
+  return `${salutation} Boas-vindas ao Sistema CAPO.`
 }
 
 /** A forma de tratamento é resolvida pelo backend para o perfil efetivo,
