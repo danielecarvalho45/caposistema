@@ -119,7 +119,7 @@ export function FamilyAgendaBookingPanel({
       const raw = val(context?.family_phone).replace(/\D/g, '')
       const national = raw.startsWith('55') && raw.length >= 12 ? raw.slice(2) : raw
       if (!/^[1-9][0-9]{9,10}$/.test(national)) {
-        reservation.cancel()
+        reservation?.cancel()
         setFeedback('Consulta familiar salva. Confira o telefone antes do aviso por WhatsApp.')
         return
       }
@@ -127,7 +127,7 @@ export function FamilyAgendaBookingPanel({
       const location = care.status === 'success' ? obj(care.data) : null
       const address = val(location?.care_location)
       if (!address) {
-        reservation.cancel()
+        reservation?.cancel()
         setFeedback('Consulta familiar salva. Confira o endereço do atendimento para preparar o WhatsApp.')
         return
       }
@@ -153,9 +153,9 @@ export function FamilyAgendaBookingPanel({
       setNotice(prepared)
       const url = 'https://web.whatsapp.com/send?phone='
         + encodeURIComponent(prepared.phone) + '&text=' + encodeURIComponent(prepared.text)
-      if (!reservation.open(url)) setFeedback('Consulta salva. Abra o WhatsApp manualmente pelo botão abaixo.')
+      if (!reservation?.open(url)) setFeedback('Consulta salva. Abra o WhatsApp manualmente pelo botão abaixo.')
     } catch (error) {
-      reservation.cancel()
+      reservation?.cancel()
       setFeedback(error instanceof Error ? error.message : 'Não foi possível agendar este familiar.')
     } finally { setBusy(false) }
   }
