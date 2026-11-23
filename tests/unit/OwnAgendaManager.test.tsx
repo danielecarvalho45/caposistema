@@ -115,6 +115,36 @@ describe('OwnAgendaManager — padrões semanais flexíveis', () => {
     expect(within(screen.getByRole('region', { name: 'Ajustes por período de datas' })).getAllByRole('button')).toHaveLength(9)
   })
 
+  it('consulta sexta-feira no padrão correto e não duplica o almoço já salvo', async () => {
+    const tuesday = { ...mondayTuesday, config_id: 'config-tuesday', weekdays: [2], start_time: '08:10:00', end_time: '17:00:00' }
+    const friday = { ...wednesdayFriday, config_id: 'config-friday', weekdays: [5], start_date: '2026-11-12',
+      start_time: '08:10:00', end_time: '17:10:00',
+      blocks: [
+        { id: 'lunch', weekday: 5, specific_date: null, start_time: '12:00:00',
+          end_time: '13:30:00', block_type: 'alimentacao', is_active: true },
+        { id: 'group', weekday: 5, specific_date: null, start_time: '13:30:00',
+          end_time: '17:00:00', block_type: 'outro', is_active: true },
+      ] }
+    rpc.getAgendaConfiguration.mockReset()
+    rpc.getAgendaConfiguration.mockResolvedValue({ status: 'success',
+      data: { configurations: [tuesday, friday] } })
+    render(<OwnAgendaManager professionalId="psychologist-id" allowStructuralEdit />)
+    await screen.findByRole('option', { name: /Ter · 08:10–17:00 · Ativo/ })
+    fireEvent.change(screen.getByLabelText('Consultar intervalos do dia'), { target: { value: '5' } })
+    expect(screen.getByLabelText('Padrão semanal')).toHaveValue('config-friday')
+    expect(screen.getByText(/Almoço já cadastrado neste padrão/)).toBeVisible()
+    expect(screen.getByText('Sexta · 12:00–13:30')).toBeVisible()
+
+    fireEvent.change(screen.getByLabelText('Tipo'), { target: { value: 'alimentacao' } })
+    fireEvent.change(screen.getByLabelText('Início'), { target: { value: '12:00' } })
+    fireEvent.change(screen.getByLabelText('Fim'), { target: { value: '13:30' } })
+    const days = screen.getByRole('group', { name: 'Aplicar nos dias' })
+    fireEvent.click(within(days).getByLabelText('Sexta'))
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar intervalo semanal' }))
+    expect(await screen.findByText(/Já existe Almoço em Sexta/)).toBeVisible()
+    expect(rpc.saveAgendaRecurringInterval).not.toHaveBeenCalled()
+  })
+
   it('exibe ajustes pontuais depois da configuração permanente e mantém as nove ações acessíveis', async () => {
     const user = userEvent.setup()
     render(<OwnAgendaManager professionalId="professional-id" allowStructuralEdit allowEmergencySlot />)
