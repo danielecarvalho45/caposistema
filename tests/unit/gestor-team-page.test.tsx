@@ -10,6 +10,73 @@ vi.mock('../../src/features/agenda/OwnAgendaManager', () => ({
 }))
 
 describe('GestorTeamPage', () => {
+
+  it('salva o tratamento isoladamente, relê do Supabase e não altera o cadastro', async () => {
+    const id = 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0'
+    let stored: 'feminino' | 'masculino' | null = null
+    const getGreetingTreatment = vi.fn(async () => ({
+      status: 'success' as const, data: { greeting_treatment: stored },
+    }))
+    const setGreetingTreatment = vi.fn(async (_id: string, treatment: 'feminino' | 'masculino' | null) => {
+      stored = treatment
+      return { status: 'success' as const, data: { greeting_treatment: stored } }
+    })
+    const update = vi.fn(async () => ({ status: 'success' as const, data: {} }))
+    const getContext = async () => ({ status: 'success' as const, data: {
+      team: [{ professional_id: id, full_name: 'Profissional de teste', function_title: 'Atendimento',
+        username: 'profissional.teste', recovery_email: 'teste@exemplo.org', status: 'ativo',
+        is_professional: true, specialties: [{ specialty_id: 's1', name: 'Nutrição' }],
+        roles: [{ code: 'profissional' }] }],
+      roles: [{ code: 'profissional', name: 'Profissional' }],
+      specialties: [{ specialty_id: 's1', name: 'Nutrição' }],
+    } })
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext, getGreetingTreatment, setGreetingTreatment, update,
+      create: success, setActive: success, setPrimaryContext: success,
+      getCapabilities: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional de teste/ }))
+    const selector = screen.getByLabelText('Forma de tratamento na saudação')
+    await waitFor(() => expect(selector).not.toBeDisabled())
+    fireEvent.change(selector, { target: { value: 'feminino' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar forma de tratamento' }))
+    await waitFor(() => expect(setGreetingTreatment).toHaveBeenCalledWith(id, 'feminino'))
+    await waitFor(() => expect(getGreetingTreatment).toHaveBeenCalledTimes(2))
+    expect(screen.getByRole('status')).toHaveTextContent('Forma de tratamento salva e conferida no Supabase')
+    expect(update).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /Profissional de teste/ }))
+    await waitFor(() => expect(screen.getByLabelText('Forma de tratamento na saudação')).toHaveValue('feminino'))
+  })
+
+  it('não declara sucesso quando o Supabase não confirma a escolha', async () => {
+    const id = 'c9496e0b-6735-499a-b756-ea2cdd8ba6c0'
+    const success = async () => ({ status: 'success' as const, data: [] })
+    const service: TeamManagementService = {
+      getContext: async () => ({ status: 'success' as const, data: {
+        team: [{ professional_id: id, full_name: 'Profissional exemplo', status: 'ativo' }],
+        roles: [], specialties: [],
+      } }),
+      getGreetingTreatment: async () => ({ status: 'success' as const, data: { greeting_treatment: null } }),
+      setGreetingTreatment: async () => ({ status: 'error' as const, error: {
+        kind: 'backend' as const, operation: 'set_professional_greeting_treatment_for_interface',
+        message: 'Falha simulada',
+      } }),
+      create: success, update: success, setActive: success, setPrimaryContext: success,
+      getCapabilities: success, setCapability: success, removeCapability: success,
+      setSpecialtyCapability: success, getCapabilityCatalog: success,
+    }
+    render(<GestorTeamPage service={service} mode="administracao" />)
+    fireEvent.click(await screen.findByRole('button', { name: /Profissional exemplo/ }))
+    await waitFor(() => expect(screen.getByLabelText('Forma de tratamento na saudação')).not.toBeDisabled())
+    fireEvent.change(screen.getByLabelText('Forma de tratamento na saudação'), { target: { value: 'masculino' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar forma de tratamento' }))
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('não confirmou a gravação'))
+  })
+
+
   it('reconhece Assistência Social na gestão de agenda a partir de specialties retornado pelo Supabase', async () => {
     const socialId = '00000000-0000-4000-8000-000000000003'
     const otherId = 'ca39a1a5-04a1-4ecb-bcc6-15f04748ef0c'
