@@ -3096,6 +3096,7 @@ export function AgendaPage({
                     Buscar paciente
                   </button>
                 )}
+                {!isProfessional && <small>Pesquise também Familiar/Cuidador por nome, Nº CAPO ou CMS; selecione a identidade correta.</small>}
                 {!isProfessional && appointmentPatients.length === 1 && appointmentPatientId && (
                   <div className="agenda-patient-selected" role="status" aria-label="Paciente selecionado">
                     <strong>{appointmentPatients[0].full_name}</strong>
@@ -3117,7 +3118,7 @@ export function AgendaPage({
                     ))}
                   </div>
                 )}
-                {!isProfessional && appointmentPatients.length > 1 && (
+                {!isProfessional && (appointmentPatients.length > 1 || (appointmentPatients.length === 1 && appointmentFamilyResults.length > 0)) && (
                   <div className="agenda-patient-results" aria-label="Pacientes encontrados">
                     {appointmentPatients.map((patient) => (
                       <button
