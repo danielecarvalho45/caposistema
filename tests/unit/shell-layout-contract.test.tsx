@@ -36,7 +36,7 @@ describe('estrutura dos cabeçalhos por contexto', () => {
       <h1>Minha Agenda</h1>
     </AppShell></MemoryRouter>)
     expect(screen.getByRole('heading', { name: 'Minha Agenda' })).toBeVisible()
-    expect(screen.getByText('Clínica Geral')).toHaveClass('app-user-caption')
+    expect(screen.getByText('Clínica Geral')).toHaveClass('app-user-caption', 'app-user-caption--specialty')
     expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveAttribute('aria-controls', 'app-sidebar')
     expect(screen.getByLabelText(/Conexão/)).toBeInTheDocument()
     expect(screen.getByText(/Sistema CAPO — Gestão Administrativa e Operacional/)).toBeInTheDocument()
@@ -54,6 +54,7 @@ describe('estrutura dos cabeçalhos por contexto', () => {
       <h1>Início administrativo</h1>
     </AppShell></MemoryRouter>)
     expect(screen.getByText('Administrador')).toHaveClass('app-user-caption')
+    expect(screen.getByText('Administrador')).not.toHaveClass('app-user-caption--specialty')
     expect(screen.queryByText('Clínica Geral')).not.toBeInTheDocument()
   })
 
@@ -80,7 +81,7 @@ describe('estrutura dos cabeçalhos por contexto', () => {
     render(<MemoryRouter><AppShell accessContext={testContext} activePath="/" onLogout={async () => {}}>
       <h1>Início profissional</h1>
     </AppShell></MemoryRouter>)
-    expect(screen.getByText('Nutrição')).toHaveClass('app-user-caption')
+    expect(screen.getByText('Nutrição')).toHaveClass('app-user-caption', 'app-user-caption--specialty')
   })
 
   it('mostra menu móvel funcional e atalho profissional no contexto da titular', async () => {
