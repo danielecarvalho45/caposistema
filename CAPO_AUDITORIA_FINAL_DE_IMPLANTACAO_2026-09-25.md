@@ -833,3 +833,16 @@
 **Correção mínima em `main`:** `src/components/shell/app-shell.css` aumentou somente a imagem do menu para `width:205px;max-width:100%;height:auto;max-height:105px`, mantendo centralização e `object-fit:contain` (commit `4dc3eade73e1ed51c2a1fb1007aa2193872e7dce`). `src/features/gestor/gestor.css` aplicou os mesmos valores à logo no menu Gestor/Titular (commit `6bc5044ca46faecaa0d34ccc93023b10582079f3`). Os limites `max-width:100%` evitam exceder o espaço disponível na sidebar responsiva; nenhuma mudança de layout, posição ou ativo de imagem.
 
 **Verificação e limites:** releitura dos dois CSS no `main` confirmou exatamente os novos valores. Não houve alteração no banco, login, rotas, autorização, dados de pacientes, PDFs ou tela de autenticação. **Build, testes visuais autenticados (desktop/mobile) e publicação do Cloudflare não comprovados nesta etapa**; homologação visual ainda necessária.
+
+
+---
+
+## 23/11/2026 — VERDE — ampliar logo lateral para ocupar toda a largura do espaço reservado
+
+**Solicitação e autorização:** após a ampliação inicial de 170px para 205px, a Titular relatou que a logo ainda parecia pequena e solicitou ocupação quase integral do espaço reservado no topo esquerdo do sistema; concedeu novo **VERDE** específico. Manter o mesmo lugar, não deformar a imagem nem deslocar menus e ações.
+
+**Diagnóstico físico:** imagem `public/assets/capo-logo.jpg` verificada no GitHub: JPEG com dimensões intrínsecas **1536 × 1024 px (proporção 3:2)**. Os estilos de `.app-brand img` e `.gestor-brand img` mantinham `max-height:105px`, reduzindo a largura visual efetiva para aproximadamente 157,5px, apesar de `width:205px`; o espaço lateral ainda tinha 8px de preenchimento de cada lado.
+
+**Correção pontual na branch `main`:** `src/components/shell/app-shell.css` commit `26c9fbbbb9535d7e9ab0c13b23c456441bcb951b` e `src/features/gestor/gestor.css` commit `a5cc1b15a6d06385af0b3b519ce27c4d46427f20`. Nas duas versões do menu, somente a marca visual passou a `width:100%; max-width:100%; min-width:0; height:auto; max-height:none; object-fit:contain`; a faixa superior teve seu padding lateral reduzido a zero e o padding inferior a 12px. A logo ocupa a largura disponível com proporção preservada, flexível também quando o botão de fechar menu estiver visível no mobile. Não foi trocado, recortado nem modificado o arquivo de imagem.
+
+**Preservação:** larguras das sidebars, navegação, botões de fechar, logo do login, PDFs/timbres, dados e acessos no Supabase permanecem inalterados. Releitura dos dois CSS após commit confirmou as declarações. **Ainda não foram executados testes de build ou validações visuais autenticadas em desktop/mobile, nem confirmado deploy Cloudflare.** A Titular deverá homologar a percepção do tamanho da logo na interface publicada.
