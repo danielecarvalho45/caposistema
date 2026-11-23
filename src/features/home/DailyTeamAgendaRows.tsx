@@ -177,7 +177,8 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
         const confirmed = decision === 'comparecera' || contact === 'confirmou'
         const requestedChange = isLinkCancellation || decision === 'nao_comparecera' || contact === 'solicitou_cancelamento' || contact === 'solicitou_remarcacao'
         const canConfirm = slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily) && !confirmed && !requestedChange && !state.error && ready
-        const canReschedule = ready && !state.error && slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily) && (!confirmed || requestedChange)
+        const canReschedule = ready && !state.error && slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily)
+        // Aviso/confirmação prévia não muda a elegibilidade de remarcação administrativa.
         return (
           <div className={`capo-team-day-entry is-${slot.slot_status}`} key={`${slot.professional_id}:${slot.slot_start}:${id ?? ''}`}>
             <div className="capo-team-day-primary">
