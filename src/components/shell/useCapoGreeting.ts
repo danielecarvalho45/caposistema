@@ -28,7 +28,9 @@ export function useCapoGreeting(accessContext: AccessContext): string {
   useEffect(() => {
     let active = true
     setTreatment(null)
-    void getRpcService().getProfessionalGreetingTreatment().then((result) => {
+    const getTreatment = getRpcService().getProfessionalGreetingTreatment
+    if (typeof getTreatment !== 'function') return
+    void getTreatment().then((result) => {
       if (!active) return
       if (result.status !== 'success' || !result.data ||
         typeof result.data !== 'object' || Array.isArray(result.data)) return
