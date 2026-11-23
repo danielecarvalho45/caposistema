@@ -859,3 +859,18 @@
 **Cobertura adicionada:** `tests/unit/shell-layout-contract.test.tsx` passou a verificar especialidade de Clínica Geral no contexto profissional, preservação do rótulo Administrador quando a mesma conta está no contexto administrativo, e especialidade simulada Nutrição no ambiente de homologação (commit `6d6ba6988269f324ce075e665eb1bfafeae0661e`).
 
 **Validação/limites:** arquivos versionados no GitHub `main`, sem mudanças no Supabase. **Execução de Vitest/build, publicação Cloudflare e homologação visual autenticada não foram confirmadas nesta etapa**. Após publicação, conferir nos perfis profissionais, na Home/mobile e no contexto de homologação que a especialidade correta é exibida, sem quebra do cabeçalho.
+
+
+---
+
+## 23/11/2026 — VERDE — corrigir tamanho efetivo da especialidade sob nome profissional
+
+**Solicitação e autorização:** após a manutenção que passou a exibir a especialidade abaixo do nome profissional, a Titular relatou que ainda ficou pequena; aprovou novo **VERDE** para exibição com fonte de 18px no cabeçalho compartilhado, mantendo posição e demais elementos.
+
+**Causa técnica:** `src/components/shell/app-shell.css` continha uma regra antiga de cabeçalho compacto, mais abaixo da primeira definição, `.app-user-caption{margin-top:3px;font-size:10px;font-weight:400}`, que sobrescrevia o `font-size:0.9rem; font-weight:600` introduzido na manutenção anterior. Em `@media(max-width:520px)` havia também `.app-user-caption{display:none}`. Assim, a especialidade aparecia a apenas 10px em desktop e ficava oculta em telas pequenas, embora o novo valor existisse no CSS.
+
+**Correção mínima no GitHub `main`:** `src/components/shell/AppShell.tsx` adicionou a classe condicional `app-user-caption--specialty` somente quando há especialidade validada no contexto profissional (commit `7910ae9a58f59b968f413cb9469a2e943d011e6f`). `src/components/shell/app-shell.css` ganhou, ao final do arquivo, uma regra mais específica `.app-user .app-user-caption--specialty` com `display:block; font-size:18px; font-weight:600; line-height:1.25` e quebra responsiva (commit `c88ad3cb9929db009da56de8f03d7d7a3f0e235c`). Isso prevalece sobre a regra legada de 10px e o ocultamento em mobile sem alterar o rótulo de papel dos perfis administrativos. Nenhuma alteração em dados ou permissões.
+
+**Cobertura:** assertions em `tests/unit/shell-layout-contract.test.tsx` passam a verificar a classe exclusiva da especialidade em Clínica Geral e Nutrição de homologação, e sua ausência no contexto Administrativo (commit `2cfed784ad3d54335d479b40d04bc0fec6311c63`).
+
+**Verificação/pendências:** alterações realizadas em arquivos versionados no `main`. **Execução de testes Vitest/build, deploy Cloudflare e homologação visual autenticada desktop/mobile ainda não confirmados**. Testar o tamanho real da especialidade abaixo do nome em Nutrição e outros profissionais e preservar a hierarquia do cabeçalho.
