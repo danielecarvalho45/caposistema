@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GestorTeamPage, type TeamManagementService } from '../../src/features/gestor/GestorTeamPage'
+import { SupabaseOperationError } from '../../src/lib/supabase/errors'
 
 vi.mock('../../src/features/agenda/OwnAgendaManager', () => ({
   OwnAgendaManager: ({ professionalId, enableSocialHomeVisits }: { professionalId: string; enableSocialHomeVisits?: boolean }) => (
@@ -60,10 +61,12 @@ describe('GestorTeamPage', () => {
         roles: [], specialties: [],
       } }),
       getGreetingTreatment: async () => ({ status: 'success' as const, data: { greeting_treatment: null } }),
-      setGreetingTreatment: async () => ({ status: 'error' as const, error: {
-        kind: 'backend' as const, operation: 'set_professional_greeting_treatment_for_interface',
-        message: 'Falha simulada',
-      } }),
+      setGreetingTreatment: async () => ({ status: 'error' as const,
+        error: new SupabaseOperationError({
+          kind: 'unknown', operation: 'set_professional_greeting_treatment_for_interface',
+          message: 'Falha simulada',
+        }),
+      }),
       create: success, update: success, setActive: success, setPrimaryContext: success,
       getCapabilities: success, setCapability: success, removeCapability: success,
       setSpecialtyCapability: success, getCapabilityCatalog: success,
