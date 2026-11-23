@@ -112,4 +112,28 @@ describe('Agendamento familiar pela pesquisa canônica da Agenda', () => {
     expect(await screen.findByRole('button', { name: 'Confirmar agendamento' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Confirmar agendamento do familiar' })).not.toBeInTheDocument()
   })
+  it('permite ao Administrativo confirmar explicitamente atendimento familiar passado antes do retorno', async () => {
+    let confirmed = false
+    mocks.rpc.mockImplementation(async (name: string, args: Record<string, unknown>) => {
+      if (name === 'update_family_psychology_attendance_for_interface') {
+        expect(args).toEqual({
+          p_appointment_id: 'past-1', p_action: 'confirmado', p_reason: null, p_notes: null,
+        })
+        confirmed = true
+        return { data: { success: true }, error: null }
+      }
+      return { data: context({
+        appointment_id: 'past-1', professional_id: 'psychologist-1',
+        attendance_status: confirmed ? 'confirmado' : 'agendado',
+        appointment_date: '2026-11-10T13:00:00-03:00',
+      }), error: null }
+    })
+    mount()
+    const confirm = await screen.findByRole('button', { name: 'Confirmar presença da consulta anterior' })
+    expect(screen.getByText(/continua registrada como agendada/)).toBeVisible()
+    expect(screen.queryByText(/Consulta familiar existente:/)).not.toBeInTheDocument()
+    fireEvent.click(confirm)
+    expect(await screen.findByRole('button', { name: 'Confirmar agendamento' })).toBeVisible()
+    expect(mocks.createFamilyPsychologyAppointment).not.toHaveBeenCalled()
+  })
 })
