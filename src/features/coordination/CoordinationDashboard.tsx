@@ -121,7 +121,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
       </li>)}</ul> : <p>Nenhum registro retornado.</p>)}
     </section>
     <TeamDayAgendaPanel agenda={agenda} />
-    <BirthdayPanel title="Aniversariantes de hoje" />
+    <BirthdayPanel title="Aniversariantes" />
     <section className="home-profile" aria-labelledby="agenda-change-review-title"><h2 id="agenda-change-review-title">Solicitações de alteração de agenda</h2>
       {feedback && <p role="status">{feedback}</p>}
       {requests.status === 'loading' && <p>Carregando solicitações…</p>}
