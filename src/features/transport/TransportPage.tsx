@@ -212,6 +212,7 @@ export function TransportPage({ accessContext }: Props) {
   const [pdfDetailsRequest, setPdfDetailsRequest] = useState<TransportRecord | null>(null)
   const [pdfDetailsMode, setPdfDetailsMode] = useState<'address' | 'periodicity'>('address')
   const [boardingSource, setBoardingSource] = useState<'cadastro' | 'alternativo'>('cadastro')
+  const [addressConfirmed, setAddressConfirmed] = useState(false)
   const [boardingAddress, setBoardingAddress] = useState('')
   const [periodicity, setPeriodicity] = useState<'unica' | 'semanal' | 'quinzenal'>('unica')
   const [periodicityChosen, setPeriodicityChosen] = useState(false)
@@ -322,6 +323,7 @@ export function TransportPage({ accessContext }: Props) {
     setPdfDetailsRequest(request)
     setPdfDetailsMode(mode)
     setBoardingSource(savedSource === 'alternativo' ? 'alternativo' : 'cadastro')
+    setAddressConfirmed(Boolean(savedSource))
     setBoardingAddress(field(request, 'boarding_address') ?? '')
     const savedPeriodicity = field(request, 'periodicity')
     setPeriodicity(savedPeriodicity === 'semanal' || savedPeriodicity === 'quinzenal' ? savedPeriodicity : 'unica')
@@ -331,8 +333,8 @@ export function TransportPage({ accessContext }: Props) {
   async function savePdfDetails() {
     const id = pdfDetailsRequest && requestId(pdfDetailsRequest)
     const homeAddress = field(patient, 'address') ?? ''
-    if (!id || !canAdminister || busy || !periodicityChosen) {
-      setFeedback('Confirme a periodicidade antes de salvar os dados do PDF.')
+    if (!id || !canAdminister || busy || !periodicityChosen || !addressConfirmed) {
+      setFeedback('Confirme explicitamente o endereço de embarque e a periodicidade antes de salvar os dados do PDF.')
       return
     }
     if (boardingSource === 'cadastro' && !homeAddress.trim()) {
@@ -824,9 +826,9 @@ export function TransportPage({ accessContext }: Props) {
                   <legend>Onde o transporte buscará o paciente?</legend>
                   <p>Endereço do cadastro: {field(patient, 'address') ?? 'Não informado'}</p>
                   <label><input type="radio" checked={boardingSource === 'cadastro'}
-                    onChange={() => setBoardingSource('cadastro')} /> Mesmo endereço do cadastro</label>
+                    onChange={() => { setBoardingSource('cadastro'); setAddressConfirmed(true) }} /> Mesmo endereço do cadastro</label>
                   <label><input type="radio" checked={boardingSource === 'alternativo'}
-                    onChange={() => setBoardingSource('alternativo')} /> Outro local de embarque</label>
+                    onChange={() => { setBoardingSource('alternativo'); setAddressConfirmed(true) }} /> Outro local de embarque</label>
                   {boardingSource === 'alternativo' && (
                     <label>Endereço completo de embarque
                       <textarea rows={3} maxLength={500} value={boardingAddress}
