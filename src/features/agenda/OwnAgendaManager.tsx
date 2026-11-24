@@ -490,20 +490,26 @@ export function OwnAgendaManager({
       const locationResult = newId ? await rpc.getAppointmentCareLocation(newId) : null
       const location = locationResult?.status === 'success' ? record(locationResult.data) : null
       const careLocation = stringValue(location?.care_location).trim()
-      setRemanejamentoContact((kind === 'paciente' || kind === 'grupo') && careLocation ? {
+      const noticeProfessionalName = stringValue(appointment.professional_name)
+        || (accessContext?.professional_id === professionalId ? accessContext.full_name?.trim() || '' : '')
+      const noticeSpecialtyName = stringValue(appointment.specialty_name)
+        || (accessContext?.professional_id === professionalId
+          ? accessContext.specialties?.find((entry) => entry.is_primary)?.specialty_name
+            || accessContext.specialties?.[0]?.specialty_name || '' : '')
+      const canPrepareNotice = (kind === 'paciente' || kind === 'grupo')
+        && Boolean(careLocation && noticeProfessionalName && noticeSpecialtyName)
+      setRemanejamentoContact(canPrepareNotice ? {
         patientId: stringValue(appointment.person_id),
         patientName: stringValue(appointment.person_name),
         oldStart: stringValue(appointment.appointment_date),
         newStart: kind === 'grupo' ? stringValue(response?.new_appointment_start) : remanejamentoStart,
         careLocation,
-        professionalName: stringValue(appointment.professional_name)
-          || (accessContext?.professional_id === professionalId ? accessContext.full_name?.trim() || '' : ''),
-        specialtyName: stringValue(appointment.specialty_name)
-          || (accessContext?.professional_id === professionalId
-            ? accessContext.specialties?.find((entry) => entry.is_primary)?.specialty_name
-              || accessContext.specialties?.[0]?.specialty_name || '' : ''),
+        professionalName: noticeProfessionalName,
+        specialtyName: noticeSpecialtyName,
       } : null)
-      setFeedback('Consulta remarcada e histórico preservado. Confira as demais pendências antes de bloquear.')
+      setFeedback((kind === 'paciente' || kind === 'grupo') && !canPrepareNotice
+        ? 'Consulta remarcada e histórico preservado. Aviso pendente: confirme o local, nome do profissional e especialidade antes de enviar.'
+        : 'Consulta remarcada e histórico preservado. Confira as demais pendências antes de bloquear.')
       setRemanejamentoId('')
       setRemanejamentoStart('')
       setRemanejamentoSlots([])
