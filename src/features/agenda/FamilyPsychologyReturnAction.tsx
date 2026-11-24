@@ -113,6 +113,7 @@ export function FamilyPsychologyReturnAction({
         newStart: chosenSlot,
         careLocation: address,
         professionalName: value(family, 'professional_name'),
+        specialtyName: 'Psicologia',
         senderName: sender,
         senderTitle: title,
       })
