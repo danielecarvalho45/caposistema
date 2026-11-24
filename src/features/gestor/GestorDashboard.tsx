@@ -118,7 +118,7 @@ export function GestorDashboard() {
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
           {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
         </article>
-        <AuditRecentActivities /><MaintenanceNoticeBoard />
+        <MaintenanceNoticeBoard /><AuditRecentActivities />
         <article className="gestor-panel gestor-approved-agenda-changes">
           <header>
             <div>
