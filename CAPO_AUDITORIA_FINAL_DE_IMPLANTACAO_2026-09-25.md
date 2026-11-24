@@ -1,3 +1,18 @@
+## 24/11/2026 — VERDE: concluir padronização 3D dos atalhos da Assistência Social e do Painel Técnico
+
+**Verificação precedente:** os atalhos coloridos dos componentes gerais do Gestor, Home e modelo profissional já possuíam o acabamento 3D, mas a Assistência Social (`.social-quick-card`) e o Painel Técnico (`.technical-quick-card`) utilizavam CSS próprio ainda sem o relevo aprovado. A Titular concedeu VERDE para completar **somente esses botões**, sem linhas de borda nem outras mudanças.
+
+**Backup desta etapa:** branch `backup/atalhos-social-tecnico-antes-3d-2026-11-24` criada a partir do commit `4f3b212c80e3782d643cc501f95dd5a4e5a45565`. Reversão, se solicitada, deve remover somente os seletores desta etapa e preservar o restante das manutenções.
+
+**Alterações em GitHub `main`:**
+- `src/features/social/social-page.css`: regras específicas para `.social-quick-access.home-profile-standard .social-quick-card`, removendo a borda e aplicando relevo discreto por sombra e elevação no hover (commit `05c36a909c71ec9abe952be7777e7022c06325b9`).
+- `src/features/technical/technical-page.css`: regras específicas para `.technical-page .technical-quick-grid .technical-quick-card`, com o mesmo relevo e sem contornos; o indicador do item ativo do Painel Técnico usa sombra reforçada sem a antiga linha de outline, preservando identificação visual do módulo ativo (commit `7c79a8672bea2f5121d5d35162a3adba4329cb2a`).
+- Respeitados ponteiro hover e preferência `prefers-reduced-motion`; estados de foco receberam sombra perceptível. Fundo degradê, cartões não pertencentes aos atalhos, cores, fontes, ícones, tamanho, posição, funcionalidade, permissões e dados permanecem inalterados.
+
+**Status:** alterações de CSS versionadas; sem migração ou modificações no banco. Publicação Cloudflare, testes automatizados e homologação visual de perfis em desktop/mobile não comprovados nesta etapa.
+
+---
+
 ## 24/11/2026 — VERDE: efeito 3D discreto somente nos botões coloridos dos Acessos rápidos, sem bordas
 
 **Determinação da Titular:** após aprovação do fundo degradê, manter o fundo exatamente como está (a retirada do branco já foi realizada). Alterar **apenas os botões coloridos dos Acessos rápidos**, com sombra/relevo 3D suave, **sem linha de borda ou contorno**. Não modificar outros botões, cartões comuns, formulários, menus, fontes, cores institucionais, ícones, tamanhos, posições, funções, agendas, permissões ou dados.
