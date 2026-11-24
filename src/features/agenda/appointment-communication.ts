@@ -26,7 +26,8 @@ export type CommunicationContact = Readonly<{
   oldStart?: string
   newStart: string
   careLocation: string
-  professionalName?: string
+  professionalName: string
+  specialtyName: string
   senderName: string
   senderTitle: string
 }>
@@ -36,6 +37,15 @@ export function movementWhatsAppMessage(
   contact: CommunicationContact,
   now = new Date(),
 ) {
+  const professionalName = contact.professionalName.trim()
+  const specialtyName = contact.specialtyName.trim()
+  if (!professionalName || !specialtyName) {
+    throw new Error('Confirme o nome do profissional e a especialidade do agendamento antes de preparar o WhatsApp.')
+  }
+  const professionalDetails = [
+    `👩‍⚕️ *Profissional:* ${professionalName}`,
+    `🩺 *Especialidade:* ${specialtyName}`,
+  ]
   const greeting = capoGreeting(now)
   const sender = [contact.senderName.toLocaleUpperCase('pt-BR'), contact.senderTitle.toLocaleUpperCase('pt-BR')].join('\n')
   if (kind === 'remanejamento') {
@@ -48,6 +58,7 @@ export function movementWhatsAppMessage(
       '✅ *SUA NOVA CONSULTA:*', '',
       `📅 *Data:* ${datePart(contact.newStart)}`,
       `🕒 *Horário:* ${timePart(contact.newStart)}`,
+      ...professionalDetails,
       `📍 *Local:* ${contact.careLocation}`, '',
       'Estamos à disposição para ajudar no que precisar!', '', sender,
     ].join('\n')
@@ -61,6 +72,7 @@ export function movementWhatsAppMessage(
       '✅ *NOVO AGENDAMENTO:*',
       `📅 *Data:* ${datePart(contact.newStart)}`,
       `🕒 *Horário:* ${timePart(contact.newStart)}`,
+      ...professionalDetails,
       `📍 *Local:* ${contact.careLocation}`, '',
       'Considere a nova data e horário. Estamos à disposição! 💙', '', sender,
     ].join('\n')
@@ -70,7 +82,7 @@ export function movementWhatsAppMessage(
     'Sua consulta de *retorno* no CAPO foi agendada.', '',
     `📅 *Data:* ${datePart(contact.newStart)}`,
     `🕒 *Horário:* ${timePart(contact.newStart)}`,
-    ...(contact.professionalName?.trim() ? [`👩‍⚕️ *Profissional:* ${contact.professionalName.trim()}`] : []),
+    ...professionalDetails,
     `📍 *Local:* ${contact.careLocation}`, '',
     'Estamos à disposição para ajudar no que precisar!', '', sender,
   ].join('\n')
