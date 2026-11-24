@@ -681,3 +681,13 @@
   .app-welcome-copy .capo-greeting-message { font-size: 16px; }
   .app-welcome-copy .capo-welcome-workday { font-size: 16px; }
 }
+
+
+/* CAPO — VERDE: logomarca com profundidade 3D em todos os perfis do AppShell. */
+.app-brand img[src="/assets/capo-logo.jpg"] {
+  filter:
+    drop-shadow(0 3px 2px rgb(22 66 103 / 20%))
+    drop-shadow(0 11px 11px rgb(22 66 103 / 17%))
+    drop-shadow(0 20px 20px rgb(22 66 103 / 9%));
+  transform: translateY(-2px);
+}
