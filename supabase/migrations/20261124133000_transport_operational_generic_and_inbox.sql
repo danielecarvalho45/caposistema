@@ -59,6 +59,10 @@ begin
     raise exception 'Somente Gestor/Titular, Administrativo Operacional ou Assistência Social autorizada podem solicitar transporte.' using errcode='42501';
   end if;
 
+  perform public.capo_assert_patient_write_context(p_patient_id);
+  if not exists (select 1 from public.patients pt where pt.id=p_patient_id and pt.status='ativo' and pt.deceased=false) then
+    raise exception 'Paciente inexistente, inativo ou falecido.' using errcode='22023';
+  end if;
   if length(btrim(coalesce(p_transport_notes,''))) not between 5 and 500 then raise exception 'O motivo do transporte deve possuir entre 5 e 500 caracteres.'; end if;
   if p_appointment_id is not null then
     select pa.patient_id,pa.attendance_status into v_ap_patient,v_ap_status from public.patient_appointments pa where pa.id=p_appointment_id;
