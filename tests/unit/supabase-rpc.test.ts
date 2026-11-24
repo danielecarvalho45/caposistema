@@ -101,6 +101,28 @@ describe('camada de RPCs CAPO', () => {
   })
 
 
+  it('autoriza RPCs autenticadas para anexos PDF e link externo revogável', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { success: true }, error: null })
+    const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
+    const service = createRpcService(createSupabaseTransport(client))
+
+    const registered = await service.registerTransportAttachment('pedido-1', 'transport/pedido-1/anexos/anexo-1.pdf', 'Exame.pdf')
+    const files = await service.listTransportAttachments('pedido-1')
+    const issued = await service.createTransportShare('pedido-1', 7)
+    const revoked = await service.revokeTransportShare('pedido-1')
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'register_transport_attachment_for_interface', {
+      p_request_id: 'pedido-1', p_storage_path: 'transport/pedido-1/anexos/anexo-1.pdf', p_display_name: 'Exame.pdf',
+    })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'list_transport_attachments_for_interface', { p_request_id: 'pedido-1' })
+    expect(rpc).toHaveBeenNthCalledWith(3, 'create_transport_share_for_interface', { p_request_id: 'pedido-1', p_days: 7 })
+    expect(rpc).toHaveBeenNthCalledWith(4, 'revoke_transport_share_for_interface', { p_request_id: 'pedido-1' })
+    expect(registered.status).toBe('success')
+    expect(files.status).toBe('success')
+    expect(issued.status).toBe('success')
+    expect(revoked.status).toBe('success')
+  })
+
   it('encaminha confirmação de endereço exclusivo e avisos manuais do transporte sem alterar paciente', async () => {
     const rpc = vi.fn()
       .mockResolvedValueOnce({ data: { success: true, boarding_address: 'Rua de teste, 10', periodicity: 'semanal' }, error: null })
