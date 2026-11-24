@@ -283,11 +283,27 @@ export function NutritionPage({
           : 'Plano gravado, mas não foi possível conferir o retorno do banco. Não emita o PDF antes de recarregar.')
         return
       }
-      const loaded = planFromContext(reloaded.data)
-      setPlan(loaded.plan)
+      const persisted = asRecord(asRecord(reloaded.data)?.current_plan)
+      // Nunca declarar sucesso nem substituir o texto digitado por uma leitura
+      // antiga/vazia. O usuário precisa de confirmação da mesma revisão salva.
+      const storedPlan = planFromContext(reloaded.data).plan
+      const editableFields: (keyof NutritionPlan)[] = [
+        'title', 'breakfast', 'lunch', 'dessertLunch', 'snack', 'dinner',
+        'dessertDinner', 'hydration', 'supplement', 'other', 'oncology', 'notes',
+      ]
+      const mismatchedFields = editableFields.filter((key) =>
+        storedPlan[key].trim() !== plan[key].trim())
+      if (persisted?.plan_id !== response.plan_id || mismatchedFields.length > 0) {
+        setFeedback(
+          'A gravação retornou confirmação, mas o conteúdo ainda não corresponde ao plano digitado. ' +
+          'Seus textos foram preservados; não gere o PDF até atualizar e conferir o plano no banco.',
+        )
+        return
+      }
+      setPlan(storedPlan)
       setPlanDirty(false)
-      setCanEditPlan(loaded.canEdit)
-      setFeedback('Plano alimentar salvo e atualizado no banco com sucesso.')
+      setCanEditPlan(true)
+      setFeedback('Plano alimentar salvo e conferido no banco. O PDF oficial já pode ser gerado.')
     } catch (error) {
       setFeedback(`Falha ao salvar o plano: ${error instanceof Error ? error.message : 'erro inesperado'}. Os textos continuam na tela.`)
     } finally {
@@ -302,6 +318,7 @@ export function NutritionPage({
     }
     setBusy(true)
     setFeedback('Gerando documento nutricional oficial…')
+    try {
     const created = await getRpcService().createNutritionDocument(patientId)
     if (created.status !== 'success') {
       setFeedback(created.status === 'error' ? created.error.message : 'Documento não retornou confirmação.')
@@ -347,7 +364,13 @@ export function NutritionPage({
     const reloaded = await getRpcService().getNutritionDocument(documentId)
     setDocument(reloaded.status === 'success' ? reloaded.data as NutritionRecord : officialDocument)
     setFeedback('PDF Nutricional Oficial gerado e vinculado ao documento.')
-    setBusy(false)
+    } catch (error) {
+      setFeedback('Falha na geração do PDF: ' +
+        (error instanceof Error ? error.message : 'erro inesperado') +
+        '. O plano alimentar salvo permanece preservado.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function searchManagementPatients() {
