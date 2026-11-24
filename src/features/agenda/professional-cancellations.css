@@ -16,3 +16,33 @@
 .agenda-home-cancellations li strong {font-size:.82rem}
 .agenda-home-cancellations p {margin:0;font-size:.78rem;line-height:1.45}
 .agenda-home-cancellations small {font-size:.72rem;color:var(--color-muted,#66758b)}
+
+/* Rótulo informativo, sem alterar a ordem ou os registros do dia. */
+.agenda-home-cancellations-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .4rem;
+}
+.agenda-home-cancellations-entry-head span {
+  border: 1px solid var(--color-border, #d9e7f3);
+  border-radius: 999px;
+  padding: .16rem .5rem;
+  font-size: .72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.agenda-home-cancellations-entry-head .is-rescheduled {
+  border-color: #b9dcd1;
+  background: #f2faf6;
+  color: #235a47;
+}
+.agenda-home-cancellations-entry-head .is-cancelled {
+  border-color: #e6ccd5;
+  background: #fff8fa;
+  color: #874256;
+}
+.agenda-home-cancellations-no-new {
+  color: var(--color-muted, #66758b);
+}
