@@ -10,10 +10,20 @@ export type DailyCancellation = Readonly<{
   cancellation_reason: string
   cancelled_at: string
   cancelled_by: string
+  cancellation_status?: 'cancelada' | 'remarcada'
+  new_appointment_date?: string | null
 }>
 
 export function getCancellationSummary(rows: readonly DailyCancellation[]) {
   return rows.slice().sort((a, b) => Date.parse(a.appointment_date) - Date.parse(b.appointment_date))
+}
+
+export function getCancellationPresentation(item: DailyCancellation) {
+  const wasRescheduled = item.cancellation_status === 'remarcada' && Boolean(item.new_appointment_date)
+  return {
+    label: wasRescheduled ? 'Remarcada' : 'Cancelada',
+    nextDate: wasRescheduled ? item.new_appointment_date : null,
+  }
 }
 
 function dateTime(value: string, options: Intl.DateTimeFormatOptions) {
@@ -28,7 +38,7 @@ export function ProfessionalDailyCancellations() {
   const reload = useCallback(async () => {
     try {
       const { data, error } = await getSupabaseClient().rpc(
-        'get_my_daily_appointment_cancellations_for_interface' as never,
+        'get_my_daily_appointment_cancellations_detailed_for_interface' as never,
         { p_date: capoTodayIso() } as never,
       )
       if (error) throw error
@@ -66,13 +76,26 @@ export function ProfessionalDailyCancellations() {
       {state === 'success' && items.length === 0 && <p>Nenhum cancelamento registrado hoje.</p>}
       {state === 'success' && items.length > 0 && (
         <ul>
-          {items.map(item => (
-            <li key={item.appointment_id}>
-              <strong>{dateTime(item.appointment_date, { hour: '2-digit', minute: '2-digit', hour12: false })} — {item.patient_name}</strong>
-              <p><b>Motivo:</b> {item.cancellation_reason}</p>
-              <small>Cancelado em {dateTime(item.cancelled_at, { dateStyle: 'short', timeStyle: 'short' })} · Registrado por {item.cancelled_by}</small>
-            </li>
-          ))}
+          {items.map(item => {
+            const presentation = getCancellationPresentation(item)
+            return (
+              <li key={item.appointment_id}>
+                <div className="agenda-home-cancellations-entry-head">
+                  <strong>{dateTime(item.appointment_date, { hour: '2-digit', minute: '2-digit', hour12: false })} — {item.patient_name}</strong>
+                  <span className={presentation.nextDate ? 'is-rescheduled' : 'is-cancelled'}>
+                    {presentation.label}
+                  </span>
+                </div>
+                <p><b>Motivo:</b> {item.cancellation_reason}</p>
+                {presentation.nextDate ? (
+                  <p><b>Nova consulta:</b> {dateTime(presentation.nextDate, {
+                    dateStyle: 'short', timeStyle: 'short',
+                  })}</p>
+                ) : <p className="agenda-home-cancellations-no-new">Sem nova consulta agendada</p>}
+                <small>Cancelado em {dateTime(item.cancelled_at, { dateStyle: 'short', timeStyle: 'short' })} · Registrado por {item.cancelled_by}</small>
+              </li>
+            )
+          })}
         </ul>
       )}
     </article>
