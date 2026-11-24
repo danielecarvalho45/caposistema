@@ -7,6 +7,7 @@ const contact = {
   newStart: '2026-11-19T13:30:00Z',
   careLocation: 'Unidade informada no agendamento',
   professionalName: 'Dra. Profissional Exemplo',
+  specialtyName: 'Nutrição',
   senderName: 'Atendente CAPO',
   senderTitle: 'Auxiliar Administrativo',
 }
@@ -21,7 +22,8 @@ describe('Comunicações CAPO conforme tipo de movimentação', () => {
   it('destaca a nova consulta e pede desculpas somente no remanejamento pelo serviço', () => {
     const message = movementWhatsAppMessage('remanejamento', contact, new Date('2026-11-10T15:00:00Z'))
     expect(message).toContain('⚠️ *COMUNICADO IMPORTANTE — CAPO*')
-    expect(message).not.toContain('*Profissional:*')
+    expect(message).toContain('👩‍⚕️ *Profissional:* Dra. Profissional Exemplo')
+    expect(message).toContain('🩺 *Especialidade:* Nutrição')
     expect(message).toContain('Boa tarde!')
     expect(message).toContain('força maior')
     expect(message).toContain('17/11/2026')
@@ -33,7 +35,8 @@ describe('Comunicações CAPO conforme tipo de movimentação', () => {
   it('não atribui ao serviço uma remarcação solicitada pelo paciente', () => {
     const message = movementWhatsAppMessage('remarcacao', contact)
     expect(message).toContain('Conforme solicitado')
-    expect(message).not.toContain('*Profissional:*')
+    expect(message).toContain('👩‍⚕️ *Profissional:* Dra. Profissional Exemplo')
+    expect(message).toContain('🩺 *Especialidade:* Nutrição')
     expect(message).toContain('Data anterior')
     expect(message).not.toContain('força maior')
   })
@@ -42,9 +45,15 @@ describe('Comunicações CAPO conforme tipo de movimentação', () => {
     const message = movementWhatsAppMessage('retorno', contact)
     expect(message).toContain('consulta de *retorno*')
     expect(message).toContain('👩‍⚕️ *Profissional:* Dra. Profissional Exemplo')
+    expect(message).toContain('🩺 *Especialidade:* Nutrição')
     expect(message).toContain('Atendente CAPO'.toLocaleUpperCase('pt-BR'))
     expect(message).toContain('Auxiliar Administrativo'.toLocaleUpperCase('pt-BR'))
     expect(message).not.toContain('Data anterior')
     expect(message).not.toContain('remarcada')
+  })
+  it('impede aviso com profissional ou especialidade ausente', () => {
+    expect(() => movementWhatsAppMessage('retorno', { ...contact, professionalName: '' })).toThrow('Confirme o nome do profissional')
+    expect(() => movementWhatsAppMessage('remarcacao', { ...contact, specialtyName: '' })).toThrow('Confirme o nome do profissional')
+    expect(() => movementWhatsAppMessage('remanejamento', { ...contact, specialtyName: '' })).toThrow('Confirme o nome do profissional')
   })
 })
