@@ -203,6 +203,15 @@ export function TransportPage({ accessContext }: Props) {
     return () => { active = false }
   }, [authorized])
 
+  useEffect(() => {
+    if (!contactsOpen) return
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setContactsOpen(false)
+    }
+    document.addEventListener('keydown', onEscape)
+    return () => document.removeEventListener('keydown', onEscape)
+  }, [contactsOpen])
+
   async function saveContacts() {
     if (!isManager || contactsBusy) return
     setContactsBusy(true)
@@ -566,8 +575,16 @@ export function TransportPage({ accessContext }: Props) {
           <span aria-hidden="true">✉</span> Contatos do Transporte
         </button>
         {contactsOpen && (
-          <div className="transport-contact-details">
-            <p>Contatos institucionais utilizados no encaminhamento de PDFs e documentos.</p>
+          <div className="transport-contact-overlay">
+            <button type="button" className="transport-contact-backdrop"
+              aria-label="Fechar janela de contatos" onClick={() => setContactsOpen(false)} />
+            <section className="transport-contact-modal" role="dialog" aria-modal="true" aria-label="Contatos do Transporte">
+              <div className="transport-contact-modal-head">
+                <h2>Contatos do Transporte</h2>
+                <button type="button" onClick={() => setContactsOpen(false)} aria-label="Fechar contatos">✕ Fechar</button>
+              </div>
+              <div className="transport-contact-details">
+                <p>Contatos institucionais utilizados no encaminhamento de PDFs e documentos.</p>
             {CONTACT_FIELDS.map(({ key, label }) => (
               <label key={key} className="transport-contact-field">{label}
                 {isManager ? (
@@ -599,6 +616,8 @@ export function TransportPage({ accessContext }: Props) {
                 <small>Marque um, dois ou três contatos. Cada canal abre individualmente.</small>
               </fieldset>
             )}
+              </div>
+            </section>
           </div>
         )}
       </div>
