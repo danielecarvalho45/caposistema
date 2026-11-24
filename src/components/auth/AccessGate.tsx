@@ -256,7 +256,7 @@ function EmailSentStep() {
   const { sentStatus, showLogin } = useAccessFlow()
   return (
     <section className="auth-step" aria-labelledby="auth-sent-title">
-      <h1 id="auth-sent-title">✉ Instruções enviadas</h1>
+      <h1 id="auth-sent-title">✉ Link de recuperação solicitado</h1>
       <p className="auth-subtitle">{sentStatus}</p>
       <button
         className="auth-primary auth-full"
