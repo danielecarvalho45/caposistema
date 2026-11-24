@@ -9,24 +9,24 @@ html {
   min-height: 100%;
   background:
     radial-gradient(
-      circle at 7% 93%,
-      rgb(0 96 182 / 13%) 0 16%,
-      transparent 34%
+      ellipse at 14% 25%,
+      rgb(0 96 182 / 21%) 0 12%,
+      transparent 46%
     ),
     radial-gradient(
-      circle at 94% 42%,
-      rgb(241 72 153 / 13%) 0 14%,
-      transparent 31%
+      ellipse at 93% 28%,
+      rgb(241 72 153 / 19%) 0 12%,
+      transparent 44%
     ),
     radial-gradient(
-      circle at 91% 76%,
-      rgb(250 186 3 / 13%) 0 13%,
-      transparent 29%
+      ellipse at 91% 75%,
+      rgb(250 186 3 / 18%) 0 11%,
+      transparent 40%
     ),
     radial-gradient(
-      circle at 77% 94%,
-      rgb(130 195 43 / 13%) 0 14%,
-      transparent 31%
+      ellipse at 68% 91%,
+      rgb(130 195 43 / 18%) 0 12%,
+      transparent 44%
     ),
     linear-gradient(180deg, #fff 0%, #f8fbfe 100%);
 }
