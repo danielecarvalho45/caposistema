@@ -81,3 +81,44 @@
     min-width: 0;
   }
 }
+
+/* Janela própria: não amplia a tela principal. */
+.transport-contact-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: grid;
+  place-items: center;
+  padding: .75rem;
+}
+.transport-contact-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(18 32 54 / 45%);
+  cursor: default;
+}
+.transport-contact-modal {
+  position: relative;
+  width: min(34rem, 100%);
+  max-height: min(85vh, 46rem);
+  overflow-y: auto;
+  padding: 1rem 1.15rem;
+  border: 1px solid #ead1dd;
+  border-top: 3px solid #e90059;
+  border-radius: .8rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #243347);
+  box-shadow: 0 .7rem 2rem rgb(0 0 0 / 18%);
+}
+.transport-contact-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .7rem;
+}
+.transport-contact-modal-head h2 { margin: 0; }
+.transport-contact-modal-head button {
+  flex-shrink: 0;
+  font: inherit;
+}
