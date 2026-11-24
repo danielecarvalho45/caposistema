@@ -130,6 +130,10 @@ export type ClosuresIntegration = Readonly<{
     patientId: string,
     reason: string,
   ) => Promise<AsyncState<ClosureResult>>
+  closeUnstartedAcceptedCycle: (
+    patientId: string,
+    reason: string,
+  ) => Promise<AsyncState<ClosureResult>>
   startSocial: (
     patientId: string,
     appointmentId: string,
@@ -218,6 +222,12 @@ export function createClosuresIntegration(): ClosuresIntegration {
           p_patient_id: patientId,
           p_opening_reason: reason,
         },
+      ),
+    closeUnstartedAcceptedCycle: (patientId, reason) =>
+      write(
+        'close_unstarted_accepted_care_cycle_for_interface',
+        'close_unstarted_accepted_care_cycle_for_interface',
+        { p_patient_id: patientId, p_reason: reason },
       ),
     startSocial: (patientId, appointmentId) =>
       write(
