@@ -58,6 +58,32 @@ function transportWith(data: unknown, error: unknown = null): RpcTransport {
 }
 
 describe('camada de RPCs CAPO', () => {
+  it('libera leitura, gravação de contatos e conclusão documental do Transporte', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { success: true }, error: null })
+    const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
+    const service = createRpcService(createSupabaseTransport(client))
+
+    const read = await service.getTransportSectorContacts()
+    const saved = await service.setTransportSectorContacts('35999999999', '35988888888', 'transporte@example.org')
+    const complete = await service.completeTransportRequestWithClosurePdf(
+      'request-1', 'transport/request-1/encerramento.pdf',
+    )
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'get_transport_sector_contacts_for_interface', {})
+    expect(rpc).toHaveBeenNthCalledWith(2, 'set_transport_sector_contacts_for_interface', {
+      p_whatsapp_primary: '35999999999',
+      p_phone_responsible: '35988888888',
+      p_email: 'transporte@example.org',
+    })
+    expect(rpc).toHaveBeenNthCalledWith(3, 'complete_transport_request_with_closure_pdf_for_interface', {
+      p_request_id: 'request-1',
+      p_storage_path: 'transport/request-1/encerramento.pdf',
+    })
+    expect(read.status).toBe('success')
+    expect(saved.status).toBe('success')
+    expect(complete.status).toBe('success')
+  })
+
 
   it('autoriza no transporte a leitura e gravação da forma de tratamento da saudação', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { greeting_treatment: 'feminino' }, error: null })
