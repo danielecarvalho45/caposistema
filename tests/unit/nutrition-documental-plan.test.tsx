@@ -10,6 +10,7 @@ const rpc = vi.hoisted(() => ({
   getBirthdays: vi.fn(),
   getNutritionContext: vi.fn(),
   saveDetailedNutritionPlan: vi.fn(),
+  createNutritionDocument: vi.fn(),
   getProfessionalAppointmentContext: vi.fn(),
 }))
 vi.mock('../../src/lib/supabase/rpc', async (importOriginal) => {
@@ -150,6 +151,64 @@ describe('Plano Alimentar documental — Nutrição', () => {
     await user.click(screen.getByRole('button', { name: 'Salvar / atualizar plano' }))
     expect(await screen.findByText(/O banco não confirmou o plano salvo/)).toBeVisible()
     expect(screen.getByLabelText('Sobremesa (almoço)')).toHaveValue('Conferência necessária')
+  })
+
+  it('somente confirma salvamento após reler no banco o mesmo conteúdo digitado', async () => {
+    const user = userEvent.setup()
+    rpc.getNutritionContext
+      .mockResolvedValueOnce({ status: 'success', data: nutritionContext })
+      .mockResolvedValueOnce({ status: 'success', data: {
+        ...nutritionContext,
+        current_plan: {
+          plan_id: 'test-plan-id', owned_by_me: true,
+          dessert_lunch: 'Fruta conforme plano da nutricionista.',
+          document_title: 'PLANO ALIMENTAR ORAL',
+        },
+      } })
+    renderHomeAndPlan()
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
+    await user.type(screen.getByLabelText('Sobremesa (almoço)'), 'Fruta conforme plano da nutricionista.')
+    await user.click(screen.getByRole('button', { name: 'Salvar / atualizar plano' }))
+    expect(await screen.findByText(/Plano alimentar salvo e conferido no banco/)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Gerar documento nutricional oficial' })).toBeEnabled()
+  })
+
+  it('preserva rascunho e impede PDF se o banco devolver plano desatualizado', async () => {
+    const user = userEvent.setup()
+    rpc.getNutritionContext.mockResolvedValue({ status: 'success', data: nutritionContext })
+    renderHomeAndPlan()
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
+    await user.type(screen.getByLabelText('Sobremesa (almoço)'), 'Texto real que não pode ser descartado')
+    await user.click(screen.getByRole('button', { name: 'Salvar / atualizar plano' }))
+    expect(await screen.findByText(/o conteúdo ainda não corresponde ao plano digitado/)).toBeVisible()
+    expect(screen.getByLabelText('Sobremesa (almoço)')).toHaveValue('Texto real que não pode ser descartado')
+    expect(screen.getByRole('button', { name: 'Gerar documento nutricional oficial' })).toBeDisabled()
+  })
+
+  it('restaura o botão de PDF após erro inesperado sem apagar o plano salvo', async () => {
+    const user = userEvent.setup()
+    rpc.createNutritionDocument.mockRejectedValue(new Error('Serviço temporariamente indisponível'))
+    rpc.getNutritionContext
+      .mockResolvedValueOnce({ status: 'success', data: nutritionContext })
+      .mockResolvedValueOnce({ status: 'success', data: {
+        ...nutritionContext,
+        current_plan: {
+          plan_id: 'test-plan-id', owned_by_me: true,
+          breakfast: 'Refeição individualizada',
+          document_title: 'PLANO ALIMENTAR ORAL',
+        },
+      } })
+    renderHomeAndPlan()
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
+    await user.type(screen.getByLabelText('Café da manhã'), 'Refeição individualizada')
+    await user.click(screen.getByRole('button', { name: 'Salvar / atualizar plano' }))
+    await screen.findByText(/Plano alimentar salvo e conferido no banco/)
+    await user.click(screen.getByRole('button', { name: 'Gerar documento nutricional oficial' }))
+    expect(await screen.findByText(/Falha na geração do PDF: Serviço temporariamente indisponível/)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Gerar documento nutricional oficial' })).toBeEnabled()
   })
 
   it('não permite edição quando o plano atual pertence a outro profissional', async () => {
