@@ -443,7 +443,7 @@ describe('App', () => {
 
     expect(await screen.findByText('Paciente autorizado')).toBeVisible()
     expect(
-      screen.getByRole('heading', { name: 'Aniversariantes de hoje' }),
+      screen.getByRole('heading', { name: 'Aniversariantes' }),
     ).toBeVisible()
     expect(screen.getByText('Nº CAPO CAPO-10')).toBeVisible()
     expect(screen.getByText('Integrante CAPO')).toBeVisible()
@@ -473,7 +473,7 @@ describe('App', () => {
 
     expect(loadBirthdays).not.toHaveBeenCalled()
     expect(
-      screen.queryByRole('heading', { name: 'Aniversariantes de hoje' }),
+      screen.queryByRole('heading', { name: 'Aniversariantes' }),
     ).not.toBeInTheDocument()
   })
 
