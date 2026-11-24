@@ -291,7 +291,7 @@ export function AssistentialPage({
         />
       </section>
 
-      <BirthdayPanel title="Aniversariantes de hoje" />
+      <BirthdayPanel title="Aniversariantes" />
 
       {(!homeOnly || searchState !== null) && (
       <article id="assistential-patients" className="assistential-card">
