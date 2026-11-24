@@ -111,6 +111,7 @@ export function PatientsPage({
   const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Record<string, string>>({})
   const [editBusy, setEditBusy] = useState(false)
+  const [waitingStart, setWaitingStart] = useState(false)
   const [appointmentHistoryOpen, setAppointmentHistoryOpen] = useState(false)
   const [appointmentHistory, setAppointmentHistory] = useState<{ patientId: string; rows: readonly PatientAppointmentHistoryRow[]; total: number; error: string | null } | null>(null)
   const [appointmentHistoryBusy, setAppointmentHistoryBusy] = useState(false)
@@ -422,6 +423,7 @@ ADMINISTRATIVO DO CAPO`
     setAppointmentHistory(null)
     setExistingOfferAvailable(false)
     setOfferFeedback(null)
+    setWaitingStart(false)
     setEditBusy(true)
     setFeedback(null)
     const next = canEditPatient
@@ -432,6 +434,13 @@ ADMINISTRATIVO DO CAPO`
       if (row && typeof row === 'object' && !Array.isArray(row)) {
         const source = row as Record<string, unknown>
         setEditingPatientId(patientId)
+        const waitingResult = await getSupabaseClient().rpc(
+          'get_patient_waiting_start_for_interface' as never,
+          { p_patient_id: patientId } as never,
+        )
+        setWaitingStart(!waitingResult.error && Boolean(
+          (waitingResult.data as { waiting_start?: boolean } | null)?.waiting_start,
+        ))
         setEditForm({
           patient_number: String(source.patient_number ?? ''),
           full_name: String(source.full_name ?? ''),
@@ -958,7 +967,7 @@ ADMINISTRATIVO DO CAPO`
                 {editForm.cms ? <> · CMS <strong>{editForm.cms}</strong></> : null}
               </p>
             </div>
-            <span className="patients-selected-status">{editForm.status === 'obito' ? 'Óbito registrado · Inativo' : editForm.status === 'inativo' ? 'Inativo' : 'Ativo'}</span>
+            <span className={waitingStart && editForm.status === 'ativo' ? 'patients-selected-status patients-selected-status-waiting' : 'patients-selected-status'}>{editForm.status === 'obito' ? 'Óbito registrado · Inativo' : editForm.status === 'inativo' ? 'Inativo' : waitingStart ? 'Aguardando início · Cadastro mantido' : 'Ativo'}</span>
           </div>
 
           <div className="patients-form-grid patients-selected-grid">
