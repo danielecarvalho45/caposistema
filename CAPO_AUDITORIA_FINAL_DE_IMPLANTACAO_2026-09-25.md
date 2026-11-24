@@ -1,3 +1,13 @@
+## 24/11/2026 — HOMOLOGAÇÃO DA TITULAR — botão Início no cabeçalho do Gestor/Titular
+
+**Confirmação expressa:** após a correção de localização do botão `⌂ Início`, imediatamente antes de `Mensagens` no cabeçalho do login individual da Gestor/Titular Daniele, a Titular informou **"testado ok"**. Considerar a manutenção pontual aprovada operacionalmente no cenário verificado pela Titular.
+
+**Decisão:** manutenção do posicionamento do botão **ENCERRADA/HOMOLOGADA PELA TITULAR**. Preservar a restrição individual, navegação em um clique e os demais comandos do cabeçalho. Não modificar preventivamente; reabrir apenas para ocorrência concreta com novo VERDE.
+
+**Limites:** a confirmação de uso não equivale à execução de suíte automatizada, teste em todos os dispositivos ou demais perfis. Nenhum código funcional, dado real ou objeto do Supabase alterado neste registro documental.
+
+---
+
 ## 24/11/2026 — Ajuste de localização do botão Início da Titular, conforme imagem
 
 **Esclarecimento da Titular:** o botão `Início` solicitado anteriormente não pertence ao aviso flutuante de atualização; deve aparecer no cabeçalho fixo da Home/áreas do Gestor/Titular, imediatamente **antes de Mensagens**, conforme imagem encaminhada. Mantido o VERDE concedido para esse botão e a restrição individual da conta `daniele`.
