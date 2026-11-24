@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { TeamMonthlyBirthdays } from '../../components/birthdays/TeamMonthlyBirthdays'
 import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type AgendaAppointment, type ReferralPatient } from '../../lib/supabase/rpc'
 import type { AccessContext } from '../../types/access'
 import { AgendaPage } from '../agenda/AgendaPage'
@@ -561,15 +562,15 @@ export function NutritionPage({
           <AgendaPage accessContext={accessContext} showSpecialty={false} onConfirmed={(appointment) => void openConfirmedPatient(appointment)} embeddedHome />
 
           <section className="home-profile" aria-labelledby="nutrition-birthdays-title">
-            <h2 id="nutrition-birthdays-title">Aniversariantes de hoje</h2>
+            <h2 id="nutrition-birthdays-title">Aniversariantes</h2>
             {birthdays.status === 'loading' && <p>Carregando aniversariantes autorizados…</p>}
             {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
             {birthdays.status === 'empty' && <p>Nenhum aniversariante retornado.</p>}
-            {birthdays.status === 'success' && <><h3>Pacientes vinculados</h3>{birthdays.data.patients.length ? <ul>{birthdays.data.patients.map((patient) => (
+            {birthdays.status === 'success' && <><h3>Pacientes vinculados — Hoje</h3>{birthdays.data.patients.length ? <ul>{birthdays.data.patients.map((patient) => (
   <li key={patient.patient_id}>
     {patient.full_name}
   </li>
-))}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<h3>Equipe CAPO</h3>{birthdays.data.team.length ? <ul>{birthdays.data.team.map((member) => <li key={member.professional_id}>{member.full_name}</li>)}</ul> : <p>Nenhum integrante da equipe faz aniversário hoje.</p>}</>}
+))}</ul> : <p>Nenhum paciente vinculado faz aniversário hoje.</p>}<TeamMonthlyBirthdays team={birthdays.data.team} referenceDate={birthdays.data.reference_date} /></>}
           </section>
 
         </>
