@@ -1,0 +1,83 @@
+/* Transporte — detalhes discretos da identidade institucional CAPO. */
+.transport-sector-contacts {
+  border-left: 3px solid #e90059;
+}
+.transport-contact-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  border: 1px solid #e7c4d3;
+  border-radius: .5rem;
+  padding: .45rem .7rem;
+  color: #a51051;
+  background: #fff3f7;
+  font: inherit;
+  cursor: pointer;
+}
+.transport-contact-toggle:hover,
+.transport-contact-toggle:focus-visible {
+  border-color: #e90059;
+  outline-offset: 2px;
+}
+.transport-contact-details {
+  display: grid;
+  gap: .65rem;
+  margin-top: .8rem;
+  max-width: 40rem;
+}
+.transport-contact-field {
+  display: grid;
+  gap: .25rem;
+  min-width: 0;
+}
+.transport-contact-field input {
+  width: 100%;
+  max-width: 33rem;
+}
+.transport-contact-value {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.transport-contact-selection {
+  display: grid;
+  gap: .55rem;
+  padding: .7rem .8rem;
+  border: 1px solid #ead8e2;
+  border-radius: .5rem;
+}
+.transport-contact-selection legend {
+  padding: 0 .3rem;
+  color: #9f3446;
+  font-weight: 600;
+}
+.transport-contact-selection label {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+.transport-contact-selection input {
+  width: auto;
+  accent-color: #e90059;
+}
+.transport-send-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  padding: .6rem 0;
+}
+.transport-send-actions small {
+  flex-basis: 100%;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #596b79);
+}
+.transport-cancellation {
+  border-top: 1px solid #ead8e2;
+}
+@media (max-width: 540px) {
+  .transport-contact-details,
+  .transport-contact-selection {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
