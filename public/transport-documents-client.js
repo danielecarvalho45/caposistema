@@ -49,7 +49,7 @@
         view.textContent = "Visualizar / imprimir";
         const download = document.createElement("a");
         download.className = "action";
-        download.href = file.url;
+        download.href = typeof file.downloadUrl === 'string' ? file.downloadUrl : file.url;
         download.target = "_blank";
         download.rel = "noopener noreferrer";
         download.textContent = "Baixar PDF";
