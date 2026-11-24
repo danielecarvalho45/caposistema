@@ -235,6 +235,8 @@ export function OwnAgendaManager({
     oldStart: string
     newStart: string
     careLocation: string
+    professionalName: string
+    specialtyName: string
   }> | null>(null)
   const [busy, setBusy] = useState(false)
   const [, setPendingConfirmation] =
@@ -494,6 +496,12 @@ export function OwnAgendaManager({
         oldStart: stringValue(appointment.appointment_date),
         newStart: kind === 'grupo' ? stringValue(response?.new_appointment_start) : remanejamentoStart,
         careLocation,
+        professionalName: stringValue(appointment.professional_name)
+          || (accessContext?.professional_id === professionalId ? accessContext.full_name?.trim() || '' : ''),
+        specialtyName: stringValue(appointment.specialty_name)
+          || (accessContext?.professional_id === professionalId
+            ? accessContext.specialties?.find((entry) => entry.is_primary)?.specialty_name
+              || accessContext.specialties?.[0]?.specialty_name || '' : ''),
       } : null)
       setFeedback('Consulta remarcada e histórico preservado. Confira as demais pendências antes de bloquear.')
       setRemanejamentoId('')
