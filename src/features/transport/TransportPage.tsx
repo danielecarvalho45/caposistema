@@ -179,6 +179,8 @@ export function TransportPage({ accessContext }: Props) {
   const [needReason, setNeedReason] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [administrativeQueue, setAdministrativeQueue] = useState<readonly TransportRecord[]>([])
+  const [queueLoading, setQueueLoading] = useState(false)
   const [contactsOpen, setContactsOpen] = useState(false)
   const [contactsBusy, setContactsBusy] = useState(false)
   const [contacts, setContacts] = useState<TransportContacts>(EMPTY_CONTACTS)
@@ -211,6 +213,37 @@ export function TransportPage({ accessContext }: Props) {
     document.addEventListener('keydown', onEscape)
     return () => document.removeEventListener('keydown', onEscape)
   }, [contactsOpen])
+
+  async function reloadAdministrativeQueue() {
+    if (!canAdminister) return
+    setQueueLoading(true)
+    try {
+      const result = await getRpcService().getTransportAdministrativeQueue(50)
+      if (result.status === 'success') {
+        setAdministrativeQueue(Array.isArray(result.data) ? result.data as readonly TransportRecord[] : [])
+      } else if (result.status === 'empty') {
+        setAdministrativeQueue([])
+      } else if (result.status === 'error') {
+        setFeedback(result.error.message)
+      }
+    } finally {
+      setQueueLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!canAdminister) return
+    let mounted = true
+    void getRpcService().getTransportAdministrativeQueue(50).then((result) => {
+      if (!mounted) return
+      if (result.status === 'success') {
+        setAdministrativeQueue(Array.isArray(result.data) ? result.data as readonly TransportRecord[] : [])
+      } else if (result.status === 'error') {
+        setFeedback(result.error.message)
+      }
+    })
+    return () => { mounted = false }
+  }, [canAdminister])
 
   async function saveContacts() {
     if (!isManager || contactsBusy) return
@@ -366,6 +399,7 @@ export function TransportPage({ accessContext }: Props) {
       setReason('')
       setSelectedAppointmentId('')
       await loadContext(patientId, patientName)
+      if (canAdminister) void reloadAdministrativeQueue()
       setFeedback(canAdminister
         ? 'Solicitação salva. Confirme a solicitação na seção Acompanhamento para gerar o PDF oficial.'
         : 'Solicitação enviada ao Administrativo com sua justificativa. O Administrativo gerará o PDF.')
@@ -407,6 +441,7 @@ export function TransportPage({ accessContext }: Props) {
       }
       if (action === 'cancel') setCancellationReason('')
       await loadContext(patientId, patientName)
+      void reloadAdministrativeQueue()
       setFeedback('Providência de transporte registrada no banco.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a providência.')
@@ -630,6 +665,34 @@ export function TransportPage({ accessContext }: Props) {
       </div>
 
       {feedback && <p role="status">{feedback}</p>}
+
+      {canAdminister && (
+        <div className="home-ops" aria-label="Solicitações administrativas de transporte">
+          <div className="transport-queue-head">
+            <h2>Solicitações recebidas</h2>
+            <button type="button" disabled={queueLoading} onClick={() => void reloadAdministrativeQueue()}>
+              {queueLoading ? 'Atualizando…' : 'Atualizar fila'}
+            </button>
+          </div>
+          {administrativeQueue.length === 0 ? (
+            <p>Não há solicitações pendentes na fila.</p>
+          ) : (
+            <ul className="transport-queue">
+              {administrativeQueue.map((item) => (
+                <li key={requestId(item)}>
+                  <button type="button" disabled={busy} onClick={() => void loadContext(
+                    field(item, 'patient_id') ?? '', field(item, 'patient_name') ?? 'Paciente',
+                  )}>
+                    <strong>{field(item, 'patient_name') ?? 'Paciente'}</strong>
+                    <small>{field(item, 'status') === 'solicitado' ? 'Aguardando confirmação administrativa' : 'Em processamento'}</small>
+                    <span>{field(item, 'transport_notes') ?? 'Sem justificativa informada'}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="home-ops">
         <h2>Localizar paciente</h2>
