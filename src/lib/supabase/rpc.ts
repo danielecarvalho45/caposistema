@@ -3761,6 +3761,8 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'set_transport_pdf_details_for_interface', args: {
         p_request_id: requestId, p_boarding_source: source, p_boarding_address: address, p_periodicity: periodicity,
       }, parse: parseConfirmedJson }),
+    getTransportReminderQueue: () =>
+      execute({ transport, operation: 'get_transport_reminder_queue_for_interface', args: {}, parse: parseConfirmedJson }),
     getTransportAdministrativeQueue: (limit = 50) =>
       execute({ transport, operation: 'get_transport_administrative_queue_for_interface', args: { p_limit: limit }, parse: (value) => value }),
     getTransportSectorContacts: () =>
@@ -3928,6 +3930,7 @@ export function createSupabaseTransport(
       case 'get_transport_need_queue_for_interface':
       case 'manage_transport_need_for_interface':
       case 'set_transport_pdf_details_for_interface':
+      case 'get_transport_reminder_queue_for_interface':
       case 'get_transport_administrative_queue_for_interface':
       case 'get_transport_sector_contacts_for_interface':
       case 'set_transport_sector_contacts_for_interface':
