@@ -153,6 +153,15 @@ describe('Plano Alimentar documental — Nutrição', () => {
     expect(screen.getByLabelText('Sobremesa (almoço)')).toHaveValue('Conferência necessária')
   })
 
+  it('não libera PDF oficial para paciente sem plano persistido, mesmo com formulário aberto', async () => {
+    const user = userEvent.setup()
+    renderHomeAndPlan()
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    expect(await screen.findByText('Paciente selecionado: Paciente da homologação')).toBeVisible()
+    expect(screen.getByText(/Ainda não existe Plano Alimentar salvo para este paciente/)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Gerar documento nutricional oficial' })).toBeDisabled()
+  })
+
   it('somente confirma salvamento após reler no banco o mesmo conteúdo digitado', async () => {
     const user = userEvent.setup()
     rpc.getNutritionContext
