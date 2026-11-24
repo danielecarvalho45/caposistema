@@ -8,9 +8,27 @@ html {
   min-width: 320px;
   min-height: 100%;
   background:
-    radial-gradient(circle at 22% 2%, rgb(114 196 255 / 12%), transparent 30%),
-    radial-gradient(circle at 95% 92%, rgb(241 72 153 / 5.5%), transparent 26%),
-    linear-gradient(135deg, #fbfdff 0%, #f3f9fe 43%, #fbf9ff 72%, #fffafd 100%);
+    radial-gradient(
+      circle at 7% 93%,
+      rgb(0 96 182 / 13%) 0 16%,
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 94% 42%,
+      rgb(241 72 153 / 13%) 0 14%,
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 91% 76%,
+      rgb(250 186 3 / 13%) 0 13%,
+      transparent 29%
+    ),
+    radial-gradient(
+      circle at 77% 94%,
+      rgb(130 195 43 / 13%) 0 14%,
+      transparent 31%
+    ),
+    linear-gradient(180deg, #fff 0%, #f8fbfe 100%);
 }
 
 body {
