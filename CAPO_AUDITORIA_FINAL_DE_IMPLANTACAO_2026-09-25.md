@@ -1,3 +1,19 @@
+## 24/11/2026 — VERDE — botão Início exclusivo da Titular no aviso de atualização
+
+**Problema e pedido:** no aviso de nova versão do CAPO, Titular solicitou botão `Início` ao lado da mensagem, com retorno à Home em um clique, apenas em sua conta de Gestor/Titular; confirmou VERDE para a implementação no aviso expandido e minimizado.
+
+**Implementação pontual na `main`:**
+- `src/components/system/CapoAutomaticVersionUpdate.tsx` — commit `b8285369c716e6d6655e3684327f36186aa1fed0`: usa o contexto autenticado existente (`useAccessFlow`) para exibir o botão exclusivamente quando `user_account_id` corresponde à conta oficial `daniele` e `primary_context.code === 'administrador'`. A verificação é individual, não por simples nome ou papel genérico. Botão `⌂ Início` aparece ao lado do título expandido e da faixa minimizada; usa navegação React Router `router.navigate('/')`, sem obrigar recarga da página. Nenhum novo privilégio é concedido.
+- `src/components/system/automatic-version-update.css` — commit `2194a2aedd1f1c940088c241f4621d83291beb37`: alinhamento compacto/responsivo dos botões em desktop, tablet e celular.
+
+**Proteções mantidas:** detecção da versão, minimização aos cinco segundos, botão `Atualizar agora`, confirmação em caso de edição e recarga automática somente na Home segura após 120 segundos de ociosidade, com demais critérios originais. O botão Início é navegação comum, não atualização forçada. Nenhuma alteração em banco Supabase, sessões, permissões, dados reais, homologação, agenda, atendimento ou formulários.
+
+**Validação e limites:** commits de código confirmados no GitHub. Não foi executado build, Vitest, CI, deploy Cloudflare ou teste autenticado em conta da Titular e outros perfis. Conferir na interface o retorno à Home em um clique e ausência do botão nos demais logins; manter o aviso minimizado sem obstruir funções.
+
+**Estado:** VERSIONADO NA MAIN; PUBLICAÇÃO E HOMOLOGAÇÃO OPERACIONAL PENDENTES DE CONFIRMAÇÃO.
+
+---
+
 ## 24/11/2026 — VERDE: minimização automática do aviso de atualização da versão
 
 **Relato e autorização:** aviso `Nova versão do CAPO disponível` permanecia expandido no canto inferior e dificultava a utilização de comandos na tela. Após leitura do histórico de 19/11/2026, Titular concedeu VERDE para a correção exclusivamente visual: exibir aviso normalmente, minimizar em cinco segundos, permitir reabrir e manter `Atualizar agora`.
