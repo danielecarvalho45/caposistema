@@ -241,22 +241,27 @@ export function TransportPage({ accessContext }: Props) {
       : current.filter((item) => item !== key))
   }
 
-  function openTransportChannel(key: ContactKey) {
+  function openTransportChannel(key: ContactKey, request: TransportRecord) {
     const destination = contacts[key].trim()
     if (!destination || !selectedContacts.includes(key)) return
     const sender = accessContext.full_name ?? accessContext.username
-    const brazilHour = Number(new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false,
+    const date = field(request, 'appointment_date')
+    const appointmentLabel = date ? new Date(date).toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo', hour12: false,
+    }) : null
+    const brazilHour = Number(new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23',
     }).format(new Date()))
     const greeting = brazilHour < 12 ? 'Bom dia!' : brazilHour < 18 ? 'Boa tarde!' : 'Boa noite!'
     const message = [
       greeting,
       'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
       'O CAPO solicita providências de transporte para o(a) paciente ' + patientName + ', em acompanhamento pelo serviço.',
+      appointmentLabel ? 'Atendimento previsto: ' + appointmentLabel + '.' : '',
       'O PDF oficial da solicitação e a documentação necessária serão anexados a esta mensagem.',
       'Solicitamos a confirmação do recebimento e orientações para continuidade.',
       'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
-    ].join('\n')
+    ].filter(Boolean).join('\n')
     const digits = destination.replace(/\D/g, '')
     const url = key === 'email'
       ? 'mailto:' + encodeURIComponent(destination) + '?subject=' + encodeURIComponent('CAPO — Solicitação de Transporte') + '&body=' + encodeURIComponent(message)
@@ -761,7 +766,7 @@ export function TransportPage({ accessContext }: Props) {
                       <div className="transport-send-actions">
                         {selectedContacts.map((key) => contacts[key].trim() ? (
                           <button type="button" key={key} disabled={busy}
-                            onClick={() => openTransportChannel(key)}>
+                            onClick={() => openTransportChannel(key, request)}>
                             {key === 'email' ? '✉ Abrir e-mail' : key === 'phone_responsible' ? '☏ WhatsApp responsável' : '✉ WhatsApp setor'}
                           </button>
                         ) : null)}
