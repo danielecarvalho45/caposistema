@@ -65,6 +65,12 @@ describe('camada de RPCs CAPO', () => {
 
     const read = await service.getTransportSectorContacts()
     const saved = await service.setTransportSectorContacts('35999999999', '35988888888', 'transporte@example.org')
+    const queue = await service.getTransportAdministrativeQueue(50)
+    const generic = await service.createTransportRequest({
+      p_patient_id: 'patient-1',
+      p_appointment_id: null,
+      p_transport_notes: 'Solicitação genérica por necessidade de transporte.',
+    })
     const complete = await service.completeTransportRequestWithClosurePdf(
       'request-1', 'transport/request-1/encerramento.pdf',
     )
@@ -75,12 +81,22 @@ describe('camada de RPCs CAPO', () => {
       p_phone_responsible: '35988888888',
       p_email: 'transporte@example.org',
     })
-    expect(rpc).toHaveBeenNthCalledWith(3, 'complete_transport_request_with_closure_pdf_for_interface', {
+    expect(rpc).toHaveBeenNthCalledWith(3, 'get_transport_administrative_queue_for_interface', {
+      p_limit: 50,
+    })
+    expect(rpc).toHaveBeenNthCalledWith(4, 'create_transport_request_for_interface', {
+      p_patient_id: 'patient-1',
+      p_appointment_id: null,
+      p_transport_notes: 'Solicitação genérica por necessidade de transporte.',
+    })
+    expect(rpc).toHaveBeenNthCalledWith(5, 'complete_transport_request_with_closure_pdf_for_interface', {
       p_request_id: 'request-1',
       p_storage_path: 'transport/request-1/encerramento.pdf',
     })
     expect(read.status).toBe('success')
     expect(saved.status).toBe('success')
+    expect(queue.status).toBe('success')
+    expect(generic.status).toBe('success')
     expect(complete.status).toBe('success')
   })
 
