@@ -1,3 +1,15 @@
+## 24/11/2026 — ENCERRAMENTO / OK: Aniversariantes em todas as Homes — homologação pela Titular
+
+**Confirmação expressa da Titular:** “Já foi homologada pode encerrar como ok porém nenhum aniversário no mês mas na home já mudou agora se houver divergência manutenção pontual”.
+
+**Status:** **OK — HOMOLOGADO E ENCERRADO PELA TITULAR** quanto à apresentação da Home conforme a regra autorizada: pacientes aniversariantes apenas do dia e aniversariantes da equipe CAPO do mês, abrangendo todos os perfis cujas Homes já possuem o painel, preservando localização, permissões e isolamento. A Titular confirmou ter observado na Home a alteração de apresentação após a implementação técnica descrita na entrada anterior.
+
+**Limite da homologação observado:** não havia aniversariantes no mês na ocasião; portanto a lista mensal preenchida, a ordenação dos integrantes e o marcador “Aniversário hoje” **não foram validados com dados reais pela Titular**. Isso não impede o encerramento autorizado, mas deve permanecer explícito para auditoria. Não registrar teste inexistente, nem alterar nascimentos ou criar registros fictícios para completar a verificação.
+
+**Regra de continuidade:** frente **ENCERRADA**. Não realizar novas mudanças preventivas, refatoração ou reconstrução do módulo. Reabrir **exclusivamente caso apareça divergência concreta** na listagem, permissões, apresentação, rolagem, mudança de dia/mês ou comportamento de um perfil, mediante nova autorização **VERDE** e manutenção cirúrgica sem regressões.
+
+---
+
 ## 24/11/2026 — VERDE: aniversariantes da equipe mensal e pacientes diariamente em TODAS as Homes
 
 **Solicitação e autorização:** Titular corrigiu escopo original: o painel de aniversariantes existe nas Homes de vários perfis; a alteração não é exclusiva da Home Gestor/Titular. VERDE expresso para que os pacientes permaneçam como aniversariantes **somente do dia** (fuso America/Sao_Paulo) e a equipe CAPO exiba **todos os aniversariantes do mês corrente**, inclusive datas já passadas naquele mês e datas futuras; ordenar por dia crescente, mostrar dia/mês, nome e função e distinguir discretamente quando o aniversário da equipe é hoje. Atualização automaticamente conforme a data de referência retornada do Supabase, sem data de nascimento completa, dados fictícios ou novos painéis extensos. Preservar painel no lugar homologado e regras de permissões/isolamento.
