@@ -101,6 +101,27 @@ describe('camada de RPCs CAPO', () => {
   })
 
 
+  it('encaminha confirmação de endereço exclusivo e avisos manuais do transporte sem alterar paciente', async () => {
+    const rpc = vi.fn()
+      .mockResolvedValueOnce({ data: { success: true, boarding_address: 'Rua de teste, 10', periodicity: 'semanal' }, error: null })
+      .mockResolvedValueOnce({ data: [], error: null })
+    const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
+    const service = createRpcService(createSupabaseTransport(client))
+
+    const details = await service.setTransportPdfDetails('pedido-1', 'alternativo', 'Rua de teste, 10', 'semanal')
+    const reminders = await service.getTransportReminderQueue()
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'set_transport_pdf_details_for_interface', {
+      p_request_id: 'pedido-1',
+      p_boarding_source: 'alternativo',
+      p_boarding_address: 'Rua de teste, 10',
+      p_periodicity: 'semanal',
+    })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'get_transport_reminder_queue_for_interface', {})
+    expect(details.status).toBe('success')
+    expect(reminders.status).toBe('success')
+  })
+
   it('autoriza no transporte a leitura e gravação da forma de tratamento da saudação', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { greeting_treatment: 'feminino' }, error: null })
     const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
