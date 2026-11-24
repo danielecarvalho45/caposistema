@@ -1,3 +1,18 @@
+## 24/11/2026 — VERDE: alto-relevo 3D somente na logomarca CAPO do login e menus laterais
+
+**Determinação da Titular:** aplicar sensação de logomarca saindo da tela, em 3D elegante e estático, preservando a própria imagem, as cores, proporções e posicionamento. Abrange login, Gestor/Titular e todos os perfis que utilizam o menu lateral padrão (inclusive o modelo genérico de novos profissionais). Sem alterar os fundos, acessos rápidos, formulários, demais elementos ou funcionalidades.
+
+**Backup reversível:** criada e confirmada a branch `backup/logo-antes-relevo-3d-2026-11-24` apontando para o estado anterior `c3cb07b5e258537c921fa12831501c3bf3d9a503`. Para reverter a mudança, remover somente os três blocos CSS novos e preservar commits posteriores.
+
+**Implementação somente CSS no GitHub `main`:** aplicação de `filter: drop-shadow(...)` em três camadas de profundidade e `transform: translateY(-2px)` sobre a imagem original `/assets/capo-logo.jpg`. Sem substituir arquivo ou alterar HTML/React, altura, largura, cores ou proporção:
+- `src/components/auth/access-gate.css`, seletor `.login-wrap .auth-logo` — commit `0644bce6eb6860e414733643bfe0f3a5feb99408`.
+- `src/components/shell/app-shell.css`, seletor `.app-brand img[src="/assets/capo-logo.jpg"]` — commit `9baa66ed79226243abda3ca36c50d28dd504785d`.
+- `src/features/gestor/gestor.css`, seletor `.gestor-brand img[src="/assets/capo-logo.jpg"]` — commit `5841dfbdf23bfd073ff7c8fa9e584e8f87c99027`.
+
+**Validação:** alterações versionadas, sem alterações de banco, credenciais, regras ou rotinas. Não há comprovação nesta etapa de publicação Cloudflare, execução de testes automatizados ou verificação visual em desktop/mobile; homologação da Titular pendente.
+
+---
+
 ## 24/11/2026 — VERDE: concluir padronização 3D dos atalhos da Assistência Social e do Painel Técnico
 
 **Verificação precedente:** os atalhos coloridos dos componentes gerais do Gestor, Home e modelo profissional já possuíam o acabamento 3D, mas a Assistência Social (`.social-quick-card`) e o Painel Técnico (`.technical-quick-card`) utilizavam CSS próprio ainda sem o relevo aprovado. A Titular concedeu VERDE para completar **somente esses botões**, sem linhas de borda nem outras mudanças.
