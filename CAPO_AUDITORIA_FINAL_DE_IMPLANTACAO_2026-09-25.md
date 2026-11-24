@@ -1,3 +1,15 @@
+## RESULTADO DO TESTE DOCUMENTAL 24/11/2026 — NÃO APARECEU
+
+**Relato da Titular:** após a anotação de teste no Documento Mestre (commit `b06adddb399f367c0101a6b76d59289ca1e8fc86`), foi solicitado observar se o CAPO emitia indevidamente a mensagem de atualização. A Titular respondeu: **"não apareceu"**.
+
+**Resultado observado:** APROVADO NO CENÁRIO TESTADO. A alteração exclusivamente documental não produziu novo aviso visível de atualização na sessão observada pela Titular, conforme o comportamento esperado.
+
+**Escopo da homologação:** somente ausência do aviso indevido após edição documental. O teste não valida a exibição, os 5 segundos de minimização, a reabertura, a recarga segura nem outras sessões/dispositivos.
+
+**Estado:** TESTE DOCUMENTAL ENCERRADO; NÃO REQUER CORREÇÃO. Registro documental sem modificação de frontend, banco ou dados assistenciais.
+
+---
+
 ## TESTE DOCUMENTAL CONTROLADO 24/11/2026 — AVISO DE ATUALIZAÇÃO
 
 **Finalidade:** verificar, no comportamento real do CAPO publicado, se uma anotação feita **somente neste Documento Mestre de Auditoria** dispara indevidamente a mensagem `Nova versão do CAPO disponível`.
