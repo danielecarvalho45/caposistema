@@ -3757,6 +3757,14 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_cycle_id: cycleId, p_action: action, p_reason: reason },
         parse: parseConfirmedJson,
       }),
+    getTransportSectorContacts: () =>
+      execute({ transport, operation: 'get_transport_sector_contacts_for_interface', args: {}, parse: parseConfirmedJson }),
+    setTransportSectorContacts: (whatsappPrimary: string, phoneResponsible: string, email: string) =>
+      execute({ transport, operation: 'set_transport_sector_contacts_for_interface', args: {
+        p_whatsapp_primary: whatsappPrimary,
+        p_phone_responsible: phoneResponsible,
+        p_email: email,
+      }, parse: parseConfirmedJson }),
     getTransportContext: (patientId: string) =>
       execute({ transport, operation: 'get_transport_context_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     createTransportRequest: (args: ConfirmedJsonArgs) =>
@@ -3913,6 +3921,9 @@ export function createSupabaseTransport(
       case 'recognize_transport_need_for_interface':
       case 'get_transport_need_queue_for_interface':
       case 'manage_transport_need_for_interface':
+      case 'get_transport_sector_contacts_for_interface':
+      case 'set_transport_sector_contacts_for_interface':
+      case 'complete_transport_request_with_closure_pdf_for_interface':
       case 'get_transport_context_for_interface':
       case 'create_transport_request_for_interface':
       case 'register_transport_pdf_for_interface':
