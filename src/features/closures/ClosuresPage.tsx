@@ -67,6 +67,10 @@ export function ClosuresPage({
   const [returnPatients, setReturnPatients] = useState<readonly ReferralPatient[]>([])
   const [returnPatientId, setReturnPatientId] = useState('')
   const [returnReason, setReturnReason] = useState('')
+  const [waitingPatientQuery, setWaitingPatientQuery] = useState('')
+  const [waitingPatients, setWaitingPatients] = useState<readonly ReferralPatient[]>([])
+  const [waitingPatientId, setWaitingPatientId] = useState('')
+  const [waitingReason, setWaitingReason] = useState('Aceitou a Oferta CAPO, mas optou por aguardar antes de iniciar o acompanhamento.')
 
   const hasRole = (code: string) =>
     accessContext.roles.some((role) => role.code === code)
@@ -279,6 +283,43 @@ export function ClosuresPage({
       setReturnPatients([])
       setFeedback(result.status === 'error' ? result.error.message : 'Nenhum paciente encontrado.')
     }
+  }
+
+  async function searchWaitingPatients() {
+    const query = waitingPatientQuery.trim()
+    if (query.length < 2) {
+      setFeedback('Informe nome, Nº CAPO ou CMS com pelo menos dois caracteres.')
+      return
+    }
+    const result = await getRpcService().searchReferralPatients(query, 20, 0)
+    if (result.status === 'success') {
+      setWaitingPatients(result.data)
+      setFeedback(result.data.length ? null : 'Nenhum paciente encontrado.')
+    } else {
+      setWaitingPatients([])
+      setFeedback(result.status === 'error' ? result.error.message : 'Nenhum paciente encontrado.')
+    }
+  }
+
+  async function closeWaitingCycle() {
+    if (busy || !waitingPatientId) return
+    if (waitingReason.trim().length < 5) {
+      setFeedback('Informe o motivo administrativo antes de confirmar.')
+      return
+    }
+    setBusy(true)
+    setFeedback(null)
+    const result = await integration.closeUnstartedAcceptedCycle(waitingPatientId, waitingReason.trim())
+    if (result.status === 'success') {
+      setFeedback('Ciclo encerrado administrativamente. Cadastro preservado e situação amarela: Aguardando início.')
+      setWaitingPatientId('')
+      setWaitingPatientQuery('')
+      setWaitingPatients([])
+      await reload()
+    } else {
+      setFeedback(errorOf(result) ?? 'O banco não confirmou o encerramento administrativo.')
+    }
+    setBusy(false)
   }
 
   async function openReturnCycle() {
@@ -575,6 +616,47 @@ export function ClosuresPage({
             onClick={() => void requestOwnClosure()}
           >
             Encerrar minha atuação
+          </button>
+        </section>
+      )}
+
+      {canAdministrativeAction && (
+        <section className="closures-request" aria-labelledby="waiting-start-closure-title">
+          <h2 id="waiting-start-closure-title">Encerramento administrativo — Aguardando início</h2>
+          <p>
+            Exclusivo para quem aceitou a Oferta CAPO e decidiu aguardar, sem atendimento iniciado.
+            O cadastro continua ativo e o ciclo é encerrado administrativamente.
+            Consultas ativas e registros profissionais impedem este encerramento.
+          </p>
+          <label>
+            Paciente
+            <input
+              value={waitingPatientQuery}
+              onChange={(event) => { setWaitingPatientQuery(event.target.value); setWaitingPatientId(''); setWaitingPatients([]) }}
+              placeholder="Nome, Nº CAPO ou CMS"
+            />
+          </label>
+          <button type="button" disabled={busy} onClick={() => void searchWaitingPatients()}>
+            Buscar paciente
+          </button>
+          {waitingPatients.length > 0 && (
+            <select value={waitingPatientId} onChange={(event) => setWaitingPatientId(event.target.value)} aria-label="Paciente para encerramento administrativo">
+              <option value="">Selecionar paciente</option>
+              {waitingPatients.map(patient => (
+                <option key={patient.patient_id} value={patient.patient_id}>
+                  {patient.full_name}{patient.patient_number ? ` · Nº CAPO ${patient.patient_number}` : ''}
+                </option>
+              ))}
+            </select>
+          )}
+          <label>
+            Motivo administrativo
+            <textarea value={waitingReason} maxLength={1000}
+              onChange={(event) => setWaitingReason(event.target.value)} />
+          </label>
+          <button type="button" disabled={busy || !waitingPatientId || waitingReason.trim().length < 5}
+            onClick={() => void closeWaitingCycle()}>
+            Confirmar encerramento administrativo
           </button>
         </section>
       )}
