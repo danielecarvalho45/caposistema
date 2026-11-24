@@ -13,6 +13,7 @@ import type { AccessContext } from '../../types/access'
 import { ProfileDashboard } from './ProfileDashboard'
 import { CareLocationNotices } from './CareLocationNotices'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { TeamMonthlyBirthdays } from '../../components/birthdays/TeamMonthlyBirthdays'
 import { AdministrativeTwoDayAgenda } from './AdministrativeTwoDayAgenda'
 import './home-page.css'
 import '../../styles/quick-access.css'
@@ -147,8 +148,8 @@ export function HomePage({
         <section className="home-birthdays" aria-labelledby="birthdays-title">
           <div className="home-birthdays-heading">
             <div>
-              <p className="eyebrow">Hoje</p>
-              <h2 id="birthdays-title">Aniversariantes de hoje</h2>
+              <p className="eyebrow">Pacientes hoje · Equipe no mês</p>
+              <h2 id="birthdays-title">Aniversariantes</h2>
             </div>
             {birthdays.status === 'success' && (
               <span>{formatDateOnly(birthdays.data.reference_date)}</span>
@@ -169,7 +170,7 @@ export function HomePage({
           {birthdays.status === 'success' && (
             <div className="home-birthday-grid">
               <article>
-                <h3>Pacientes</h3>
+                <h3>Pacientes — Hoje</h3>
                 {birthdays.data.patients.length === 0 ? (
                   <p>Nenhum paciente acompanhado faz aniversário hoje.</p>
                 ) : (
@@ -198,19 +199,7 @@ export function HomePage({
                 )}
               </article>
               <article>
-                <h3>Equipe CAPO</h3>
-                {birthdays.data.team.length === 0 ? (
-                  <p>Nenhum integrante da equipe faz aniversário hoje.</p>
-                ) : (
-                  <ul>
-                    {birthdays.data.team.map((member) => (
-                      <li key={member.professional_id}>
-                        <strong>{member.full_name}</strong>
-                        <small>{member.function_title}</small>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <TeamMonthlyBirthdays team={birthdays.data.team} referenceDate={birthdays.data.reference_date} />
               </article>
             </div>
           )}
