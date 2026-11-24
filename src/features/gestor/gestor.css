@@ -668,3 +668,13 @@
     transform: none;
   }
 }
+
+
+/* CAPO — VERDE: logomarca original do Gestor/Titular com alto-relevo 3D. */
+.gestor-brand img[src="/assets/capo-logo.jpg"] {
+  filter:
+    drop-shadow(0 3px 2px rgb(22 66 103 / 20%))
+    drop-shadow(0 11px 11px rgb(22 66 103 / 17%))
+    drop-shadow(0 20px 20px rgb(22 66 103 / 9%));
+  transform: translateY(-2px);
+}
