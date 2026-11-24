@@ -116,7 +116,8 @@ describe('camada de RPCs CAPO', () => {
       notes: null,
     })
 
-    expect(rpc).toHaveBeenCalledExactlyOnceWith('rebook_patient_link_cancellation_for_interface', {
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('rebook_patient_link_cancellation_for_interface', {
       p_appointment_id: 'consulta-cancelada',
       p_new_professional_id: 'profissional-original',
       p_new_slot_start: '2026-12-01T13:00:00Z',
