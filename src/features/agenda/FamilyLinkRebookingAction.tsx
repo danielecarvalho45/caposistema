@@ -120,6 +120,7 @@ export function FamilyLinkRebookingAction({
         oldStart: context.previous_start,
         newStart: slot,
         professionalName: context.professional_name,
+        specialtyName: 'Psicologia',
         careLocation: address,
         senderName: sender,
         senderTitle: title,
