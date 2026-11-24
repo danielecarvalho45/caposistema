@@ -1,3 +1,15 @@
+## 24/11/2026 — VERDE: efeito 3D discreto somente nos botões coloridos dos Acessos rápidos, sem bordas
+
+**Determinação da Titular:** após aprovação do fundo degradê, manter o fundo exatamente como está (a retirada do branco já foi realizada). Alterar **apenas os botões coloridos dos Acessos rápidos**, com sombra/relevo 3D suave, **sem linha de borda ou contorno**. Não modificar outros botões, cartões comuns, formulários, menus, fontes, cores institucionais, ícones, tamanhos, posições, funções, agendas, permissões ou dados.
+
+**Preservação reversível:** antes da manutenção, criada a branch `backup/atalhos-antes-relevo-3d-2026-11-24` no commit `226f7e16b97ac9c0779bcdf3f61da0f8997b0a08`. Branches anteriores `backup/visual-antes-mudanca-fundo-2026-11-24` e `backup/fundo-degrade-suave-antes-reforco-2026-11-24` permanecem disponíveis. Uma eventual regressão visual deverá reverter **somente os seletores adicionados nesta manutenção**, preservando todas as demais mudanças posteriores.
+
+**Implementação exclusivamente CSS:** `src/features/gestor/gestor.css` (commit `abcb40694ea64fb3489ee92205f38d72cd8d60df`) adiciona relevo por `box-shadow`, remove somente a borda dos atalhos `.gestor-dashboard .gestor-quick-grid .gestor-quick-card`, e aplica elevação discreta ao hover em dispositivos com ponteiro. `src/features/home/home-page.css` (commit `846ad4f7fbcf34dc51f2809eab3e2e1f75f4c89f`) faz o equivalente somente nos `.home-profile-card.quick-*` coloridos das demais Homes. Estados de foco preservam destaque visual por sombra, sem linha de contorno; movimento desativado quando `prefers-reduced-motion: reduce`. Nenhuma regra de fundo da página foi alterada.
+
+**Validação e limites:** alterações versionadas no GitHub `main`. Publicação no Cloudflare, execução de testes automatizados e homologação visual desktop/mobile pela Titular ainda não comprovadas nesta etapa. Não houve alteração no Supabase, no banco, em usuários ou em registros clínicos.
+
+---
+
 ## 24/11/2026 — VERDE: reforço de visibilidade do degradê exclusivamente no fundo das telas internas (reversível)
 
 **Relato da Titular:** após a primeira mudança de fundo, as cores da tela de login ficaram visíveis principalmente na parte inferior; o restante da Home permaneceu visualmente branco. A Titular autorizou expressamente reforçar o degradê e conservar a possibilidade de regressão visual se não gostar do resultado.
