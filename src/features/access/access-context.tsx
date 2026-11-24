@@ -640,9 +640,9 @@ export function AccessProvider({
           }
           setFlow((current) => ({
             ...current,
-            screen: 'recovery-code',
+            screen: 'email-sent',
             recoveryEmail: cleanEmail,
-            sentStatus: `Solicitação ${requests} de 2. Se o e-mail estiver cadastrado e autorizado, as instruções serão enviadas.`,
+            sentStatus: `Solicitação ${requests} de 2. Se o e-mail estiver cadastrado e autorizado, enviaremos um link para redefinir sua senha. Verifique sua caixa de entrada e a pasta de spam, depois clique no link recebido.`,
             feedback: null,
             busy: false,
           }))
