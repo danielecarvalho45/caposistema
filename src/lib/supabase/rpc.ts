@@ -3326,6 +3326,23 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_professional_id: professionalId, p_date: date },
         parse: parseAvailableAppointmentSlots,
       }),
+    rebookPatientLinkCancellation: (input: {
+      appointmentId: string
+      professionalId: string
+      slotStart: string
+      notes: string | null
+    }) =>
+      execute({
+        transport,
+        operation: 'rebook_patient_link_cancellation_for_interface',
+        args: {
+          p_appointment_id: input.appointmentId,
+          p_new_professional_id: input.professionalId,
+          p_new_slot_start: input.slotStart,
+          p_new_notes: input.notes,
+        },
+        parse: (value) => value,
+      }),
     createAppointment: (input: {
       patientId: string
       professionalId: string
@@ -4245,6 +4262,13 @@ export function createSupabaseTransport(
         return client.rpc(operation, {
           p_professional_id: String(args?.p_professional_id ?? ''),
           p_date: String(args?.p_date ?? ''),
+        })
+      case 'rebook_patient_link_cancellation_for_interface':
+        return client.rpc(operation, {
+          p_appointment_id: String(args?.p_appointment_id ?? ''),
+          p_new_professional_id: String(args?.p_new_professional_id ?? ''),
+          p_new_slot_start: String(args?.p_new_slot_start ?? ''),
+          p_new_notes: typeof args?.p_new_notes === 'string' ? args.p_new_notes : null,
         })
       case 'create_appointment_for_interface':
         return client.rpc(operation, {
