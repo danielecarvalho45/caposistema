@@ -319,8 +319,8 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(true)
     const result = await getRpcService().recognizeTransportNeed(patientId)
     if (result.status === 'success') {
-      setFeedback('Necessidade de transporte reconhecida no banco.')
       await loadContext(patientId, patientName)
+      setFeedback('Necessidade de transporte reconhecida no banco.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a necessidade de transporte.')
     }
@@ -363,12 +363,12 @@ export function TransportPage({ accessContext }: Props) {
       p_transport_notes: reason.trim(),
     })
     if (result.status === 'success') {
-      setFeedback(canAdminister
-        ? 'Solicitação salva. Confirme a solicitação na seção Acompanhamento para gerar o PDF oficial.'
-        : 'Solicitação enviada ao Administrativo com sua justificativa. O Administrativo gerará o PDF.')
       setReason('')
       setSelectedAppointmentId('')
       await loadContext(patientId, patientName)
+      setFeedback(canAdminister
+        ? 'Solicitação salva. Confirme a solicitação na seção Acompanhamento para gerar o PDF oficial.'
+        : 'Solicitação enviada ao Administrativo com sua justificativa. O Administrativo gerará o PDF.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a solicitação.')
     }
@@ -401,13 +401,13 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(true)
     const result = await getRpcService().manageTransportRequest(args)
     if (result.status === 'success') {
-      setFeedback('Providência de transporte registrada no banco.')
       if (action === 'forward') {
         setChannel('')
         setReference('')
       }
       if (action === 'cancel') setCancellationReason('')
       await loadContext(patientId, patientName)
+      setFeedback('Providência de transporte registrada no banco.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a providência.')
     }
@@ -446,8 +446,8 @@ export function TransportPage({ accessContext }: Props) {
 
     const result = await getRpcService().registerTransportPdf(id, storagePath)
     if (result.status === 'success') {
-      setFeedback('PDF oficial gerado e vinculado à solicitação.')
       await loadContext(patientId, patientName)
+      setFeedback('PDF oficial gerado e vinculado à solicitação.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o PDF.')
     }
@@ -460,8 +460,8 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(true)
     const result = await getRpcService().signTransportPdf(id)
     if (result.status === 'success') {
-      setFeedback('PDF oficial assinado e liberado para continuidade administrativa.')
       await loadContext(patientId, patientName)
+      setFeedback('PDF oficial confirmado e liberado para continuidade administrativa.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a assinatura.')
     }
