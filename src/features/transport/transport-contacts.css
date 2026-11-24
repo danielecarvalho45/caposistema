@@ -164,3 +164,41 @@
 .transport-queue li button small {
   color: #98536c;
 }
+
+/* Campos de confirmação documental e lembrete manual: extensão pontual. */
+.transport-detail-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+.transport-detail-switch button[aria-pressed="true"] {
+  border-color: #e90059;
+  color: #aa0042;
+  background: #fff3f8;
+}
+.transport-contact-details fieldset {
+  display: grid;
+  gap: .65rem;
+  min-width: 0;
+}
+.transport-contact-details fieldset label {
+  display: flex;
+  align-items: flex-start;
+  gap: .45rem;
+  flex-wrap: wrap;
+}
+.transport-contact-details fieldset label textarea {
+  width: 100%;
+  flex-basis: 100%;
+}
+.transport-reminder-entry {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  padding: .65rem;
+  border: 1px solid #e3e9ef;
+  border-radius: .5rem;
+}
+.transport-reminder-entry button {
+  align-self: flex-start;
+}
