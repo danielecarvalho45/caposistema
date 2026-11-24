@@ -91,7 +91,7 @@ describe('SocialPage', () => {
     render(<MemoryRouter><SocialPage accessContext={accessContext} loadSpecialties={loadSpecialties} /></MemoryRouter>)
     expect(await screen.findByRole('heading', { name: 'Acessos rápidos' })).toBeVisible()
     expect(screen.getByRole('link', { name: /Minha Agenda/i })).toHaveAttribute('href', '/agenda')
-    expect(screen.getByRole('heading', { name: 'Aniversariantes de hoje' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Aniversariantes' })).toBeVisible()
     expect(screen.queryByRole('heading', { name: 'Assistência Social indisponível' })).not.toBeInTheDocument()
   })
 
