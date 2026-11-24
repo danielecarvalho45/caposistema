@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="referrer" content="no-referrer"/>
+  <meta http-equiv="Cache-Control" content="no-store"/>
+  <title>CAPO — Documentos de Transporte</title>
+  <style>
+  :root { font-family: Arial, Helvetica, sans-serif; color: #202b35; background: #f7f8fb; }
+  body { margin: 0; padding: 24px 12px; }
+  main { max-width: 680px; margin: 20px auto; background: #fff; border: 1px solid #e3e6ec; border-radius: 16px; padding: 24px; box-shadow: 0 5px 18px #16202c13; }
+  .eyebrow { color: #b00046; letter-spacing: .09em; font-weight: 700; text-transform: uppercase; font-size: 12px; }
+  h1 { margin: 8px 0; font-size: 23px; } p { line-height: 1.55; }
+  form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 20px 0; }
+  label { display: grid; gap: 6px; font-weight: 600; flex: 1 1 210px; }
+  input { font-size: 19px; min-height: 42px; border: 1px solid #8899a9; border-radius: 8px; padding: 4px 10px; }
+  button, a.action { border: 1px solid #bc004a; background: #d80055; color: #fff; padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 650; text-decoration: none; cursor: pointer; }
+  button:disabled { opacity: .65; cursor: progress; }
+  .secondary { color: #ab0044 !important; background: white !important; }
+  .documents { list-style: none; padding: 0; display: grid; gap: 12px; }
+  .documents li { border: 1px solid #dae0e8; border-radius: 10px; padding: 16px; overflow-wrap: anywhere; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  small { color: #53616c; } #status { min-height: 22px; }
+  [hidden] { display: none !important; }
+  </style>
+  <script src="/transport-documents-client.js" defer></script>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Centro de Apoio ao Paciente Oncológico</div>
+    <h1>Documentos de Transporte</h1>
+    <p>Consulte os documentos encaminhados pelo CAPO. Este acesso é exclusivo da solicitação e não permite alterar arquivos ou consultar o cadastro do paciente.</p>
+    <form id="access-form">
+      <label>Código de acesso fornecido separadamente
+        <input id="access-pin" type="text" inputmode="numeric" maxlength="8" minlength="8" pattern="[0-9]{8}" autocomplete="off" required placeholder="8 dígitos"/>
+      </label>
+      <button id="open-documents" type="submit">Acessar documentos</button>
+    </form>
+    <p id="status" role="status" aria-live="polite"></p>
+    <section id="files" hidden>
+      <h2>Arquivos disponíveis</h2>
+      <p><small>Os links de arquivo têm validade curta. Para reabrir após esse prazo, informe o código novamente.</small></p>
+      <ul id="documents" class="documents"></ul>
+      <p><small>Para imprimir, abra o PDF e use a função Imprimir do visualizador ou do navegador.</small></p>
+    </section>
+    <hr/>
+    <p><small>Não compartilhe este link e o código de acesso com pessoas não autorizadas. Se o link estiver expirado ou revogado, solicite outro ao setor responsável do CAPO.</small></p>
+  </main>
+</body>
+</html>
