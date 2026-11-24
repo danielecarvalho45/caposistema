@@ -1,4 +1,5 @@
 import type { BirthdayTeamMember } from '../../lib/supabase/rpc'
+import './team-monthly-birthdays.css'
 
 export function teamBirthdayMonthLabel(referenceDate: string) {
   const [year, month] = referenceDate.split('-').map(Number)
