@@ -59,3 +59,28 @@
     max-width: min(15rem, calc(100vw - 1.2rem));
   }
 }
+
+/* Acesso rápido exclusivo da Titular, sem expandir a faixa minimizada. */
+.capo-new-version__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.capo-new-version .capo-new-version__home {
+  padding: .35rem .6rem;
+  background: var(--color-brand-blue, #185e93);
+  color: #fff;
+  border-radius: .4rem;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.capo-new-version--minimized:has(.capo-new-version__home) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem;
+  max-width: min(22rem, calc(100vw - 1.2rem));
+}
