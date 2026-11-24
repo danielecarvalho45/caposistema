@@ -1,3 +1,15 @@
+## 24/11/2026 — VERDE: recuperação de senha por link, sem tela de código após envio
+
+**Relato e autorização da Titular:** o e-mail de recuperação já enviava link válido que levava diretamente à tela de definição de nova senha. A interface, porém, apresentava indevidamente `Confirmar código de recuperação` logo após enviar o e-mail. A Titular determinou manter exclusivamente o link e concedeu **VERDE**.
+
+**Correção pontual no GitHub `main`:** `src/features/access/access-context.tsx` passa a apresentar a tela `email-sent` existente após `resetPasswordForEmail` bem-sucedido, com orientação para abrir o link enviado e verificar a pasta de spam; `src/components/auth/AccessGate.tsx` identifica a tela como `Link de recuperação solicitado`; `tests/unit/access-flow.test.tsx` verifica a orientação pelo link, a ausência do campo de código e a navegação de retorno ao login. Commits `f31a522336b2671382abf3660508ec727e0f8e9a`, `76c7a0ace61075decc86ff7493bd7f31a12ad36f` e `5f6cfa9436c4dc9cf4e3927f73fb795688ffb915`.
+
+**Preservação:** não alterados o `resetPasswordForEmail`, o link/token gerado pelo Supabase, o tratamento do evento `PASSWORD_RECOVERY`, a validação de sessão, a alteração de senha, o fluxo de primeiro acesso, MFA, RLS, Edge Functions, banco de dados ou contas existentes. O componente antigo de código permanece no código-fonte sem navegação a partir do envio; a única correção autorizada foi o comportamento de pós-envio.
+
+**Validação:** commits de código e teste versionados. Execução automatizada e confirmação de publicação Cloudflare ainda não comprovadas nesta etapa; homologação operacional pela Titular pendente.
+
+---
+
 ## 24/11/2026 — HOMOLOGADO PELA TITULAR — Encerramento administrativo Aguardando início
 
 **Confirmação operacional expressa da Titular:** “utilizado ok testado”. A Titular informa que utilizou e testou o fluxo de **Encerramento administrativo — Aguardando início**, introduzido na manutenção imediatamente abaixo, e o aprovou.
