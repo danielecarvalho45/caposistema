@@ -101,6 +101,30 @@ describe('camada de RPCs CAPO', () => {
   })
 
 
+  it('encaminha a remarcação por link à operação transacional e não à criação solta', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: { success: true, appointment_id: 'nova-consulta', previous_appointment_id: 'consulta-cancelada', notification_resolved: true },
+      error: null,
+    })
+    const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
+    const service = createRpcService(createSupabaseTransport(client))
+
+    const result = await service.rebookPatientLinkCancellation({
+      appointmentId: 'consulta-cancelada',
+      professionalId: 'profissional-original',
+      slotStart: '2026-12-01T13:00:00Z',
+      notes: null,
+    })
+
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('rebook_patient_link_cancellation_for_interface', {
+      p_appointment_id: 'consulta-cancelada',
+      p_new_professional_id: 'profissional-original',
+      p_new_slot_start: '2026-12-01T13:00:00Z',
+      p_new_notes: null,
+    })
+    expect(result.status).toBe('success')
+  })
+
   it('autoriza RPCs autenticadas para anexos PDF e link externo revogável', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { success: true }, error: null })
     const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
