@@ -1,3 +1,13 @@
+## 24/11/2026 — APROVAÇÃO VISUAL DA TITULAR: logomarca CAPO com efeito 3D
+
+**Manifestação expressa da Titular:** após a implementação do efeito de alto-relevo 3D na logomarca, respondeu **"perfeito, pode registrar"**. Fica registrada a **aprovação do resultado visual da logomarca**, para a tela de login e os menus laterais dos perfis abrangidos pela manutenção anterior.
+
+**Decisão de continuidade:** preservar o acabamento aprovado da logomarca; não substituir o arquivo original nem alterar proporções, cores, dimensões ou posicionamento. Novas mudanças nesse efeito somente mediante novo relato e autorização expressa VERDE. Mantido o backup reversível `backup/logo-antes-relevo-3d-2026-11-24`.
+
+**Limites do registro:** esta é a aprovação visual informada pela Titular; não representa comprovação de testes automatizados, inspeção individual de todos os perfis ou publicação no Cloudflare, que não foram verificados nesta etapa. Nenhuma alteração adicional em CSS, código funcional, dados ou banco.
+
+---
+
 ## 24/11/2026 — VERDE: alto-relevo 3D somente na logomarca CAPO do login e menus laterais
 
 **Determinação da Titular:** aplicar sensação de logomarca saindo da tela, em 3D elegante e estático, preservando a própria imagem, as cores, proporções e posicionamento. Abrange login, Gestor/Titular e todos os perfis que utilizam o menu lateral padrão (inclusive o modelo genérico de novos profissionais). Sem alterar os fundos, acessos rápidos, formulários, demais elementos ou funcionalidades.
