@@ -247,7 +247,7 @@ describe('entrada única CAPO', () => {
     await user.click(screen.getByRole('button', { name: 'Enviar instruções' }))
 
     expect(
-      await screen.findByRole('heading', { name: 'Confirmar código de recuperação' }),
+      await screen.findByRole('heading', { name: '✉ Link de recuperação solicitado' }),
     ).toBeVisible()
     expect(screen.getByText(/Solicitação 1 de 2/)).toBeVisible()
     expect(authApi.resetPasswordForEmail).toHaveBeenCalledWith(
@@ -256,12 +256,8 @@ describe('entrada única CAPO', () => {
     )
   })
 
-  it('valida o codigo de recuperacao antes de permitir definir nova senha', async () => {
-    const authApi = createAuthApi({
-      getSession: vi.fn().mockResolvedValue(session),
-    })
-    // O teste se inicia sem sessão; a confirmação do código criará a sessão de recuperação.
-    vi.mocked(authApi.getSession).mockResolvedValueOnce(null)
+  it('orienta a abrir o link enviado sem solicitar codigo de recuperacao', async () => {
+    const authApi = createAuthApi()
     renderFlow(authApi)
     const user = userEvent.setup()
 
@@ -269,12 +265,14 @@ describe('entrada única CAPO', () => {
     await user.click(screen.getByRole('button', { name: 'Esqueceu sua senha?' }))
     await user.type(screen.getByLabelText('E-mail cadastrado'), 'conta@capo.org')
     await user.click(screen.getByRole('button', { name: 'Enviar instruções' }))
-    await screen.findByRole('heading', { name: 'Confirmar código de recuperação' })
-    await user.type(screen.getByLabelText('Código recebido por e-mail'), '123456')
-    await user.click(screen.getByRole('button', { name: 'Confirmar código' }))
-    expect(await screen.findByRole('heading', { name: 'Definir nova senha' })).toBeVisible()
-    expect(authApi.verifyRecoveryCode).toHaveBeenCalledWith('conta@capo.org', '123456')
+
+    expect(await screen.findByRole('heading', { name: '✉ Link de recuperação solicitado' })).toBeVisible()
+    expect(screen.getByText(/clique no link recebido/)).toBeVisible()
+    expect(screen.queryByLabelText('Código recebido por e-mail')).not.toBeInTheDocument()
+    expect(authApi.verifyRecoveryCode).not.toHaveBeenCalled()
     expect(authApi.updatePassword).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Voltar para o login' }))
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo ao Sistema CAPO' })).toBeVisible()
   })
 
   it('exige e registra o termo vigente antes do contexto', async () => {
