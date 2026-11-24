@@ -3757,6 +3757,18 @@ export function createRpcService(transport: RpcTransport) {
         args: { p_cycle_id: cycleId, p_action: action, p_reason: reason },
         parse: parseConfirmedJson,
       }),
+    registerTransportAttachment: (requestId: string, storagePath: string, displayName: string) =>
+      execute({ transport, operation: 'register_transport_attachment_for_interface',
+        args: { p_request_id: requestId, p_storage_path: storagePath, p_display_name: displayName }, parse: parseConfirmedJson }),
+    listTransportAttachments: (requestId: string) =>
+      execute({ transport, operation: 'list_transport_attachments_for_interface',
+        args: { p_request_id: requestId }, parse: parseConfirmedJson }),
+    createTransportShare: (requestId: string, days = 7) =>
+      execute({ transport, operation: 'create_transport_share_for_interface',
+        args: { p_request_id: requestId, p_days: days }, parse: parseConfirmedJson }),
+    revokeTransportShare: (requestId: string) =>
+      execute({ transport, operation: 'revoke_transport_share_for_interface',
+        args: { p_request_id: requestId }, parse: parseConfirmedJson }),
     setTransportPdfDetails: (requestId: string, source: 'cadastro' | 'alternativo', address: string, periodicity: 'unica' | 'semanal' | 'quinzenal') =>
       execute({ transport, operation: 'set_transport_pdf_details_for_interface', args: {
         p_request_id: requestId, p_boarding_source: source, p_boarding_address: address, p_periodicity: periodicity,
@@ -3929,6 +3941,10 @@ export function createSupabaseTransport(
       case 'recognize_transport_need_for_interface':
       case 'get_transport_need_queue_for_interface':
       case 'manage_transport_need_for_interface':
+      case 'register_transport_attachment_for_interface':
+      case 'list_transport_attachments_for_interface':
+      case 'create_transport_share_for_interface':
+      case 'revoke_transport_share_for_interface':
       case 'set_transport_pdf_details_for_interface':
       case 'get_transport_reminder_queue_for_interface':
       case 'get_transport_administrative_queue_for_interface':
