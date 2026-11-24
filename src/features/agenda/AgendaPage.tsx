@@ -1552,7 +1552,8 @@ export function AgendaPage({
         typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
         ? locationResult.data as Record<string, unknown> : null
       const careLocation = typeof location?.care_location === 'string' ? location.care_location.trim() : ''
-      setLastRescheduledContact({
+      const groupProfessionalName = catalogRows.find((row) => row.professional_id === professionalId)?.professional_name ?? ''
+      setLastRescheduledContact(groupProfessionalName ? {
         patientId: participant.patient_id,
         appointmentId: result.data.new_appointment_id,
         kind: 'remarcacao',
@@ -1560,12 +1561,14 @@ export function AgendaPage({
           patientName: participant.patient_name,
           oldStart: session.start,
           newStart: result.data.new_appointment_start,
-          professionalName: catalogRows.find((row) => row.professional_id === professionalId)?.professional_name ?? '',
+          professionalName: groupProfessionalName,
           specialtyName: 'Psicologia',
           careLocation,
         },
-      })
-      setGroupRescheduleFeedback(careLocation
+      } : null)
+      setGroupRescheduleFeedback(!groupProfessionalName
+        ? 'Participante remarcado. Identificação do psicólogo ausente no catálogo; aviso pendente.'
+        : careLocation
         ? 'Participante remarcado. Confira o aviso de remarcação antes de enviar.'
         : 'Participante remarcado. Aviso de alteração pendente; confirme o endereço no painel de comunicação antes de enviar.')
       setGroupRescheduleAppointmentId('')
@@ -2063,7 +2066,7 @@ export function AgendaPage({
             specialtyName: newProfessional.specialty_name },
         })
       }
-      setAppointmentFeedback(previous && patientId && !newProfessional?.professional_name
+      setAppointmentFeedback(previous && patientId && (!newProfessional?.professional_name || !newProfessional.specialty_name)
         ? 'Movimentação salva. Identificação do profissional indisponível; confira o cadastro antes de preparar o aviso.'
         : previous && patientId
         ? careLocation
@@ -2207,14 +2210,18 @@ export function AgendaPage({
       const place = lookup?.status === 'success' && lookup.data && typeof lookup.data === 'object' && !Array.isArray(lookup.data)
         ? lookup.data as Record<string, unknown> : null
       const careLocation = typeof place?.care_location === 'string' ? place.care_location.trim() : ''
-      if (previousStart && familyName) {
+      const familyProfessionalName = String(previousFamily?.professional_name ?? '').trim()
+        || catalogRows.find((row) => row.professional_id === professional)?.professional_name || ''
+      if (previousStart && familyName && familyProfessionalName) {
         setFamilyRescheduledNotice({
           professionalId: professional, phone: familyPhone, kind: 'remarcacao',
           contact: { patientName: familyName, oldStart: previousStart, newStart, careLocation,
-            professionalName: String(previousFamily?.professional_name ?? ''), specialtyName: 'Psicologia' },
+            professionalName: familyProfessionalName, specialtyName: 'Psicologia' },
         })
       }
-      setAppointmentFeedback('Consulta do familiar remarcada; histórico preservado. Confira o aviso específico de remarcação antes de concluir.')
+      setAppointmentFeedback(familyProfessionalName
+        ? 'Consulta do familiar remarcada; histórico preservado. Confira o aviso específico de remarcação antes de concluir.'
+        : 'Consulta do familiar remarcada. Aviso pendente: não foi possível confirmar o nome da psicóloga no cadastro.')
       setFamilyRescheduleId('')
       setFamilyRescheduleSlots([])
       setFamilyRescheduleStart('')
