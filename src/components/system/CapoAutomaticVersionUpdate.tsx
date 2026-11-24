@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './automatic-version-update.css'
-import { useAccessFlow } from '../../features/access/access-context'
-import { router } from '../../app/router'
 
 declare const __CAPO_BUILD_VERSION__: string
 
 const CHECK_INTERVAL_MS = 60_000
 const IDLE_FOR_AUTO_RELOAD_MS = 120_000
 const NOTICE_AUTO_MINIMIZE_MS = 5_000
-// Conta individual da Titular, conferida no cadastro oficial; não liberar por papel genérico.
-const TITULAR_ACCOUNT_ID = '7a077538-471f-4f3a-9033-e30fec74dd9b'
 
 export function isSafeCapoAutoReload(input: {
   path: string
@@ -32,9 +28,6 @@ export function isSafeCapoAutoReload(input: {
 }
 
 export function CapoAutomaticVersionUpdate() {
-  const { accessContext } = useAccessFlow()
-  const showTitularHome = accessContext?.user_account_id === TITULAR_ACCOUNT_ID
-    && accessContext.primary_context.code === 'administrador'
   const [newVersion, setNewVersion] = useState(false)
   const [noticeMinimized, setNoticeMinimized] = useState(false)
   const [edited, setEdited] = useState(false)
@@ -135,25 +128,13 @@ export function CapoAutomaticVersionUpdate() {
         <button type="button" className="capo-new-version__restore" onClick={() => setNoticeMinimized(false)} aria-label="Reabrir aviso de atualização do CAPO">
           Atualização disponível
         </button>
-        {showTitularHome && (
-          <button type="button" className="capo-new-version__home" onClick={() => void router.navigate('/')} aria-label="Ir para a Home do Gestor/Titular">
-            ⌂ Início
-          </button>
-        )}
       </aside>
     )
   }
 
   return (
     <aside className="capo-new-version" role="status" aria-live="polite">
-      <div className="capo-new-version__heading">
-        <strong>Nova versão do CAPO disponível</strong>
-        {showTitularHome && (
-          <button type="button" className="capo-new-version__home" onClick={() => void router.navigate('/')} aria-label="Ir para a Home do Gestor/Titular">
-            ⌂ Início
-          </button>
-        )}
-      </div>
+      <strong>Nova versão do CAPO disponível</strong>
       <span>
         {edited
           ? 'Há informações editadas nesta sessão. A atualização não será automática para evitar perdas.'
