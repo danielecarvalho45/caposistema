@@ -1848,26 +1848,28 @@ export function AgendaPage({
           ? resultRecord.appointment_id
           : ''
       if (appointmentId && !isProfessional) {
-        const professionalName =
-          professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1] ??
-          'Profissional CAPO'
+        const professionalName = professionalOptions.find(([id]) => id === selectedProfessionalId)?.[1]?.trim() ?? ''
+        const specialtyName = specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1]?.trim() ?? ''
         const locationResult = await getRpcService().getAppointmentCareLocation(appointmentId)
         const locationData = locationResult.status === 'success' && locationResult.data &&
           typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
           ? locationResult.data as Record<string, unknown> : null
         const careLocation = typeof locationData?.care_location === 'string'
           ? locationData.care_location.trim() : ''
-        setLastScheduledContact(careLocation ? {
+        setLastScheduledContact(careLocation && professionalName && specialtyName ? {
           patientId: appointmentPatientId,
           patientName: appointmentPatientQuery,
           professionalName,
-          specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? 'Especialidade não informada',
+          specialtyName,
           careLocation,
           slotStart: validSlotStart,
           isReturn: appointmentType === 'Retorno',
         } : null)
         if (!careLocation) locationWarning = true
-        if (careLocation) {
+        if (careLocation && (!professionalName || !specialtyName)) {
+          whatsappFeedback = 'Consulta salva. Aviso pendente: nome do profissional ou especialidade não confirmados no catálogo.'
+        }
+        if (careLocation && professionalName && specialtyName) {
           // Consultar o contato autorizado já após a gravação. A reserva feita no
           // clique permite direcionar a aba mesmo depois das chamadas ao Supabase.
           try {
@@ -1893,13 +1895,13 @@ export function AgendaPage({
               const message = appointmentType === 'Retorno'
                 ? movementWhatsAppMessage('retorno', {
                   patientName, professionalName, newStart: validSlotStart,
-                  specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? '',
+                  specialtyName,
                   careLocation, senderName, senderTitle,
                 })
                 : appointmentNoticeMessage({
                   patientName,
                   professionalName,
-                  specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? 'Especialidade não informada',
+                  specialtyName,
                   slotStart: validSlotStart, careLocation, senderName, senderTitle,
                 })
               const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`
