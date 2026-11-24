@@ -1554,7 +1554,7 @@ export function AgendaPage({
           patientName: participant.patient_name,
           oldStart: session.start,
           newStart: result.data.new_appointment_start,
-          professionalName: catalogRows.find((row) => row.professional_id === session.professional_id)?.professional_name ?? '',
+          professionalName: catalogRows.find((row) => row.professional_id === professionalId)?.professional_name ?? '',
           specialtyName: 'Psicologia',
           careLocation,
         },
