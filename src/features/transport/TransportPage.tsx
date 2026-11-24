@@ -236,8 +236,12 @@ export function TransportPage({ accessContext }: Props) {
     const destination = contacts[key].trim()
     if (!destination || !selectedContacts.includes(key)) return
     const sender = accessContext.full_name ?? accessContext.username
+    const brazilHour = Number(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false,
+    }).format(new Date()))
+    const greeting = brazilHour < 12 ? 'Bom dia!' : brazilHour < 18 ? 'Boa tarde!' : 'Boa noite!'
     const message = [
-      'Bom dia/Boa tarde.',
+      greeting,
       'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
       'O CAPO solicita providências de transporte para o(a) paciente ' + patientName + ', em acompanhamento pelo serviço.',
       'O PDF oficial da solicitação e a documentação necessária serão anexados a esta mensagem.',
@@ -248,8 +252,14 @@ export function TransportPage({ accessContext }: Props) {
     const url = key === 'email'
       ? 'mailto:' + encodeURIComponent(destination) + '?subject=' + encodeURIComponent('CAPO — Solicitação de Transporte') + '&body=' + encodeURIComponent(message)
       : 'https://wa.me/' + (digits.startsWith('55') ? digits : '55' + digits) + '?text=' + encodeURIComponent(message)
-    globalThis.open(url, '_blank', 'noopener,noreferrer')
-    setFeedback('Canal aberto para envio. Anexe o PDF oficial e demais documentos manualmente; o CAPO não confirma entrega automática.')
+    if (key === 'email') {
+      globalThis.open(url, '_blank', 'noopener,noreferrer')
+    } else {
+      // Reutilizar a janela de WhatsApp do Transporte para não criar uma aba a cada envio.
+      const destinationWindow = globalThis.open(url, 'capo-transporte-whatsapp')
+      if (destinationWindow) destinationWindow.opener = null
+    }
+    setFeedback('Abertura do canal solicitada. Confirme no aplicativo, anexe o PDF e os documentos; não há confirmação automática de entrega.')
   }
 
 
