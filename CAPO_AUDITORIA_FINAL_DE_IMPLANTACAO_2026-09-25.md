@@ -1,3 +1,13 @@
+## 24/11/2026 — VERDE: inverter a ordem dos painéis na Home Gestor/Titular
+
+**Solicitação aprovada:** mostrar **Avisos de Manutenção** acima de **Atividades Recentes** na Home do Gestor/Titular, inclusive em telas móveis. Manutenção exclusivamente visual, sem alterar conteúdo, notificações, permissões ou comportamento dos painéis.
+
+**Implementação:** em `src/features/gestor/GestorDashboard.tsx`, a ordem de renderização passou de `<AuditRecentActivities /><MaintenanceNoticeBoard />` para `<MaintenanceNoticeBoard /><AuditRecentActivities />`. Commit `6b1588b1a7a8fd5056596750ae35d0ee3c3d93c8` na branch `main`. Nenhum outro componente ou banco foi modificado.
+
+**Verificação:** alteração localizada confirmada pelo retorno do GitHub. Publicação no Cloudflare e inspeção visual autenticada (desktop/mobile) **não confirmadas nesta execução**; aguardam homologação da Titular.
+
+---
+
 ## 24/11/2026 — VERDE: Cancelamentos do dia na Home dos profissionais — Cancelada x Remarcada
 
 **Aprovação da Titular:** exibir somente cancelamentos cuja **data original da consulta corresponda ao dia atual na timezone America/Sao_Paulo**, abaixo dos Faltosos, em todos os perfis profissionais que já utilizam o painel canônico. Quando o paciente não possui nova consulta vinculada, mostrar **Cancelada**, horário original, motivo e **Sem nova consulta agendada**. Quando existe um sucessor válido vinculado ao agendamento cancelado, mostrar **Remarcada**, horário e motivo originais e a **data/hora da nova consulta**. Não duplicar registros, não apagar o original e não listar cancelamentos de dias anteriores/futuros na Home de hoje. O histórico e as agendas já homologados devem permanecer intocados.
