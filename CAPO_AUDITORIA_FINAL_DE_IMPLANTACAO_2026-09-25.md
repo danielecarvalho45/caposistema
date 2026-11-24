@@ -1,3 +1,15 @@
+## 24/11/2026 — HOMOLOGADO PELA TITULAR — Encerramento administrativo Aguardando início
+
+**Confirmação operacional expressa da Titular:** “utilizado ok testado”. A Titular informa que utilizou e testou o fluxo de **Encerramento administrativo — Aguardando início**, introduzido na manutenção imediatamente abaixo, e o aprovou.
+
+**Status da frente: OK — TESTADO PELA TITULAR / HOMOLOGADO / ENCERRADO.** Fica preservada a regra autorizada: cadastro CAPO mantido ativo, identificação amarela de espera no cadastro, ciclo encerrado administrativamente com histórico, sem contar o paciente como ativo em acompanhamento nos indicadores e relatórios; retorno futuro por novo ciclo sem novo cadastro, respeitando as verificações canônicas. A aprovação de uso foi dada pela Titular; **não afirmar que CI, suíte automatizada ou todas as situações de borda foram testadas** sem evidência específica.
+
+**Regra de estabilidade e continuidade:** não refatorar, reconstruir ou alterar preventivamente esta funcionalidade homologada. Somente reabrir se houver divergência concreta relatada e após novo **VERDE**, com correção pontual e cirúrgica, sem regressão nos demais tipos de encerramento, cadastro, relatórios, Oferta CAPO, agenda ou isolamento de homologação.
+
+**Mudança nesta etapa:** apenas atualização do Documento Mestre de Auditoria. Sem alteração de código funcional, banco ou dados dos pacientes.
+
+---
+
 ## 24/11/2026 — VERDE: encerramento administrativo de Oferta CAPO aceita, acompanhamento não iniciado (cadastro AMARELO)
 
 **Solicitação e autorização da Titular:** pessoa que ACEITOU a Oferta CAPO e decidiu AGUARDAR antes de iniciar atendimentos deve poder ter **Encerramento Administrativo — Aguardando início** no módulo `Encerramentos / Ciclos CAPO`. **Não inativar cadastro**, preservar nº CAPO, aceite da Oferta CAPO e histórico; apresentar marcador visual **amarelo** “Aguardando início” no cadastro; separar a pessoa dos **ativos em acompanhamento** nos indicadores e relatórios. Futuro ingresso usa fluxo já existente `open_return_care_cycle_for_interface`, sem novo cadastro. VERDE explícito recebido.
