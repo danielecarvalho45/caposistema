@@ -568,6 +568,7 @@ describe('camada de RPCs CAPO', () => {
           professional_id: 'professional-id',
           full_name: 'Integrante CAPO',
           function_title: 'Nutricionista',
+          birthday_day: 22,
         },
       ],
     })
@@ -582,7 +583,7 @@ describe('camada de RPCs CAPO', () => {
       status: 'success',
       data: {
         patients: [{ patient_id: 'patient-id' }],
-        team: [{ professional_id: 'professional-id' }],
+        team: [{ professional_id: 'professional-id', birthday_day: 22 }],
       },
     })
   })
