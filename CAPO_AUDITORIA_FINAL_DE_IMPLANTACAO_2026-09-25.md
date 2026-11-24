@@ -1,3 +1,17 @@
+## TESTE DOCUMENTAL CONTROLADO 24/11/2026 — AVISO DE ATUALIZAÇÃO
+
+**Finalidade:** verificar, no comportamento real do CAPO publicado, se uma anotação feita **somente neste Documento Mestre de Auditoria** dispara indevidamente a mensagem `Nova versão do CAPO disponível`.
+
+**Ação de teste autorizada pela Titular:** adicionar este registro documental na branch `main`, sem alterar qualquer arquivo funcional (`src/`, `public/`, `vite.config.ts`, dependências ou gerador de versão), sem mudar configuração de atualização e sem modificar dados de pacientes ou Supabase.
+
+**Resultado esperado:** após o commit exclusivamente documental, o sistema CAPO **não deve** apresentar um novo aviso de atualização por causa desta anotação; seu identificador de versão do frontend deve permanecer idêntico para os mesmos arquivos funcionais. A navegação e os atendimentos devem continuar normalmente. Se aparecer aviso, investigar primeiro se existia uma versão funcional pendente de atualização e qual versão o navegador já utilizava, antes de atribuir a causa a este registro.
+
+**Procedimento de verificação da Titular:** manter uma sessão previamente atualizada do CAPO e observar o aviso; conferir também após voltar à aba, pois a verificação ocorre periodicamente (aproximadamente a cada 60 segundos). Não forçar atualização durante atendimento ou preenchimento de formulários. Informar se apareceu nova mensagem e em que circunstâncias.
+
+**Situação:** TESTE DOCUMENTAL REGISTRADO — AGUARDANDO OBSERVAÇÃO E RESULTADO DA TITULAR. Este registro não representa teste visual realizado pelo assistente e não constitui homologação antecipada.
+
+---
+
 ## 24/11/2026 — HOMOLOGAÇÃO DA TITULAR — botão Início no cabeçalho do Gestor/Titular
 
 **Confirmação expressa:** após a correção de localização do botão `⌂ Início`, imediatamente antes de `Mensagens` no cabeçalho do login individual da Gestor/Titular Daniele, a Titular informou **"testado ok"**. Considerar a manutenção pontual aprovada operacionalmente no cenário verificado pela Titular.
