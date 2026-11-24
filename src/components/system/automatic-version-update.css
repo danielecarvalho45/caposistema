@@ -27,3 +27,35 @@
 @media (max-width: 540px) {
   .capo-new-version { inset: auto .6rem .6rem .6rem; max-width: none; }
 }
+
+/* A faixa minimizada ocupa apenas sua própria área clicável e não cobre o trabalho. */
+.capo-new-version--minimized {
+  display: block;
+  width: max-content;
+  max-width: min(15rem, calc(100vw - 1.2rem));
+  padding: .2rem;
+  border-radius: .6rem;
+}
+.capo-new-version .capo-new-version__restore {
+  display: block;
+  padding: .35rem .65rem;
+  font-size: .8rem;
+  white-space: normal;
+  text-align: left;
+}
+.capo-new-version__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.capo-new-version .capo-new-version__minimize {
+  background: transparent;
+  color: var(--color-brand-blue, #185e93);
+  border: 1px solid var(--color-border, #b9cbda);
+}
+@media (max-width: 540px) {
+  .capo-new-version--minimized {
+    inset: auto .6rem .6rem auto;
+    max-width: min(15rem, calc(100vw - 1.2rem));
+  }
+}
