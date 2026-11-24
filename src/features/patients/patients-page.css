@@ -455,3 +455,10 @@
   .patients-registration-cards { grid-template-columns: 1fr; }
   .patients-registration-card { min-height: 155px; }
 }
+
+/* Encerramento administrativo sem inicio: cadastro continua ativo, identificacao amarela. */
+.patients-selected-status.patients-selected-status-waiting {
+  background: #fff3c5;
+  color: #825a06;
+  border: 1px solid #e8c76c;
+}
