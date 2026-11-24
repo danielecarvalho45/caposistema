@@ -110,7 +110,7 @@ describe('montagem interna das rotas físicas sem dados operacionais', () => {
     }
     const { container } = render(<MemoryRouter><App /></MemoryRouter>)
     const agenda = await screen.findByRole('heading', { name: 'Minha Agenda' })
-    const birthdays = screen.getByRole('heading', { name: 'Aniversariantes de hoje' })
+    const birthdays = screen.getByRole('heading', { name: 'Aniversariantes' })
     expect(agenda.compareDocumentPosition(birthdays) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(container.querySelector('.home-profile-grid')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Plano Alimentar e PDF oficial' })).not.toBeInTheDocument()
@@ -125,7 +125,7 @@ describe('montagem interna das rotas físicas sem dados operacionais', () => {
     }
     const { container } = render(<MemoryRouter><App /></MemoryRouter>)
     const agenda = await screen.findByRole('heading', { name: 'Minha Agenda' })
-    const birthdays = screen.getByRole('heading', { name: 'Aniversariantes de hoje' })
+    const birthdays = screen.getByRole('heading', { name: 'Aniversariantes' })
     const followup = container.querySelector('#acompanhamento-social')
     expect(agenda.compareDocumentPosition(birthdays) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(followup).not.toBeInTheDocument()
@@ -156,7 +156,7 @@ describe('montagem interna das rotas físicas sem dados operacionais', () => {
     const main = screen.getByRole('main')
     const team = within(main).getByRole('heading', { name: 'Equipe e Profissionais' })
     const agenda = within(main).getByRole('heading', { name: 'Agendas da Equipe' })
-    const birthdays = within(main).getByRole('heading', { name: 'Aniversariantes de hoje' })
+    const birthdays = within(main).getByRole('heading', { name: 'Aniversariantes' })
     expect(team.compareDocumentPosition(agenda) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(agenda.compareDocumentPosition(birthdays) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(within(main).getByRole('heading', { name: 'Solicitações de alteração de agenda' })).toBeVisible()
