@@ -1065,3 +1065,24 @@ A Titular especificou a denominação **“Sistema de Agendamento do CAPO”** p
 **Proteções:** sem alterações no Supabase, SQL, registros reais, pacientes, vínculos, escopo de profissionais, agendamentos, termos, armazenamento ou PDF/layout. Os planos/documentos de Juliana continuam ausentes após investigação; **nenhum plano foi inventado ou salvo em nome dela**.
 
 **Homologação operacional pendente:** conferir publicação do novo frontend no Cloudflare; acessar login real da Juliana, selecionar paciente da Nutrição confirmado, preencher ao menos uma orientação, clicar `Salvar / atualizar plano`, verificar mensagem `Plano alimentar salvo e conferido no banco` e registro em `nutrition_plans`; em seguida emitir PDF oficial, validar `nutrition_plan_documents`, caminho Storage e PDF legível. Se botão Salvar ainda não executar chamada, coletar texto exato mostrado e comportamento da seleção/contexto para identificar impedimento não observado em logs. Não afirmar resolução E2E apenas com commits.
+
+
+---
+
+## 24/11/2026 — VERDE — mensagens de agendamento, retorno, remarcação e remanejamento com nome e especialidade
+
+**Relato da Titular:** mensagens reais de remarcação estavam chegando sem a identificação do profissional. Regra funcional já cobrada nas manutenções: mostrar sempre **nome real do profissional e especialidade**, tanto para retorno quanto remarcação; estender a todos os avisos operacionais pertinentes, incluindo remanejamento, agendamento inicial, Psicologia em grupo e Familiar/Cuidador. Autorização expressa VERDE.
+
+**Causa confirmada no GitHub `main`:** `movementWhatsAppMessage` em `src/features/agenda/appointment-communication.ts` incluía nome profissional apenas opcionalmente no retorno e nenhum nome/especialidade em remarcação ou remanejamento. Agendamento inicial (`appointmentNoticeMessage`) tinha especialidade, mas não o nome do profissional. Vários chamadores de Agenda, grupos, vínculo e bloqueio nem transmitiam ambos os campos.
+
+**Alterações autorizadas, somente frontend:**
+- `src/features/agenda/appointment-communication.ts` commit `367286ad39977d1fe9935c056deaefb4d5791d5c`: `CommunicationContact` passa a exigir `professionalName` e `specialtyName`; as três mensagens exibem linhas `Profissional` e `Especialidade`. Dados ausentes provocam erro claro na preparação, nunca identificação inventada.
+- `src/features/agenda/AgendaPage.tsx` commits `763499086c93cf8e02ff5622325c7ba511a7f8cd`, `60eefd5e8d469f6418126b754d8bbd16f29f1ec0`, `1f99f41af7323fbd5a12e3cb6763e9ef26db4f80`, `3300f523d6cdcb9b63934b679cb12602e4cd0957`, `ee4c910113bcd11ce15e59eade71bab5beff5cbc`: acrescenta profissional/especialidade do catálogo real em novo agendamento, retorno administrativo, remarcação/remanejamento, Psicologia grupo e familiar/cuidador; mensagens pendentes em vez de cartões com identificador não confirmado; não modifica agendamento após gravação nem gera nova consulta para tentar o aviso.
+- `src/features/agenda/FamilyPsychologyReturnAction.tsx` commit `d1c82e619666a001b9bd04aa8bb58e679ac4c5f9`: identifica especialidade Psicologia no retorno familiar, preservando regra de comunicação pelo Administrativo.
+- `src/features/agenda/FamilyLinkRebookingAction.tsx` commit `f381c6840bcf784b42181fdd03c7a7070b6ea47a`: identifica Psicologia na remarcação do familiar cancelada pelo link, nome obtido do contexto autorizado.
+- `src/features/agenda/OwnAgendaManager.tsx` commits `4c02cee2f5feb80446f021aecf58214dd7dd3e19`, `4a2b933e3a6743e9c8264b45e8a273dc1499dc54`: no remanejamento do bloqueio estrutural, inclui nome/especialidade do registro atingido, com alternativa do perfil profissional somente quando identidade coincide; sem identidade completa, deixa aviso pendente e não renderiza mensagem inválida.
+- `tests/unit/appointment-communication.test.ts` commit `472e73df84502fd3d52a59f9707a9b2b81eb58ce`: atualiza os cenários de todos os tipos de movimentação para exigir ambas as identificações e adiciona bloqueio quando qualquer campo estiver vazio.
+
+**Restrições preservadas:** nenhum SQL, migração, alteração de dado real, prontuário, status, agenda, fila, permissões, bloqueio, cancelamento ou mecanismo de WhatsApp executado. O texto acolhedor, a data anterior e nova, a saudação e assinatura mantêm o padrão anterior. WhatsApp continua aberto para envio manual e sem declaração falsa de entrega. **Testes unitários foram escritos/atualizados, mas não há prova de execução Vitest, TypeScript/build, Cloudflare deploy ou homologação autenticada nas diferentes agendas.**
+
+**Homologação requerida:** publicar/confirmar nova versão frontend; no Gestor/AO preparar em conta autorizada mensagens de retorno, remarcação e remanejamento com profissional/especialidade reais e horário atualizado; verificar grupo Psicologia, familiar/cuidador e aviso inicial; em cadastro faltante confirmar aviso pendente sem texto genérico. Não executar remarcações reais meramente para teste.
