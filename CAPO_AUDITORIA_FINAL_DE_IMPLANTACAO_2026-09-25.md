@@ -1,3 +1,17 @@
+## 24/11/2026 — Ajuste de localização do botão Início da Titular, conforme imagem
+
+**Esclarecimento da Titular:** o botão `Início` solicitado anteriormente não pertence ao aviso flutuante de atualização; deve aparecer no cabeçalho fixo da Home/áreas do Gestor/Titular, imediatamente **antes de Mensagens**, conforme imagem encaminhada. Mantido o VERDE concedido para esse botão e a restrição individual da conta `daniele`.
+
+**Correção na `main`:**
+- `src/features/gestor/GestorShell.tsx` commit `83952389dff33a0ce11bab17e9f541ed94ba4b7c`: botão `⌂ Início` inserido imediatamente antes de `CommunicationUnreadLink` no `gestor-header-actions`, em um clique navega por React Router para `/`. Exibição restrita ao ID da conta individual oficial da Titular e contexto principal `administrador`; não é habilitado para qualquer Gestor de forma genérica.
+- `src/components/system/CapoAutomaticVersionUpdate.tsx` commit `209f6adb337dca815e5ec5463612aacd405ed438` e `src/components/system/automatic-version-update.css` commit `49164a79ee875235c7a8e5898b1ac498c3619105`: removem o botão anteriormente colocado no aviso flutuante e seu CSS exclusivo. Preservadas minimização automática em 5 segundos, reabertura, opção `Atualizar agora`, detecção por versão e proteção de dados e atendimentos.
+
+**Limites:** sem mudança no Supabase, em agendas, registros ou perfis. Comandos anteriores de Mensagens, Voltar, Avisos e Perfil não foram alterados. Commits confirmados no GitHub; não há prova de publicação Cloudflare, build/testes automatizados ou homologação de navegador. Conferir na conta real da Titular a posição imediatamente antes de Mensagens e navegação de um clique; confirmar ausência em outros logins e comportamento mobile.
+
+**Estado:** CORREÇÃO DE POSIÇÃO VERSIONADA NA MAIN; PUBLICAÇÃO E HOMOLOGAÇÃO PENDENTES.
+
+---
+
 ## 24/11/2026 — VERDE — botão Início exclusivo da Titular no aviso de atualização
 
 **Problema e pedido:** no aviso de nova versão do CAPO, Titular solicitou botão `Início` ao lado da mensagem, com retorno à Home em um clique, apenas em sua conta de Gestor/Titular; confirmou VERDE para a implementação no aviso expandido e minimizado.
