@@ -82,6 +82,7 @@ function HomeIndicatorSummary() {
     ['registered', 'Pacientes cadastrados'],
     ['active', 'Pacientes ativos'],
     ['awaiting_response', 'Aguardando resposta'],
+    ['awaiting_start', 'Aguardando início'],
     ['closed', 'Encerrados'],
   ] as const
   return (
@@ -101,7 +102,7 @@ function HomeIndicatorSummary() {
           ))}
         </dl>
       )}
-      <small>Ativos: pacientes em acompanhamento; aguardando resposta: Oferta CAPO ou Resgate em aberto; encerrados: registros inativos, encerrados ou por óbito.</small>
+      <small>Ativos: pacientes em acompanhamento; aguardando resposta: Oferta CAPO ou Resgate em aberto; aguardando início: oferta aceita com ciclo encerrado administrativamente e cadastro mantido; encerrados: cadastros inativos, encerrados ou por óbito.</small>
       <Link to="/relatorios">Ver relatórios e indicadores</Link>
     </article>
   )
