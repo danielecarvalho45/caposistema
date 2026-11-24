@@ -1,10 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
+import './transport-contacts.css'
 
 type TransportRecord = Readonly<Record<string, unknown>>
+
+type ContactKey = 'whatsapp_primary' | 'phone_responsible' | 'email'
+type TransportContacts = Readonly<Record<ContactKey, string>>
+const CONTACT_FIELDS: readonly { key: ContactKey; label: string }[] = [
+  { key: 'whatsapp_primary', label: 'WhatsApp do setor' },
+  { key: 'phone_responsible', label: 'Telefone do responsável' },
+  { key: 'email', label: 'E-mail institucional' },
+]
+const EMPTY_CONTACTS: TransportContacts = { whatsapp_primary: '', phone_responsible: '', email: '' }
 
 type Props = Readonly<{
   accessContext: AccessContext
@@ -169,6 +179,79 @@ export function TransportPage({ accessContext }: Props) {
   const [needReason, setNeedReason] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [contactsOpen, setContactsOpen] = useState(false)
+  const [contactsBusy, setContactsBusy] = useState(false)
+  const [contacts, setContacts] = useState<TransportContacts>(EMPTY_CONTACTS)
+  const [selectedContacts, setSelectedContacts] = useState<readonly ContactKey[]>([])
+
+  useEffect(() => {
+    if (!authorized) return
+    let active = true
+    void getRpcService().getTransportSectorContacts().then((result) => {
+      if (!active) return
+      if (result.status === 'success') {
+        const data = result.data as TransportRecord
+        setContacts({
+          whatsapp_primary: field(data, 'whatsapp_primary') ?? '',
+          phone_responsible: field(data, 'phone_responsible') ?? '',
+          email: field(data, 'email') ?? '',
+        })
+      } else if (result.status === 'error') {
+        setFeedback('Não foi possível carregar contatos do Transporte: ' + result.error.message)
+      }
+    })
+    return () => { active = false }
+  }, [authorized])
+
+  async function saveContacts() {
+    if (!isManager || contactsBusy) return
+    setContactsBusy(true)
+    try {
+      const result = await getRpcService().setTransportSectorContacts(
+        contacts.whatsapp_primary, contacts.phone_responsible, contacts.email,
+      )
+      if (result.status === 'success') {
+        const data = result.data as TransportRecord
+        setContacts({
+          whatsapp_primary: field(data, 'whatsapp_primary') ?? '',
+          phone_responsible: field(data, 'phone_responsible') ?? '',
+          email: field(data, 'email') ?? '',
+        })
+        setFeedback('Contatos institucionais do Transporte salvos.')
+      } else {
+        setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou os contatos.')
+      }
+    } finally {
+      setContactsBusy(false)
+    }
+  }
+
+  function chooseContact(key: ContactKey, checked: boolean) {
+    setSelectedContacts((current) => checked
+      ? current.includes(key) ? current : [...current, key]
+      : current.filter((item) => item !== key))
+  }
+
+  function openTransportChannel(key: ContactKey) {
+    const destination = contacts[key].trim()
+    if (!destination || !selectedContacts.includes(key)) return
+    const sender = accessContext.full_name ?? accessContext.username
+    const message = [
+      'Bom dia/Boa tarde.',
+      'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
+      'O CAPO solicita providências de transporte para o(a) paciente ' + patientName + ', em acompanhamento pelo serviço.',
+      'O PDF oficial da solicitação e a documentação necessária serão anexados a esta mensagem.',
+      'Solicitamos a confirmação do recebimento e orientações para continuidade.',
+      'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
+    ].join('\n')
+    const digits = destination.replace(/\D/g, '')
+    const url = key === 'email'
+      ? 'mailto:' + encodeURIComponent(destination) + '?subject=' + encodeURIComponent('CAPO — Solicitação de Transporte') + '&body=' + encodeURIComponent(message)
+      : 'https://wa.me/' + (digits.startsWith('55') ? digits : '55' + digits) + '?text=' + encodeURIComponent(message)
+    globalThis.open(url, '_blank', 'noopener,noreferrer')
+    setFeedback('Canal aberto para envio. Anexe o PDF oficial e demais documentos manualmente; o CAPO não confirma entrega automática.')
+  }
+
 
   const requests = rowsFromContext(context, 'requests', 'transport_requests', 'items')
   const appointments = rowsFromContext(context, 'appointments')
@@ -467,6 +550,49 @@ export function TransportPage({ accessContext }: Props) {
         </div>
       )}
 
+      <div className="home-ops transport-sector-contacts">
+        <button type="button" className="transport-contact-toggle" aria-expanded={contactsOpen}
+          onClick={() => setContactsOpen((value) => !value)}>
+          <span aria-hidden="true">✉</span> Contatos do Transporte
+        </button>
+        {contactsOpen && (
+          <div className="transport-contact-details">
+            <p>Contatos institucionais utilizados no encaminhamento de PDFs e documentos.</p>
+            {CONTACT_FIELDS.map(({ key, label }) => (
+              <label key={key} className="transport-contact-field">{label}
+                {isManager ? (
+                  <input type={key === 'email' ? 'email' : 'tel'} autoComplete="off"
+                    value={contacts[key]} onChange={(event) => setContacts((current) => ({
+                      ...current, [key]: event.target.value,
+                    }))} placeholder={key === 'email' ? 'E-mail do setor' : 'DDD e número'} />
+                ) : (
+                  <span className="transport-contact-value">{contacts[key] || 'Não cadastrado'}</span>
+                )}
+              </label>
+            ))}
+            {isManager && (
+              <button type="button" disabled={contactsBusy} onClick={() => void saveContacts()}>
+                {contactsBusy ? 'Salvando…' : 'Salvar contatos'}
+              </button>
+            )}
+            {canForwardExternally && (
+              <fieldset className="transport-contact-selection">
+                <legend>Destinatários do encaminhamento</legend>
+                {CONTACT_FIELDS.map(({ key, label }) => (
+                  <label key={key}>
+                    <input type="checkbox" disabled={!contacts[key].trim()}
+                      checked={selectedContacts.includes(key)}
+                      onChange={(event) => chooseContact(key, event.target.checked)} />
+                    {label}
+                  </label>
+                ))}
+                <small>Marque um, dois ou três contatos. Cada canal abre individualmente.</small>
+              </fieldset>
+            )}
+          </div>
+        )}
+      </div>
+
       {feedback && <p role="status">{feedback}</p>}
 
       <div className="home-ops">
@@ -498,22 +624,7 @@ export function TransportPage({ accessContext }: Props) {
         <div className="home-ops">
           <h2>Necessidade de transporte</h2>
           {activeNeed ? (
-            <>
-              <p>Situação: <strong>{field(activeNeed, 'status') ?? 'ativo'}</strong></p>
-              <label>Justificativa para alteração da necessidade
-                <textarea value={needReason} onChange={(event) => setNeedReason(event.target.value)} rows={2} />
-              </label>
-              {!isManager && isSocialProfessional && hasTransportCapability && (
-                <button type="button" disabled={busy || needReason.trim().length < 5} onClick={() => void manageNeed('request_cancel')}>
-                  Solicitar cancelamento
-                </button>
-              )}
-              {canAdminister && (
-                <button type="button" disabled={busy || needReason.trim().length < 5} onClick={() => void manageNeed('cancel')}>
-                  Encerrar necessidade
-                </button>
-              )}
-            </>
+            <p>Situação: <strong>{field(activeNeed, 'status') ?? 'ativo'}</strong></p>
           ) : canCreateRequest ? (
             <button type="button" disabled={busy} onClick={() => void recognizeNeed()}>
               Reconhecer necessidade de transporte
@@ -548,6 +659,25 @@ export function TransportPage({ accessContext }: Props) {
           </button>
           {!isManager && isSocialProfessional && hasTransportCapability && (
             <p>O PDF oficial será gerado e assinado pelo Gestor do Sistema. A etapa administrativa posterior recebe o documento já vinculado.</p>
+          )}
+        </div>
+      )}
+
+      {patientId && activeNeed && (
+        <div className="home-ops transport-cancellation">
+          <h2>Cancelamento da necessidade de transporte</h2>
+          <label>Justificativa para alteração da necessidade
+            <textarea value={needReason} onChange={(event) => setNeedReason(event.target.value)} rows={2} />
+          </label>
+          {!isManager && isSocialProfessional && hasTransportCapability && (
+            <button type="button" disabled={busy || needReason.trim().length < 5} onClick={() => void manageNeed('request_cancel')}>
+              Solicitar cancelamento
+            </button>
+          )}
+          {canAdminister && (
+            <button type="button" disabled={busy || needReason.trim().length < 5} onClick={() => void manageNeed('cancel')}>
+              Encerrar necessidade
+            </button>
           )}
         </div>
       )}
@@ -597,6 +727,17 @@ export function TransportPage({ accessContext }: Props) {
                     )}
                     {canAdminister && status === 'solicitado' && (
                       <button type="button" disabled={busy} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
+                    )}
+                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && selectedContacts.length > 0 && (
+                      <div className="transport-send-actions">
+                        {selectedContacts.map((key) => contacts[key].trim() ? (
+                          <button type="button" key={key} disabled={busy}
+                            onClick={() => openTransportChannel(key)}>
+                            {key === 'email' ? '✉ Abrir e-mail' : key === 'phone_responsible' ? '☏ WhatsApp responsável' : '✉ WhatsApp setor'}
+                          </button>
+                        ) : null)}
+                        <small>Baixe o PDF assinado acima e anexe-o manualmente com os demais documentos. Confirme o envio antes de registrar o encaminhamento.</small>
+                      </div>
                     )}
                     {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && (
                       <button type="button" disabled={busy || channel.trim().length < 2} onClick={() => void manage(request, 'forward')}>Registrar encaminhamento</button>
