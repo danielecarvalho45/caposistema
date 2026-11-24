@@ -70,37 +70,60 @@ function wrapLine(value: string, width = 86) {
 function buildTransportPdfBlob(input: Readonly<{
   patientName: string
   cms: string | null
+  capoNumber: string | null
+  registeredAddress: string | null
+  boardingAddress: string
+  periodicity: 'unica' | 'semanal' | 'quinzenal'
   reason: string
-  requester: string
-  requesterRole: string
+  requestedBy: string
+  requestedByRole: string | null
+  issuer: string
+  issuerRole: string
   appointmentLabel: string | null
+  professionalName: string | null
+  specialty: string | null
+  careLocation: string | null
 }>) {
+  const cadence = input.periodicity === 'semanal' ? 'Semanal' :
+    input.periodicity === 'quinzenal' ? 'Quinzenal' : 'Consulta única'
   const lines = [
-    'SOLICITAÇÃO DE TRANSPORTE',
+    'SOLICITAÇÃO OFICIAL DE TRANSPORTE — CAPO',
     '',
     'Ao Setor de Transportes da Secretaria Municipal de Saúde.',
     '',
-    `Paciente: ${input.patientName}${input.cms ? ` · CMS ${input.cms}` : ''}`,
-    input.appointmentLabel ? `Atendimento vinculado: ${input.appointmentLabel}` : '',
+    'IDENTIFICAÇÃO DO PACIENTE',
+    `Nome completo: ${input.patientName}`,
+    `Número CAPO: ${input.capoNumber ?? 'Não informado no cadastro'}`,
+    `Número CMS: ${input.cms ?? 'Não informado no cadastro'}`,
+    `Endereço residencial cadastrado: ${input.registeredAddress ?? 'Não informado no cadastro'}`,
     '',
-    'Declara-se, para os devidos fins, que o(a) paciente identificado(a) neste documento encontra-se em acompanhamento pelo Centro de Apoio ao Paciente Oncológico – CAPO e apresenta necessidade de utilização de transporte para viabilizar o deslocamento relacionado ao seu acompanhamento e/ou tratamento de saúde.',
+    'TRAJETO SOLICITADO',
+    `Local de embarque (onde buscar o paciente): ${input.boardingAddress}`,
+    input.appointmentLabel ? `Data e horário da consulta: ${input.appointmentLabel}` : 'Solicitação genérica — sem consulta vinculada.',
+    input.professionalName ? `Profissional que atenderá: ${input.professionalName}` : '',
+    input.specialty ? `Especialidade: ${input.specialty}` : '',
+    input.appointmentLabel ? `Local de atendimento / destino: ${input.careLocation ?? 'Endereço do atendimento não informado — conferir antes do envio.'}` : '',
+    `Periodicidade informada: ${cadence}`,
     '',
-    'A presente solicitação tem por finalidade formalizar a necessidade de transporte, possibilitando o encaminhamento ao setor responsável para análise, organização e demais providências cabíveis.',
+    'JUSTIFICATIVA DO TRANSPORTE',
+    input.reason,
     '',
-    `Motivo da solicitação: ${input.reason}`,
+    'RESPONSABILIDADE E EMISSÃO',
+    `Solicitado por: ${input.requestedBy}`,
+    `Função do solicitante: ${input.requestedByRole ?? 'Não informada'}`,
+    `Documento emitido por: ${input.issuer}`,
+    `Função do emitente: ${input.issuerRole}`,
+    `Data da emissão: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}`,
     '',
-    'As informações específicas acima consideram a situação individual do paciente e a necessidade que originou esta solicitação.',
-    '',
-    `Responsável pela emissão: ${input.requester}`,
-    `Função: ${input.requesterRole}`,
-  ].flatMap((line) => wrapLine(line))
+    'Assinatura institucional — identificação do login emissor:',
+    input.issuer,
+    input.issuerRole,
+    'Documento gerado pelo sistema CAPO. Identificação de autoria; não constitui assinatura digital certificada.',
+  ].flatMap((line) => wrapLine(line, 84))
 
   return buildCapoDocumentPdf(lines, {
-    fontSize: 10,
-    lineHeight: 14,
-    linesPerPage: 40,
-    generatedBy: input.requester,
-    generatedByRole: input.requesterRole,
+    fontSize: 10, lineHeight: 14, linesPerPage: 40,
+    generatedBy: input.issuer, generatedByRole: input.issuerRole,
   })
 }
 
@@ -185,6 +208,12 @@ export function TransportPage({ accessContext }: Props) {
   const [contactsBusy, setContactsBusy] = useState(false)
   const [contacts, setContacts] = useState<TransportContacts>(EMPTY_CONTACTS)
   const [selectedContacts, setSelectedContacts] = useState<readonly ContactKey[]>([])
+  const [pdfDetailsRequest, setPdfDetailsRequest] = useState<TransportRecord | null>(null)
+  const [pdfDetailsMode, setPdfDetailsMode] = useState<'address' | 'periodicity'>('address')
+  const [boardingSource, setBoardingSource] = useState<'cadastro' | 'alternativo'>('cadastro')
+  const [boardingAddress, setBoardingAddress] = useState('')
+  const [periodicity, setPeriodicity] = useState<'unica' | 'semanal' | 'quinzenal'>('unica')
+  const [periodicityChosen, setPeriodicityChosen] = useState(false)
 
   useEffect(() => {
     if (!authorized) return
@@ -244,6 +273,49 @@ export function TransportPage({ accessContext }: Props) {
     })
     return () => { mounted = false }
   }, [canAdminister])
+
+  function editPdfDetails(request: TransportRecord, mode: 'address' | 'periodicity') {
+    const savedSource = field(request, 'boarding_source')
+    setPdfDetailsRequest(request)
+    setPdfDetailsMode(mode)
+    setBoardingSource(savedSource === 'alternativo' ? 'alternativo' : 'cadastro')
+    setBoardingAddress(field(request, 'boarding_address') ?? '')
+    const savedPeriodicity = field(request, 'periodicity')
+    setPeriodicity(savedPeriodicity === 'semanal' || savedPeriodicity === 'quinzenal' ? savedPeriodicity : 'unica')
+    setPeriodicityChosen(Boolean(savedPeriodicity))
+  }
+
+  async function savePdfDetails() {
+    const id = pdfDetailsRequest && requestId(pdfDetailsRequest)
+    const homeAddress = field(patient, 'address') ?? ''
+    if (!id || !canAdminister || busy || !periodicityChosen) {
+      setFeedback('Confirme a periodicidade antes de salvar os dados do PDF.')
+      return
+    }
+    if (boardingSource === 'cadastro' && !homeAddress.trim()) {
+      setFeedback('Não há endereço residencial cadastrado; informe outro endereço de embarque.')
+      return
+    }
+    if (boardingSource === 'alternativo' && boardingAddress.trim().length < 8) {
+      setFeedback('Informe o endereço completo de embarque.')
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await getRpcService().setTransportPdfDetails(
+        id, boardingSource, boardingSource === 'cadastro' ? homeAddress : boardingAddress.trim(), periodicity,
+      )
+      if (result.status === 'success') {
+        setPdfDetailsRequest(null)
+        await loadContext(patientId, patientName)
+        setFeedback('Endereço de embarque e periodicidade confirmados para esta solicitação. O cadastro do paciente permanece intacto.')
+      } else {
+        setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou os dados do PDF.')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function saveContacts() {
     if (!isManager || contactsBusy) return
@@ -453,6 +525,16 @@ export function TransportPage({ accessContext }: Props) {
     const id = requestId(request)
     if (!id || !canAdminister || busy) return
     const notes = field(request, 'transport_notes') ?? 'Necessidade de transporte registrada no CAPO.'
+    const boarding = field(request, 'boarding_address')
+    if (!boarding || !field(request, 'pdf_details_confirmed_at')) {
+      setFeedback('Confirme o endereço de embarque e a periodicidade nos ícones antes de gerar o PDF.')
+      return
+    }
+    const cadence = field(request, 'periodicity')
+    if (cadence !== 'unica' && cadence !== 'semanal' && cadence !== 'quinzenal') {
+      setFeedback('Escolha a periodicidade para esta solicitação.')
+      return
+    }
     const appointmentDate = field(request, 'appointment_date')
     const appointmentLabel = appointmentDate
       ? new Date(appointmentDate).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
@@ -460,10 +542,19 @@ export function TransportPage({ accessContext }: Props) {
     const blob = buildTransportPdfBlob({
       patientName: patientName || field(patient, 'full_name') || 'Paciente',
       cms: field(patient, 'cms'),
+      capoNumber: field(patient, 'patient_number'),
+      registeredAddress: field(patient, 'address'),
+      boardingAddress: boarding,
+      periodicity: cadence,
       reason: notes,
-      requester: accessContext.full_name ?? accessContext.username,
-      requesterRole: issuerRole,
+      requestedBy: field(request, 'requested_by') ?? 'Não identificado',
+      requestedByRole: field(request, 'requested_by_role'),
+      issuer: accessContext.full_name ?? accessContext.username,
+      issuerRole,
       appointmentLabel,
+      professionalName: field(request, 'appointment_professional'),
+      specialty: field(request, 'appointment_specialty'),
+      careLocation: field(request, 'appointment_location'),
     })
     const storagePath = `transport/${id}/solicitacao-transporte-${Date.now()}.pdf`
 
@@ -664,6 +755,58 @@ export function TransportPage({ accessContext }: Props) {
         )}
       </div>
 
+      {pdfDetailsRequest && (
+        <div className="transport-contact-overlay">
+          <button type="button" className="transport-contact-backdrop" aria-label="Fechar conferência de transporte"
+            onClick={() => setPdfDetailsRequest(null)} />
+          <section className="transport-contact-modal" role="dialog" aria-modal="true"
+            aria-label="Conferir informações da solicitação de transporte">
+            <div className="transport-contact-modal-head">
+              <h2>{pdfDetailsMode === 'address' ? 'Endereço de embarque' : 'Periodicidade da consulta'}</h2>
+              <button type="button" onClick={() => setPdfDetailsRequest(null)}>✕ Fechar</button>
+            </div>
+            <div className="transport-contact-details">
+              <div className="transport-detail-switch">
+                <button type="button" onClick={() => setPdfDetailsMode('address')} aria-pressed={pdfDetailsMode === 'address'}>⌖ Endereço</button>
+                <button type="button" onClick={() => setPdfDetailsMode('periodicity')} aria-pressed={pdfDetailsMode === 'periodicity'}>▦ Periodicidade</button>
+              </div>
+              {pdfDetailsMode === 'address' ? (
+                <fieldset>
+                  <legend>Onde o transporte buscará o paciente?</legend>
+                  <p>Endereço do cadastro: {field(patient, 'address') ?? 'Não informado'}</p>
+                  <label><input type="radio" checked={boardingSource === 'cadastro'}
+                    onChange={() => setBoardingSource('cadastro')} /> Mesmo endereço do cadastro</label>
+                  <label><input type="radio" checked={boardingSource === 'alternativo'}
+                    onChange={() => setBoardingSource('alternativo')} /> Outro local de embarque</label>
+                  {boardingSource === 'alternativo' && (
+                    <label>Endereço completo de embarque
+                      <textarea rows={3} maxLength={500} value={boardingAddress}
+                        onChange={(event) => setBoardingAddress(event.target.value)}
+                        placeholder="Logradouro, número, complemento, bairro e município" />
+                    </label>
+                  )}
+                  <small>O endereço alternativo fica somente nesta solicitação; não altera a ficha do paciente.</small>
+                </fieldset>
+              ) : (
+                <fieldset>
+                  <legend>Periodicidade da solicitação</legend>
+                  {(['unica','semanal','quinzenal'] as const).map((item) => (
+                    <label key={item}><input type="radio" checked={periodicityChosen && periodicity === item}
+                      onChange={() => { setPeriodicity(item); setPeriodicityChosen(true) }} />
+                      {item === 'unica' ? 'Consulta única' : item === 'semanal' ? 'Semanal' : 'Quinzenal'}
+                    </label>
+                  ))}
+                  <small>A periodicidade não cria nem altera consultas na agenda.</small>
+                </fieldset>
+              )}
+              <button type="button" disabled={busy} onClick={() => void savePdfDetails()}>
+                Confirmar dados para o PDF
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {feedback && <p role="status">{feedback}</p>}
 
       {canAdminister && (
@@ -818,7 +961,14 @@ export function TransportPage({ accessContext }: Props) {
                   <small>{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
                   <div>
                     {canAdminister && status === 'confirmado' && !pdfPersisted && (
-                      <button type="button" disabled={busy} onClick={() => void generatePdf(request)}>Gerar PDF</button>
+                      <>
+                        <button type="button" disabled={busy} title="Confirmar local de embarque"
+                          onClick={() => editPdfDetails(request, 'address')}>⌖ Endereço de embarque</button>
+                        <button type="button" disabled={busy} title="Definir periodicidade"
+                          onClick={() => editPdfDetails(request, 'periodicity')}>▦ Periodicidade</button>
+                        <button type="button" disabled={busy || !field(request, 'pdf_details_confirmed_at')}
+                          onClick={() => void generatePdf(request)}>Gerar PDF</button>
+                      </>
                     )}
                     {canAdminister && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
