@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AsyncState, type BirthdayOverview } from '../../lib/supabase/rpc'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { TeamMonthlyBirthdays } from '../../components/birthdays/TeamMonthlyBirthdays'
 import { CareLocationNotices } from '../home/CareLocationNotices'
 import { CapoIcon, type CapoIconName } from '../../components/icons/CapoIcon'
 import { agendaBlockText } from '../../components/icons/AgendaBlockIndicator'
@@ -112,11 +113,11 @@ export function GestorDashboard() {
       </section>
       <section className="gestor-dashboard-grid" aria-label="Visão geral do sistema">
         <AdministrativeTwoDayAgenda />
-        <aside className="gestor-side-stack"><article className="gestor-panel"><h3><CapoIcon name="cake" /> Aniversariantes de hoje</h3>
+        <aside className="gestor-side-stack"><article className="gestor-panel"><h3><CapoIcon name="cake" /> Aniversariantes</h3>
           {birthdays.status === 'loading' && <p>Carregando aniversariantes…</p>}
           {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
-          {birthdays.status === 'success' && <><h4>Pacientes</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><h4>Equipe CAPO</h4><ul>{birthdays.data.team.map((item) => <li key={item.professional_id}>{item.full_name}</li>)}</ul></>}
+          {birthdays.status === 'success' && <><h4>Pacientes — Hoje</h4><ul>{birthdays.data.patients.map((item) => <li key={item.patient_id}>{item.full_name}<PatientWhatsAppButton patientId={item.patient_id} message={`Olá, ${item.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`} /></li>)}</ul><TeamMonthlyBirthdays team={birthdays.data.team} referenceDate={birthdays.data.reference_date} heading="h4" /></>}
         </article>
         <MaintenanceNoticeBoard /><AuditRecentActivities />
         <article className="gestor-panel gestor-approved-agenda-changes">
