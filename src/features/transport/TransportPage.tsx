@@ -426,9 +426,10 @@ export function TransportPage({ accessContext }: Props) {
         setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o anexo.')
         return
       }
+      setShareAccess(null)
       const updated = await getRpcService().listTransportAttachments(id)
       if (updated.status === 'success') setAttachedDocuments(Array.isArray(updated.data) ? updated.data as readonly TransportRecord[] : [])
-      setFeedback('Documento complementar anexado somente a esta solicitação.')
+      setFeedback('Documento complementar anexado. Qualquer link anterior foi revogado; gere outro após concluir os anexos.')
     } finally {
       setBusy(false)
     }
