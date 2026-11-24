@@ -1554,6 +1554,8 @@ export function AgendaPage({
           patientName: participant.patient_name,
           oldStart: session.start,
           newStart: result.data.new_appointment_start,
+          professionalName: catalogRows.find((row) => row.professional_id === session.professional_id)?.professional_name ?? '',
+          specialtyName: 'Psicologia',
           careLocation,
         },
       })
@@ -1882,6 +1884,7 @@ export function AgendaPage({
               const message = appointmentType === 'Retorno'
                 ? movementWhatsAppMessage('retorno', {
                   patientName, professionalName, newStart: validSlotStart,
+                  specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? '',
                   careLocation, senderName, senderTitle,
                 })
                 : appointmentNoticeMessage({
@@ -2038,16 +2041,24 @@ export function AgendaPage({
         typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
         ? locationResult.data as Record<string, unknown> : null
       const careLocation = typeof locationData?.care_location === 'string' ? locationData.care_location.trim() : ''
-      if (previous && patientId) {
+      const newProfessional = catalogRows.find((row) =>
+        row.professional_id === rescheduleProfessionalId &&
+        (!selectedSpecialtyId || row.specialty_id === selectedSpecialtyId))
+        ?? catalogRows.find((row) => row.professional_id === rescheduleProfessionalId)
+      if (previous && patientId && newProfessional?.professional_name && newProfessional.specialty_name) {
         setLastRescheduledContact({
           patientId,
           appointmentId: newAppointmentId,
           kind: movementKind === 'remanejamento' ? 'remanejamento' : 'remarcacao',
           contact: { patientName: previous.patient_name, oldStart: previous.appointment_date,
-            newStart: newSlotStart, careLocation },
+            newStart: newSlotStart, careLocation,
+            professionalName: newProfessional.professional_name,
+            specialtyName: newProfessional.specialty_name },
         })
       }
-      setAppointmentFeedback(previous && patientId
+      setAppointmentFeedback(previous && patientId && !newProfessional?.professional_name
+        ? 'Movimentação salva. Identificação do profissional indisponível; confira o cadastro antes de preparar o aviso.'
+        : previous && patientId
         ? careLocation
           ? 'Movimentação registrada. Confira o WhatsApp de alteração antes de enviar.'
           : 'Movimentação registrada. O aviso de alteração está pendente: confirme o endereço do novo atendimento e tente preparar a mensagem novamente.'
@@ -2192,7 +2203,8 @@ export function AgendaPage({
       if (previousStart && familyName) {
         setFamilyRescheduledNotice({
           professionalId: professional, phone: familyPhone, kind: 'remarcacao',
-          contact: { patientName: familyName, oldStart: previousStart, newStart, careLocation },
+          contact: { patientName: familyName, oldStart: previousStart, newStart, careLocation,
+            professionalName: String(previousFamily?.professional_name ?? ''), specialtyName: 'Psicologia' },
         })
       }
       setAppointmentFeedback('Consulta do familiar remarcada; histórico preservado. Confira o aviso específico de remarcação antes de concluir.')
@@ -3340,6 +3352,7 @@ export function AgendaPage({
                         message={movementWhatsAppMessage('retorno', {
                           patientName: lastScheduledContact.patientName,
                           professionalName: lastScheduledContact.professionalName,
+                          specialtyName: lastScheduledContact.specialtyName,
                           newStart: lastScheduledContact.slotStart,
                           careLocation: lastScheduledContact.careLocation,
                           senderName: accessContext.real_identity.full_name?.trim()
@@ -3398,6 +3411,7 @@ export function AgendaPage({
                 message={lastScheduledContact.isReturn ? movementWhatsAppMessage('retorno', {
                   patientName: lastScheduledContact.patientName,
                   professionalName: lastScheduledContact.professionalName,
+                  specialtyName: lastScheduledContact.specialtyName,
                   newStart: lastScheduledContact.slotStart,
                   careLocation: lastScheduledContact.careLocation,
                   senderName: accessContext.real_identity.full_name?.trim()
