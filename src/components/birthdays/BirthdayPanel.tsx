@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { PatientWhatsAppButton } from '../contact/PatientWhatsAppButton'
+import { TeamMonthlyBirthdays } from './TeamMonthlyBirthdays'
 import {
   getRpcService,
   loadingState,
@@ -21,7 +22,7 @@ function formatReferenceDate(value: string) {
 }
 
 export function BirthdayPanel({
-  title = 'Aniversariantes de hoje',
+  title = 'Aniversariantes',
   className = '',
   loadBirthdays = getRpcService().getBirthdays,
   allowPatientWhatsApp = false,
@@ -45,7 +46,7 @@ export function BirthdayPanel({
       aria-labelledby="capo-birthdays-title"
     >
       <div>
-        <p className="eyebrow">Hoje</p>
+        <p className="eyebrow">Pacientes hoje · Equipe no mês</p>
         <h2 id="capo-birthdays-title">{title}</h2>
         {state.status === 'success' && (
           <span>{formatReferenceDate(state.data.reference_date)}</span>
@@ -65,7 +66,7 @@ export function BirthdayPanel({
       {state.status === 'success' && (
         <div className="home-profile-grid">
           <article>
-            <h3>Pacientes</h3>
+            <h3>Pacientes — Hoje</h3>
             {state.data.patients.length === 0 ? (
               <p>Nenhum paciente acompanhado faz aniversário hoje.</p>
             ) : (
@@ -93,19 +94,7 @@ export function BirthdayPanel({
           </article>
 
           <article>
-            <h3>Equipe CAPO</h3>
-            {state.data.team.length === 0 ? (
-              <p>Nenhum integrante da equipe faz aniversário hoje.</p>
-            ) : (
-              <ul>
-                {state.data.team.map((member) => (
-                  <li key={member.professional_id}>
-                    <strong>{member.full_name}</strong>
-                    <small>{member.function_title}</small>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <TeamMonthlyBirthdays team={state.data.team} referenceDate={state.data.reference_date} />
           </article>
         </div>
       )}
