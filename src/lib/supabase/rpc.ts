@@ -324,6 +324,7 @@ export type BirthdayTeamMember = Readonly<{
   professional_id: string
   full_name: string
   function_title: string
+  birthday_day: number | null
 }>
 
 export type BirthdayOverview = Readonly<{
@@ -1402,6 +1403,8 @@ function parseBirthdayOverview(value: unknown): BirthdayOverview {
         professional_id: requiredString(item, 'professional_id', operation),
         full_name: requiredString(item, 'full_name', operation),
         function_title: requiredString(item, 'function_title', operation),
+        birthday_day: typeof item.birthday_day === 'number' && Number.isInteger(item.birthday_day) &&
+          item.birthday_day >= 1 && item.birthday_day <= 31 ? item.birthday_day : null,
       }
     }),
   }
