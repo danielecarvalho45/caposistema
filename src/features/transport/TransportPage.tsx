@@ -203,6 +203,7 @@ export function TransportPage({ accessContext }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [administrativeQueue, setAdministrativeQueue] = useState<readonly TransportRecord[]>([])
+  const [reminderQueue, setReminderQueue] = useState<readonly TransportRecord[]>([])
   const [queueLoading, setQueueLoading] = useState(false)
   const [contactsOpen, setContactsOpen] = useState(false)
   const [contactsBusy, setContactsBusy] = useState(false)
@@ -243,6 +244,47 @@ export function TransportPage({ accessContext }: Props) {
     return () => document.removeEventListener('keydown', onEscape)
   }, [contactsOpen])
 
+  async function reloadReminders() {
+    if (!canAdminister) return
+    const result = await getRpcService().getTransportReminderQueue()
+    if (result.status === 'success') {
+      setReminderQueue(Array.isArray(result.data) ? result.data as readonly TransportRecord[] : [])
+    } else if (result.status === 'error') {
+      setFeedback('Não foi possível consultar os lembretes de Transporte: ' + result.error.message)
+    }
+  }
+
+  function openManualReminder(item: TransportRecord) {
+    const destination = contacts.whatsapp_primary.trim()
+    if (!destination) {
+      setFeedback('Cadastre o WhatsApp principal do setor de transporte antes de abrir um lembrete.')
+      return
+    }
+    const digits = destination.replace(/\D/g, '')
+    const dateRaw = field(item, 'next_visit_date')
+    const date = dateRaw && /^\d{4}-\d{2}-\d{2}$/.test(dateRaw)
+      ? dateRaw.slice(8,10) + '/' + dateRaw.slice(5,7) + '/' + dateRaw.slice(0,4) : dateRaw
+    const cadence = field(item, 'periodicity') === 'quinzenal' ? 'Quinzenal' : 'Semanal'
+    const sender = accessContext.full_name ?? accessContext.username
+    const message = [
+      'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
+      'Lembrete de transporte — CAPO.',
+      'Paciente: ' + (field(item, 'patient_name') ?? 'Não informado'),
+      'Número CAPO: ' + (field(item, 'patient_number') ?? 'Não informado'),
+      'CMS: ' + (field(item, 'cms') ?? 'Não informado'),
+      'Periodicidade: ' + cadence,
+      'Próximo atendimento: ' + (date ?? 'Data não informada') + ' às ' + (field(item, 'appointment_time') ?? 'Horário não informado'),
+      'Profissional: ' + (field(item, 'professional_name') ?? 'Não informado'),
+      'Embarque: ' + (field(item, 'boarding_address') ?? 'Não informado'),
+      'Destino: ' + (field(item, 'care_location') ?? 'Não informado'),
+      'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
+    ].join('\n')
+    const url = 'https://wa.me/' + (digits.startsWith('55') ? digits : '55' + digits) + '?text=' + encodeURIComponent(message)
+    const popup = globalThis.open(url, 'capo-transporte-whatsapp')
+    if (popup) popup.opener = null
+    setFeedback('Mensagem de lembrete aberta para envio manual. Abrir o WhatsApp não confirma o envio nem o recebimento.')
+  }
+
   async function reloadAdministrativeQueue() {
     if (!canAdminister) return
     setQueueLoading(true)
@@ -262,6 +304,7 @@ export function TransportPage({ accessContext }: Props) {
 
   useEffect(() => {
     if (!canAdminister) return
+    void reloadReminders()
     let mounted = true
     void getRpcService().getTransportAdministrativeQueue(50).then((result) => {
       if (!mounted) return
@@ -471,7 +514,7 @@ export function TransportPage({ accessContext }: Props) {
       setReason('')
       setSelectedAppointmentId('')
       await loadContext(patientId, patientName)
-      if (canAdminister) void reloadAdministrativeQueue()
+      if (canAdminister) { void reloadAdministrativeQueue(); void reloadReminders() }
       setFeedback(canAdminister
         ? 'Solicitação salva. Confirme a solicitação na seção Acompanhamento para gerar o PDF oficial.'
         : 'Solicitação enviada ao Administrativo com sua justificativa. O Administrativo gerará o PDF.')
@@ -514,6 +557,7 @@ export function TransportPage({ accessContext }: Props) {
       if (action === 'cancel') setCancellationReason('')
       await loadContext(patientId, patientName)
       void reloadAdministrativeQueue()
+      void reloadReminders()
       setFeedback('Providência de transporte registrada no banco.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a providência.')
@@ -533,6 +577,10 @@ export function TransportPage({ accessContext }: Props) {
     const cadence = field(request, 'periodicity')
     if (cadence !== 'unica' && cadence !== 'semanal' && cadence !== 'quinzenal') {
       setFeedback('Escolha a periodicidade para esta solicitação.')
+      return
+    }
+    if (field(request, 'appointment_id') && !field(request, 'appointment_location')) {
+      setFeedback('O endereço onde o profissional atende não está informado no agendamento ou cadastro profissional. Regularize o local oficial do atendimento antes de gerar o PDF.')
       return
     }
     const appointmentDate = field(request, 'appointment_date')
@@ -587,6 +635,7 @@ export function TransportPage({ accessContext }: Props) {
     const result = await getRpcService().signTransportPdf(id)
     if (result.status === 'success') {
       await loadContext(patientId, patientName)
+      void reloadReminders()
       setFeedback('PDF oficial confirmado e liberado para continuidade administrativa.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a assinatura.')
@@ -808,6 +857,27 @@ export function TransportPage({ accessContext }: Props) {
       )}
 
       {feedback && <p role="status">{feedback}</p>}
+
+      {canAdminister && reminderQueue.length > 0 && (
+        <div className="home-ops" aria-label="Avisos de transporte recorrente">
+          <div className="transport-queue-head">
+            <h2>▦ Lembretes de transporte</h2>
+            <button type="button" onClick={() => void reloadReminders()}>Atualizar avisos</button>
+          </div>
+          <p>Consultas semanais ou quinzenais com lembrete para hoje ou amanhã. Envio manual pelo WhatsApp; sem confirmação de recebimento.</p>
+          <ul className="transport-queue">
+            {reminderQueue.map((item) => (
+              <li key={requestId(item)}>
+                <div className="transport-reminder-entry">
+                  <strong>{field(item, 'patient_name') ?? 'Paciente'}</strong>
+                  <small>{field(item, 'periodicity') === 'quinzenal' ? 'Quinzenal' : 'Semanal'} · {field(item, 'next_visit_date') ?? ''} · {field(item, 'appointment_time') ?? ''}</small>
+                  <button type="button" onClick={() => openManualReminder(item)}>✉ Abrir lembrete no WhatsApp</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {canAdminister && (
         <div className="home-ops" aria-label="Solicitações administrativas de transporte">
