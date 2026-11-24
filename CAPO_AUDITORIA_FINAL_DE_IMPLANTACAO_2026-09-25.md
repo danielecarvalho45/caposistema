@@ -1,3 +1,15 @@
+## 24/11/2026 — VERDE: somente fundo interno com degradê da tela de login (reversível)
+
+**Solicitação e autorização:** a Titular apresentou imagens da Home do Gestor e da tela de login; autorizou expressamente **somente o fundo** das telas internas, reproduzindo o degradê já existente na tela de login. Quadros, cartões, bordas, menus, cabeçalhos, formulários, tipografia, funcionalidades e dados não podem sofrer alterações por esta manutenção.
+
+**Ponto de restauração anterior à mudança:** branch GitHub `backup/visual-antes-mudanca-fundo-2026-11-24` criada e confirmada apontando para o commit `cf219da3de83c675de8af1d37255deb3945aaa1b`. A restauração, se solicitada, deve reverter pontualmente **apenas os fundos modificados**, preservando quaisquer alterações posteriores e não desfazendo outras funcionalidades.
+
+**Alteração pontual no GitHub `main`:** `src/styles/global.css` — substituição exclusivamente do `background` do seletor `html` pelo mesmo conjunto de gradientes `radial-gradient` azul, rosa, amarelo, verde e `linear-gradient` branco da regra original `.login-wrap` de `src/components/auth/access-gate.css`; commit `f9e58abc7f375124d06d1f693489dd1880110466`. `src/features/gestor/gestor.css` — substituição exclusivamente do `background` da regra `.gestor-shell` pelo mesmo conjunto de gradientes; commit `f2d5239dbccbb7ce2d768e48451fed94664d552e`. A tela de login e os componentes existentes não foram alterados.
+
+**Limites e validação:** somente CSS de fundo; sem migrações, banco, contas, dados assistenciais, RLS ou APIs. Cópia do estado anterior preservada. Teste visual em desktop/mobile, confirmação de publicação Cloudflare e homologação operacional pela Titular pendentes; não declarar testado/homologado previamente.
+
+---
+
 ## 24/11/2026 — VERDE: recuperação de senha por link, sem tela de código após envio
 
 **Relato e autorização da Titular:** o e-mail de recuperação já enviava link válido que levava diretamente à tela de definição de nova senha. A interface, porém, apresentava indevidamente `Confirmar código de recuperação` logo após enviar o e-mail. A Titular determinou manter exclusivamente o link e concedeu **VERDE**.
