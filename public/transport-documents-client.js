@@ -46,14 +46,21 @@
         view.href = file.url;
         view.target = "_blank";
         view.rel = "noopener noreferrer";
-        view.textContent = "Visualizar / imprimir";
+        view.textContent = "Visualizar";
+        const print = document.createElement("a");
+        print.className = "action secondary";
+        print.href = file.url;
+        print.target = "_blank";
+        print.rel = "noopener noreferrer";
+        print.textContent = "Imprimir";
+        print.title = "Abre o PDF. Use a opção Imprimir do visualizador ou Ctrl+P.";
         const download = document.createElement("a");
         download.className = "action";
         download.href = typeof file.downloadUrl === 'string' ? file.downloadUrl : file.url;
         download.target = "_blank";
         download.rel = "noopener noreferrer";
         download.textContent = "Baixar PDF";
-        actions.append(view, download);
+        actions.append(view, download, print);
         li.appendChild(actions);
         list.appendChild(li);
       }
