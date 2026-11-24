@@ -134,6 +134,8 @@ export function GestorShell({
   }, [accessContext, activePath])
 
   const profileLabel = accessContext.primary_context.name?.trim() || 'Administrador'
+  const isDanieleTitular = accessContext.user_account_id === '7a077538-471f-4f3a-9033-e30fec74dd9b'
+    && accessContext.primary_context.code === 'administrador'
 
   return (
     <div className="gestor-shell">
@@ -187,6 +189,11 @@ export function GestorShell({
             <p>Administrador do Sistema / Titular</p>
           </div>
           <div className="gestor-header-actions">
+            {isDanieleTitular && (
+              <button type="button" onClick={() => navigate('/')} aria-label="Ir para Início">
+                ⌂ <span>Início</span>
+              </button>
+            )}
             <CommunicationUnreadLink accessContext={accessContext} />
             <button type="button" onClick={goBack}>← <span>Voltar</span></button>
             {canAccessAppRoute(accessContext, '/notificacoes') && (
