@@ -17,7 +17,8 @@ describe('Encerramento administrativo — aguardando início', () => {
     const result = await createClosuresIntegration().closeUnstartedAcceptedCycle(
       'paciente-id', 'Paciente aceitou a oferta, mas deseja aguardar o início.',
     )
-    expect(rpc).toHaveBeenCalledExactlyOnceWith(
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith(
       'close_unstarted_accepted_care_cycle_for_interface',
       { p_patient_id: 'paciente-id', p_reason: 'Paciente aceitou a oferta, mas deseja aguardar o início.' },
     )
