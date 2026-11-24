@@ -177,12 +177,16 @@ function formatCAPOMessageDateTime(value: string) {
 
 function appointmentNoticeMessage(contact: {
   patientName: string
+  professionalName: string
   specialtyName: string
   slotStart: string
   careLocation: string
   senderName: string
   senderTitle: string
 }) {
+  if (!contact.professionalName.trim() || !contact.specialtyName.trim()) {
+    throw new Error('Nome do profissional ou especialidade ausente neste agendamento. Confira o cadastro antes de avisar.')
+  }
   const start = new Date(contact.slotStart)
   const valid = !Number.isNaN(start.getTime())
   const date = valid
@@ -204,7 +208,8 @@ function appointmentNoticeMessage(contact: {
     '',
     `📅 Data: ${date}`,
     `🕒 Horário: ${time}`,
-    `👩‍⚕️ Especialidade: ${contact.specialtyName}`,
+    `👩‍⚕️ Profissional: ${contact.professionalName}`,
+    `🩺 Especialidade: ${contact.specialtyName}`,
     `📍 Local: ${contact.careLocation}`,
     '',
     'Pedimos que compareça no horário agendado.',
@@ -1513,6 +1518,7 @@ export function AgendaPage({
     if (!careLocation) throw new Error('Local do agendamento não confirmado. Confira antes de avisar.')
     return appointmentNoticeMessage({
       patientName: participant.patient_name,
+      professionalName: catalogRows.find((row) => row.professional_id === professionalId)?.professional_name ?? '',
       specialtyName: 'Psicologia — ' + session.name,
       slotStart: session.start, careLocation,
       senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
@@ -1889,6 +1895,7 @@ export function AgendaPage({
                 })
                 : appointmentNoticeMessage({
                   patientName,
+                  professionalName,
                   specialtyName: specialtyOptions.find(([id]) => id === selectedSpecialtyId)?.[1] ?? 'Especialidade não informada',
                   slotStart: validSlotStart, careLocation, senderName, senderTitle,
                 })
