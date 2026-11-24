@@ -1,7 +1,7 @@
 import { capoTodayIso } from '../../lib/date/capo-locale'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   getRpcService,
   loadingState,
@@ -944,6 +944,7 @@ export function AgendaPage({
   embeddedHome?: boolean
 }>) {
   const location = useLocation()
+  const navigate = useNavigate()
   const [view, setView] = useState<AgendaView>('day')
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [socialVisitMode, setSocialVisitMode] = useState(false)
@@ -970,6 +971,7 @@ export function AgendaPage({
   const appointmentSearchRequest = useRef(0)
   const [appointmentType, setAppointmentType] = useState('')
   const [appointmentOrigin, setAppointmentOrigin] = useState('')
+  const [patientLinkCancelledSourceId, setPatientLinkCancelledSourceId] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
   // Evita que um novo retorno seja confundido com remarcação de consulta ainda ativa.
@@ -1774,8 +1776,15 @@ export function AgendaPage({
 
   async function createAppointment() {
     if (awaitingNextAppointmentChoice) return
-    if (!appointmentPatientId || !selectedSpecialtyId || !selectedProfessionalId || !validSlotStart || !appointmentType) {
+    const isPatientLinkRebooking = location.state?.origin === 'patient_link_cancellation'
+      && patientLinkCancelledSourceId.length > 0
+    if (!appointmentPatientId || !selectedSpecialtyId || !selectedProfessionalId || !validSlotStart ||
+      (!appointmentType && !isPatientLinkRebooking)) {
       setAppointmentFeedback('Selecione paciente, especialidade, profissional, horário e tipo de atendimento.')
+      return
+    }
+    if (location.state?.origin === 'patient_link_cancellation' && !isPatientLinkRebooking) {
+      setAppointmentFeedback('A consulta cancelada pelo link ainda não foi validada. Reabra a solicitação pela Home.')
       return
     }
     // Conferência obrigatória da agenda existente, antes da reserva e da gravação.
@@ -1821,20 +1830,32 @@ export function AgendaPage({
     setAppointmentFeedback('Criando agendamento no banco…')
     let result: Awaited<ReturnType<ReturnType<typeof getRpcService>['createAppointment']>>
     try {
-      result = await getRpcService().createAppointment({
-      patientId: appointmentPatientId,
-      professionalId: selectedProfessionalId,
-      slotStart: validSlotStart,
-      appointmentType,
-      generalNotes: appointmentNotes.trim() || null,
-      operationalOrigin: appointmentOrigin.trim() || null,
-      })
+      result = isPatientLinkRebooking
+        ? await getRpcService().rebookPatientLinkCancellation({
+          appointmentId: patientLinkCancelledSourceId,
+          professionalId: selectedProfessionalId,
+          slotStart: validSlotStart,
+          notes: appointmentNotes.trim() || null,
+        })
+        : await getRpcService().createAppointment({
+          patientId: appointmentPatientId,
+          professionalId: selectedProfessionalId,
+          slotStart: validSlotStart,
+          appointmentType,
+          generalNotes: appointmentNotes.trim() || null,
+          operationalOrigin: appointmentOrigin.trim() || null,
+        })
     } catch (error) {
       whatsappReservation?.cancel()
       setAppointmentFeedback(error instanceof Error ? error.message : 'Não foi possível registrar o agendamento.')
       return
     }
     if (result.status === 'success') {
+      if (isPatientLinkRebooking) {
+        setPatientLinkCancelledSourceId('')
+        // Consome a origem de navegação para que uma atualização da agenda não reabra a solicitação.
+        navigate(location.pathname, { replace: true, state: null })
+      }
       // O retorno administrativo deve apresentar o aviso antes de permitir concluir a operação.
       if (!isProfessional && appointmentType === 'Retorno') setReturnNoticeAcknowledged(false)
       let locationWarning = false
@@ -2523,6 +2544,7 @@ export function AgendaPage({
     setSelectedProfessionalId('')
     setSelectedSlotStart('')
     setAppointmentOrigin('cancelamento_link_paciente')
+    setPatientLinkCancelledSourceId(appointmentId)
     setAppointmentFeedback('Consultando os dados da consulta cancelada para preparar um novo agendamento…')
     void (async () => {
       const rpc = getRpcService()
@@ -2551,6 +2573,10 @@ export function AgendaPage({
         row.professional_name === original.professional_name &&
         row.specialty_name === original.specialty_name)
       setAppointmentPatientQuery(patientName)
+      setAppointmentType(original.appointment_type === 'retorno' ? 'Retorno'
+        : original.appointment_type === 'primeiro_capo' ? 'Primeiro atendimento no CAPO'
+        : original.appointment_type === 'primeiro_especialidade' ? 'Primeiro atendimento na especialidade'
+        : '')
       if (candidates.length === 1) {
         setSelectedSpecialtyId(candidates[0].specialty_id)
         setSelectedProfessionalId(candidates[0].professional_id)
@@ -3316,7 +3342,9 @@ export function AgendaPage({
               {!isProfessional && !selectedAppointmentFamily && (
                 <label>
                   Origem
-                  <input type="text" placeholder="Origem da demanda" value={appointmentOrigin} onChange={(event) => setAppointmentOrigin(event.target.value)} />
+                  <input type="text" placeholder="Origem da demanda" value={appointmentOrigin}
+                    readOnly={location.state?.origin === 'patient_link_cancellation'}
+                    onChange={(event) => setAppointmentOrigin(event.target.value)} />
                 </label>
               )}
               <label className="agenda-form-wide">
