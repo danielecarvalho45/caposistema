@@ -1,3 +1,19 @@
+## 24/11/2026 — VERDE: minimização automática do aviso de atualização da versão
+
+**Relato e autorização:** aviso `Nova versão do CAPO disponível` permanecia expandido no canto inferior e dificultava a utilização de comandos na tela. Após leitura do histórico de 19/11/2026, Titular concedeu VERDE para a correção exclusivamente visual: exibir aviso normalmente, minimizar em cinco segundos, permitir reabrir e manter `Atualizar agora`.
+
+**Correção cirúrgica na branch `main`:**
+- `src/components/system/CapoAutomaticVersionUpdate.tsx`, commit `4614e5c20fa68f0bae83123cd06eb75ffada5bac`: estado local `noticeMinimized`; temporizador de cinco segundos iniciado quando se detecta nova versão e cancelado na desmontagem; cartão passa a faixa compacta `Atualização disponível`, com botão de reabertura; ação manual `Minimizar`. O comando `Atualizar agora` continua disponível ao reabrir e mantém a confirmação prévia quando houve edição.
+- `src/components/system/automatic-version-update.css`, commit `8b355a7cea1f63e3c52069a06c109487276b3a2b`: faixa discreta e responsiva no canto inferior direito, ocupando apenas a área do próprio aviso; apresentação compacta também no celular.
+
+**Invariantes preservadas:** nenhuma mudança na detecção por hash, intervalo de verificação de 60 segundos, recarga automática exclusiva da Home após 120 segundos sem atividade e demais condições de segurança (visibilidade, conexão, ausência de edição, editor e modal). Nenhuma alteração em Supabase, SQL, autenticação, agenda, atendimento, formulários, dados reais, perfis ou isolamento `manuteste`. A minimização não altera se e quando ocorrerá recarga segura.
+
+**Validação e limites:** commits retornaram sucesso no GitHub. Não foi comprovada execução de build, Vitest, CI, deploy Cloudflare ou teste autenticado em desktop/tablet/celular. Homologar detectando uma versão realmente nova; verificar cartão por cinco segundos, faixa compacta, reabertura e botão de atualização, inexistência de obstrução de cliques e manutenção da proteção contra perda de dados. Não afirmar homologação sem confirmação da Titular.
+
+**Estado:** CORREÇÃO VERSIONADA NA `main` / HOMOLOGAÇÃO OPERACIONAL E PUBLICAÇÃO PENDENTES DE CONFIRMAÇÃO.
+
+---
+
 
 ---
 
