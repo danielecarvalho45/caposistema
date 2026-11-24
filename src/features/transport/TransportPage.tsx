@@ -156,7 +156,7 @@ export function TransportPage({ accessContext }: Props) {
           .toLowerCase() === 'assistencia social',
     )
   const canCreateRequest =
-    isManager || (isSocialProfessional && hasTransportCapability)
+    isManager || isAdministrativeOperational || (isSocialProfessional && hasTransportCapability)
   const canAdminister = isManager || isAdministrativeOperational
   const canForwardExternally = isManager || isAdministrativeOperational
   const issuerRole = isManager
@@ -352,18 +352,20 @@ export function TransportPage({ accessContext }: Props) {
   }
 
   async function createRequest() {
-    if (!patientId || !selectedAppointmentId || reason.trim().length < 5 || busy) {
-      setFeedback('Selecione paciente, atendimento vinculado e informe o motivo do transporte.')
+    if (!patientId || (appointments.length > 0 && !selectedAppointmentId) || reason.trim().length < 5 || busy) {
+      setFeedback('Selecione o paciente, informe a justificativa e, se houver agendamento, selecione o atendimento.')
       return
     }
     setBusy(true)
     const result = await getRpcService().createTransportRequest({
       p_patient_id: patientId,
-      p_appointment_id: selectedAppointmentId,
+      p_appointment_id: selectedAppointmentId || null,
       p_transport_notes: reason.trim(),
     })
     if (result.status === 'success') {
-      setFeedback('Solicitação de transporte registrada no banco.')
+      setFeedback(canAdminister
+        ? 'Solicitação salva. Confirme a solicitação na seção Acompanhamento para gerar o PDF oficial.'
+        : 'Solicitação enviada ao Administrativo com sua justificativa. O Administrativo gerará o PDF.')
       setReason('')
       setSelectedAppointmentId('')
       await loadContext(patientId, patientName)
@@ -414,7 +416,7 @@ export function TransportPage({ accessContext }: Props) {
 
   async function generatePdf(request: TransportRecord) {
     const id = requestId(request)
-    if (!id || !isManager || busy) return
+    if (!id || !canAdminister || busy) return
     const notes = field(request, 'transport_notes') ?? 'Necessidade de transporte registrada no CAPO.'
     const appointmentDate = field(request, 'appointment_date')
     const appointmentLabel = appointmentDate
@@ -454,7 +456,7 @@ export function TransportPage({ accessContext }: Props) {
 
   async function signPdf(request: TransportRecord) {
     const id = requestId(request)
-    if (!id || !isManager || busy) return
+    if (!id || !canAdminister || busy) return
     setBusy(true)
     const result = await getRpcService().signTransportPdf(id)
     if (result.status === 'success') {
@@ -568,8 +570,8 @@ export function TransportPage({ accessContext }: Props) {
         <div className="home-ops" aria-label="Orientação sobre a solicitação de transporte">
           <h2>Solicitação de Transporte</h2>
           <p>
-            Selecione o paciente e um agendamento válido para registrar a solicitação.
-            A necessidade de transporte permanecerá ativa até seu cancelamento formal.
+            Selecione o paciente e informe a justificativa. Se houver atendimento agendado, vincule-o à solicitação.
+            Sem agendamento, a solicitação será genérica. A necessidade de transporte permanece ativa até o cancelamento formal.
           </p>
         </div>
       )}
@@ -673,26 +675,30 @@ export function TransportPage({ accessContext }: Props) {
         <div className="home-ops">
           <h2>Solicitação de Transporte</h2>
           <p>Paciente: <strong>{patientName}</strong>{field(patient, 'cms') ? ` · CMS ${field(patient, 'cms')}` : ''}</p>
-          <label>Atendimento vinculado *
-            <select value={selectedAppointmentId} onChange={(event) => setSelectedAppointmentId(event.target.value)}>
-              <option value="">Selecionar atendimento</option>
-              {appointments.map((appointment, index) => (
-                <option key={field(appointment, 'appointment_id', 'id') ?? index} value={field(appointment, 'appointment_id', 'id') ?? ''}>
-                  {field(appointment, 'appointment_date')
-                    ? new Date(field(appointment, 'appointment_date') ?? '').toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
-                    : 'Atendimento'} · {field(appointment, 'professional_name') ?? 'Profissional'}
-                </option>
-              ))}
-            </select>
-          </label>
+          {appointments.length > 0 ? (
+            <label>Atendimento vinculado *
+              <select value={selectedAppointmentId} onChange={(event) => setSelectedAppointmentId(event.target.value)}>
+                <option value="">Selecionar atendimento</option>
+                {appointments.map((appointment, index) => (
+                  <option key={field(appointment, 'appointment_id', 'id') ?? index} value={field(appointment, 'appointment_id', 'id') ?? ''}>
+                    {field(appointment, 'appointment_date')
+                      ? new Date(field(appointment, 'appointment_date') ?? '').toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
+                      : 'Atendimento'} · {field(appointment, 'professional_name') ?? 'Profissional'}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <p>Sem agendamento ativo — solicitação genérica de transporte.</p>
+          )}
           <label>Motivo da solicitação *
             <textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={4} />
           </label>
-          <button type="button" onClick={() => void createRequest()} disabled={busy || !selectedAppointmentId || reason.trim().length < 5}>
+          <button type="button" onClick={() => void createRequest()} disabled={busy || (appointments.length > 0 && !selectedAppointmentId) || reason.trim().length < 5}>
             Salvar solicitação
           </button>
           {!isManager && isSocialProfessional && hasTransportCapability && (
-            <p>O PDF oficial será gerado e assinado pelo Gestor do Sistema. A etapa administrativa posterior recebe o documento já vinculado.</p>
+            <p>A justificativa será encaminhada diretamente ao Administrativo, que emitirá e confirmará o PDF oficial.</p>
           )}
         </div>
       )}
@@ -745,12 +751,13 @@ export function TransportPage({ accessContext }: Props) {
                 <li key={id || index}>
                   <strong>{patientName || 'Paciente'}</strong>
                   <span>{status}</span>
+                  <small>{field(request, 'appointment_id') ? 'Agendamento vinculado' : 'Solicitação genérica (sem agendamento)'}</small>
                   <small>{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
                   <div>
-                    {isManager && status === 'confirmado' && !pdfPersisted && (
+                    {canAdminister && status === 'confirmado' && !pdfPersisted && (
                       <button type="button" disabled={busy} onClick={() => void generatePdf(request)}>Gerar PDF</button>
                     )}
-                    {isManager && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
+                    {canAdminister && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
                     )}
                     {pdfPersisted && (
