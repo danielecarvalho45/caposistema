@@ -1,3 +1,15 @@
+## 24/11/2026 — VERDE: reforço de visibilidade do degradê exclusivamente no fundo das telas internas (reversível)
+
+**Relato da Titular:** após a primeira mudança de fundo, as cores da tela de login ficaram visíveis principalmente na parte inferior; o restante da Home permaneceu visualmente branco. A Titular autorizou expressamente reforçar o degradê e conservar a possibilidade de regressão visual se não gostar do resultado.
+
+**Restauração protegida:** antes da segunda alteração, criada a branch `backup/fundo-degrade-suave-antes-reforco-2026-11-24`, apontando para `e02986d6da72ad2896200dd3788af9aa1fee9995`, preservando o estado integral imediatamente anterior ao reforço. A branch original `backup/visual-antes-mudanca-fundo-2026-11-24` continua protegendo o visual anterior à primeira mudança. Se a Titular solicitar retorno, reverter **somente as regras de background alteradas**, sem sobrescrever outras manutenções posteriores.
+
+**Escopo CSS mínimo, sem alteração estrutural:** em `src/styles/global.css`, alterado somente `background` do seletor `html` para distribuir melhor as mesmas cores azul, rosa, amarelo e verde com transparência moderada nas regiões central, superior e inferior; commit `1902661f8d11fde13ec6e1e02424ce027cf1793a`. Em `src/features/gestor/gestor.css`, alterado somente `background` da regra `.gestor-shell` para o mesmo padrão; commit `d3d8eb7cfee6bbe94087fa538444890d55cbf331`. Quadros brancos, superfícies, bordas, botões, cabeçalho, sidebar, login, telas clínicas, permissões, dados e funções não alterados.
+
+**Validação:** alteração CSS versionada; aprovação visual operacional pela Titular e confirmação de publicação Cloudflare pendentes. Sem mudança de banco, contas ou pacientes; nenhum teste destrutivo.
+
+---
+
 ## 24/11/2026 — VERDE: somente fundo interno com degradê da tela de login (reversível)
 
 **Solicitação e autorização:** a Titular apresentou imagens da Home do Gestor e da tela de login; autorizou expressamente **somente o fundo** das telas internas, reproduzindo o degradê já existente na tela de login. Quadros, cartões, bordas, menus, cabeçalhos, formulários, tipografia, funcionalidades e dados não podem sofrer alterações por esta manutenção.
