@@ -209,6 +209,9 @@ export function TransportPage({ accessContext }: Props) {
   const [contactsBusy, setContactsBusy] = useState(false)
   const [contacts, setContacts] = useState<TransportContacts>(EMPTY_CONTACTS)
   const [selectedContacts, setSelectedContacts] = useState<readonly ContactKey[]>([])
+  const [documentsRequest, setDocumentsRequest] = useState<TransportRecord | null>(null)
+  const [attachedDocuments, setAttachedDocuments] = useState<readonly TransportRecord[]>([])
+  const [shareAccess, setShareAccess] = useState<{requestId: string; url: string; pin: string; expires: string} | null>(null)
   const [pdfDetailsRequest, setPdfDetailsRequest] = useState<TransportRecord | null>(null)
   const [pdfDetailsMode, setPdfDetailsMode] = useState<'address' | 'periodicity'>('address')
   const [boardingSource, setBoardingSource] = useState<'cadastro' | 'alternativo'>('cadastro')
@@ -391,9 +394,111 @@ export function TransportPage({ accessContext }: Props) {
       : current.filter((item) => item !== key))
   }
 
+  async function openDocuments(request: TransportRecord) {
+    setDocumentsRequest(request)
+    setAttachedDocuments([])
+    const result = await getRpcService().listTransportAttachments(requestId(request))
+    if (result.status === 'success') {
+      setAttachedDocuments(Array.isArray(result.data) ? result.data as readonly TransportRecord[] : [])
+    } else if (result.status === 'error') {
+      setFeedback('Não foi possível carregar os anexos: ' + result.error.message)
+    }
+  }
+
+  async function uploadDocument(request: TransportRecord, file: File | undefined) {
+    if (!file || busy || !canAdminister) return
+    if (file.type !== 'application/pdf' || !file.name.toLowerCase().endsWith('.pdf') || file.size > 10 * 1024 * 1024) {
+      setFeedback('Aceitamos somente PDF de até 10 MB por arquivo.')
+      return
+    }
+    const id = requestId(request)
+    const path = `transport/${id}/anexos/${globalThis.crypto.randomUUID()}.pdf`
+    setBusy(true)
+    try {
+      const { error: uploadError } = await getSupabaseClient().storage.from('capo-documents')
+        .upload(path, file, { contentType: 'application/pdf', upsert: false })
+      if (uploadError) {
+        setFeedback('Não foi possível enviar o PDF: ' + uploadError.message)
+        return
+      }
+      const result = await getRpcService().registerTransportAttachment(id, path, file.name.slice(0, 160))
+      if (result.status !== 'success') {
+        setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o anexo.')
+        return
+      }
+      const updated = await getRpcService().listTransportAttachments(id)
+      if (updated.status === 'success') setAttachedDocuments(Array.isArray(updated.data) ? updated.data as readonly TransportRecord[] : [])
+      setFeedback('Documento complementar anexado somente a esta solicitação.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function openAttachedDocument(item: TransportRecord) {
+    const path = field(item, 'storage_path')
+    if (!path) return
+    const { data, error } = await getSupabaseClient().storage.from('capo-documents').createSignedUrl(path, 120)
+    if (error || !data?.signedUrl) {
+      setFeedback(error?.message ?? 'Não foi possível visualizar o anexo.')
+      return
+    }
+    globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  async function issueShare(request: TransportRecord) {
+    if (busy || !canAdminister) return
+    setBusy(true)
+    try {
+      const id = requestId(request)
+      const result = await getRpcService().createTransportShare(id, 7)
+      if (result.status !== 'success') {
+        setFeedback(result.status === 'error' ? result.error.message : 'Não foi possível gerar o link seguro.')
+        return
+      }
+      const data = result.data as TransportRecord
+      const token = field(data, 'token')
+      const pin = field(data, 'pin')
+      const expires = field(data, 'expires_at')
+      if (!token || !pin || !expires) {
+        setFeedback('O sistema não devolveu o link e o código de forma segura.')
+        return
+      }
+      const url = `https://caposistema.pages.dev/transporte-documentos.html#acesso=${token}`
+      setShareAccess({requestId: id, url, pin, expires})
+      setFeedback('Link seguro gerado. Envie o código de acesso por canal separado do link. Gerar novo link revoga o anterior.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function revokeShare(request: TransportRecord) {
+    if (busy || !canAdminister) return
+    setBusy(true)
+    try {
+      const result = await getRpcService().revokeTransportShare(requestId(request))
+      if (result.status === 'success') {
+        setShareAccess(null)
+        setFeedback('Link externo revogado no banco.')
+      } else {
+        setFeedback(result.status === 'error' ? result.error.message : 'Falha ao revogar o link.')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
   function openTransportChannel(key: ContactKey, request: TransportRecord) {
     const destination = contacts[key].trim()
     if (!destination || !selectedContacts.includes(key)) return
+    const activeShare = shareAccess?.requestId === requestId(request) ? shareAccess : null
+    if (!activeShare) {
+      setFeedback('Gere o link seguro desta solicitação antes de preparar o WhatsApp.')
+      return
+    }
+    if (new Date(activeShare.expires).getTime() <= Date.now()) {
+      setFeedback('O link expirou. Gere outro link antes de abrir a mensagem.')
+      return
+    }
     const sender = accessContext.full_name ?? accessContext.username
     const date = field(request, 'appointment_date')
     const appointmentLabel = date ? new Date(date).toLocaleString('pt-BR', {
@@ -408,8 +513,10 @@ export function TransportPage({ accessContext }: Props) {
       'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
       'O CAPO solicita providências de transporte para o(a) paciente ' + patientName + ', em acompanhamento pelo serviço.',
       appointmentLabel ? 'Atendimento previsto: ' + appointmentLabel + '.' : '',
-      'O PDF oficial da solicitação e a documentação necessária serão anexados a esta mensagem.',
-      'Solicitamos a confirmação do recebimento e orientações para continuidade.',
+      'PDF oficial e documentos complementares: ' + activeShare.url,
+      'Abra o link para visualizar, baixar ou imprimir os documentos.',
+      'Código de acesso: fornecido separadamente pelo CAPO.',
+      'Link válido até: ' + new Date(activeShare.expires).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', hour12:false}) + '.',
       'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
     ].filter(Boolean).join('\n')
     const digits = destination.replace(/\D/g, '')
@@ -423,7 +530,7 @@ export function TransportPage({ accessContext }: Props) {
       const destinationWindow = globalThis.open(url, 'capo-transporte-whatsapp')
       if (destinationWindow) destinationWindow.opener = null
     }
-    setFeedback('Abertura do canal solicitada. Confirme no aplicativo, anexe o PDF e os documentos; não há confirmação automática de entrega.')
+    setFeedback('Mensagem com o link seguro aberta. O envio é manual e não registra recebimento automático.')
   }
 
 
@@ -450,6 +557,8 @@ export function TransportPage({ accessContext }: Props) {
   async function loadContext(id: string, name: string) {
     setPatientId(id)
     setPatientName(name)
+    setShareAccess((value) => value?.requestId && id !== patientId ? null : value)
+    setDocumentsRequest(null)
     setSelectedAppointmentId('')
     const result = await getRpcService().getTransportContext(id)
     if (result.status === 'success') {
@@ -806,6 +915,40 @@ export function TransportPage({ accessContext }: Props) {
         )}
       </div>
 
+      {documentsRequest && (
+        <div className="transport-contact-overlay">
+          <button type="button" className="transport-contact-backdrop" aria-label="Fechar anexos"
+            onClick={() => setDocumentsRequest(null)} />
+          <section className="transport-contact-modal" role="dialog" aria-modal="true" aria-label="Documentos complementares do Transporte">
+            <div className="transport-contact-modal-head">
+              <h2>📎 Documentos complementares</h2>
+              <button type="button" onClick={() => setDocumentsRequest(null)}>✕ Fechar</button>
+            </div>
+            <div className="transport-contact-details">
+              <p>Anexos PDF exclusivos desta solicitação. Armazenamento privado; limite de 10 arquivos, até 10 MB cada.</p>
+              <ul>{attachedDocuments.map((doc) => (
+                <li key={field(doc,'id') ?? field(doc,'storage_path')}>
+                  {field(doc,'name') ?? 'Documento'}{' '}
+                  <button type="button" onClick={() => void openAttachedDocument(doc)}>Visualizar PDF</button>
+                </li>
+              ))}</ul>
+              {attachedDocuments.length === 0 && <p>Sem documentos complementares.</p>}
+              {canAdminister && ['solicitado','confirmado'].includes(field(documentsRequest,'status') ?? '')
+                && !field(documentsRequest,'external_forwarded_at') && (
+                <label>Incluir documento PDF
+                  <input type="file" accept=".pdf,application/pdf" disabled={busy || attachedDocuments.length >= 10}
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0]
+                      if (file) void uploadDocument(documentsRequest, file)
+                      event.currentTarget.value = ''
+                    }} />
+                </label>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
       {pdfDetailsRequest && (
         <div className="transport-contact-overlay">
           <button type="button" className="transport-contact-backdrop" aria-label="Fechar conferência de transporte"
@@ -1045,6 +1188,25 @@ export function TransportPage({ accessContext }: Props) {
                     {canAdminister && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
                     )}
+                    {canAdminister && status !== 'cancelado' && (
+                      <button type="button" disabled={busy} onClick={() => void openDocuments(request)}>
+                        📎 Documentos complementares
+                      </button>
+                    )}
+                    {canAdminister && status === 'confirmado' && pdfPrepared && (
+                      <>
+                        <button type="button" disabled={busy} onClick={() => void issueShare(request)}>🔗 Gerar link seguro</button>
+                        <button type="button" disabled={busy} onClick={() => void revokeShare(request)}>Revogar link</button>
+                        {shareAccess?.requestId === id && (
+                          <div className="transport-share-access">
+                            <p><strong>Link válido por 7 dias.</strong> Envie o link pelo WhatsApp e o código por outro canal.</p>
+                            <p>Código de acesso: <strong>{shareAccess.pin}</strong></p>
+                            <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.pin)}>Copiar código</button>
+                            <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.url)}>Copiar link</button>
+                          </div>
+                        )}
+                      </>
+                    )}
                     {pdfPersisted && (
                       <>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
@@ -1062,7 +1224,7 @@ export function TransportPage({ accessContext }: Props) {
                             {key === 'email' ? '✉ Abrir e-mail' : key === 'phone_responsible' ? '☏ WhatsApp responsável' : '✉ WhatsApp setor'}
                           </button>
                         ) : null)}
-                        <small>Baixe o PDF assinado acima e anexe-o manualmente com os demais documentos. Confirme o envio antes de registrar o encaminhamento.</small>
+                        <small>A mensagem contém um único link seguro. Informe o código de acesso por canal separado. Confirme o envio manual antes de registrar o encaminhamento.</small>
                       </div>
                     )}
                     {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && (
