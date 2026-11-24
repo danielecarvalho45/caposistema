@@ -202,3 +202,16 @@
 .transport-reminder-entry button {
   align-self: flex-start;
 }
+
+/* Compartilhamento de documentos: compacto, isolado da navegação. */
+.transport-share-access {
+  display: grid;
+  gap: .45rem;
+  padding: .7rem;
+  border: 1px solid #ead8e2;
+  border-radius: .5rem;
+  background: #fff8fb;
+  overflow-wrap: anywhere;
+}
+.transport-share-access p { margin: 0; }
+.transport-share-access button { justify-self: start; }
