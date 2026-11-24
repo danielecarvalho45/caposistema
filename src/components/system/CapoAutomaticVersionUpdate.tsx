@@ -5,6 +5,7 @@ declare const __CAPO_BUILD_VERSION__: string
 
 const CHECK_INTERVAL_MS = 60_000
 const IDLE_FOR_AUTO_RELOAD_MS = 120_000
+const NOTICE_AUTO_MINIMIZE_MS = 5_000
 
 export function isSafeCapoAutoReload(input: {
   path: string
@@ -28,6 +29,7 @@ export function isSafeCapoAutoReload(input: {
 
 export function CapoAutomaticVersionUpdate() {
   const [newVersion, setNewVersion] = useState(false)
+  const [noticeMinimized, setNoticeMinimized] = useState(false)
   const [edited, setEdited] = useState(false)
   const lastActivity = useRef(Date.now())
   const updating = useRef(false)
@@ -110,7 +112,25 @@ export function CapoAutomaticVersionUpdate() {
     }
   }, [reloadIfSafe])
 
+  // A minimização afeta somente a apresentação, nunca a política de recarga segura.
+  // Executar este efeito antes do retorno condicional mantém a ordem dos hooks.
+  useEffect(() => {
+    if (!newVersion) return
+    const timer = window.setTimeout(() => setNoticeMinimized(true), NOTICE_AUTO_MINIMIZE_MS)
+    return () => window.clearTimeout(timer)
+  }, [newVersion])
+
   if (!newVersion) return null
+
+  if (noticeMinimized) {
+    return (
+      <aside className="capo-new-version capo-new-version--minimized" role="status" aria-label="Atualização do CAPO disponível">
+        <button type="button" className="capo-new-version__restore" onClick={() => setNoticeMinimized(false)} aria-label="Reabrir aviso de atualização do CAPO">
+          Atualização disponível
+        </button>
+      </aside>
+    )
+  }
 
   return (
     <aside className="capo-new-version" role="status" aria-live="polite">
@@ -120,11 +140,14 @@ export function CapoAutomaticVersionUpdate() {
           ? 'Há informações editadas nesta sessão. A atualização não será automática para evitar perdas.'
           : 'O sistema atualizará sozinho quando estiver na Home e sem atividade em andamento.'}
       </span>
+      <div className="capo-new-version__actions">
       <button type="button" onClick={() => {
         if (edited && !window.confirm('Uma atualização pode descartar informações ainda não salvas. Deseja atualizar agora?')) return
         updating.current = true
         window.location.reload()
       }}>Atualizar agora</button>
+      <button type="button" className="capo-new-version__minimize" onClick={() => setNoticeMinimized(true)}>Minimizar</button>
+      </div>
     </aside>
   )
 }
