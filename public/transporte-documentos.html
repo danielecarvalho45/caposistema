@@ -30,7 +30,8 @@
   <main>
     <div class="eyebrow">Centro de Apoio ao Paciente Oncológico</div>
     <h1>Documentos de Transporte</h1>
-    <p>Consulte os documentos encaminhados pelo CAPO. Este acesso é exclusivo da solicitação e não permite alterar arquivos ou consultar o cadastro do paciente.</p>
+    <p>Consulte o PDF oficial e os documentos complementares desta solicitação. Você pode visualizar ou baixar os arquivos, mas não alterá-los.</p>
+    <p id="expiry-notice"><strong>Atenção:</strong> o link fica disponível por 24 horas após a geração. Baixe a documentação antes do vencimento.</p>
     <form id="access-form">
       <label>Código de acesso fornecido separadamente
         <input id="access-pin" type="text" inputmode="numeric" maxlength="8" minlength="8" pattern="[0-9]{8}" autocomplete="off" required placeholder="8 dígitos"/>
@@ -40,12 +41,12 @@
     <p id="status" role="status" aria-live="polite"></p>
     <section id="files" hidden>
       <h2>Arquivos disponíveis</h2>
-      <p><small>Os links de arquivo têm validade curta. Para reabrir após esse prazo, informe o código novamente.</small></p>
+      <p><small>Os links para cada arquivo são temporários. Enquanto o link principal estiver válido, você pode abrir novamente esta página para obter novos links de download.</small></p>
       <ul id="documents" class="documents"></ul>
       <p><small>Para imprimir, abra o PDF e use a função Imprimir do visualizador ou do navegador.</small></p>
     </section>
     <hr/>
-    <p><small>Não compartilhe este link e o código de acesso com pessoas não autorizadas. Se o link estiver expirado ou revogado, solicite outro ao setor responsável do CAPO.</small></p>
+    <p><small>Este link dá acesso a documentação sensível. Não compartilhe com pessoas não autorizadas. Se estiver expirado ou revogado, solicite outro ao CAPO.</small></p>
   </main>
 </body>
 </html>
