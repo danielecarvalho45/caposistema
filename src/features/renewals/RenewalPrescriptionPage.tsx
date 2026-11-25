@@ -539,7 +539,7 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
                 <>
                   <p><strong>Decisão médica:</strong> receita pronta.</p>
                   <p><strong>Local de retirada informado pelo Médico Clínico:</strong> {selected.pickup_location ?? 'Não informado'}</p>
-                  <fieldset className="renewal-whatsapp-address">
+                  {operationalContext?.medical_outcome === 'renewed' && (<fieldset className="renewal-whatsapp-address">
                     <legend>Endereço para o aviso de receita pronta</legend>
                     <label>
                       <input type="radio" name="renewal-whatsapp-address" checked={addressMode === 'registered'} onChange={() => setAddressMode('registered')} />
@@ -558,7 +558,7 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
                       {openingWhatsApp ? 'Abrindo WhatsApp...' : 'Avisar paciente — WhatsApp'}
                     </button>
                     <small>O WhatsApp abre em um clique, com a mensagem pronta. Enviar o aviso não conclui nem confirma o contato automaticamente.</small>
-                  </fieldset>
+                  </fieldset>)}
                   <label>Observação administrativa final<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
                   <label><input type="checkbox" checked={patientContacted} onChange={(event) => setPatientContacted(event.target.checked)} /> Paciente contatado/orientado</label>
                   <button type="button" onClick={() => void completeAdministrative()} disabled={busy || !patientContacted}>Concluir retorno</button>
