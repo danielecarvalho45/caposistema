@@ -2,6 +2,24 @@ import { useState } from 'react'
 import { getRpcService } from '../../lib/supabase/rpc'
 import { openCapoWhatsAppTab } from './whatsapp-tab'
 
+// Visual only: reusable by existing WhatsApp launch controls without altering their handlers.
+export const capoWhatsAppStyle = {
+  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  verticalAlign: 'middle', gap: 6, minHeight: 32, minWidth: 32,
+  padding: '4px 8px', width: 'auto', maxWidth: '100%', boxSizing: 'border-box',
+  border: '1px solid #b9ddf5', borderRadius: 8, background: '#e8f6ff',
+  boxShadow: 'none', color: '#006bd9', fontSize: '0.85rem', lineHeight: 1.2,
+} as const
+
+export function CapoWhatsAppIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+            <path d="M20.5 11.8a8.5 8.5 0 0 1-12.6 7.5L3.5 20.5l1.2-4.3a8.5 8.5 0 1 1 15.8-4.4Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M9 7.5c-.8-.4-2 .5-2 1.8 0 3.6 4.6 7.3 7.4 7.3 1.4 0 2.1-.8 2.3-1.6.1-.5-2.5-1.8-2.9-1.7-.5.1-.9 1-1.3 1-1.4-.4-3-2-3.4-3.3 0-.4.8-.8.9-1.2.1-.3-.6-2-1-2.3Z" fill="currentColor"/>
+          </svg>
+  )
+}
+
 type Props = Readonly<{
   patientId: string
   label?: string
@@ -77,32 +95,21 @@ export function PatientWhatsAppButton({
 
   return (
     <span>
-      {compact ? (
-        <button
-          type="button"
-          aria-label={busy ? 'Abrindo WhatsApp…' : label}
-          title={busy ? 'Abrindo WhatsApp…' : label}
-          disabled={busy || !patientId}
-          onClick={() => void openContact()}
-          style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            verticalAlign: 'middle', width: 32, height: 32, minWidth: 32, minHeight: 32,
-            maxWidth: 32, padding: 4, marginInlineStart: 6, boxSizing: 'border-box',
-            border: '1px solid #b9ddf5', borderRadius: 8, background: '#e8f6ff',
-            boxShadow: 'none', color: '#006bd9', flexShrink: 0,
-            opacity: busy || !patientId ? 0.5 : 1,
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-            <path d="M20.5 11.8a8.5 8.5 0 0 1-12.6 7.5L3.5 20.5l1.2-4.3a8.5 8.5 0 1 1 15.8-4.4Z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M9 7.5c-.8-.4-2 .5-2 1.8 0 3.6 4.6 7.3 7.4 7.3 1.4 0 2.1-.8 2.3-1.6.1-.5-2.5-1.8-2.9-1.7-.5.1-.9 1-1.3 1-1.4-.4-3-2-3.4-3.3 0-.4.8-.8.9-1.2.1-.3-.6-2-1-2.3Z" fill="currentColor"/>
-          </svg>
-        </button>
-      ) : (
-      <button type="button" disabled={busy || !patientId} onClick={() => void openContact()}>
-        {busy ? 'Abrindo…' : label}
+      <button
+        type="button"
+        aria-label={busy ? 'Abrindo…' : label}
+        title={busy ? 'Abrindo…' : label}
+        disabled={busy || !patientId}
+        onClick={() => void openContact()}
+        style={{
+          ...capoWhatsAppStyle,
+          ...(compact ? { width: 32, height: 32, maxWidth: 32, padding: 4, marginInlineStart: 6, flexShrink: 0 } : {}),
+          opacity: busy || !patientId ? 0.5 : 1,
+        }}
+      >
+        <CapoWhatsAppIcon />
+        {!compact && <span>{busy ? 'Abrindo…' : label.replace(/^💬\s*/, '')}</span>}
       </button>
-      )}
       {feedback && <small role="status">{feedback}</small>}
     </span>
   )
