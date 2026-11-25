@@ -1,3 +1,21 @@
+## 25/11/2026 — VERDE EXECUTADO — CORREÇÃO PONTUAL DA REGRESSÃO DE CONFIRMAÇÕES E REMARCAÇÕES POR LINK
+
+**Autorização:** a Gestora/Titular concedeu VERDE expresso após análise da investigação documental de 25/11 (commit `631c0ef8`). Manutenção delimitada à incompatibilidade entre `notifications.status='resolvida'` e o valor canônico permitido `resolvido`.
+
+**Proteção anterior:** criada a branch GitHub `backup/confirmacoes-antes-status-2026-11-25` antes de qualquer alteração. O arquivo de migração foi versionado na `main`: `supabase/migrations/20261125101000_fix_confirmation_notification_status_capo.sql`, commit `92954eb89e99c36744ec7641996ab80e88e31f96`.
+
+**Confirmação prévia no banco REAL `fftebavlhbfcrvrtnrld`:** `notifications_status_check` permite `pendente`, `visualizado`, `resolvido`. Foi encontrado `status='resolvida'` nos encerramentos de notificações pendentes em cinco funções instaladas: `capo_close_unanswered_on_manual_confirmation()`, `respond_appointment_confirmation_link(text,text)`, `respond_family_psychology_confirmation_link(text,text)`, `rebook_patient_link_cancellation_for_interface(uuid,uuid,timestamp with time zone,text)`, `rebook_family_link_cancellation_for_interface(uuid,timestamp with time zone)`. Outras ocorrências da palavra `resolvida` em telas/chamados técnicos e parâmetros de ação foram preservadas, pois não são o status canônico de `public.notifications`.
+
+**Intervenção mínima:** migração `fix_confirmation_notification_status_capo_20261125` aplicada com sucesso no Supabase. Um bloco SQL verificou a existência e exatamente uma ocorrência de `status='resolvida'` em cada uma dessas cinco funções antes de substituí-la por `status='resolvido'` via `CREATE OR REPLACE FUNCTION` gerado a partir da definição instalada. Não alterou assinatura, lógica de confirmação, prazos dos links, agendamentos, pacientes, notificações existentes, constraints, tabelas, políticas RLS, gatilhos, grants, `SECURITY DEFINER`, `search_path`, controle de isolamento nem UI.
+
+**Verificação posterior no Supabase (somente leitura):** cada uma das cinco funções apresenta zero ocorrências de `status='resolvida'` e uma ocorrência de `status='resolvido'`. Dois gatilhos manuais continuam habilitados: `appointment_previsit_contacts` e `family_psychology_previsit_contacts`. A restrição `notifications_status_check` continua intacta; as ACLs, `SECURITY DEFINER` e `search_path` foram conferidos. As 9 notificações pendentes `appointment_confirmation_unanswered` mantiveram-se pendentes, sem atualização de dados antigos.
+
+**Limite da validação:** confirmada aplicação da migração e consistência estrutural do banco. **Não foram realizados testes operacionais end-to-end em consultas de pacientes reais, nem se declarou sucesso de WhatsApp, clique do link em navegador ou homologação da Titular.** Próximos testes autorizados no fluxo normal: confirmação manual na Home, confirmação por link de paciente e familiar, `não comparecerei` e remarcação, preferencialmente com dados de homologação isolados; depois homologação expressa da Titular. A mera aplicação SQL não prova publicação/deploy da interface.
+
+**Situação:** correção técnica aplicada e verificação estrutural aprovada; homologação operacional ainda pendente. NÃO reconstruir fluxos homologados; reabrir somente com erro concreto e novo VERDE.
+
+---
+
 ## 25/11/2026 — INVESTIGAÇÃO SEM ALTERAÇÃO — regressão das confirmações manual e por link
 
 **Relato da Gestora/Titular:** confirmação manual pela agenda da Home não grava; posteriormente informou que o link de confirmação recebido pelo paciente também falha. A Titular registrou que ambos funcionavam anteriormente e solicitou apuração de regressão **antes de qualquer correção**. Em seguida solicitou explicitamente registrar a investigação neste Documento Mestre. **Não houve VERDE para intervenção funcional ou no banco.**
