@@ -2,6 +2,9 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { RenewalPrescriptionPage } from '../../src/features/renewals/RenewalPrescriptionPage'
+import { reserveCapoWhatsAppTab } from '../../src/components/contact/whatsapp-tab'
+
+vi.mock('../../src/components/contact/whatsapp-tab', () => ({ reserveCapoWhatsAppTab: vi.fn() }))
 import type { AccessContext } from '../../src/types/access'
 
 const professionalContext: AccessContext = {
@@ -80,6 +83,8 @@ function renewalService(result: object) {
       .fn()
       .mockResolvedValue({ status: 'empty' }),
     getPrescriptionRenewalOperationalContext: vi.fn().mockResolvedValue({ status: 'empty' }),
+    getProfessionalCareLocation: vi.fn().mockResolvedValue({ status: 'success', data: { care_location: 'Rua do Médico, 10' } }),
+    getPatientContact: vi.fn().mockResolvedValue({ status: 'success', data: { phone: '35999998888' } }),
     searchReferralPatients: vi.fn().mockResolvedValue({ status: 'empty' }),
   }
 }
@@ -370,6 +375,62 @@ describe('RenewalPrescriptionPage', () => {
 
     expect(service.getPrescriptionRenewalDoctors).not.toHaveBeenCalled()
     expect(service.getPrescriptionRenewalOperationalContext).not.toHaveBeenCalled()
+  })
+
+  it('abre o WhatsApp em um clique na etapa administrativa sem concluir nem confirmar o paciente', async () => {
+    const user = userEvent.setup()
+    const open = vi.fn().mockReturnValue(true)
+    const cancel = vi.fn()
+    vi.mocked(reserveCapoWhatsAppTab).mockReturnValue({ open, cancel })
+    const renewal = {
+      renewal_id: 'r1', patient_id: 'p1', patient_name: 'Paciente de teste',
+      doctor_id: 'd1', doctor_name: 'Dr. Clínico', status: 'awaiting_admin',
+      pickup_location: 'Centro de especialidades', request_note: 'Pedido',
+      updated_at: '2026-11-25T12:00:00Z',
+    }
+    const service = renewalService({ status: 'success', data: [renewal] })
+    service.getPrescriptionRenewalOperationalContext.mockResolvedValue({
+      status: 'success', data: { medical_outcome: 'renewed' },
+    })
+    render(<RenewalPrescriptionPage accessContext={administrativeContext} service={service} />)
+    await user.click(await screen.findByRole('button', { name: /Paciente de teste/ }))
+    expect(await screen.findByText('Rua do Médico, 10')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Avisar paciente — WhatsApp' }))
+    expect(reserveCapoWhatsAppTab).toHaveBeenCalledTimes(1)
+    expect(service.getPatientContact).toHaveBeenCalledWith('p1')
+    expect(open).toHaveBeenCalledTimes(1)
+    const url = String(open.mock.calls[0][0])
+    const message = new URL(url).searchParams.get('text') ?? ''
+    expect(message).toContain('Paciente de teste')
+    expect(message).toContain('Dr. Clínico — Clínico Geral')
+    expect(message).toContain('Centro de especialidades')
+    expect(message).toContain('Rua do Médico, 10')
+    expect(service.managePrescriptionRenewalAdmin).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Paciente contatado/orientado')).not.toBeChecked()
+  })
+
+  it('permite outro endereço somente para a mensagem sem alterar o cadastro', async () => {
+    const user = userEvent.setup()
+    const open = vi.fn().mockReturnValue(true)
+    vi.mocked(reserveCapoWhatsAppTab).mockReturnValue({ open, cancel: vi.fn() })
+    const service = renewalService({ status: 'success', data: [{
+      renewal_id: 'r2', patient_id: 'p2', patient_name: 'Paciente simulado',
+      doctor_id: 'd2', doctor_name: 'Dr. Clínico', status: 'awaiting_admin',
+      pickup_location: 'Recepção', updated_at: '2026-11-25T12:00:00Z',
+    }] })
+    service.getPrescriptionRenewalOperationalContext.mockResolvedValue({
+      status: 'success', data: { medical_outcome: 'renewed' },
+    })
+    render(<RenewalPrescriptionPage accessContext={administrativeContext} service={service} />)
+    await user.click(await screen.findByRole('button', { name: /Paciente simulado/ }))
+    await user.click(screen.getByLabelText('Outro endereço de retirada'))
+    await user.type(screen.getByLabelText('Digite o endereço para este aviso'), 'Avenida Alternativa, 200')
+    await user.click(screen.getByRole('button', { name: 'Avisar paciente — WhatsApp' }))
+    expect(open).toHaveBeenCalledTimes(1)
+    const message = new URL(String(open.mock.calls[0][0])).searchParams.get('text')
+    expect(message).toContain('Avenida Alternativa, 200')
+    expect(service.managePrescriptionRenewalAdmin).not.toHaveBeenCalled()
+    expect(service.getProfessionalCareLocation).toHaveBeenCalledWith('d2')
   })
 
 })
