@@ -175,6 +175,11 @@ export function TransportPage({ accessContext }: Props) {
           phone_responsible: field(data, 'phone_responsible') ?? '',
           email: field(data, 'email') ?? '',
         })
+        const savedChannels = Array.isArray(data.selected_channels)
+          ? data.selected_channels.filter((value): value is ContactKey =>
+            value === 'whatsapp_primary' || value === 'phone_responsible' || value === 'email')
+          : []
+        setSelectedContacts(savedChannels)
       } else if (result.status === 'error') {
         setFeedback('Não foi possível carregar contatos do Transporte: ' + result.error.message)
       }
@@ -322,7 +327,16 @@ export function TransportPage({ accessContext }: Props) {
           phone_responsible: field(data, 'phone_responsible') ?? '',
           email: field(data, 'email') ?? '',
         })
-        setFeedback('Contatos institucionais do Transporte salvos.')
+        const chosenChannels = selectedContacts.filter((key) => Boolean(contacts[key].trim()))
+        const savedSelection = await getRpcService().setTransportSectorChannels(chosenChannels)
+        if (savedSelection.status === 'success') {
+          setSelectedContacts(chosenChannels)
+          setFeedback('Contatos e destinatários selecionados do Transporte salvos.')
+        } else {
+          setFeedback(savedSelection.status === 'error'
+            ? 'Contatos salvos, mas a seleção dos destinatários não foi confirmada: ' + savedSelection.error.message
+            : 'Contatos salvos, mas a seleção dos destinatários não foi confirmada.')
+        }
       } else {
         setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou os contatos.')
       }
@@ -899,13 +913,13 @@ export function TransportPage({ accessContext }: Props) {
                 <legend>Destinatários do encaminhamento</legend>
                 {CONTACT_FIELDS.map(({ key, label }) => (
                   <label key={key}>
-                    <input type="checkbox" disabled={!contacts[key].trim()}
+                    <input type="checkbox" disabled={!isManager || !contacts[key].trim()}
                       checked={selectedContacts.includes(key)}
                       onChange={(event) => chooseContact(key, event.target.checked)} />
                     {label}
                   </label>
                 ))}
-                <small>Marque um, dois ou três contatos. Cada canal abre individualmente.</small>
+                <small>O Gestor seleciona os destinatários que aparecerão após gerar o link. Clique em Salvar contatos para manter a seleção nos próximos acessos.</small>
               </fieldset>
             )}
               </div>
