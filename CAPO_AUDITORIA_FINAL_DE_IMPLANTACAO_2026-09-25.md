@@ -1,3 +1,27 @@
+## 25/11/2026 — VERDE — correção pontual de confirmação indevida no reagendamento de primeira consulta pelo link
+
+**Relato da Gestora/Titular:** o Administrativo tentou reagendar primeira consulta solicitada pelo link do paciente e o CAPO passou a pedir uma confirmação adicional fora do fluxo. Após investigação somente leitura, Gestora/Titular autorizou expressamente: **VERDE**.
+
+**Causa identificada no código:** `src/features/agenda/AgendaPage.tsx`, função `createAppointment`, executava a verificação de consulta ativa e mostrava a mensagem **"Consulta anterior ainda ativa / Esta consulta é adicional. Manter os dois agendamentos"** mesmo quando a origem era `patient_link_cancellation`. A função já possuía caminho dedicado `rebookPatientLinkCancellation`, com validações no banco para a consulta original cancelada pelo link; a confirmação de vaga adicional é específica do agendamento comum, não da remarcação do link. O botão da interface também exigia `appointmentType` para todos os casos, embora o caminho específico de link recupere o tipo original no banco e o tratamento da ação já faça a exceção.
+
+**Proteção:** branch `backup/agenda-link-primeira-consulta-antes-correcao-2026-11-25` criada a partir da `main` imediatamente antes da intervenção.
+
+**Manutenção cirúrgica:** commit `2a8aabb9b6fe609d39f1efbab34a8b9da726bf55`, **somente** `src/features/agenda/AgendaPage.tsx`:
+1. Conferência para **consulta adicional** e checkbox são executados/exibidos somente para agendamento administrativo **comum**, não quando `origin=patient_link_cancellation` e o identificador da consulta cancelada foi carregado.
+2. Ao carregar solicitação do link, limpar alerta/aceite anterior de vaga adicional, evitando estado residual da tela.
+3. Botão administrativo em origem de link passa a exibir **"Confirmar remarcação"** e aceita o tipo a partir do registro original, sem exigir seleção redundante. Fora desse caminho, o tipo obrigatório e a regra de confirmação extra mantêm-se íntegros.
+4. Preservar explicitamente `rebookPatientLinkCancellation`, que valida consulta original cancelada, vínculo correto de paciente/profissional/ciclo/especialidade, inexistência de novo agendamento ativo vinculado e resolução administrativa da notificação após gravar. Não alterar status, dados de consultas, notificações ou RLS no Supabase, nem fluxo de familiar/cuidador ou confirmação de presença.
+
+**Verificação estática pós-commit:** leitura da `main` confirmou 8/8 condições relevantes: chamada da RPC específica preservada, bloqueio comum mantido, alerta de vaga adicional oculto na origem link, aceite residual limpo, exceção de tipo no botão, novo rótulo, aviso de duplicidade comum preservado, demais chamadas inalteradas. **Nenhum paciente real foi reagendado para testar.**
+
+**Limitação:** workflow `Validate production build` do GitHub Actions para o commit `2a8aabb9b` retornou **failure**, assim como a execução imediatamente anterior `7f82bf74`. Logs de jobs não disponíveis nesta sessão; não é possível afirmar se a falha se relaciona a esta alteração, nem comprovar build, deploy na Cloudflare ou clique autenticado nos perfis. **Implementado no código; compilação/publicação/homologação funcional ainda NÃO comprovadas.**
+
+**Teste obrigatório em homologação:** (1) paciente de teste envia "Não poderei comparecer" pelo link; (2) administrativo abre notificação e seleção do paciente com consulta originalmente de primeiro atendimento; (3) escolhe novo horário; (4) não surge confirmação de consulta adicional; (5) um clique em "Confirmar remarcação" conclui a RPC dedicada e resolve aviso; (6) nova consulta mantém tipo original, mesmo profissional, especialidade e ciclo, enquanto original permanece cancelada/auditável; (7) WhatsApp abre texto de aviso manual; (8) agendamento normal com conflito continua exigindo confirmação de consulta adicional; (9) produção e `manuteste` mantêm isolamento.
+
+**Estado:** alteração de código registrada em `main`, **não homologada**; nenhuma mudança no banco ou nos dados reais.
+
+---
+
 ## 25/11/2026 — VERDE EXECUTADO — reestruturação da página de Transporte, protocolos, acompanhamento e PDF
 
 **Autorização expressa:** após registro do desenho estrutural no Documento Mestre (`fc0c19aa`), Gestora/Titular autorizou: **"verde para as atualizações"**. Escopo implementado: interface administrativa de Transporte, novos protocolos por solicitação, filas/abas, contatos na própria tela, busca, autoria/canal, PDF e mensagens, conclusão individual sem PDF obrigatório, preservando separação entre necessidade geral e protocolos. **Não foi autorizada e nem realizada modificação em agendas, prontuários, cadastros clínicos ou transportes reais para teste.**
