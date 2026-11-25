@@ -8,6 +8,7 @@ import { AgendaPage } from '../agenda/AgendaPage'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
+import { nutritionDownloadFilename } from '../../lib/pdf/nutrition-download-filename'
 import { buildNutritionDocumentPdf } from '../../lib/pdf/nutrition-document-pdf'
 import './nutrition-document.css'
 
@@ -473,12 +474,12 @@ export function NutritionPage({
     setBusy(false)
   }
 
-  async function openNutritionStoragePath(path: string, download: boolean) {
+  async function openNutritionStoragePath(path: string, download: boolean, officialDocument: NutritionRecord | null = null) {
     if (!path || busy) return
     setBusy(true)
     const { data, error } = await getSupabaseClient()
       .storage.from('capo-documents')
-      .createSignedUrl(path, 120, download ? { download: true } : undefined)
+      .createSignedUrl(path, 120, download ? { download: nutritionDownloadFilename(officialDocument) } : undefined)
     if (error || !data?.signedUrl) {
       setManagementFeedback(error?.message ?? 'Não foi possível abrir o PDF nutricional.')
       setBusy(false)
@@ -505,7 +506,7 @@ export function NutritionPage({
     }
     const { data, error } = await getSupabaseClient()
       .storage.from('capo-documents')
-      .createSignedUrl(path, 120, download ? { download: true } : undefined)
+      .createSignedUrl(path, 120, download ? { download: nutritionDownloadFilename(result.data as NutritionRecord) } : undefined)
     if (error || !data?.signedUrl) {
       setManagementFeedback(error?.message ?? 'Não foi possível abrir o PDF nutricional.')
       setBusy(false)
@@ -683,7 +684,7 @@ export function NutritionPage({
                 {field(document, 'pdf_path') && (
                   <>
                     <button type="button" disabled={busy} onClick={() => void openNutritionStoragePath(field(document, 'pdf_path') ?? '', false)}>Visualizar PDF</button>
-                    <button type="button" disabled={busy} onClick={() => void openNutritionStoragePath(field(document, 'pdf_path') ?? '', true)}>Baixar PDF</button>
+                    <button type="button" disabled={busy} onClick={() => void openNutritionStoragePath(field(document, 'pdf_path') ?? '', true, document)}>Baixar PDF</button>
                     <button type="button" disabled={busy} onClick={() => void requestAdministrativeDelivery()}>Enviar ao Administrativo</button>
                   </>
                 )}
