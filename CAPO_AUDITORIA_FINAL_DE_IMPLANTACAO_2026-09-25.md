@@ -1,3 +1,19 @@
+## 25/11/2026 — INVESTIGAÇÃO: Maria do Bom Parto visualiza PDF anterior apesar do novo modelo de Transporte
+
+**Relato:** Gestora/Titular informa que a solicitação da paciente Maria do Bom Parto está “em processamento” e que, ao clicar em Visualizar PDF, aparece a estética antiga; pediu investigação, sem novo VERDE para alteração funcional.
+
+**Evidência Supabase, leitura do registro exato:** pedido `ae365b56-7a9a-4899-810a-a9a52b1754cc` da paciente Maria do Bom Parto Santos Sousa, status armazenado `confirmado`, criado em **25/11/2026 10:38:31 (America/Sao_Paulo)**, PDF oficial vinculado em **10:40:29**, caminho privado `transport/ae365b56-7a9a-4899-810a-a9a52b1754cc/solicitacao-transporte-1795614047552.pdf`; confirmação/preparação do PDF em **10:55:05**. Os horários de gravação no Supabase estavam em UTC (+00), convertidos para Brasília (-03). Não houve alteração de dados do paciente, documento ou solicitação.
+
+**Causa do PDF antigo persistente, confirmada pelo código:** `src/features/transport/TransportPage.tsx`, botão `openPdf(request,false)`, solicita `getTransportDocument(id)`, recupera **`request_pdf_path` já persistido** e cria URL assinada com `storage.from('capo-documents').createSignedUrl(path,120)`. Portanto **Visualizar PDF apenas abre o arquivo existente, não regenera com o modelo novo**. O modelo suave foi versionado em `src/lib/pdf/capo-transport-request-pdf.ts` (commit `c8f5b49e`) e integrado exclusivamente para **nova geração** no `TransportPage.tsx` (commit `e94bf0e2`). O fato de haver código novo na GitHub `main` não modifica o PDF já armazenado. **Não foi confirmado nesta verificação se o deploy Cloudflare que o usuário abriu já continha o commit**; não atribuir a falta de atualização unicamente a cache ou deploy sem evidência.
+
+**Situação e causa distinta de “em processamento”:** o estado persistido no banco é `confirmado`, com `request_pdf_signed_at` e `pdf_prepared_at` definidos. A frase de exibição “Em processamento” é rótulo genérico da interface para itens da fila administrativa, não prova que o PDF esteja sendo processado ou recriado.
+
+**Solução proposta, sem execução:** preservar e auditar o PDF assinado/preparado antigo; para pedidos já documentados e que precisem do novo layout, desenhar opção explícita de **gerar nova versão do documento**, sem sobrescrever silenciosamente o arquivo vigente nem alterar autoria/data/status/encaminhamentos; confirmar primeiro impacto no fluxo de confirmação/preparo e link externo e, se necessário, homologar em `manuteste` com aprovação VERDE. Para novos pedidos, verificar Cloudflare Pages deploy da `main` e emitir um PDF novo no contexto isolado antes de homologação. Não reabrir regras de Transporte homologadas sem autorização.
+
+**Estado:** investigação concluída por leitura do GitHub e Supabase, sem alteração funcional, sem substituição de PDF real; depende de novo VERDE para implementar regeneração/versionamento de PDFs já emitidos.
+
+---
+
 ## 25/11/2026 — VERDE: estética suave do PDF oficial de Transporte sem mudar o fluxo e com autoria nominal
 
 **Pedido e aprovação:** Gestora/Titular aprovou o modelo visual apresentado para o PDF oficial da solicitação de Transporte, depois pediu tons mais suaves conforme a logo CAPO (azul claro/verde), títulos maiores centralizados e em negrito, texto de justificativa justificado, endereço residencial sem repetição quando o embarque é igual ao cadastro, periodicidade destacada, bloco final objetivo sem linha de assinatura e com nomes de quem solicitou e quem gerou o documento. Durante a implementação esclareceu **“no final nome do administrativo”** e solicitou explicitamente **verificar o fluxo como foi montado e mantê-lo**. O VERDE foi restrito a essa apresentação; o vínculo entre solicitante e emissor permanece o do sistema.
