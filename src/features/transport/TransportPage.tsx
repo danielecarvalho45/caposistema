@@ -557,7 +557,7 @@ export function TransportPage({ accessContext }: Props) {
       gmailTab.opener = null
       gmailTab.focus()
       setChannel('Gmail — ' + destination)
-      setFeedback('Gmail aberto com a mensagem preparada. Confira o destinatário, o link e envie manualmente.')
+      setFeedback('Gmail aberto. Confira destinatário, link e se sua assinatura com a logo CAPO apareceu antes de enviar. O Gmail controla sua assinatura automática.')
       return
     }
 
@@ -1309,6 +1309,9 @@ export function TransportPage({ accessContext }: Props) {
                 <li key={id || index}>
                   <strong>{patientName || 'Paciente'}</strong>
                   <small>Protocolo: {field(request, 'protocol') || 'Não informado'} · Solicitante: {field(request, 'requested_by') || 'Não identificado'}</small>
+                  <small>Canal: {field(request, 'external_channel') || 'Ainda não encaminhado'}</small>
+                  {field(request,'external_forwarded_at') && <small>Encaminhado em: {new Date(field(request,'external_forwarded_at') || '').toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour12:false})}</small>}
+                  {!selectedRequestId && <button type="button" disabled={busy} onClick={() => setSelectedRequestId(id)}>Acompanhar este protocolo</button>}
                   <span>{status}</span>
                   <small>{field(request, 'appointment_id') ? 'Agendamento vinculado' : 'Solicitação genérica (sem agendamento)'}</small>
                   <small>{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
