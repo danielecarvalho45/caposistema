@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
@@ -1127,7 +1128,7 @@ export function TransportPage({ accessContext }: Props) {
                 <div className="transport-reminder-entry">
                   <strong>{field(item, 'patient_name') ?? 'Paciente'}</strong>
                   <small>{field(item, 'periodicity') === 'quinzenal' ? 'Quinzenal' : 'Semanal'} · {field(item, 'next_visit_date') ?? ''} · {field(item, 'appointment_time') ?? ''}</small>
-                  <button type="button" onClick={() => openManualReminder(item)}>✉ Abrir lembrete no WhatsApp</button>
+                  <button type="button" style={capoWhatsAppStyle} onClick={() => openManualReminder(item)}><CapoWhatsAppIcon /> Abrir lembrete no WhatsApp</button>
                 </div>
               </li>
             ))}
@@ -1408,10 +1409,11 @@ export function TransportPage({ accessContext }: Props) {
                           <p>Selecione o destinatário em Contatos do Transporte para abrir a mensagem.</p>
                         )}
                         {selectedContacts.map((key) => contacts[key].trim() ? (
-                          <button type="button" key={key} disabled={busy || verifiedShareRequestId !== id}
+                          <button type="button" key={key} style={key === 'email' ? undefined : capoWhatsAppStyle} disabled={busy || verifiedShareRequestId !== id}
                             onClick={() => openTransportChannel(key, request)}>
+                            {key !== 'email' && <CapoWhatsAppIcon />}
                             {key === 'email' ? '✉ ' + contacts[key] : key === 'phone_responsible'
-                              ? '☏ WhatsApp responsável · ' + contacts[key] : '✉ WhatsApp setor · ' + contacts[key]}
+                              ? 'WhatsApp responsável · ' + contacts[key] : 'WhatsApp setor · ' + contacts[key]}
                           </button>
                         ) : null)}
                         {verifiedShareRequestId !== id && <small>Envio bloqueado até a validação automática do link. Use Gerar link para verificar novamente.</small>}
