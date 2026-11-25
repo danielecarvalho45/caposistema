@@ -3,6 +3,7 @@ import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
+import { buildTransportOfficialPdf } from '../../lib/pdf/capo-transport-request-pdf'
 import './transport-contacts.css'
 
 type TransportRecord = Readonly<Record<string, unknown>>
@@ -65,66 +66,6 @@ function wrapLine(value: string, width = 86) {
   }
   if (current) lines.push(current)
   return lines
-}
-
-function buildTransportPdfBlob(input: Readonly<{
-  patientName: string
-  cms: string | null
-  capoNumber: string | null
-  registeredAddress: string | null
-  boardingAddress: string
-  periodicity: 'unica' | 'semanal' | 'quinzenal'
-  reason: string
-  requestedBy: string
-  requestedByRole: string | null
-  issuer: string
-  issuerRole: string
-  appointmentLabel: string | null
-  professionalName: string | null
-  specialty: string | null
-  careLocation: string | null
-}>) {
-  const cadence = input.periodicity === 'semanal' ? 'Semanal' :
-    input.periodicity === 'quinzenal' ? 'Quinzenal' : 'Consulta única'
-  const lines = [
-    'SOLICITAÇÃO OFICIAL DE TRANSPORTE — CAPO',
-    '',
-    'Ao Setor de Transportes da Secretaria Municipal de Saúde.',
-    '',
-    'IDENTIFICAÇÃO DO PACIENTE',
-    `Nome completo: ${input.patientName}`,
-    `Número CAPO: ${input.capoNumber ?? 'Não informado no cadastro'}`,
-    `Número CMS: ${input.cms ?? 'Não informado no cadastro'}`,
-    `Endereço residencial cadastrado: ${input.registeredAddress ?? 'Não informado no cadastro'}`,
-    '',
-    'TRAJETO SOLICITADO',
-    `Local de embarque (onde buscar o paciente): ${input.boardingAddress}`,
-    input.appointmentLabel ? `Data e horário da consulta: ${input.appointmentLabel}` : 'Solicitação genérica — sem consulta vinculada.',
-    input.professionalName ? `Profissional que atenderá: ${input.professionalName}` : '',
-    input.specialty ? `Especialidade: ${input.specialty}` : '',
-    input.appointmentLabel ? `Local de atendimento / destino: ${input.careLocation ?? 'Endereço do atendimento não informado — conferir antes do envio.'}` : '',
-    `Periodicidade informada: ${cadence}`,
-    '',
-    'JUSTIFICATIVA DO TRANSPORTE',
-    input.reason,
-    '',
-    'RESPONSABILIDADE E EMISSÃO',
-    `Solicitado por: ${input.requestedBy}`,
-    `Função do solicitante: ${input.requestedByRole ?? 'Não informada'}`,
-    `Documento emitido por: ${input.issuer}`,
-    `Função do emitente: ${input.issuerRole}`,
-    `Data da emissão: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })}`,
-    '',
-    'Assinatura institucional — identificação do login emissor:',
-    input.issuer,
-    input.issuerRole,
-    'Documento gerado pelo sistema CAPO. Identificação de autoria; não constitui assinatura digital certificada.',
-  ].flatMap((line) => wrapLine(line, 84))
-
-  return buildCapoDocumentPdf(lines, {
-    fontSize: 10, lineHeight: 14, linesPerPage: 40,
-    generatedBy: input.issuer, generatedByRole: input.issuerRole,
-  })
 }
 
 function buildTransportClosurePdfBlob(input: Readonly<{
@@ -699,18 +640,18 @@ export function TransportPage({ accessContext }: Props) {
     const appointmentLabel = appointmentDate
       ? new Date(appointmentDate).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false })
       : null
-    const blob = buildTransportPdfBlob({
+    const blob = buildTransportOfficialPdf({
       patientName: patientName || field(patient, 'full_name') || 'Paciente',
       cms: field(patient, 'cms'),
       capoNumber: field(patient, 'patient_number'),
       registeredAddress: field(patient, 'address'),
       boardingAddress: boarding,
+      boardingSource: field(request, 'boarding_source') === 'alternativo' ? 'alternativo' : 'cadastro',
       periodicity: cadence,
       reason: notes,
       requestedBy: field(request, 'requested_by') ?? 'Não identificado',
       requestedByRole: field(request, 'requested_by_role'),
       issuer: accessContext.full_name ?? accessContext.username,
-      issuerRole,
       appointmentLabel,
       professionalName: field(request, 'appointment_professional'),
       specialty: field(request, 'appointment_specialty'),
