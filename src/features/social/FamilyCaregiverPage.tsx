@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -365,6 +366,7 @@ export function FamilyCaregiverPage({
                 context.active_link.phone.trim() && (
                   <button
                     type="button"
+                    style={capoWhatsAppStyle}
                     onClick={() =>
                       openFamilyWhatsApp(
                         String(context.active_link?.phone ?? ''),
@@ -376,7 +378,7 @@ export function FamilyCaregiverPage({
                       )
                     }
                   >
-                    WhatsApp do familiar
+                    <CapoWhatsAppIcon /> WhatsApp do familiar
                   </button>
                 )}
             </>
