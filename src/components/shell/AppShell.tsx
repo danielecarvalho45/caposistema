@@ -24,13 +24,14 @@ function normalized(value: string | null | undefined) {
   return cleanValue || null
 }
 
-function AccumulatedIcon({ kind }: { kind: 'inicio' | 'operacional' | 'profissional' | 'gestor' | 'ti' | 'sair' }) {
+function AccumulatedIcon({ kind }: { kind: 'inicio' | 'operacional' | 'profissional' | 'gestor' | 'agenda' | 'ti' | 'sair' }) {
   return (
     <svg width="28" height="28" viewBox="0 0 34 34" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {kind === 'inicio' && <path d="M3 15L17 3 31 15 M7 13V30H27V13 M14 30V20H20V30" />}
       {kind === 'operacional' && <><rect x="6" y="6" width="22" height="25" rx="3" /><rect x="12" y="2" width="10" height="7" rx="2" fill="var(--titular-light)" /><path d="M11 15H23 M11 21H23 M11 27H19" /></>}
       {kind === 'profissional' && <><path d="M5 3V11A7 7 0 0 0 19 11V3 M3 3H7 M17 3H21 M12 18V24A6 6 0 0 0 24 24V17"/><circle cx="24" cy="13" r="4"/></>}
       {kind === 'gestor' && <><circle cx="12" cy="9" r="6" /><path d="M1 30V26Q1 17 12 17T23 26V30 M24 3Q36 8 25 15 M26 19Q33 21 33 29" /></>}
+      {kind === 'agenda' && <><rect x="3" y="6" width="28" height="25" rx="3"/><path d="M3 13H31 M10 2V10 M24 2V10"/><circle cx="19" cy="22" r="6"/><path d="M19 18V22L22 24"/></>}
       {kind === 'ti' && <><rect x="2" y="3" width="30" height="21" rx="3" /><path d="M5 19H29 M17 24V30 M8 31H26 M10 9L14 12L10 15 M18 15H25" /></>}
       {kind === 'sair' && <path d="M15 4H5V30H15 M12 17H31 M24 10L31 17 24 24" />}
     </svg>
@@ -59,6 +60,31 @@ const accumulatedMenuStyles = `
 .app-sidebar--accumulated .titular-menu-button:active, .app-sidebar--accumulated .titular-menu-button[aria-expanded="true"] { transform: translateY(2px); box-shadow: 0 2px 0 var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 65%); }
 .app-sidebar--accumulated .titular-menu-button:focus-visible { outline: 2px solid var(--titular-ink); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .app-sidebar--accumulated .titular-menu-button { transition: none; } }
+`
+
+const professionalMenuStyles = `
+.app-sidebar--professional .titular-menu-button {
+  --titular-light: rgb(235 246 255 / 78%); --titular-base: rgb(184 213 234 / 49%); --titular-edge: rgb(91 135 171 / 32%); --titular-ink: #365d7e;
+  box-sizing: border-box; display: flex; align-items: center; gap: 12px;
+  width: calc(100% - 16px); min-height: 54px; margin: 8px 8px 16px; padding: 10px 12px;
+  border: 1px solid rgb(255 255 255 / 75%); border-radius: 12px;
+  background: linear-gradient(170deg, var(--titular-light), var(--titular-base));
+  box-shadow: 0 3px 0 var(--titular-edge), 0 5px 10px -4px var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 68%);
+  backdrop-filter: blur(3px);
+  color: var(--titular-ink); line-height: 1.2; font-family: inherit; font-size: 15px; font-weight: 600;
+  text-decoration: none; text-align: left; cursor: pointer; transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.app-sidebar--professional .titular-menu-button[data-tone="profissional"] { --titular-light: rgb(255 239 245 / 78%); --titular-base: rgb(230 188 205 / 48%); --titular-edge: rgb(160 106 130 / 30%); --titular-ink: #79425c; }
+.app-sidebar--professional .titular-menu-button[data-tone="gestor"] { --titular-light: rgb(255 249 229 / 80%); --titular-base: rgb(235 216 158 / 48%); --titular-edge: rgb(156 129 67 / 30%); --titular-ink: #765b22; }
+.app-sidebar--professional .titular-menu-button[data-tone="ti"] { --titular-light: rgb(242 250 235 / 80%); --titular-base: rgb(190 215 177 / 48%); --titular-edge: rgb(100 140 83 / 30%); --titular-ink: #46673c; }
+.app-sidebar--professional .titular-menu-button[data-tone="sair"] { --titular-light: rgb(249 241 255 / 78%); --titular-base: rgb(215 197 231 / 48%); --titular-edge: rgb(130 106 158 / 30%); --titular-ink: #654c7c; width: auto; min-height: 34px; padding: 5px 18px; margin: 10px auto 8px; border-radius: 999px; gap: 7px; font-size: 12px; box-shadow: 0 2px 0 var(--titular-edge), 0 4px 7px -3px var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 70%); }
+.app-sidebar--professional .titular-menu-button[data-tone="sair"] svg { width: 19px; height: 19px; }
+.app-sidebar--professional .titular-menu-button svg { flex-shrink: 0; }
+.app-sidebar--professional .titular-menu-button .titular-chevron { margin-left: auto; width: auto; font-size: 13px; }
+.app-sidebar--professional .titular-menu-button:hover { transform: translateY(-1px); }
+.app-sidebar--professional .titular-menu-button:active, .app-sidebar--professional .titular-menu-button[aria-expanded="true"] { transform: translateY(1px); box-shadow: 0 1px 0 var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 65%); }
+.app-sidebar--professional .titular-menu-button:focus-visible { outline: 2px solid var(--titular-ink); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .app-sidebar--professional .titular-menu-button { transition: none; } }
 `
 
 export function AppShell({
@@ -131,6 +157,8 @@ export function AppShell({
   const knownRoles = ['administrativo_operacional', 'profissional', 'administrador', 'coordenador', 'administrador_tecnico']
   const multipleRoles = knownRoles.filter(hasRole).length > 1
   const primaryRole = accessContext.primary_context.code
+  const singleProfessional = primaryRole === 'profissional' && hasRole('profissional') && new Set(accessContext.roles.map((role) => role.code)).size === 1
+  const groupedMenu = multipleRoles || singleProfessional
   const mainItems = [...primaryNavigation.filter((item) => item.path !== '/'), ...managementNavigation]
   const professionalOnlyPaths = ['/minha-agenda/gerenciar', '/minha-agenda/solicitar-alteracao', '/assistencia-social', '/luto']
   const professionalItems = hasRole('profissional') && primaryRole !== 'profissional'
@@ -139,13 +167,26 @@ export function AppShell({
   const operationalOnlyPaths = ['/faltosos', '/busca-ativa']
   const operationalItems = hasRole('administrativo_operacional') && mainArea !== 'operacional' ? mainItems.filter((item) => operationalOnlyPaths.includes(item.path)) : []
   const primaryItems = mainItems.filter((item) => !operationalItems.includes(item))
-  const groups = [
+  const accumulatedGroups = [
     { id: 'operacional', label: 'Operacional', tone: 'operacional', icon: 'operacional' as const, items: mainArea === 'operacional' ? primaryItems.filter((item) => !professionalItems.includes(item)) : operationalItems },
     { id: 'profissional', label: 'Profissional', tone: 'profissional', icon: 'profissional' as const, items: mainArea === 'profissional' ? primaryItems : professionalItems },
     { id: 'gestor', label: 'Gestor', tone: 'gestor', icon: 'gestor' as const, items: accumulatedNavigation.filter((item) => item.path.startsWith('/gestor/')) },
     { id: 'coordenacao', label: 'Coordenação', tone: 'gestor', icon: 'gestor' as const, items: [...(mainArea === 'coordenacao' ? primaryItems.filter((item) => !professionalItems.includes(item)) : []), ...accumulatedNavigation.filter((item) => item.path === '/coordenacao')] },
     { id: 'ti', label: 'TI', tone: 'ti', icon: 'ti' as const, items: [...(mainArea === 'ti' ? primaryItems.filter((item) => !professionalItems.includes(item)) : []), ...technicalNavigation] },
   ].filter((group) => group.items.length > 0)
+  // Classify existing authorized destinations by activity, not by new permissions.
+  const adminPaths: readonly AppRoute[] = ['/solicitacoes', '/encaminhamentos', '/transporte', '/comunicacao', '/notificacoes', '/odontologia']
+  const agendaPaths: readonly AppRoute[] = ['/minha-agenda/gerenciar', '/minha-agenda/solicitar-alteracao']
+  const supportPaths: readonly AppRoute[] = ['/suporte', '/tecnica']
+  const professionalLinks = [...mainItems, ...technicalNavigation, ...accumulatedNavigation]
+  const professionalGroups = [
+    { id: 'atendimento', label: 'Atendimento ao Paciente', tone: 'profissional', icon: 'profissional' as const, items: professionalLinks.filter((item) => !adminPaths.includes(item.path) && !agendaPaths.includes(item.path) && !supportPaths.includes(item.path)) },
+    { id: 'administrativo', label: 'Solicitações Administrativas', tone: 'gestor', icon: 'operacional' as const, items: professionalLinks.filter((item) => adminPaths.includes(item.path)) },
+    { id: 'agenda', label: 'Gestão da Minha Agenda', tone: 'inicio', icon: 'agenda' as const, items: professionalLinks.filter((item) => agendaPaths.includes(item.path)) },
+    { id: 'manutencao', label: 'Suporte e Manutenção', tone: 'ti', icon: 'ti' as const, items: professionalLinks.filter((item) => supportPaths.includes(item.path)) },
+  ].filter((group) => group.items.length > 0)
+  const groups = singleProfessional ? professionalGroups : accumulatedGroups
+
   useEffect(() => {
     mainRef.current?.focus()
   }, [activePath])
@@ -220,7 +261,7 @@ export function AppShell({
     <div className="app-shell">
       <aside
         id="app-sidebar"
-        className={`app-sidebar${menuOpen ? ' is-open' : ''}${multipleRoles ? ' app-sidebar--accumulated' : ''}`}
+        className={`app-sidebar${menuOpen ? ' is-open' : ''}${singleProfessional ? ' app-sidebar--professional' : multipleRoles ? ' app-sidebar--accumulated' : ''}`}
         aria-label="Navegação do CAPO"
       >
         <div className="app-brand">
@@ -235,9 +276,9 @@ export function AppShell({
           </button>
         </div>
 
-        {multipleRoles && <style>{accumulatedMenuStyles}</style>}
+        {groupedMenu && <style>{singleProfessional ? professionalMenuStyles : accumulatedMenuStyles}</style>}
         <nav className="app-nav" aria-label="Navegação principal">
-          {multipleRoles ? <>
+          {groupedMenu ? <>
             <Link className="titular-menu-button" data-tone="inicio" to="/" aria-current={currentPath === '/' ? 'page' : undefined} onClick={() => setExpandedArea(null)}><AccumulatedIcon kind="inicio" /> Início</Link>
             {groups.map((group) => <div key={group.id}>
               <button className="titular-menu-button" data-tone={group.tone} type="button" aria-expanded={expandedArea === group.id} aria-controls={`app-area-${group.id}`} onClick={() => setExpandedArea((current) => current === group.id ? null : group.id)}>
@@ -328,14 +369,14 @@ export function AppShell({
         </nav>
 
         <button
-          className={multipleRoles ? 'titular-menu-button' : 'app-logout'}
-          data-tone={multipleRoles ? 'sair' : undefined}
+          className={groupedMenu ? 'titular-menu-button' : 'app-logout'}
+          data-tone={groupedMenu ? 'sair' : undefined}
           type="button"
           disabled={loggingOut}
           aria-busy={loggingOut}
           onClick={() => void logout()}
         >
-          {multipleRoles ? <AccumulatedIcon kind="sair" /> : <span aria-hidden="true">↪</span>}
+          {groupedMenu ? <AccumulatedIcon kind="sair" /> : <span aria-hidden="true">↪</span>}
           <span>{loggingOut ? 'Saindo…' : 'Sair'}</span>
         </button>
 
