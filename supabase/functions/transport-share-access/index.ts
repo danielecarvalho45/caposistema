@@ -40,8 +40,18 @@ Deno.serve(async (request: Request) => {
     const { data, error } = pin
       ? await db.rpc("open_transport_share_for_edge", { p_token: token, p_pin: pin })
       : await db.rpc("open_transport_direct_share_for_edge", { p_token: token });
-    if (error || !data || !Array.isArray(data.documents)) {
-      return respond({ error: "Link indisponível. O prazo de acesso à documentação terminou ou o link foi revogado. Solicite outro ao CAPO." }, 403);
+    if (error) {
+      return respond({ error: "Falha técnica na validação do acesso. Contate o CAPO." }, 503);
+    }
+    if (!data || !Array.isArray(data.documents)) {
+      const reason = typeof data?.status === "string" ? data.status : "invalid";
+      const errors: Record<string,string> = {
+        revoked: "Este link foi revogado pelo CAPO. Solicite um novo link.",
+        expired: "O prazo de 24 horas terminou. Solicite um novo link ao CAPO.",
+        unavailable: "A documentação desta solicitação está indisponível. Contate o CAPO.",
+        invalid: "Link não encontrado ou inválido. Confira o endereço recebido.",
+      };
+      return respond({ error: errors[reason] || errors.invalid, reason }, reason === "unavailable" ? 404 : 403);
     }
     // A URL do arquivo nunca pode sobreviver à validade do link da solicitação.
     const remainingSeconds = Math.floor((new Date(data.expires_at).getTime() - Date.now()) / 1000);
