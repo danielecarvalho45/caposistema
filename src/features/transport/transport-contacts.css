@@ -123,6 +123,26 @@
   font: inherit;
 }
 
+/* Seleção opcional de veículo salva com um clique na própria solicitação. */
+.transport-vehicle-selection {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: .55rem 0;
+}
+.transport-vehicle-selection strong { flex-basis: 100%; }
+.transport-vehicle-selection button[aria-pressed="true"] {
+  background: #fff1f7;
+  color: #960038;
+  border: 2px solid #d80055;
+  font-weight: 700;
+}
+.transport-vehicle-selection small {
+  flex-basis: 100%;
+  color: var(--color-text-secondary, #596b79);
+}
+
 /* Caixa de entrada operacional: somente os itens necessários para agir. */
 .transport-queue-head {
   display: flex;
