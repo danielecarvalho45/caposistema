@@ -1,3 +1,18 @@
+## 25/11/2026 — VERDE: WhatsApp independente para aviso de receita pronta no Administrativo
+
+**Relato e decisão da Titular:** na tela de Detalhes da Renovação de Receita, status `Aguardando processamento administrativo`, a receita já foi marcada como pronta pelo Clínico Geral e foi informado um local de retirada. A Titular solicitou botão `Avisar paciente — WhatsApp` visível nesse momento, com **um único clique abrindo automaticamente a aba de WhatsApp do CAPO e preenchendo a mensagem**. O aviso deve ser **independente** de concluir a receita e da confirmação `Paciente contatado/orientado`. Endereço cadastrado do médico fica marcado por padrão; operador pode escolher `Outro endereço de retirada` e digitar local alternativo **somente para o aviso**, sem modificar o cadastro original.
+
+**Preservação:** criada a branch `backup/receita-antes-aviso-whatsapp-2026-11-25`, apontando para `bfdab2e0e314b478a92728d75029e5b16ef2fca3`. Reversão deve atingir apenas os arquivos/trechos desta manutenção, preservando correções posteriores e o fluxo médico/administrativo já homologado.
+
+**Implementação cirúrgica no GitHub `main`:**
+- `src/features/renewals/RenewalPrescriptionPage.tsx`: na etapa administrativa, exclusivamente se `getPrescriptionRenewalOperationalContext` confirmar `medical_outcome='renewed'`, mostra seleção de endereço cadastrado do profissional via RPC já existente `getProfessionalCareLocation(doctor_id)`, ou endereço alternativo digitado localmente. Ao clicar no botão, usa `reserveCapoWhatsAppTab` de forma síncrona para reservar/reutilizar a aba, consulta o telefone permitido com `getPatientContact(patient_id)` e navega para `web.whatsapp.com/send` com mensagem preenchida incluindo paciente, nome do médico e especialidade Clínica Geral, local indicado pelo médico, endereço escolhido e assinatura do login. Se endereço/telefone faltar, não envia nem inventa dados, mostra orientação. WhatsApp exige envio manual. Não chama RPC de alteração da renovação, não conclui, não marca contato nem duplica notificação. Commits `e0199055d3c5664affa6c04afc5830f7d16d741a` e `7bf19260c98079b3dd75ad753c7c140bfebd54ee`.
+- `src/features/renewals/renewal-prescription-page.css`: CSS pontual para seleção de endereço e botão responsivos, preservando os outros módulos — commit `8bcb56f98e5e555e2c40dc0b2f179d845d75af5f`.
+- `tests/unit/renewal-prescription-page.test.tsx`: casos de regressão que verificam abertura e texto do WhatsApp no endereço cadastrado ou alternativo e ausência de conclusão administrativa/checkbox automático; mocks das consultas de endereço e contato — commit `6abf042acda498d972780c7cd4b35055a5443d2c`.
+
+**Limites e pendências de homologação:** implementação versionada no GitHub, sem alteração de banco, dados assistenciais, Auth, permissões, decisão médica ou conclusão administrativa. A criação dos testes **não implica execução Vitest**. A publicação Cloudflare e o teste real da abertura do WhatsApp e do endereço do médico em contexto autorizado ainda precisam ser confirmados no navegador pela Titular; não declarar produção homologada nesta etapa.
+
+---
+
 ## 24/11/2026 — APROVAÇÃO VISUAL DA TITULAR: logomarca CAPO com efeito 3D
 
 **Manifestação expressa da Titular:** após a implementação do efeito de alto-relevo 3D na logomarca, respondeu **"perfeito, pode registrar"**. Fica registrada a **aprovação do resultado visual da logomarca**, para a tela de login e os menus laterais dos perfis abrangidos pela manutenção anterior.
