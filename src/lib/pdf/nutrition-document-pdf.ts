@@ -213,7 +213,7 @@ function layoutPages(document: NutritionDocument): Page[] {
   // persistido do autor do documento, não do nome digitado nem de dados de paciente.
   const authorLines = layoutNutritionParagraph(name, CONTENT_WIDTH - 24, 11.5)
   const registrationLabel = registration
-    ? (isJuliana ? (/^CRN\\b/i.test(registration) ? registration : 'CRN: ' + registration)
+    ? (isJuliana ? (/^CRN\b/i.test(registration) ? registration : 'CRN: ' + registration)
       : 'Registro profissional: ' + registration)
     : ''
   const registrationLines = registrationLabel ? layoutNutritionParagraph(registrationLabel, CONTENT_WIDTH - 24, 10.4) : []
