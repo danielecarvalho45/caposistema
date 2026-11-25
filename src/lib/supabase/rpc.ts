@@ -3965,6 +3965,7 @@ export function createSupabaseTransport(
       case 'set_social_vulnerability_indicator_for_interface':
       case 'get_nutrition_context_for_interface':
       case 'save_nutrition_plan_for_interface':
+      case 'save_nutrition_plan_detailed_for_interface':
       case 'create_nutrition_document_for_interface':
       case 'create_nutrition_document_for_management_interface':
       case 'register_nutrition_pdf_for_interface':
