@@ -1,3 +1,21 @@
+## 25/11/2026 — VERDE EXECUTADO — Justificativa de Transporte sem limite artificial de 500 caracteres
+
+**Autorização:** Gestora/Titular, após investigação de quatro tentativas HTTP 400 de criação em 25/11 e esclarecimento de que `transport_requests.transport_notes` é do tipo PostgreSQL `text`, autorizou **VERDE** para retirar o limite máximo da justificativa, sem alterar outras rotinas. O mínimo de cinco caracteres permanece obrigatório. O limite físico de armazenamento do PostgreSQL não foi alterado.
+
+**Proteção:** branch de backup anterior `backup/transporte-justificativa-antes-sem-limite-2026-11-25`. Migração versionada na `main` em `supabase/migrations/20261125143000_transport_notes_unlimited.sql`; commit `3dc1347d6493dda9d3972e2ee9004431c7b6a53a`.
+
+**Alteração aplicada no Supabase `fftebavlhbfcrvrtnrld`:** migration `transport_notes_unlimited_20261125` retornou sucesso. Em `create_transport_request_for_interface(uuid,uuid,text)`, validação de 5–500 mudou para apenas mínimo de 5; em `manage_transport_request_for_interface(uuid,text,text,text,text,text)`, a edição posterior de `p_transport_notes` também requer somente mínimo de 5; em `capo_validate_transport_request()`, removido exclusivamente o bloqueio de `new.transport_notes > 500`. As definições efetivamente instaladas foram reutilizadas com substituições exatas via `CREATE OR REPLACE FUNCTION`, preservando o restante do SQL. A interface `src/features/transport/TransportPage.tsx` já não possuía `maxLength` no campo Motivo da solicitação; por isso não houve alteração no frontend.
+
+**Preservações:** não modificar limites de justificativa de cancelamento, endereço de embarque, referência externa ou outros campos que tenham regras independentes. Não alterar fluxo de necessidade ativa, agendamento opcional, Assistência Social, Gestor/Titular, Administrativo Operacional, notificações, PDF, WhatsApp, compartilhamento de documentos, RLS, separação de produção e `manuteste`, dados clínicos ou pacientes.
+
+**Validação estrutural pós-migração (somente leitura):** as três funções mantêm verificação de mínimo de cinco caracteres e não possuem limite de 500 para `transport_notes`; ACL, `SECURITY DEFINER` e `search_path` originais foram preservados; os cinco gatilhos ativos de `public.transport_requests` continuam habilitados; coluna `transport_notes` permanece `text`. A quantidade de solicitações permaneceu em 3, sendo o registro mais recente de 08/10/2026; nenhum pedido foi inserido para teste.
+
+**Limites de evidência e homologação:** não houve teste end-to-end autenticado de criação/edição com justificativa longa, pois não se deve gerar solicitações fictícias no ambiente real. O fluxo operacional completo (Salvar, Confirmar, PDF e WhatsApp) **ainda necessita homologação da Titular**, preferencialmente em `manuteste` isolado. Não declarar cura de outros erros sem evidência; se persistir erro, consultar logs atuais e identificar causa concreta antes de novo VERDE.
+
+**Estado:** migração aplicada, verificações estruturais aprovadas, homologação operacional pendente.
+
+---
+
 ## 25/11/2026 — INVESTIGAÇÃO SEM ALTERAÇÃO — solicitação de Transporte não salva após preenchimento da justificativa
 
 **Relato:** a Gestora/Titular informou que o erro de solicitação de Transporte persiste, apesar das manutenções anteriores: ao preencher a justificativa e salvar, a solicitação não é gravada e o fluxo não avança. Solicitou exclusivamente **investigação da causa**, sem VERDE para correção.
