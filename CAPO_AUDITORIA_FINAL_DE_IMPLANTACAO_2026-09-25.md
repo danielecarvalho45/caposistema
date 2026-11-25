@@ -1,3 +1,79 @@
+## 25/11/2026 — REGRA MESTRE DE COMPORTAMENTO — Continuidade operacional, congelamento seguro e recuperação durante atualização do CAPO
+
+**Determinação da Titular:** estruturar o mecanismo geral de continuidade operacional para que as atualizações do sistema não interrompam os trabalhos administrativos ou assistenciais nem eliminem o conteúdo já digitado. Registrar primeiro o comportamento esperado no Documento Mestre, como referência para futura implementação. Abrangência: todos os perfis e módulos, sem reconstrução de funcionalidades existentes. Este registro é exclusivamente documental; não constitui implementação nem homologação do mecanismo integral.
+
+### 1. Fundamento e estado atual
+
+Preservar a regra de 19/11/2026 de recarga automática conservadora, limitada à Home ociosa e segura, sem edição, editor ativo ou modal. Preservar o aviso de nova versão e sua minimização em cinco segundos. A Titular confirmou em 25/11 que a nova versão é carregada no teste operacional; essa confirmação não abrange a recuperação de rascunhos. O mecanismo atual de recarga não garante restaurar o estado dos formulários; o congelamento integral é requisito a implementar.
+
+### 2. Fluxo funcional obrigatório
+
+```text
+SESSÃO AUTORIZADA / ATIVIDADE EM ANDAMENTO
+  |
+  +-- Nova versão detectada -> aviso discreto, sem interromper a atividade
+  |
+  +-- Usuário continua trabalhando -> manter versão atual
+  |
+  +-- Atualizar agora
+        |
+        +-- Gravação, emissão ou outra operação em andamento?
+        |     SIM -> aguardar conclusão confirmada; não interromper nem repetir
+        |
+        +-- Verificar página, contexto, paciente, etapa e estado do trabalho
+        |
+        +-- Há rascunho?
+        |     SIM -> preservar temporariamente e verificar recuperação segura
+        |     NÃO -> preservar contexto de navegação e dados já persistidos
+        |
+        +-- Proteção segura comprovada?
+        |     NÃO -> impedir recarga, informar motivo, manter trabalho disponível
+        |     SIM -> carregar nova versão
+        |
+        +-- Revalidar sessão, identidade, permissões e ambiente
+        |
+        +-- Reabrir página, paciente e etapa autorizados; reconciliar com o banco
+        |
+        +-- Restaurar rascunho sem transformá-lo em registro definitivo
+        |
+        +-- Continuar trabalho do ponto em que parou
+```
+
+### 3. Requisitos de comportamento
+
+- Manter a sessão quando válida; nunca dispensar autenticação, termo vigente ou autorização atual para restaurar dados. Se a sessão tiver expirado, exigir acesso legítimo antes de recuperação.
+- Preservar rota e parâmetros, paciente/agendamento ou entidade selecionada, etapa, campos preenchidos inclusive textos longos e quebras de linha, agenda/data/profissional/filtros, posição de rolagem e foco quando tecnicamente possível. Restaurar apenas dados ainda autorizados e compatíveis com a versão nova.
+- Diferenciar alterações realmente pendentes de informações já salvas; uma edição anterior confirmada não deve, por si só, impedir atualização manual segura.
+- Rascunho temporário não equivale a gravação definitiva. A atualização não deverá confirmar presença, criar agendamento, emitir PDF, finalizar atendimento, salvar definitivamente formulário, disparar WhatsApp ou repetir qualquer operação sem a ação humana ou regra funcional originalmente autorizada.
+- Aguardar e verificar o resultado de gravações e emissões em andamento. Em caso de resultado incerto, reconciliar com o estado persistido e impedir reexecução automática que possa duplicar registros.
+- Dados confirmados no Supabase continuam íntegros. Consultar novamente o banco após recarga, sem substituir silenciosamente uma edição mais recente por versão antiga ou um rascunho por dados vazios. Em conflito com alteração concorrente, informar e permitir resolução segura, sem sobrescrever automaticamente.
+- Se a proteção, a leitura ou a compatibilidade do rascunho não puder ser garantida antes da recarga, conservar a versão e o trabalho atual, informar o motivo e permitir nova tentativa segura. Se a recuperação falhar após recarga, não descartar automaticamente o rascunho; oferecer recuperação autorizada e informar a falha.
+- Não prometer restauração de arquivos locais, anexos não enviados ou estados não suportados: nessas situações impedir a atualização enquanto não houver procedimento seguro. Não enfraquecer controles existentes para viabilizar recarga.
+- Segurança obrigatória: isolamento produção/manuteste no mesmo banco, proteção por conta, sessão e contexto, autorização revalidada por paciente e módulo, confidencialidade, minimização e retenção temporária. Não guardar conteúdo clínico em texto aberto no armazenamento do navegador. Definir tecnicamente proteção, expiração, limpeza no encerramento adequado e tratamento de troca de usuário; não misturar rascunhos nem exibir dados de outra sessão. A arquitetura de armazenamento será escolhida somente após investigação e autorização específica.
+- Atualizações exclusivamente de banco preservam os contratos usados pelas versões ainda em execução; mudanças incompatíveis exigem estratégia de compatibilidade/transição. Não usar recarga como solução para perda de dados.
+
+### 4. Exemplo obrigatório de aceitação: Nutrição
+
+Juliana inicia atendimento autorizado, abre o Plano Alimentar do paciente, digita título e seções sem salvar definitivamente. Surge nova versão. Ao selecionar Atualizar agora, o mecanismo deve proteger e verificar o rascunho, carregar a nova versão e voltar ao mesmo paciente e etapa, recuperando integralmente os 12 campos e, quando possível, campos ampliados e posição. O rascunho permanece identificado como não salvo; a emissão do PDF permanece bloqueada até confirmação de salvamento e releitura fiel no Supabase. Se a profissional já salvou, recuperar o plano confirmado, sem duplicação. Se a gravação estiver ocorrendo, aguardar o resultado. Se a recuperação não for segura, não recarregar. O exemplo é requisito de comportamento, não teste já executado.
+
+### 5. Abrangência e estratégia de implementação
+
+Aplicar a regra aos perfis Gestor/Titular, Administrativo, Nutrição, Psicologia, Assistência Social, Clínica, Fisioterapia, Coordenação e demais perfis autorizados; incluir agendas, cadastros, Oferta CAPO, Resgate, Faltosos, atendimentos, documentos, Transporte, Solicitações, Encaminhamentos e demais rotinas. Inventariar estados e operações de cada módulo antes de definir adaptadores; mecanismo comum de coordenação da recarga, com captura/recuperação específica dos estados que cada módulo suporta. Não declarar cobertura geral antes da validação módulo a módulo. Não reconstruir fluxos homologados; correções estritamente necessárias, com backup e VERDE.
+
+### 6. Critérios de teste e fechamento
+
+- Sem trabalho pendente: atualização manual carrega nova versão e recupera contexto; atualização automática apenas na condição segura previamente aprovada.
+- Com rascunho: recarga manual recupera integralmente os campos, sem confirmar ou gravar definitivamente.
+- Com dados já salvos: reabertura reproduz o registro persistido e não duplica ações.
+- Com gravação/PDF/solicitação em andamento: recarga aguarda resultado e não repete operação.
+- Falha de rede, armazenamento indisponível, mudança de versão de formulário, conflito de dados, sessão expirada e troca de conta: proteger o trabalho, respeitar autorização e informar falha sem perda silenciosa.
+- Confirmar isolamento produção/manuteste, comportamento em desktop/mobile, recuperação de rota e contexto, ausência de regressão nos módulos homologados e manutenção do aviso discreto.
+- Testes técnicos com dados fictícios somente em ambiente isolado ou mocks; não criar ou modificar pacientes reais para ensaio. Homologação operacional por usuários autorizados e aprovação expressa da Titular.
+
+**Status:** regra de comportamento registrada para estruturação; implementação, arquitetura técnica, testes e homologação integral pendentes. Nenhum frontend, banco, login ou cadastro alterado por esta anotação. Aguardar VERDE específico antes de executar manutenção funcional.
+
+---
+
 ## 25/11/2026 — CONFIRMAÇÃO OPERACIONAL DA TITULAR — atualização manual carrega a nova versão
 
 A Gestora/Titular informou expressamente que realizou testes e confirmou que a nova versão é carregada pelo CAPO. Registrar como evidência operacional relatada pela Titular da efetividade do carregamento da nova versão, no contexto da investigação do botão “Atualizar agora” da janela de atualização. Não atribuir o problema relatado a falha de publicação ou entrega da versão sem evidência adicional. A confirmação não constitui homologação da preservação integral de rascunhos, retomada do paciente/etapa ou proteção de operações em andamento durante recarga manual.
