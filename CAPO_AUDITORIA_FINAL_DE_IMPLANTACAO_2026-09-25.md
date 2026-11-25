@@ -1,3 +1,19 @@
+## 25/11/2026 — VERDE EXECUTADO — data/hora da geração no rodapé do PDF oficial de Transporte
+
+**Autorização:** Gestora/Titular solicitou data/hora da geração do documento no rodapé do PDF de Transporte e confirmou com VERDE (incluindo reconfirmação). Escopo estritamente visual; não alterar solicitação, fluxo, dados clínicos, permissões, assinatura administrativa, PDF de encerramento ou histórico.
+
+**Backup:** `backup/transporte-pdf-antes-rodape-data-2026-11-25`, branch criada antes da alteração.
+
+**Implementação:** commit `ba095c50f0f2eb83031fc6a4948d02260856f967`, exclusivamente em `src/lib/pdf/capo-transport-request-pdf.ts`. O gerador oficial captura uma única vez, no momento da criação do Blob PDF, a data/hora real pelo relógio do cliente com fuso `America/Sao_Paulo`, formato brasileiro (ex.: `Documento gerado em: 25/11/2026 às 11:15`), e insere o mesmo texto no rodapé de todas as páginas, alinhado à esquerda; paginação permanece à direita, separador discreto em azul/verde suave. O modelo novo com títulos centralizados, texto justificado, periodicidade realçada, endereço sem duplicação e autoria nominal foi preservado. A nova data só é registrada na nova emissão; PDFs anteriores armazenados e os carimbos de versões arquivadas permanecem intactos.
+
+**Conferência:** GitHub `main` atualizado por operação pontual no gerador do PDF. As operações de reemissão, confirmação do novo PDF, visualização de versões anteriores, emissão normal, WhatsApp e encaminhamento não foram editadas. Não houve alteração Supabase nem emissão fictícia para paciente real.
+
+**Publicação e homologação:** conferir resultado da implantação da Cloudflare Pages referente ao commit `ba095c50` antes de afirmar publicação concluída; verificar no navegador e em PDF baixado se o rodapé aparece em todas as páginas e se o horário corresponde ao de Brasília. O workflow separado do GitHub Actions pode apresentar falha independente; o check Cloudflare Pages é a referência de publicação. Nunca declarar homologação visual sem teste da Titular.
+
+**Estado:** alteração versionada, aguardando prova da publicação e homologação visual do PDF.
+
+---
+
 ## 25/11/2026 — VERDE EXECUTADO — recuperação de publicação Cloudflare e reintegração isolada do PDF de Transporte
 
 **Autorização:** diante de duas implantações falhas, a Gestora/Titular solicitou expressamente que o assistente técnico resolvesse a falha de publicação, preservando o CAPO, os dados da paciente Maria do Bom Parto e fluxos de Transporte previamente homologados.
