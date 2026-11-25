@@ -6,8 +6,17 @@ import {
 
 /** Apenas o Plano Alimentar usa este compositor. Relatórios e PDFs gerais permanecem intactos. */
 type NutritionDocument = Readonly<Record<string, unknown>>
-type TextLine = { text: string; x: number; y: number; size: number; bold: boolean; justify: number }
-type Page = { lines: TextLine[]; rules: number[] }
+type TextLine = { text: string; x: number; y: number; size: number; bold: boolean; justify: number; color: string }
+type Band = { x: number; y: number; width: number; height: number; fill: string }
+type Page = { lines: TextLine[]; rules: number[]; bands: Band[] }
+// Mesma paleta suave do PDF de Transporte homologado, sem dependência do seu gerador.
+const INK = '0.12 0.19 0.23'
+const BLUE = '0.85 0.93 0.98'
+const GREEN = '0.88 0.95 0.86'
+const PALE = '0.95 0.98 0.97'
+const DARK_BLUE = '0.14 0.34 0.51'
+const DARK_GREEN = '0.16 0.36 0.26'
+const JULIANA_PROFESSIONAL_ID = 'a15e4860-82be-44cf-965c-2d76fb66c062'
 const PAGE_WIDTH = 595
 const LEFT = 55
 const RIGHT = 540
@@ -137,65 +146,92 @@ export function layoutNutritionParagraph(text: string, maxWidth = CONTENT_WIDTH,
 }
 
 function layoutPages(document: NutritionDocument): Page[] {
-  const pages: Page[] = [{ lines: [], rules: [] }]
+  const pages: Page[] = [{ lines: [], rules: [], bands: [] }]
   let page = pages[0]
   let y = 707
-  function line(text: string, size = BODY_SIZE, bold = false, x = LEFT, spacing = 0, leading = BODY_LEADING) {
-    if (y < BODY_MIN_Y + leading) {
-      page = { lines: [], rules: [] }
-      pages.push(page)
-      y = 717
-    }
-    page.lines.push({ text, x, y, size, bold, justify: spacing })
+  function newPage() {
+    page = { lines: [], rules: [], bands: [] }
+    pages.push(page)
+    y = 717
+  }
+  function need(points: number) {
+    if (y - points < BODY_MIN_Y) newPage()
+  }
+  function line(text: string, size = BODY_SIZE, bold = false, x = LEFT, spacing = 0, leading = BODY_LEADING, color = INK) {
+    need(leading)
+    page.lines.push({ text, x, y, size, bold, justify: spacing, color })
     y -= leading
   }
   function gap(n = 9) { y -= n }
   function rule() {
-    if (y < BODY_MIN_Y + 12) { page = { lines: [], rules: [] }; pages.push(page); y = 717 }
+    need(13)
     page.rules.push(y)
     y -= 13
   }
-  function center(text: string, size = BODY_SIZE, bold = false, leading = BODY_LEADING) {
-    line(text, size, bold, Math.max(LEFT, (PAGE_WIDTH - width(text, size)) / 2), 0, leading)
+  function center(text: string, size = BODY_SIZE, bold = false, leading = BODY_LEADING, color = INK) {
+    line(text, size, bold, Math.max(LEFT, (PAGE_WIDTH - width(text, size) * (bold ? 1.035 : 1)) / 2), 0, leading, color)
   }
-  const name = value(document, 'author_name') || 'Nutricionista responsável'
-  const registration = value(document, 'author_registration')
-  center(name, 11.5, true, 19)
-  if (registration) center('Registro profissional: ' + registration, 10.4, false, 18)
-  center('Pouso Alegre/MG, ' + date(document.created_at), 10.4, false, 18)
-  gap(13)
-  line('SECRETARIA MUNICIPAL DE SAÚDE — CAPO', 10.2, true, LEFT, 0, 15)
-  line('Serviço de Nutrição', 10.2, false, LEFT, 0, 16)
-  gap(12)
-  line('Paciente: ' + (value(document, 'patient_name') || 'Não informado'), 11, true, LEFT, 0, 17)
-  const number = value(document, 'patient_number')
-  const cms = value(document, 'cms')
-  if (number || cms) line([number ? 'Nº CAPO: ' + number : '', cms ? 'CMS: ' + cms : ''].filter(Boolean).join('   ·   '), 9.5, false, LEFT, 0, 15)
-  gap(16)
-  const title = value(document.plan_snapshot as NutritionDocument, 'document_title') || 'PLANO ALIMENTAR ORAL'
-  for (const titleLine of layoutNutritionParagraph(title.toUpperCase(), CONTENT_WIDTH - 24, 12)) {
-    center(titleLine.text, 12, true, 22)
+  function heading(text: string, fill: string, color: string, size = 12) {
+    const lines = layoutNutritionParagraph(text, CONTENT_WIDTH - 24, size)
+    for (const item of lines) {
+      need(34)
+      page.bands.push({ x: LEFT, y: y - 8, width: CONTENT_WIDTH, height: 25, fill })
+      center(item.text, size, true, 32, color)
+    }
   }
-  rule()
+  function paragraph(text: string) {
+    for (const item of layoutNutritionParagraph(text)) {
+      if (!item.text) { gap(7); continue }
+      line(item.text, BODY_SIZE, false, LEFT, item.wordSpacing, BODY_LEADING)
+    }
+  }
   const snapshot = document.plan_snapshot && typeof document.plan_snapshot === 'object'
     ? document.plan_snapshot as NutritionDocument : null
+  const name = value(document, 'author_name') || 'Nutricionista responsável'
+  const registration = value(document, 'author_registration')
+  const isJuliana = value(document, 'professional_id') === JULIANA_PROFESSIONAL_ID
+  const title = value(snapshot, 'document_title') || 'PLANO ALIMENTAR ORAL'
+  heading(title.toUpperCase(), PALE, DARK_BLUE, 15)
+  gap(6)
+  heading('IDENTIFICAÇÃO DO PACIENTE', BLUE, DARK_BLUE)
+  paragraph('Paciente: ' + (value(document, 'patient_name') || 'Não informado'))
+  const number = value(document, 'patient_number')
+  const cms = value(document, 'cms')
+  if (number || cms) paragraph([number ? 'Nº CAPO: ' + number : '', cms ? 'CMS: ' + cms : ''].filter(Boolean).join('   ·   '))
+  line('Pouso Alegre/MG, ' + date(document.created_at), 10.4, false)
+  gap(12)
   for (const [key, label] of sectionLabels) {
     const content = value(snapshot, key)
     if (!content) continue
-    // Não deixar título órfão da primeira linha do parágrafo.
-    if (y < BODY_MIN_Y + 54) { page = { lines: [], rules: [] }; pages.push(page); y = 717 }
-    line(label, 10.1, true, LEFT, 0, 17)
-    for (const paragraphLine of layoutNutritionParagraph(content)) {
-      if (!paragraphLine.text) { gap(7); continue }
-      line(paragraphLine.text, BODY_SIZE, false, LEFT, paragraphLine.wordSpacing, BODY_LEADING)
-    }
-    gap(11)
+    // A faixa e a primeira linha do conteúdo permanecem juntas.
+    need(54)
+    heading(label, GREEN, DARK_GREEN, 11.6)
+    paragraph(content)
+    gap(12)
   }
+  // Autoria somente no final. A qualificação específica depende do ID
+  // persistido do autor do documento, não do nome digitado nem de dados de paciente.
+  const authorLines = layoutNutritionParagraph(name, CONTENT_WIDTH - 24, 11.5)
+  const registrationLabel = registration
+    ? (isJuliana ? (/^CRN\\b/i.test(registration) ? registration : 'CRN: ' + registration)
+      : 'Registro profissional: ' + registration)
+    : ''
+  const registrationLines = registrationLabel ? layoutNutritionParagraph(registrationLabel, CONTENT_WIDTH - 24, 10.4) : []
+  need(33 + authorLines.length * 19 + 18 + registrationLines.length * 18)
+  gap(9)
+  rule()
+  for (const item of authorLines) center(item.text, 11.5, true, 19, DARK_BLUE)
+  center(isJuliana ? 'Nutricionista Oncológica e Paliativista' : 'Nutricionista', 11, false, 18)
+  for (const item of registrationLines) center(item.text, 10.4, false, 18)
   return pages
 }
 
 export function buildNutritionDocumentPdf(document: NutritionDocument): Blob {
   const pages = layoutPages(document)
+  const generatedAt = new Date().toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).replace(',', ' às')
   const logo = getCapoDocumentLogoJpeg()
   const logoHeight = 505 * CAPO_DOCUMENT_LOGO_HEIGHT / CAPO_DOCUMENT_LOGO_WIDTH
   const pageIds = pages.map((_, i) => 6 + 2 * i)
@@ -216,15 +252,19 @@ export function buildNutritionDocumentPdf(document: NutritionDocument): Blob {
       // Tw altera de fato a distância entre as palavras no próprio PDF.
       const spacing = item.justify ? item.justify.toFixed(3) : '0'
       const font = item.bold ? 'F2' : 'F1'
-      return 'BT\n/' + font + ' ' + item.size + ' Tf\n0.12 0.17 0.23 rg\n' +
+      return 'BT\n/' + font + ' ' + item.size + ' Tf\n' + item.color + ' rg\n' +
         '1 0 0 1 ' + item.x.toFixed(2) + ' ' + item.y.toFixed(2) + ' Tm\n' +
         spacing + ' Tw\n(' + pdfEscape(item.text) + ') Tj\n0 Tw\nET\n'
     }).join('')
+    const bands = page.bands.map(b => 'q\n' + b.fill + ' rg\n' +
+      '0.75 0.86 0.84 RG\n0.5 w\n' + [b.x, b.y, b.width, b.height].join(' ') + ' re B\nQ\n').join('')
     const rules = page.rules.map(y => '0.66 0.72 0.78 RG\n0.6 w\n55 ' + y + ' m\n540 ' + y + ' l\nS\n').join('')
     const footer = 'Página ' + (index + 1) + ' de ' + pages.length
     const content = [
       'q\n505 0 0 ' + logoHeight.toFixed(2) + ' 45 745 cm\n/Logo Do\nQ\n',
-      lines, rules,
+      bands, lines, rules,
+      'q\n0.80 0.89 0.89 RG\n0.5 w\n55 45 m 540 45 l S\nQ\n',
+      'BT\n/F1 8.5 Tf\n0.39 0.45 0.5 rg\n1 0 0 1 55 34 Tm\n(' + pdfEscape('Documento gerado em: ' + generatedAt) + ') Tj\nET\n',
       'BT\n/F1 8.5 Tf\n0.39 0.45 0.5 rg\n1 0 0 1 483 34 Tm\n(' + pdfEscape(footer) + ') Tj\nET\n',
     ].join('')
     const stream = encode(content)
