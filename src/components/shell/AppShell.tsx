@@ -1,3 +1,4 @@
+import { CapoShortcutIcon } from '../icons/CapoIcon'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useBackToPreviousFunction } from '../../lib/navigation/back'
@@ -316,7 +317,7 @@ export function AppShell({
               </button>
               <div id={`app-area-${group.id}`} hidden={expandedArea !== group.id}>
                 {group.items.map((item) => <Link className="app-nav-link" to={item.path} aria-current={currentPath === item.path ? 'page' : undefined} key={item.path}>
-                  <span aria-hidden="true">{item.icon}</span><span>{item.label}</span>
+                  <span aria-hidden="true"><CapoShortcutIcon path={item.path} size={18} /></span><span>{item.label}</span>
                   {item.path === '/notificacoes' && unreadNotifications !== null && unreadNotifications > 0 && <span className="app-nav-badge" aria-label={`${unreadNotifications} notificações não lidas`}>{unreadNotifications > 99 ? '99+' : unreadNotifications}</span>}
                 </Link>)}
               </div>
@@ -339,7 +340,7 @@ export function AppShell({
                 aria-current={currentPath === item.path ? 'page' : undefined}
                 key={item.path}
               >
-                <span aria-hidden="true">{item.icon}</span>
+                <span aria-hidden="true"><CapoShortcutIcon path={item.path} size={18} /></span>
                 <span>{item.label}</span>
               </Link>
             ))}
@@ -350,7 +351,7 @@ export function AppShell({
                 aria-current={currentPath === item.path ? 'page' : undefined}
                 key={item.path}
               >
-                <span aria-hidden="true">{item.icon}</span>
+                <span aria-hidden="true"><CapoShortcutIcon path={item.path} size={18} /></span>
                 <span>{item.label}</span>
                 {item.path === '/notificacoes' && unreadNotifications !== null && unreadNotifications > 0 && (
                   <span
@@ -369,7 +370,7 @@ export function AppShell({
                 aria-current={currentPath === item.path ? 'page' : undefined}
                 key={item.path}
               >
-                <span aria-hidden="true">{item.icon}</span>
+                <span aria-hidden="true"><CapoShortcutIcon path={item.path} size={18} /></span>
                 <span>{item.label}</span>
               </Link>
             ))}
@@ -385,7 +386,7 @@ export function AppShell({
                   aria-current={currentPath === item.path ? 'page' : undefined}
                   key={item.path}
                 >
-                  <span aria-hidden="true">{item.icon}</span>
+                  <span aria-hidden="true"><CapoShortcutIcon path={item.path} size={18} /></span>
                   <span>{item.label}</span>
                 </Link>
               ))
