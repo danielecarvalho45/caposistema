@@ -153,6 +153,8 @@ export function TransportPage({ accessContext }: Props) {
   const [documentsRequest, setDocumentsRequest] = useState<TransportRecord | null>(null)
   const [attachedDocuments, setAttachedDocuments] = useState<readonly TransportRecord[]>([])
   const [shareAccess, setShareAccess] = useState<{requestId: string; url: string; pin: string; expires: string} | null>(null)
+  const [pdfHistoryRequestId, setPdfHistoryRequestId] = useState<string | null>(null)
+  const [archivedPdfVersions, setArchivedPdfVersions] = useState<readonly TransportRecord[]>([])
   const [pdfDetailsRequest, setPdfDetailsRequest] = useState<TransportRecord | null>(null)
   const [pdfDetailsMode, setPdfDetailsMode] = useState<'address' | 'periodicity'>('address')
   const [boardingSource, setBoardingSource] = useState<'cadastro' | 'alternativo'>('cadastro')
@@ -501,6 +503,8 @@ export function TransportPage({ accessContext }: Props) {
     setPatientName(name)
     setShareAccess((value) => value?.requestId && id !== patientId ? null : value)
     setDocumentsRequest(null)
+    setPdfHistoryRequestId(null)
+    setArchivedPdfVersions([])
     setSelectedAppointmentId('')
     const result = await getRpcService().getTransportContext(id)
     if (result.status === 'success') {
@@ -692,6 +696,46 @@ export function TransportPage({ accessContext }: Props) {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o PDF.')
     }
     setBusy(false)
+  }
+
+  async function loadPdfHistory(request: TransportRecord) {
+    const id = requestId(request)
+    if (!id || !canAdminister || busy) return
+    if (pdfHistoryRequestId === id) {
+      setPdfHistoryRequestId(null)
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await getRpcService().listTransportPdfVersions(id)
+      if (result.status === 'success') {
+        const versions = Array.isArray(result.data) ? result.data as readonly TransportRecord[] : []
+        setArchivedPdfVersions(versions)
+        setPdfHistoryRequestId(id)
+      } else {
+        setFeedback(result.status === 'error' ? result.error.message : 'Não foi possível consultar o histórico de PDFs.')
+      }
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function viewArchivedPdf(version: TransportRecord) {
+    if (!canAdminister || busy) return
+    const path = field(version, 'previous_path')
+    if (!path) return
+    setBusy(true)
+    try {
+      const { data, error } = await getSupabaseClient().storage
+        .from('capo-documents').createSignedUrl(path, 120)
+      if (!data?.signedUrl || error) {
+        setFeedback(error?.message ?? 'Não foi possível abrir a versão anterior.')
+        return
+      }
+      globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function signPdf(request: TransportRecord) {
@@ -1172,6 +1216,24 @@ export function TransportPage({ accessContext }: Props) {
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
                       </>
+                    )}
+                    {canAdminister && pdfPersisted && (
+                      <button type="button" disabled={busy} onClick={() => void loadPdfHistory(request)}>
+                        Versões anteriores do PDF
+                      </button>
+                    )}
+                    {pdfHistoryRequestId === id && (
+                      <div className="transport-share-access">
+                        <strong>Histórico documental</strong>
+                        {archivedPdfVersions.length === 0 && <p>Não há versões anteriores.</p>}
+                        {archivedPdfVersions.map((version, versionIndex) => (
+                          <button type="button"
+                            key={field(version, 'version_id') ?? versionIndex}
+                            disabled={busy} onClick={() => void viewArchivedPdf(version)}>
+                            Visualizar versão anterior {versionIndex + 1}
+                          </button>
+                        ))}
+                      </div>
                     )}
                     {canAdminister && status === 'solicitado' && (
                       <button type="button" disabled={busy} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
