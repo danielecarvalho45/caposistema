@@ -152,7 +152,7 @@ export function TransportPage({ accessContext }: Props) {
   const [selectedContacts, setSelectedContacts] = useState<readonly ContactKey[]>([])
   const [documentsRequest, setDocumentsRequest] = useState<TransportRecord | null>(null)
   const [attachedDocuments, setAttachedDocuments] = useState<readonly TransportRecord[]>([])
-  const [shareAccess, setShareAccess] = useState<{requestId: string; url: string; pin: string; expires: string} | null>(null)
+  const [shareAccess, setShareAccess] = useState<{requestId: string; url: string; expires: string} | null>(null)
   const [pdfHistoryRequestId, setPdfHistoryRequestId] = useState<string | null>(null)
   const [archivedPdfVersions, setArchivedPdfVersions] = useState<readonly TransportRecord[]>([])
   const [pdfDetailsRequest, setPdfDetailsRequest] = useState<TransportRecord | null>(null)
@@ -394,22 +394,21 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(true)
     try {
       const id = requestId(request)
-      const result = await getRpcService().createTransportShare(id, 7)
+      const result = await getRpcService().createTransportDirectShare(id)
       if (result.status !== 'success') {
         setFeedback(result.status === 'error' ? result.error.message : 'Não foi possível gerar o link seguro.')
         return
       }
       const data = result.data as TransportRecord
       const token = field(data, 'token')
-      const pin = field(data, 'pin')
       const expires = field(data, 'expires_at')
-      if (!token || !pin || !expires) {
-        setFeedback('O sistema não devolveu o link e o código de forma segura.')
+      if (!token || !expires) {
+        setFeedback('O sistema não devolveu um link seguro válido.')
         return
       }
-      const url = `https://caposistema.pages.dev/transporte-documentos.html#acesso=${token}`
-      setShareAccess({requestId: id, url, pin, expires})
-      setFeedback('Link seguro gerado. Envie o código de acesso por canal separado do link. Gerar novo link revoga o anterior.')
+      const url = `https://caposistema.pages.dev/transporte-documentos.html#direto=${token}`
+      setShareAccess({requestId: id, url, expires})
+      setFeedback('Link de documentação gerado, sem código, válido por 24 horas. Após esse prazo, ficará indisponível. Gerar outro link revoga o anterior.')
     } finally {
       setBusy(false)
     }
@@ -460,7 +459,7 @@ export function TransportPage({ accessContext }: Props) {
       'Toda a documentação necessária ao transporte, incluindo o PDF oficial da solicitação e os documentos complementares anexados, está disponível no link abaixo:',
       activeShare.url,
       'Acesse o link para visualizar, baixar ou imprimir a documentação.',
-      'Código de acesso: fornecido separadamente pelo CAPO.',
+      'ATENÇÃO: o link é válido por 24 horas. Visualize ou baixe a documentação antes do vencimento, pois depois o acesso ficará indisponível.',
       'Link válido até: ' + new Date(activeShare.expires).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', hour12:false}) + '.',
       'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
     ].filter(Boolean).join('\n')
@@ -1204,10 +1203,8 @@ export function TransportPage({ accessContext }: Props) {
                     )}
                     {canAdminister && status === 'confirmado' && pdfPrepared && shareAccess?.requestId === id && !forwarded && (
                       <div className="transport-share-access">
-                        <p><strong>Link seguro gerado (válido por 7 dias).</strong> O PDF oficial e os documentos complementares anexados estão no mesmo link.</p>
-                        <p>Código de acesso: <strong>{shareAccess.pin}</strong></p>
-                        <p><small>Envie o código separadamente do link, para proteger os documentos.</small></p>
-                        <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.pin)}>Copiar código</button>
+                        <p><strong>Link gerado — válido por 24 horas, sem código.</strong> O PDF oficial e todos os documentos complementares anexados estão no mesmo link.</p>
+                        <p><small>Oriente o destinatário a visualizar ou baixar a documentação antes do vencimento. Depois, o link ficará indisponível.</small></p>
                         <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.url)}>Copiar link</button>
                         <button type="button" disabled={busy} onClick={() => void revokeShare(request)}>Revogar link</button>
                       </div>
@@ -1247,7 +1244,7 @@ export function TransportPage({ accessContext }: Props) {
                               ? '☏ WhatsApp responsável · ' + contacts[key] : '✉ WhatsApp setor · ' + contacts[key]}
                           </button>
                         ) : null)}
-                        <small>O WhatsApp ou e-mail abrirá com a mensagem já preenchida e o link contendo o PDF oficial e os anexos. Compartilhe o código de acesso separadamente e registre o encaminhamento apenas após enviar.</small>
+                        <small>O WhatsApp ou e-mail abrirá com a mensagem já preenchida e o link contendo o PDF oficial e os anexos. O link expira automaticamente após 24 horas; registre o encaminhamento apenas após enviar.</small>
                       </div>
                     )}
                     {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && shareAccess?.requestId === id && (
