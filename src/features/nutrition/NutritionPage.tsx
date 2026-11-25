@@ -94,6 +94,7 @@ export function NutritionPage({
   const [patientSearchFeedback, setPatientSearchFeedback] = useState('')
   const [searchingPatients, setSearchingPatients] = useState(false)
   const [plan, setPlan] = useState<NutritionPlan>(emptyPlan)
+  const [expandedSections, setExpandedSections] = useState<Partial<Record<keyof Omit<NutritionPlan, 'title'>, boolean>>>({})
   const [planLoaded, setPlanLoaded] = useState(false)
   const [savedPlanId, setSavedPlanId] = useState('')
   const [planDirty, setPlanDirty] = useState(false)
@@ -215,6 +216,7 @@ export function NutritionPage({
   }
 
   async function selectNutritionPatient(id: string, name: string) {
+    setExpandedSections({})
     setFeedback(null); setPatientId(''); setPatientIdentification(null); setPreviewVisible(false); setPlanDirty(false); setPlanLoaded(false); setSavedPlanId(''); setDocument(null); setVulnerabilityAlert(null)
     const result = await getRpcService().getNutritionContext(id)
     if (result.status !== 'success') {
@@ -612,15 +614,34 @@ export function NutritionPage({
                 <input type="text" value={plan.title} disabled={!patientId || !canEditPlan}
                   onChange={(event) => { setPlanDirty(true); setPlan((current) => ({ ...current, title: event.target.value })) }} />
               </label>
-              {nutritionSections.map(({ key, label, rows }) => (
-                <label className="nutrition-document-section" key={key}>
-                  <strong>{label}</strong>
-                  <textarea rows={rows} value={plan[key]}
-                    disabled={!patientId || !canEditPlan}
-                    placeholder="Digite livremente as orientações para este paciente"
-                    onChange={(event) => { setPlanDirty(true); setPlan((current) => ({ ...current, [key]: event.target.value })) }} />
-                </label>
-              ))}
+              {nutritionSections.map(({ key, label, rows }) => {
+                const expanded = expandedSections[key] === true
+                const fieldId = 'nutrition-plan-field-' + key
+                return (
+                  <div className="nutrition-document-section" key={key}>
+                    <div className="nutrition-document-section-heading">
+                      <label htmlFor={fieldId}><strong>{label}</strong></label>
+                      <button type="button" className="nutrition-section-toggle"
+                        aria-label={(expanded ? 'Reduzir ' : 'Ampliar ') + label}
+                        aria-expanded={expanded} aria-controls={fieldId}
+                        title={expanded ? 'Reduzir campo' : 'Ampliar campo'}
+                        disabled={!patientId || !planLoaded}
+                        onClick={() => setExpandedSections(current => ({ ...current, [key]: !current[key] }))}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+                          {expanded
+                            ? <path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" />
+                            : <path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5" />}
+                        </svg>
+                        <span>{expanded ? 'Reduzir' : 'Ampliar'}</span>
+                      </button>
+                    </div>
+                    <textarea id={fieldId} rows={expanded ? 13 : rows} value={plan[key]}
+                      disabled={!patientId || !canEditPlan}
+                      placeholder="Digite livremente as orientações para este paciente"
+                      onChange={(event) => { setPlanDirty(true); setPlan((current) => ({ ...current, [key]: event.target.value })) }} />
+                  </div>
+                )
+              })}
             </div>
             {planDirty && <p className="nutrition-document-unsaved" role="status">Alterações não salvas. Salve o plano antes de gerar o documento oficial.</p>}
             {planLoaded && !savedPlanId && canEditPlan && <p role="status">Ainda não existe Plano Alimentar salvo para este paciente. Preencha as orientações e clique em Salvar / atualizar plano; somente após a confirmação será possível gerar o PDF oficial.</p>}
