@@ -3808,6 +3808,10 @@ export function createRpcService(transport: RpcTransport) {
         p_phone_responsible: phoneResponsible,
         p_email: email,
       }, parse: parseConfirmedJson }),
+    setTransportSectorChannels: (channels: readonly string[]) =>
+      execute({ transport, operation: 'set_transport_sector_channels_for_interface', args: {
+        p_channels: [...channels],
+      }, parse: parseConfirmedJson }),
     getTransportContext: (patientId: string) =>
       execute({ transport, operation: 'get_transport_context_for_interface', args: { p_patient_id: patientId }, parse: parseConfirmedJson }),
     createTransportRequest: (args: ConfirmedJsonArgs) =>
@@ -3980,6 +3984,7 @@ export function createSupabaseTransport(
       case 'get_transport_administrative_queue_for_interface':
       case 'get_transport_sector_contacts_for_interface':
       case 'set_transport_sector_contacts_for_interface':
+      case 'set_transport_sector_channels_for_interface':
       case 'complete_transport_request_with_closure_pdf_for_interface':
       case 'get_transport_context_for_interface':
       case 'create_transport_request_for_interface':
