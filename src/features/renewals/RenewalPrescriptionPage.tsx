@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
+import { reserveCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import {
   getRpcService,
   type AsyncState,
@@ -18,6 +19,8 @@ type Service = Pick<
   | 'managePrescriptionRenewalMedical'
   | 'managePrescriptionRenewalAdmin'
   | 'getPrescriptionRenewalOperationalContext'
+  | 'getProfessionalCareLocation'
+  | 'getPatientContact'
   | 'searchReferralPatients'
 >
 
@@ -101,6 +104,11 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
   const [note, setNote] = useState('')
   const [pickupLocation, setPickupLocation] = useState('')
   const [patientContacted, setPatientContacted] = useState(false)
+  const [addressMode, setAddressMode] = useState<'registered' | 'other'>('registered')
+  const [otherAddress, setOtherAddress] = useState('')
+  const [doctorAddress, setDoctorAddress] = useState<{ doctorId: string; value: string } | null>(null)
+  const [addressLoading, setAddressLoading] = useState(false)
+  const [openingWhatsApp, setOpeningWhatsApp] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [operationalContext, setOperationalContext] =
     useState<Record<string, unknown> | null>(null)
@@ -184,6 +192,95 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
       active = false
     }
   }, [canManageAdmin, selectedId, service])
+
+  // Consulta apenas o endereço institucional do médico. Um endereço alternativo
+  // é usado exclusivamente para esta mensagem, sem modificar o cadastro.
+  useEffect(() => {
+    setAddressMode('registered')
+    setOtherAddress('')
+    setDoctorAddress(null)
+    if (!canManageAdmin || !selected || selected.status !== 'awaiting_admin') {
+      setAddressLoading(false)
+      return
+    }
+    let active = true
+    setAddressLoading(true)
+    void service.getProfessionalCareLocation(selected.doctor_id).then((result) => {
+      if (!active) return
+      const data = result.status === 'success' && result.data &&
+        typeof result.data === 'object' && !Array.isArray(result.data)
+        ? result.data as Record<string, unknown> : null
+      const value = typeof data?.care_location === 'string' ? data.care_location.trim() : ''
+      setDoctorAddress({ doctorId: selected.doctor_id, value })
+      setAddressLoading(false)
+    }).catch(() => {
+      if (!active) return
+      setDoctorAddress({ doctorId: selected.doctor_id, value: '' })
+      setAddressLoading(false)
+    })
+    return () => { active = false }
+  }, [canManageAdmin, selected?.renewal_id, selected?.doctor_id, selected?.status, service])
+
+  async function avisarReceitaPronta() {
+    if (!selected || !canManageAdmin || selected.status !== 'awaiting_admin' || busy || openingWhatsApp) return
+    const address = addressMode === 'other'
+      ? otherAddress.trim()
+      : doctorAddress?.doctorId === selected.doctor_id ? doctorAddress.value : ''
+    if (!address) {
+      setFeedback(addressMode === 'other'
+        ? 'Informe o endereço completo para retirada antes de avisar.'
+        : 'Endereço de atendimento do médico não cadastrado. Selecione Outro endereço e informe onde retirar.')
+      return
+    }
+    // A aba é reservada no clique, antes da busca assíncrona do telefone.
+    const reservation = reserveCapoWhatsAppTab()
+    if (!reservation) {
+      setFeedback('Não foi possível abrir a aba do WhatsApp. Autorize pop-ups para o CAPO.')
+      return
+    }
+    setOpeningWhatsApp(true)
+    setFeedback(null)
+    try {
+      const result = await service.getPatientContact(selected.patient_id)
+      if (result.status !== 'success' || !result.data || typeof result.data !== 'object' || Array.isArray(result.data)) {
+        reservation.cancel()
+        setFeedback(result.status === 'error' ? result.error.message : 'Contato autorizado do paciente não encontrado.')
+        return
+      }
+      const rawPhone = (result.data as Record<string, unknown>).phone
+      const phone = typeof rawPhone === 'string' ? rawPhone.replace(/\D/g, '') : ''
+      if (!phone || phone.length < 10) {
+        reservation.cancel()
+        setFeedback('Paciente sem telefone/WhatsApp válido cadastrado.')
+        return
+      }
+      const normalized = phone.startsWith('55') ? phone : '55' + phone
+      const sender = accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || 'Equipe CAPO'
+      const message = [
+        'Olá, ' + selected.patient_name + '!',
+        '',
+        'Informamos que sua renovação de receita está pronta para retirada.',
+        '',
+        'Médico: ' + selected.doctor_name + ' — Clínico Geral',
+        'Local de retirada: ' + (selected.pickup_location?.trim() || address),
+        'Endereço de retirada: ' + address,
+        '',
+        'Atenciosamente,',
+        sender + ' — Equipe CAPO',
+      ].join('\n')
+      const url = 'https://web.whatsapp.com/send?phone=' + encodeURIComponent(normalized) + '&text=' + encodeURIComponent(message)
+      if (!reservation.open(url)) {
+        setFeedback('Não foi possível abrir o WhatsApp. Verifique as permissões de pop-ups.')
+        return
+      }
+      setFeedback('WhatsApp aberto com o aviso de receita pronta. Confira e envie a mensagem; o contato não foi confirmado automaticamente.')
+    } catch {
+      reservation.cancel()
+      setFeedback('Não foi possível preparar o aviso. Tente novamente sem alterar a situação da receita.')
+    } finally {
+      setOpeningWhatsApp(false)
+    }
+  }
 
   async function searchPatients() {
     const cleanQuery = patientQuery.trim()
@@ -442,6 +539,26 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
                 <>
                   <p><strong>Decisão médica:</strong> receita pronta.</p>
                   <p><strong>Local de retirada informado pelo Médico Clínico:</strong> {selected.pickup_location ?? 'Não informado'}</p>
+                  <fieldset className="renewal-whatsapp-address">
+                    <legend>Endereço para o aviso de receita pronta</legend>
+                    <label>
+                      <input type="radio" name="renewal-whatsapp-address" checked={addressMode === 'registered'} onChange={() => setAddressMode('registered')} />
+                      Endereço cadastrado do médico
+                    </label>
+                    {addressMode === 'registered' && <p>{addressLoading ? 'Consultando endereço...' : doctorAddress?.doctorId === selected.doctor_id && doctorAddress.value ? doctorAddress.value : 'Endereço não encontrado. Selecione Outro endereço.'}</p>}
+                    <label>
+                      <input type="radio" name="renewal-whatsapp-address" checked={addressMode === 'other'} onChange={() => setAddressMode('other')} />
+                      Outro endereço de retirada
+                    </label>
+                    {addressMode === 'other' && <label>
+                      Digite o endereço para este aviso
+                      <input value={otherAddress} onChange={(event) => setOtherAddress(event.target.value)} placeholder="Rua, número, bairro e cidade" />
+                    </label>}
+                    <button type="button" onClick={() => void avisarReceitaPronta()} disabled={busy || openingWhatsApp || (addressMode === 'registered' && addressLoading)}>
+                      {openingWhatsApp ? 'Abrindo WhatsApp...' : 'Avisar paciente — WhatsApp'}
+                    </button>
+                    <small>O WhatsApp abre em um clique, com a mensagem pronta. Enviar o aviso não conclui nem confirma o contato automaticamente.</small>
+                  </fieldset>
                   <label>Observação administrativa final<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
                   <label><input type="checkbox" checked={patientContacted} onChange={(event) => setPatientContacted(event.target.checked)} /> Paciente contatado/orientado</label>
                   <button type="button" onClick={() => void completeAdministrative()} disabled={busy || !patientContacted}>Concluir retorno</button>
