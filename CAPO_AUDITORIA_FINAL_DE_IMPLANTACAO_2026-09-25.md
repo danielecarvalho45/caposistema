@@ -1,3 +1,23 @@
+## 25/11/2026 — VERDE EXECUTADO — veículo Carro/Ambulância na solicitação, PDF e mensagens de Transporte
+
+**Autorização expressa:** Gestora/Titular solicitou opção facultativa de escolha em um clique **Carro** ou **Ambulância**, salva na própria solicitação de Transporte, incluída no PDF oficial e nas mensagens institucionais de WhatsApp/Gmail. Solicitou também nome completo do paciente e endereço de embarque no corpo das mensagens. Os modelos já emitidos e o PDF visual homologado devem ser preservados; não reconstruir fluxos previamente aprovados.
+
+**Backup:** `backup/transporte-tipo-veiculo-pdf-mensagens-2026-11-25`.
+
+**Banco:** migração `supabase/migrations/20261125212000_transport_optional_vehicle_type.sql`, commit `fae3a486`, aplicada no Supabase `fftebavlhbfcrvrtnrld` como `transport_optional_vehicle_type_20261125` com `success:true`. Adicionada coluna `transport_requests.vehicle_type` nullable com CHECK limitando a `carro` ou `ambulancia`, sem preencher solicitações anteriores. RPC `set_transport_vehicle_type_for_interface(uuid,text)` exige autenticação, termo, conta ativa, contexto isolado do paciente e Gestor/AO ou Assistência Social autorizada com ciclo e capacidade; permite selecionar/desmarcar somente nas solicitações abertas antes de gerar PDF, proibindo mudar PDF oficial já persistido, encaminhamento ou pedido finalizado. Contexto `get_transport_context_for_interface` passou a incluir `vehicle_type` na lista de solicitações sem mudar suas permissões, filas ou outras informações. Verificação de leitura: `authenticated` pode executar RPC (com validação interna) e `anon` não; resposta do contexto inclui campo; nenhuma solicitação antiga recebeu tipo de veículo na migração.
+
+**Integração:** `src/lib/supabase/rpc.ts` commit `d7ae30ef` adiciona operação e método `setTransportVehicleType` ao transportador; `src/features/transport/TransportPage.tsx` commit `aba907a6` mostra botões de um clique **Carro** e **Ambulância** no bloco da solicitação enquanto ainda não houver PDF gerado, com desmarcação opcional clicando novamente, confirmação pelo banco e recarga do contexto. O tipo selecionado aparece posteriormente como registro de leitura. `src/features/transport/transport-contacts.css` commit `57650522` destaca seleção. Como regra de integridade, não permite alterar veículo após emissão do PDF; emitir revisão documental exige fluxo versionado existente.
+
+**PDF:** `src/lib/pdf/capo-transport-request-pdf.ts` commit `513c9e3c` acrescenta somente uma linha opcional `Veículo solicitado: CARRO/AMBULÂNCIA` na seção `TRAJETO SOLICITADO`, usando o estilo de linha padrão já homologado. Não modifica PDFs de encerramento, documentos anteriores, logo, rodapé, paginação ou estrutura compartilhada; a chamada de geração passa `vehicleType` do contexto.
+
+**Mensagens:** WhatsApp Web e Gmail mantêm a abertura com um clique, destinatário já cadastrado, link direto de 24 horas, assinatura institucional e envio manual; texto agora inclui `Paciente: [nome completo]`, `Endereço de embarque: [boarding_address]` (com fallback do cadastro só se ausente) e tipo de veículo apenas quando selecionado. A limitação do Gmail de usar URL de composição com texto simples persiste; isso não representa hiperlink HTML garantido.
+
+**Conferências:** SQL confirmou coluna criada, RPC `authenticated=true/anon=false` e contexto incluindo `vehicle_type`; nenhuma solicitação real foi alterada e nenhum novo PDF ou mensagem foi gerado em nome de paciente. Confirmação de deploy Cloudflare e teste operacional autenticado permanecem necessários para homologar totalmente.
+
+**Estado:** implementação versionada, banco migrado; pendente conferir publicação frontend e homologação com operação real ou teste isolado.
+
+---
+
 ## 25/11/2026 — ADENDO DO VERDE — validação obrigatória antes de encaminhar link de Transporte
 
 A Gestora/Titular também havia autorizado verificar o link antes do envio. A implementação inicial de `Testar acesso` abria a página para inspeção manual, mas não bloqueava o envio quando o servidor rejeitava o link. Para cumprir integralmente a autorização, foi realizada a proteção automática abaixo:
