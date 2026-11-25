@@ -1,3 +1,14 @@
+## 25/11/2026 — ADENDO DO VERDE — validação obrigatória antes de encaminhar link de Transporte
+
+A Gestora/Titular também havia autorizado verificar o link antes do envio. A implementação inicial de `Testar acesso` abria a página para inspeção manual, mas não bloqueava o envio quando o servidor rejeitava o link. Para cumprir integralmente a autorização, foi realizada a proteção automática abaixo:
+
+- Migração `supabase/migrations/20261125200500_transport_share_access_probe.sql`, commit `033f95b6`, aplicada com `success:true` como `transport_share_access_probe_20261125`: RPC restrita `probe_transport_direct_share_for_edge(text)`, exclusiva da `service_role`, valida token, modalidade, revogação, prazo e PDF preparado, sem devolver caminhos ou arquivos, sem incrementar o contador de acessos e sem alterar qualquer solicitação.
+- Edge Function `transport-share-access` commit `34affdeb`, implantada na **versão 5 ACTIVE**, aceita o parâmetro `check_only:true`; consulta apenas a RPC de validação e retorna `valid:true` ou erro específico, sem gerar links assinados.
+- Frontend `src/features/transport/TransportPage.tsx` commit `fd2621a5`: a emissão ou recuperação de um link executa automaticamente o teste de validação antes de habilitar os canais WhatsApp e Gmail. Se o servidor responder com falha, os botões ficam desabilitados e uma orientação de erro aparece. O operador pode repetir a tentativa com `Gerar link`, que reutiliza o mesmo link ainda válido; `Testar acesso` continua abrindo a página para conferir visualmente PDF e anexos.
+- Não houve emissão, revogação ou envio de link real por esta manutenção. Token protegido no esquema privado `capo_private`. Teste completo com a conta do Gestor e destinatário real/homologação continua necessário. A publicação na Cloudflare deve ser confirmada pelo commit `fd2621a5`.
+
+---
+
 ## 25/11/2026 — VERDE — correção de link de Transporte (403 e reuso) e encaminhamento
 
 **Autorização:** após auditoria do fluxo completo do Transporte, Gestora/Titular concedeu VERDE para corrigir acesso externo negado, regeneração que inutilizava links anteriores, recuperação do link após atualizar a página, teste antes de enviar, clareza dos erros e preenchimento automático do canal de encaminhamento, preservando toda a interface homologada anterior, modelo do PDF, assinaturas, anexos, histórico e isolamento produção/homologação.
