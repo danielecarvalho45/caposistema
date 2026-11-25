@@ -609,13 +609,13 @@ export function NutritionPage({
               </header>
               <label className="nutrition-document-title-field">
                 Título do documento
-                <input type="text" maxLength={250} value={plan.title} disabled={!patientId || !canEditPlan}
+                <input type="text" value={plan.title} disabled={!patientId || !canEditPlan}
                   onChange={(event) => { setPlanDirty(true); setPlan((current) => ({ ...current, title: event.target.value })) }} />
               </label>
               {nutritionSections.map(({ key, label, rows }) => (
                 <label className="nutrition-document-section" key={key}>
                   <strong>{label}</strong>
-                  <textarea rows={rows} maxLength={5000} value={plan[key]}
+                  <textarea rows={rows} value={plan[key]}
                     disabled={!patientId || !canEditPlan}
                     placeholder="Digite livremente as orientações para este paciente"
                     onChange={(event) => { setPlanDirty(true); setPlan((current) => ({ ...current, [key]: event.target.value })) }} />
