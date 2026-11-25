@@ -98,3 +98,52 @@
   .nutrition-document-preview { border: 0; box-shadow: none; max-width: none; padding: 0; }
   .nutrition-document-editor, .nutrition-document-actions { display: none !important; }
 }
+
+
+/* Controle local de ampliação, sem interferir nos demais botões do CAPO. */
+.nutrition-document-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nutrition-document-section-heading > label {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.nutrition-document-section-heading > label strong {
+  display: block;
+}
+.nutrition-document-section .nutrition-section-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: none;
+  color: #254963;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nutrition-document-section .nutrition-section-toggle:hover:not(:disabled) {
+  background: #e8f1f6;
+}
+.nutrition-document-section .nutrition-section-toggle:focus-visible {
+  outline: 2px solid #307db7;
+  outline-offset: 2px;
+}
+.nutrition-document-section .nutrition-section-toggle:disabled {
+  opacity: .5;
+  cursor: default;
+}
+.nutrition-document-section textarea[rows="13"] {
+  height: auto;
+  min-height: 22em;
+}
