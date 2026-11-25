@@ -1,3 +1,19 @@
+## 25/11/2026 — VERDE — Nutrição: retirada de limites artificiais dos campos de Plano Alimentar
+
+**Autorização da Titular:** digitação livre de textos extensos, sem limites fixos de caracteres, sem reconstruir o fluxo, alterar estética, permissões, histórico ou outros módulos. Investigação anterior demonstrou limites de 250 caracteres no título e 5000 por campo nas RPCs e na interface; não comprovado que fossem a causa específica do relato de falha real de salvamento.
+
+**Backup:** branch `backup/nutricao-texto-livre-2026-11-25`, criada antes da intervenção.
+
+**Banco:** migration `supabase/migrations/20261125180500_nutrition_free_text.sql` (commit `853d282ccc16261e8664dbdd43c0021bacd59953`), aplicada com sucesso no projeto oficial como `nutrition_free_text_20261125`. Retiradas exclusivamente as verificações de tamanho 250/5000 nas duas RPCs de salvamento, preservando assinaturas, regras de sessão, autorização, escopo, ciclo, autoria, arquivamento e gravação. Colunas continuam TEXT e snapshot JSONB. Conferência somente leitura posterior: ambas RPCs sem as verificações fixas, authenticated com EXECUTE, anon sem EXECUTE, escopo nutricional preservado. CHECKs existentes não limitam o texto; trigger de imutabilidade documental mantido. Nenhum registro de paciente ou plano foi alterado para testar.
+
+**Interface:** `src/features/nutrition/NutritionPage.tsx` commit `2a3c1d559d415231610d774d77aebbf1ee82975c` remove somente maxLength 250/5000 dos campos do plano; limites de outros formulários não alterados.
+
+**PDF exclusivo:** `src/lib/pdf/nutrition-document-pdf.ts` commit `50a5521b293cb87fa69912e27d7387b7200fecaf` quebra títulos extensos e palavras sem espaços em linhas, preservando margens, composição A4, paginação e geradores de outros módulos. Testes de regressão para título extenso e sequência de 6001 caracteres versionados no commit `39ba4ab948b430478d4bb7d3c63e95a8dfb3052f`. **Limitação remanescente:** fonte Helvetica/WinAnsi existente não representa todos os caracteres Unicode (alguns são substituídos); não declarar suporte Unicode integral do PDF. A retirada dos limites de digitação e salvamento não exige reescrever o gerador. A solução de fontes Unicode precisa de validação própria para não causar regressão visual/documental.
+
+**Estado:** banco corrigido e verificado por leitura, frontend e ajuste de quebra PDF versionados. Não comprovados Vitest/build, publicação Cloudflare ou salvamento/geração ponta a ponta em sessão manuteste. A homologação continua aberta, incluindo texto longo, acentos, símbolos, múltiplas páginas e confirmação da persistência. Nenhuma alteração no Transporte, agenda, outros PDFs ou dados reais.
+
+---
+
 ## 25/11/2026 — VERDE — inclusão cirúrgica de preferência no link existente de remarcação
 
 **Autorização e limite absoluto:** a Gestora/Titular deu **VERDE** exclusivamente para incluir três escolhas **clicáveis** após clicar **"Não poderei comparecer"** no link público de confirmação **já existente, funcional e com a estética aprovada**: (1) **Próxima consulta disponível**; (2) **Daqui a 15 dias ou após esse período**, contado da solicitação; (3) **Não desejo remarcar**. A escolha é **preferência informativa para o Administrativo**, não consulta automática nem reserva; não alterar emissão/URL, validade, confirmação de presença, estética geral, agenda do profissional, mensagens atuais de WhatsApp, rotinas do familiar ou fluxo de transporte homologado e fechado.
