@@ -69,3 +69,46 @@
   .home-profile-standard .home-profile-grid,
   .home-profile-standard .social-quick-grid { grid-template-columns: 1fr; }
 }
+
+/* CAPO: acabamento compartilhado, exclusivamente visual, para todos os atalhos atuais e futuros. */
+:is(.app-shell,.gestor-shell) :is(.home-profile-standard,.home-profile-gestor,.technical-quick-access,section[aria-labelledby="gestor-quick-title"]) {
+  background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important;
+}
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card) {
+  --capo-glass: rgb(190 213 237 / 53%); --capo-ink: #365d7e;
+  background: linear-gradient(155deg,rgb(255 255 255 / 67%),var(--capo-glass)) !important;
+  color: var(--capo-ink) !important;
+  border: 1px solid rgb(255 255 255 / 80%) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 3px 0 rgb(66 91 120 / 12%), 0 6px 11px -4px rgb(66 91 120 / 24%), inset 0 1px 0 rgb(255 255 255 / 70%) !important;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):is(.quick-green,.quick-mint,.gestor-quick-green,.gestor-quick-mint,.social-quick-card--agenda,.technical-quick-manutencao) { --capo-glass: rgb(183 221 193 / 55%); --capo-ink: #236b43; }
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):is(.quick-pink,.gestor-quick-pink) { --capo-glass: rgb(235 188 208 / 55%); --capo-ink: #96375c; }
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):is(.quick-purple,.quick-violet,.gestor-quick-purple,.gestor-quick-violet,.social-quick-card--requests,.social-quick-card--reports,.technical-quick-chamados) { --capo-glass: rgb(211 193 239 / 55%); --capo-ink: #64409b; }
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):is(.quick-yellow,.gestor-quick-yellow,.social-quick-card--family,.social-quick-card--support,.technical-quick-diagnostico) { --capo-glass: rgb(242 216 163 / 55%); --capo-ink: #865a18; }
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):is(.quick-slate,.gestor-quick-slate) { --capo-glass: rgb(204 214 228 / 55%); --capo-ink: #405a75; }
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card) > :is(span,small,strong) { color: inherit !important; }
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (hover: hover) {
+  :is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):hover { transform: translateY(-2px); }
+}
+:is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card):active { transform: translateY(1px); }
+:is(.app-sidebar,.gestor-sidebar) :is(.app-nav-link,.gestor-nav-link) {
+  border: 1px solid rgb(255 255 255 / 66%); border-radius: 9px;
+  background: linear-gradient(155deg,rgb(255 255 255 / 56%),rgb(205 224 241 / 30%));
+  box-shadow: 0 2px 4px rgb(66 91 120 / 9%); margin-bottom: 4px;
+}
+:is(.app-sidebar,.gestor-sidebar) :is(.app-nav-link,.gestor-nav-link)[aria-current="page"] { background: rgb(205 224 241 / 65%); }
+:is(.app-sidebar,.gestor-sidebar) :is(.app-nav-link,.gestor-nav-link) > span:first-child { flex-shrink: 0; }
+.app-sidebar--accumulated .titular-menu-button {
+  --titular-light: rgb(235 246 255 / 78%) !important; --titular-base: rgb(184 213 234 / 49%) !important; --titular-edge: rgb(91 135 171 / 32%) !important; --titular-ink: #365d7e !important;
+  box-shadow: 0 3px 0 var(--titular-edge),0 5px 10px -4px var(--titular-edge),inset 0 1px 0 rgb(255 255 255 / 68%) !important;
+}
+.app-sidebar--accumulated .titular-menu-button:is([data-tone="operacional"],[data-tone="profissional"]) { --titular-light: rgb(255 239 245 / 78%) !important; --titular-base: rgb(230 188 205 / 48%) !important; --titular-edge: rgb(160 106 130 / 30%) !important; --titular-ink: #79425c !important; }
+.app-sidebar--accumulated .titular-menu-button[data-tone="gestor"] { --titular-light: rgb(255 249 229 / 80%) !important; --titular-base: rgb(235 216 158 / 48%) !important; --titular-edge: rgb(156 129 67 / 30%) !important; --titular-ink: #765b22 !important; }
+.app-sidebar--accumulated .titular-menu-button[data-tone="ti"] { --titular-light: rgb(242 250 235 / 80%) !important; --titular-base: rgb(190 215 177 / 48%) !important; --titular-edge: rgb(100 140 83 / 30%) !important; --titular-ink: #46673c !important; }
+.app-sidebar--accumulated .titular-menu-button[data-tone="sair"] { --titular-light: rgb(249 241 255 / 78%) !important; --titular-base: rgb(215 197 231 / 48%) !important; --titular-edge: rgb(130 106 158 / 30%) !important; --titular-ink: #654c7c !important; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card) { transition: none; transform: none !important; }
+}
