@@ -3804,6 +3804,8 @@ export function createRpcService(transport: RpcTransport) {
       }, parse: parseConfirmedJson }),
     getTransportReminderQueue: () =>
       execute({ transport, operation: 'get_transport_reminder_queue_for_interface', args: {}, parse: parseConfirmedJson }),
+    getTransportWorklist: (view: 'recebidas' | 'concluidas' | 'acompanhamento', query = '', limit = 100) =>
+      execute({ transport, operation: 'get_transport_worklist_for_interface', args: { p_view: view, p_query: query, p_limit: limit }, parse: parseConfirmedJson }),
     getTransportAdministrativeQueue: (limit = 50) =>
       execute({ transport, operation: 'get_transport_administrative_queue_for_interface', args: { p_limit: limit }, parse: (value) => value }),
     getTransportSectorContacts: () =>
@@ -3990,6 +3992,7 @@ export function createSupabaseTransport(
       case 'set_transport_vehicle_type_for_interface':
       case 'get_transport_reminder_queue_for_interface':
       case 'get_transport_administrative_queue_for_interface':
+      case 'get_transport_worklist_for_interface':
       case 'get_transport_sector_contacts_for_interface':
       case 'set_transport_sector_contacts_for_interface':
       case 'set_transport_sector_channels_for_interface':
