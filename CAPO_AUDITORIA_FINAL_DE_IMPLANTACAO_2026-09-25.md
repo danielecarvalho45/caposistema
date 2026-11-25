@@ -1,3 +1,25 @@
+## 25/11/2026 — HOMOLOGAÇÃO EXPRESSA DA TITULAR — TRANSPORTE FECHADO, MANUTENÇÃO EXCLUSIVAMENTE PONTUAL
+
+**Decisão expressa da Gestora/Titular:** a Titular declarou o **fluxo de Transporte TESTADO, CONCLUÍDO, HOMOLOGADO E FECHADO** e determinou seu fechamento definitivo como fluxo funcional. A ordem atual e prevalecente é **não reabrir o desenho estrutural do Transporte**. O comportamento de referência é **exclusivamente o fluxo que a Titular desenhou, testou e concluiu**, nos termos das etapas e regras aprovadas do Documento Mestre e do uso homologado no ambiente `manuteste`. Esta aprovação não equivale a uma nova inspeção técnica independente de todas as ações e não substitui a evidência de build/publicação quando ela for necessária para diagnosticar um erro futuro.
+
+**Estado do módulo:** **HOMOLOGADO PELA TITULAR — FLUXO FECHADO — PROIBIDA RECONSTRUÇÃO/REDESENHO**.
+
+### Regra vinculante de proteção do fluxo homologado
+
+1. **Não reabrir, reestruturar, modernizar, refatorar ou reescrever** o fluxo de Transporte já construído por causa de outra demanda. Não trocar por telas/etapas paralelas nem modificar o comportamento que foi aprovado em `manuteste`; não remover ações, campos, mensagens, contatos, protocolos, PDFs, anexos ou histórico já homologados.
+2. **Única manutenção admissível:** corrigir **erro concreto de comportamento inadequado do sistema em comparação com o fluxo homologado**, como divergência de banco, gravação, recuperação de dados, permissões, RLS, status, PDF/documento, link, mensagem, abertura de canal, botão, apresentação ou publicação. Corrigir apenas o defeito comprovado, **sem reabrir o escopo funcional**.
+3. **Toda manutenção será cirúrgica e pontual:** primeiro investigar o relato, ler este Documento Mestre e as regras anteriores, identificar a causa e o **trecho exato** de código/RPC/constraint responsável, comparar com a última versão homologada e conferir dependências; só depois de **novo VERDE expresso para a correção específica** fazer a mínima intervenção necessária. Não usar o VERDE deste fechamento como autorização para intervenções futuras.
+4. **Regressão é inaceitável:** nenhuma correção pode desconstruir função testada para construir outra. Preservar todo o comportamento preexistente, inclusive assinaturas, PDF e versões anteriores, protocolos individuais, solicitação/recebimento/acompanhamento/conclusão, contatos do Transporte, canais WhatsApp/Gmail, autoria e histórico.
+5. **Preservar isolamento:** produção e `manuteste` continuam isolados logicamente dentro do banco existente; dados de teste não aparecem nos perfis reais, dados reais não aparecem em testes. Não criar outro banco nem mover registros de pacientes reais para simulações.
+6. **Validação antes de encerrar defeito:** inspeção do antes/depois, testes da correção e dos caminhos vizinhos em homologação sem alterar pacientes reais, conferência de compatibilidade de contratos do banco, build/publicação aplicáveis e anotação no Documento Mestre. **Uma correção de defeito deve ser comprovada; não altera o status FECHADO do fluxo** nem autoriza redesenho.
+7. **Preservar o histórico:** documentação das manutenções anteriores, inclusive registros que declaram testes técnicos pendentes naquele momento, permanece intacta como fotografia histórica. Esta entrada registra **a homologação e a decisão atuais da Titular** e não altera retroativamente verificações anteriores.
+
+**Escopo deste registro:** atualização **exclusivamente documental** na branch `main`. **Nenhuma** alteração de interface, código funcional, banco Supabase, permissões, dados, PDFs, links, agendamentos, deploy ou ambiente `manuteste` é necessária ou autorizada por este fechamento.
+
+**REGRA DE CONTINUIDADE ENTRE CHATS:** ao iniciar nova manutenção, conferir obrigatoriamente esta decisão antes de propor qualquer alteração no Transporte. **Transporte está homologado e fechado; apenas manutenção pontual de erro confirmado no comportamento aprovado, mediante novo VERDE.**
+
+---
+
 ## 25/11/2026 — VERDE — correção GLOBAL da incompatibilidade de origem da remarcação por link
 
 **Solicitação e escopo:** após identificar a falha de remarcação da paciente Simone Rodrigues Silva, a Gestora/Titular esclareceu que não deseja uma exceção para o caso individual: **"Verifica a incompatibilidade em todo sistema [...] localiza o erro do sistema e corrige o erro do sistema a remarcação da paciente faço manual"**. Autorização para corrigir a regra do sistema de forma global; **não reagendar a paciente nem alterar dados de consultas ou resolver notificações pendentes**.
