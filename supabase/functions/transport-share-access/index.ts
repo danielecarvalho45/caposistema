@@ -28,7 +28,7 @@ Deno.serve(async (request: Request) => {
   try { payload = await request.json(); } catch { return respond({ error: "Dados inválidos." }, 400); }
   const token = typeof payload.token === "string" ? payload.token : "";
   const pin = typeof payload.pin === "string" ? payload.pin : "";
-  if (!/^[a-f0-9]{64}$/.test(token) || !/^[0-9]{8}$/.test(pin)) {
+  if (!/^[a-f0-9]{64}$/.test(token) || (pin !== "" && !/^[0-9]{8}$/.test(pin))) {
     return respond({ error: "Link ou código inválido." }, 403);
   }
   if (!SUPABASE_URL || !SERVICE_KEY) return respond({ error: "Serviço indisponível." }, 503);
@@ -36,12 +36,19 @@ Deno.serve(async (request: Request) => {
     const db = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data, error } = await db.rpc("open_transport_share_for_edge", {
-      p_token: token, p_pin: pin,
-    });
+    // Links diretos novos não têm PIN. Links legados seguem exigindo seu PIN.
+    const { data, error } = pin
+      ? await db.rpc("open_transport_share_for_edge", { p_token: token, p_pin: pin })
+      : await db.rpc("open_transport_direct_share_for_edge", { p_token: token });
     if (error || !data || !Array.isArray(data.documents)) {
-      return respond({ error: "Link expirado, revogado ou código inválido." }, 403);
+      return respond({ error: "Link indisponível. O prazo de acesso à documentação terminou ou o link foi revogado. Solicite outro ao CAPO." }, 403);
     }
+    // A URL do arquivo nunca pode sobreviver à validade do link da solicitação.
+    const remainingSeconds = Math.floor((new Date(data.expires_at).getTime() - Date.now()) / 1000);
+    if (!Number.isFinite(remainingSeconds) || remainingSeconds <= 0) {
+      return respond({ error: "Link indisponível. O prazo para acesso à documentação terminou." }, 403);
+    }
+    const fileTtlSeconds = Math.min(120, remainingSeconds);
     const documents: { name: string; url: string; downloadUrl: string }[] = [];
     for (const entry of data.documents) {
       const name = typeof entry.name === "string" ? entry.name : "Documento.pdf";
@@ -49,17 +56,17 @@ Deno.serve(async (request: Request) => {
       if (!/^transport\/[0-9a-f-]{36}\//.test(path) || !path.endsWith(".pdf")) {
         return respond({ error: "Documento indisponível." }, 503);
       }
-      const result = await db.storage.from("capo-documents").createSignedUrl(path, 120);
+      const result = await db.storage.from("capo-documents").createSignedUrl(path, fileTtlSeconds);
       if (result.error || !result.data?.signedUrl) {
         return respond({ error: "Não foi possível liberar o documento." }, 503);
       }
-      const downloadResult = await db.storage.from("capo-documents").createSignedUrl(path, 120, {download: name});
+      const downloadResult = await db.storage.from("capo-documents").createSignedUrl(path, fileTtlSeconds, {download: name});
       if (downloadResult.error || !downloadResult.data?.signedUrl) {
         return respond({ error: "Não foi possível liberar o download." }, 503);
       }
       documents.push({ name, url: result.data.signedUrl, downloadUrl: downloadResult.data.signedUrl });
     }
-    return respond({ documents, access_expires_at: data.expires_at, url_expires_seconds: 120 });
+    return respond({ documents, access_expires_at: data.expires_at, url_expires_seconds: fileTtlSeconds });
   } catch {
     return respond({ error: "Não foi possível acessar os documentos." }, 503);
   }
