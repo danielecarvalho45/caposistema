@@ -80,6 +80,12 @@ function splitText(value: string, font: number, maxWidth: number, bold = false):
 }
 
 export function buildTransportOfficialPdf(data: TransportPdfData): Blob {
+  // Data da emissão real, capturada uma única vez e preservada em todas as páginas.
+  const generatedAt = new Date().toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).replace(',', ' às')
   const pages: string[][] = []
   let commands: string[] = []
   let cursor = 702
@@ -206,8 +212,15 @@ export function buildTransportOfficialPdf(data: TransportPdfData): Blob {
       ' >>\nstream\n'), logo, asBytes('\nendstream')]),
   ]
   pages.forEach((pageCommands, i) => {
-    const content = asBytes(pageCommands.join('\n') + '\nBT\n/F1 9 Tf\n' + darkBlue +
-      ' rg\n1 0 0 1 478 29 Tm\n(' + escaped('Página ' + (i + 1) + ' de ' + pages.length) + ') Tj\nET\n')
+    // Rodapé fixo e discreto: à esquerda a data/hora de emissão, à direita a paginação.
+    const footer = [
+      'q', '0.80 0.89 0.89 RG', '0.5 w', '55 45 m 540 45 l S', 'Q',
+      'BT', '/F1 9 Tf', darkBlue + ' rg',
+      '1 0 0 1 57 29 Tm', '(' + escaped('Documento gerado em: ' + generatedAt) + ') Tj', 'ET',
+      'BT', '/F1 9 Tf', darkBlue + ' rg',
+      '1 0 0 1 478 29 Tm', '(' + escaped('Página ' + (i + 1) + ' de ' + pages.length) + ') Tj', 'ET',
+    ]
+    const content = asBytes([...pageCommands, ...footer].join('\n') + '\n')
     objects.push(asBytes('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /ProcSet [/PDF /Text /ImageC] /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Logo 5 0 R >> >> /Contents ' + (ids[i] + 1) + ' 0 R >>'))
     objects.push(concat([asBytes('<< /Length ' + content.length + ' >>\nstream\n'), content, asBytes('endstream')]))
   })
