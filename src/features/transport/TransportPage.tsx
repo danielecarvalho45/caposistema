@@ -489,8 +489,10 @@ export function TransportPage({ accessContext }: Props) {
       'O CAPO solicita providências de transporte para o(a) paciente ' + patientName + ', em acompanhamento pelo serviço.',
       appointmentLabel ? 'Atendimento previsto: ' + appointmentLabel + '.' : '',
       'Toda a documentação necessária ao transporte, incluindo o PDF oficial da solicitação e os documentos complementares anexados, está disponível no link abaixo:',
+      '',
       activeShare.url,
-      'Acesse o link para visualizar, baixar ou imprimir a documentação.',
+      '',
+      'Clique no endereço acima para visualizar ou baixar a documentação.',
       'ATENÇÃO: o link é válido por 24 horas. Visualize ou baixe a documentação antes do vencimento, pois depois o acesso ficará indisponível.',
       'Link válido até: ' + new Date(activeShare.expires).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', hour12:false}) + '.',
       'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
@@ -508,7 +510,8 @@ export function TransportPage({ accessContext }: Props) {
       }
       gmailTab.opener = null
       gmailTab.focus()
-      setFeedback('Gmail aberto com a mensagem preparada. Confira o destinatário e envie manualmente.')
+      setChannel('Gmail — ' + destination)
+      setFeedback('Gmail aberto com a mensagem preparada. Confira o destinatário, o link e envie manualmente.')
       return
     }
 
@@ -520,6 +523,7 @@ export function TransportPage({ accessContext }: Props) {
       setFeedback('Não foi possível abrir o WhatsApp. Autorize pop-ups para o CAPO e tente novamente.')
       return
     }
+    setChannel((key === 'phone_responsible' ? 'WhatsApp responsável — ' : 'WhatsApp setor — ') + destination)
     setFeedback('WhatsApp aberto com a mensagem preparada. Confira os dados e envie manualmente.')
   }
 
@@ -1216,8 +1220,8 @@ export function TransportPage({ accessContext }: Props) {
         <h2>Acompanhamento</h2>
         {canForwardExternally && (
           <>
-            <label>Canal institucional para encaminhamento
-              <input value={channel} onChange={(event) => setChannel(event.target.value)} placeholder="Ex.: e-mail institucional" />
+            <label>Canal utilizado no encaminhamento
+              <input value={channel} readOnly placeholder="Clique no WhatsApp ou Gmail para selecionar o canal" />
             </label>
             <label>Referência / protocolo
               <input value={reference} onChange={(event) => setReference(event.target.value)} />
@@ -1315,7 +1319,7 @@ export function TransportPage({ accessContext }: Props) {
                               ? '☏ WhatsApp responsável · ' + contacts[key] : '✉ WhatsApp setor · ' + contacts[key]}
                           </button>
                         ) : null)}
-                        <small>O WhatsApp ou e-mail abrirá com a mensagem já preenchida e o link contendo o PDF oficial e os anexos. O link expira automaticamente após 24 horas; registre o encaminhamento apenas após enviar.</small>
+                        <small>Clique em Testar acesso para conferir os PDFs antes de enviar. O WhatsApp ou Gmail abrirá com a mensagem e o link. O canal é preenchido automaticamente, mas o envio permanece manual. O link vence após 24 horas.</small>
                       </div>
                     )}
                     {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && shareAccess?.requestId === id && (
