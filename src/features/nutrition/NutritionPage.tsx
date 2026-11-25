@@ -1,3 +1,4 @@
+import { CapoShortcutIcon } from '../../components/icons/CapoIcon'
 import { useEffect, useState } from 'react'
 import { TeamMonthlyBirthdays } from '../../components/birthdays/TeamMonthlyBirthdays'
 import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type AgendaAppointment, type ReferralPatient } from '../../lib/supabase/rpc'
@@ -564,12 +565,12 @@ export function NutritionPage({
           <nav className="home-profile home-profile-standard" aria-label="Acessos rápidos da Nutrição">
             <h2>Acessos rápidos</h2>
             <div className="home-profile-grid">
-              <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
-              <Link className="home-profile-card quick-purple" to="/minha-agenda/solicitar-alteracao"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
-              <Link className="home-profile-card quick-green" to="/nutricao" state={{ returnTo: '/' }}><span className="home-profile-icon" aria-hidden="true">◉</span><strong>Planejamento Alimentar</strong><span>Abrir o módulo da Nutrição</span></Link>
-              <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Demandas da própria atuação</span></Link>
-              <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores da Nutrição</span></Link>
-              <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true">?</span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
+              <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/agenda" /></span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
+              <Link className="home-profile-card quick-purple" to="/minha-agenda/solicitar-alteracao"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/minha-agenda/solicitar-alteracao" /></span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
+              <Link className="home-profile-card quick-green" to="/nutricao" state={{ returnTo: '/' }}><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/nutricao" /></span><strong>Planejamento Alimentar</strong><span>Abrir o módulo da Nutrição</span></Link>
+              <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/solicitacoes" /></span><strong>Solicitações</strong><span>Demandas da própria atuação</span></Link>
+              <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/relatorios" /></span><strong>Relatórios</strong><span>Indicadores da Nutrição</span></Link>
+              <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/suporte" /></span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
             </div>
           </nav>
 

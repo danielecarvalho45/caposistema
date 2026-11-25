@@ -1,3 +1,4 @@
+import { CapoShortcutIcon } from '../../components/icons/CapoIcon'
 import { useEffect, useState } from 'react'
 import { effectiveProfessionalSpecialtyName, normalizeProfessionalSpecialty } from '../professional/professional-screen'
 import type { AccessContext } from '../../types/access'
@@ -225,13 +226,13 @@ export function SocialPage({
           <section className="social-quick-access home-profile-standard" aria-labelledby="quick-title">
             <h2 id="quick-title">Acessos rápidos</h2>
             <div className="social-quick-grid">
-              <Link className="social-quick-card social-quick-card--agenda" to="/agenda"><span className="social-quick-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
-              <Link className="social-quick-card social-quick-card--requests" to="/minha-agenda/solicitar-alteracao"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
-              <Link className="social-quick-card social-quick-card--followup" to="/assistencia-social"><span className="social-quick-icon" aria-hidden="true">♡</span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></Link>
-              <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true">♧</span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
-              <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
-              <Link className="social-quick-card social-quick-card--reports" to="/relatorios"><span className="social-quick-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores da própria atuação</span></Link>
-              <Link className="social-quick-card social-quick-card--support" to="/suporte"><span className="social-quick-icon" aria-hidden="true">?</span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
+              <Link className="social-quick-card social-quick-card--agenda" to="/agenda"><span className="social-quick-icon" aria-hidden="true"><CapoShortcutIcon path="/agenda" /></span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
+              <Link className="social-quick-card social-quick-card--requests" to="/minha-agenda/solicitar-alteracao"><span className="social-quick-icon" aria-hidden="true"><CapoShortcutIcon path="/minha-agenda/solicitar-alteracao" /></span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
+              <Link className="social-quick-card social-quick-card--followup" to="/assistencia-social"><span className="social-quick-icon" aria-hidden="true"><CapoShortcutIcon path="/assistencia-social" /></span><strong>Acompanhamento Social no Serviço CAPO</strong><span>Ativos e encerrados</span></Link>
+              <Link className="social-quick-card social-quick-card--family" to="/familiar-cuidador"><span className="social-quick-icon" aria-hidden="true"><CapoShortcutIcon path="/familiar-cuidador" /></span><strong>Familiar / Cuidador</strong><span>Vínculo ativo e histórico</span></Link>
+              <Link className="social-quick-card social-quick-card--requests" to="/solicitacoes"><span className="social-quick-icon" aria-hidden="true"><CapoShortcutIcon path="/solicitacoes" /></span><strong>Solicitações</strong><span>Providências operacionais</span></Link>
+              <Link className="social-quick-card social-quick-card--reports" to="/relatorios"><span className="social-quick-icon" aria-hidden="true"><CapoShortcutIcon path="/relatorios" /></span><strong>Relatórios</strong><span>Indicadores da própria atuação</span></Link>
+              <Link className="social-quick-card social-quick-card--support" to="/suporte"><span className="social-quick-icon" aria-hidden="true"><CapoShortcutIcon path="/suporte" /></span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
             </div>
           </section>
 

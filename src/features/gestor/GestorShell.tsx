@@ -1,3 +1,4 @@
+import { CapoShortcutIcon } from '../../components/icons/CapoIcon'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useBackToPreviousFunction } from '../../lib/navigation/back'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -98,7 +99,7 @@ function NavGroup({ label, items, activePath, accessContext }: Readonly<{
           state={item.state}
           key={item.path}
         >
-          <span aria-hidden="true">{item.icon}</span>
+          <span aria-hidden="true"><CapoShortcutIcon path={item.path} size={18} /></span>
           {item.label}
         </Link>
       ))}

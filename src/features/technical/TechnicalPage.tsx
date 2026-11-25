@@ -1,3 +1,4 @@
+import { CapoIcon } from '../../components/icons/CapoIcon'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -409,7 +410,7 @@ export function TechnicalPage({
             aria-current={activeTab === key ? 'page' : undefined}
             onClick={() => setActiveTab(key)}
           >
-            <span className="technical-quick-icon" aria-hidden="true">{{ painel: '▣', chamados: '▤', diagnostico: '◷', manutencao: '⚙' }[key]}</span>
+            <span className="technical-quick-icon" aria-hidden="true"><CapoIcon name={key === 'painel' ? 'monitor' : key === 'chamados' ? 'clipboard' : key === 'diagnostico' ? 'activity' : 'settings'} size={24} /></span>
             <strong>{label}</strong>
             <span>{{ painel: 'Estado do sistema', chamados: 'Receber e acompanhar', diagnostico: 'Conexão, integrações e logs', manutencao: 'Ferramentas e documentação' }[key]}</span>
           </button>

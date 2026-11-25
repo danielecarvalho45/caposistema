@@ -1,3 +1,4 @@
+import { CapoShortcutIcon } from '../../components/icons/CapoIcon'
 import { Link } from 'react-router-dom'
 import { canAccessAppRoute, type AppRoute } from '../../app/route-access'
 import type { AccessContext } from '../../types/access'
@@ -242,7 +243,7 @@ export function ProfileDashboard({
           >
             {item.icon && (
               <span className="home-profile-icon" aria-hidden="true">
-                {item.icon}
+                <CapoShortcutIcon path={item.path} />
               </span>
             )}
             <strong>{item.label}</strong>
