@@ -99,7 +99,26 @@ export function layoutNutritionParagraph(text: string, maxWidth = CONTENT_WIDTH,
       current = []
       currentWidth = 0
     }
-    for (const word of words) {
+    // Break exceptionally long unspaced text without dropping characters.
+    const wrappedWords = words.flatMap(word => {
+      if (width(word, size) <= maxWidth) return [word]
+      const pieces: string[] = []
+      let piece = ''
+      let pieceWidth = 0
+      for (const character of Array.from(word)) {
+        const characterWidth = width(character, size)
+        if (piece && pieceWidth + characterWidth > maxWidth) {
+          pieces.push(piece)
+          piece = ''
+          pieceWidth = 0
+        }
+        piece += character
+        pieceWidth += characterWidth
+      }
+      if (piece) pieces.push(piece)
+      return pieces
+    })
+    for (const word of wrappedWords) {
       if (!current.length) {
         current.push(word)
         currentWidth = width(word, size)
@@ -153,7 +172,10 @@ function layoutPages(document: NutritionDocument): Page[] {
   const cms = value(document, 'cms')
   if (number || cms) line([number ? 'Nº CAPO: ' + number : '', cms ? 'CMS: ' + cms : ''].filter(Boolean).join('   ·   '), 9.5, false, LEFT, 0, 15)
   gap(16)
-  center((value(document.plan_snapshot as NutritionDocument, 'document_title') || 'PLANO ALIMENTAR ORAL').toUpperCase(), 12, true, 22)
+  const title = value(document.plan_snapshot as NutritionDocument, 'document_title') || 'PLANO ALIMENTAR ORAL'
+  for (const titleLine of layoutNutritionParagraph(title.toUpperCase(), CONTENT_WIDTH - 24, 12)) {
+    center(titleLine.text, 12, true, 22)
+  }
   rule()
   const snapshot = document.plan_snapshot && typeof document.plan_snapshot === 'object'
     ? document.plan_snapshot as NutritionDocument : null
