@@ -15,3 +15,10 @@
 .capo-confirmation-done{padding:16px;background:#e6f6ec;border-radius:10px;color:#125a32;font-weight:600}
 .capo-confirmation-error{color:#a32128}
 .capo-confirmation-card footer{margin-top:25px;padding-top:15px;border-top:1px solid #e1e9f0;font-size:13px;text-align:center;color:#526e88}
+
+/* Somente a pequena escolha adicional exibida após "Não poderei comparecer". */
+.capo-reschedule-preferences{margin:2px 0 0;padding:12px;border:1px solid #d5e4f2;border-radius:11px;display:grid;gap:10px;min-width:0}
+.capo-reschedule-preferences legend{padding:0 5px;font-size:15px;font-weight:700;color:#17365f}
+.capo-reschedule-choice{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #d5e4f2;border-radius:9px;background:#f7fbff;cursor:pointer;font-size:15px}
+.capo-reschedule-choice input{width:19px;height:19px;accent-color:#1766c7;flex-shrink:0}
+.capo-reschedule-choice:focus-within{outline:2px solid #1766c7;outline-offset:2px}
