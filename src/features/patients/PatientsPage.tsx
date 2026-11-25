@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -845,8 +846,8 @@ ADMINISTRATIVO DO CAPO`
                 readOnly
               />
               <div className="patients-form-actions patients-offer-actions">
-                <button type="button" disabled={whatsappNumber.length < 10 || !offerPatientId || offerOpenBusy} onClick={() => void openWhatsApp()}>
-                  Abrir WhatsApp
+                <button type="button" style={capoWhatsAppStyle} disabled={whatsappNumber.length < 10 || !offerPatientId || offerOpenBusy} onClick={() => void openWhatsApp()}>
+                  <CapoWhatsAppIcon /> Abrir WhatsApp
                 </button>
               </div>
             </div>
@@ -1081,12 +1082,12 @@ ADMINISTRATIVO DO CAPO`
 
           <div className="patients-flow-actions" aria-label={`Ações do paciente ${editForm.full_name || ''}`}>
             {editForm.status !== 'obito' && patientWhatsAppHref(editForm.phone) ? (
-              <a href={patientWhatsAppHref(editForm.phone) ?? undefined} target="_blank" rel="noreferrer">
-                <span aria-hidden="true">💬</span>
+              <a style={capoWhatsAppStyle} href={patientWhatsAppHref(editForm.phone) ?? undefined} target="_blank" rel="noreferrer">
+                <CapoWhatsAppIcon />
                 WhatsApp
               </a>
             ) : (
-              <span className="is-disabled"><span aria-hidden="true">💬</span> WhatsApp</span>
+              <span className="is-disabled" style={{ ...capoWhatsAppStyle, opacity: 0.5 }}><CapoWhatsAppIcon /> WhatsApp</span>
             )}
 
             {editForm.status !== 'obito' && canAccessAppRoute(accessContext, '/agenda') && (
