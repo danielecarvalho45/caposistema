@@ -17,7 +17,7 @@ type GestorShellProps = Readonly<{
   onLogout: () => Promise<void>
 }>
 
-type NavItem = Readonly<{ path: string; icon: string; label: string }>
+type NavItem = Readonly<{ path: string; icon: string; label: string; reportView?: 'operacional' }>
 
 const serviceItems: readonly NavItem[] = [
   { path: '/pacientes', icon: '👥', label: 'Pacientes' },
@@ -63,7 +63,7 @@ const titularOperationalItems: readonly NavItem[] = [
   { path: '/encerramentos', icon: '✓', label: 'Encerramentos' },
   { path: '/notificacoes', icon: '●', label: 'Notificações' },
   { path: '/suporte', icon: '?', label: 'Suporte' },
-  { path: '/relatorios', icon: '▥', label: 'Relatórios' },
+  { path: '/relatorios', icon: '▥', label: 'Relatórios', reportView: 'operacional' },
 ]
 
 const titularRetainedItems = serviceItems.filter((item) =>
@@ -89,6 +89,7 @@ function NavGroup({ label, items, activePath, accessContext }: Readonly<{
           className="gestor-nav-link"
           aria-current={activePath === item.path ? 'page' : undefined}
           to={item.path}
+          state={item.reportView ? { titularReportView: item.reportView } : undefined}
           key={item.path}
         >
           <span aria-hidden="true">{item.icon}</span>
