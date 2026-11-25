@@ -423,10 +423,27 @@ export function TransportPage({ accessContext }: Props) {
       }
       const url = `https://caposistema.pages.dev/transporte-documentos.html#direto=${token}`
       setShareAccess({requestId: id, url, expires})
-      setFeedback('Link de documentação gerado, sem código, válido por 24 horas. Após esse prazo, ficará indisponível. Gerar outro link revoga o anterior.')
+      setFeedback(data.reused === true
+        ? 'Link atual recuperado. O prazo original de 24 horas foi mantido, sem revogar o endereço encaminhado.'
+        : 'Link criado, válido por 24 horas e sem código. Teste o acesso antes de enviar aos destinatários.')
     } finally {
       setBusy(false)
     }
+  }
+
+  function testShareLink(request: TransportRecord) {
+    const activeShare = shareAccess?.requestId === requestId(request) ? shareAccess : null
+    if (!activeShare) {
+      setFeedback('Consulte ou gere o link da solicitação antes de testar.')
+      return
+    }
+    if (Date.parse(activeShare.expires) <= Date.now()) {
+      setFeedback('O link venceu. Gere um novo antes de encaminhar.')
+      return
+    }
+    const testTab = globalThis.open(activeShare.url, '_blank', 'noopener,noreferrer')
+    if (!testTab) setFeedback('O navegador bloqueou o teste. Permita pop-ups para o CAPO.')
+    else setFeedback('Página de documentos aberta para conferência. Verifique se o PDF oficial e os anexos podem ser visualizados e baixados antes de enviar.')
   }
 
   async function revokeShare(request: TransportRecord) {
@@ -530,15 +547,39 @@ export function TransportPage({ accessContext }: Props) {
   async function loadContext(id: string, name: string) {
     setPatientId(id)
     setPatientName(name)
-    setShareAccess((value) => value?.requestId && id !== patientId ? null : value)
+    setShareAccess(null)
     setDocumentsRequest(null)
     setPdfHistoryRequestId(null)
     setArchivedPdfVersions([])
     setSelectedAppointmentId('')
     const result = await getRpcService().getTransportContext(id)
     if (result.status === 'success') {
-      setContext(result.data as TransportRecord)
+      const loadedContext = result.data as TransportRecord
+      setContext(loadedContext)
       setFeedback(null)
+      // Recuperar o link válido que já foi criado, sem emitir outro nem revogá-lo.
+      if (canAdminister) {
+        const confirmed = rowsFromContext(loadedContext, 'requests', 'transport_requests', 'items')
+          .filter((item) => field(item, 'status') === 'confirmado'
+            && Boolean(field(item, 'pdf_prepared_at'))
+            && !field(item, 'external_forwarded_at'))
+        for (const request of confirmed.slice(0, 5)) {
+          const existing = await getRpcService().getTransportDirectShare(requestId(request))
+          if (existing.status !== 'success' || !existing.data
+              || typeof existing.data !== 'object' || Array.isArray(existing.data)) continue
+          const info = existing.data as TransportRecord
+          const token = field(info, 'token')
+          const expires = field(info, 'expires_at')
+          if (token && expires) {
+            setShareAccess({
+              requestId: requestId(request),
+              url: `https://caposistema.pages.dev/transporte-documentos.html#direto=${token}`,
+              expires,
+            })
+            break
+          }
+        }
+      }
     } else if (result.status === 'empty') {
       setContext(null)
       setFeedback('Nenhum contexto de transporte real encontrado para este paciente.')
@@ -1226,15 +1267,16 @@ export function TransportPage({ accessContext }: Props) {
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
                         {canAdminister && !forwarded && (
-                          <button type="button" disabled={busy} onClick={() => void issueShare(request)}>🔗 Gerar link</button>
+                          <button type="button" disabled={busy} onClick={() => void issueShare(request)}>{shareAccess?.requestId === id ? '🔗 Consultar link' : '🔗 Gerar link'}</button>
                         )}
                       </>
                     )}
                     {canAdminister && status === 'confirmado' && pdfPrepared && shareAccess?.requestId === id && !forwarded && (
                       <div className="transport-share-access">
-                        <p><strong>Link gerado — válido por 24 horas, sem código.</strong> O PDF oficial e todos os documentos complementares anexados estão no mesmo link.</p>
+                        <p><strong>Link ativo — válido por 24 horas desde a emissão, sem código.</strong> O PDF oficial e os anexos estão no mesmo endereço. Consultar não reinicia o prazo.</p>
                         <p><small>Oriente o destinatário a visualizar ou baixar a documentação antes do vencimento. Depois, o link ficará indisponível.</small></p>
                         <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.url)}>Copiar link</button>
+                        <button type="button" onClick={() => testShareLink(request)}>Testar acesso</button>
                         <button type="button" disabled={busy} onClick={() => void revokeShare(request)}>Revogar link</button>
                       </div>
                     )}
