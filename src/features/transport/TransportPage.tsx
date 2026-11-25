@@ -83,6 +83,8 @@ export function TransportPage({ accessContext }: Props) {
   const [activeTab, setActiveTab] = useState<'principal' | 'recebidas' | 'concluidas'>('principal')
   const [selectedRequestId, setSelectedRequestId] = useState('')
   const [worklistQuery, setWorklistQuery] = useState('')
+  const [trackingQuery, setTrackingQuery] = useState('')
+  const [trackingResults, setTrackingResults] = useState<readonly TransportRecord[]>([])
   const [receivedRequests, setReceivedRequests] = useState<readonly TransportRecord[]>([])
   const [completedRequests, setCompletedRequests] = useState<readonly TransportRecord[]>([])
   const [contactsEditing, setContactsEditing] = useState(false)
@@ -203,6 +205,14 @@ export function TransportPage({ accessContext }: Props) {
     setSelectedRequestId(requestId(item))
     setActiveTab('principal')
     await loadContext(id, field(item, 'patient_name') ?? 'Paciente')
+  }
+
+  async function searchTracking() {
+    if (!canAdminister) return
+    const result = await getRpcService().getTransportWorklist('acompanhamento', trackingQuery.trim())
+    if (result.status === 'success') {
+      setTrackingResults(Array.isArray(result.data) ? result.data as readonly TransportRecord[] : [])
+    } else if (result.status === 'error') setFeedback(result.error.message)
   }
 
   async function reloadAdministrativeQueue() {
@@ -1244,6 +1254,28 @@ export function TransportPage({ accessContext }: Props) {
 
       <div className="home-ops">
         <h2>Acompanhamento</h2>
+        {canAdminister && (
+          <div className="transport-tracking-search">
+            <div className="patient-search">
+              <label>Buscar solicitação por nome, Nº CAPO ou protocolo
+                <input value={trackingQuery} onChange={(event) => setTrackingQuery(event.target.value)} />
+              </label>
+              <button type="button" onClick={() => void searchTracking()}>Buscar</button>
+            </div>
+            {trackingResults.length > 0 && (
+              <ul className="transport-queue">
+                {trackingResults.map((item) => (
+                  <li key={requestId(item)}>
+                    <button type="button" onClick={() => { setTrackingResults([]); void openProtocol(item) }}>
+                      <strong>{field(item,'patient_name') ?? 'Paciente'}</strong>
+                      <small>{field(item,'protocol') ?? 'Sem protocolo'} · {field(item,'status') ?? ''}</small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         {canForwardExternally && (
           <>
             <label>Canal utilizado no encaminhamento
