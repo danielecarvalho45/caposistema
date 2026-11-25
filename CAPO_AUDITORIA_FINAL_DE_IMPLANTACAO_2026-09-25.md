@@ -1,3 +1,13 @@
+## 25/11/2026 — VERDE: ícone compacto azul CAPO para WhatsApp dos pacientes aniversariantes de hoje
+
+**Solicitação da Titular:** reduzir exclusivamente o botão de abertura do WhatsApp ao lado dos pacientes aniversariantes de hoje, preservando mensagem já estipulada e comportamento; correção estética final expressa: manter padrão CAPO azul-claro, com símbolo reconhecível do WhatsApp. Não confundir com botão de atualização. Módulo de aniversariantes homologado em 24/11, reaberto somente para este ajuste pontual. Consulta prévia a este Documento Mestre e aos quatro componentes reais antes do VERDE.
+
+**Backup:** `backup/aniversariantes-whatsapp-compacto-2026-11-25`. **Implementação:** `src/components/contact/PatientWhatsAppButton.tsx` commit `a362407603b3c1711107f984d91acf83bd82cb2e`: opção compacta opt-in (default false), botão de 32×32 px com símbolo de 20 px, azul institucional #006bd9, fundo #e8f6ff, borda suave, rótulo acessível e tooltip, preservando feedback, estado ocupado e função openContact. Aplicada exclusivamente às três chamadas de aniversário de paciente em `BirthdayPanel.tsx` (`e53cfec6f42b25b4b461dac9707fafc0c8f8dc7a`), `HomePage.tsx` (`1c8394411acaf48dc95b90a915531fe6c7ad6509`) e `GestorDashboard.tsx` (`4a9f50fa908d6e9d10c43f404ce1c01a2976fe82`). Não amplia permissões de WhatsApp nem afeta equipe mensal.
+
+**Verificação estática pós-commit:** openContact idêntico ao backup, opção padrão falsa e botão original preservado; cada uma das três Homes/componentes difere exclusivamente pela propriedade compact, exatamente uma ocorrência por arquivo. Mensagem de parabéns, consulta autorizada de telefone, reutilização da aba WhatsApp e envio manual permanecem inalterados. Nenhuma alteração de banco, RPC, datas de nascimento, permissões ou demais módulos. Não foram comprovados build/deploy nem validação visual/operacional em sessão real. Manutenção pontual aguardando confirmação visual da Titular; homologação anterior das regras de aniversariantes preservada.
+
+---
+
 ## 25/11/2026 — CONSOLIDAÇÃO DO FLUXO VIGENTE — Plano Alimentar e PDF da Nutrição — HOMOLOGAÇÃO ABERTA
 
 **Decisão da Gestora/Titular:** manter o fluxo existente e dispensar a reconstrução anteriormente cogitada. Consolidar os ajustes pontuais autorizados. A homologação operacional será feita por Juliana Teixeira Rios Camargo durante atendimentos efetivos de pacientes reais, mediante construção, salvamento e emissão dos planos alimentares no uso normal do serviço. Não criar consultas, planos, PDFs ou dados artificiais em produção para ensaios técnicos. A confirmação de sucesso da Nutricionista será comunicada à Titular, que autorizará a homologação e fechamento. Até lá, manter testes e manutenção em aberto. Registro exclusivamente documental.
