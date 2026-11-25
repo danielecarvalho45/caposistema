@@ -1,3 +1,15 @@
+## 25/11/2026 — VERDE — correção pontual do salvamento detalhado do Plano Alimentar da Juliana
+
+**Relato:** nutricionista Juliana Teixeira Rios Camargo não consegue salvar Plano Alimentar no login real. Investigação antes do VERDE confirmou conta ativa de produção, vínculo profissional, especialidade Nutrição, papel profissional e aceite do termo vigentes. Última autenticação observada 25/11 às 15h53 (Brasília). Consulta de contexto nutricional respondeu HTTP 200 nos logs; não foram encontradas chamadas recentes de salvamento na API. Não foi alterado login nem registro de paciente.
+
+**Causa confirmada no código:** NutritionPage chama saveDetailedNutritionPlan com os 12 campos e identificador do paciente; a operação save_nutrition_plan_detailed_for_interface existe no banco e no serviço, mas faltava no switch de createSupabaseTransport, que rejeitava a RPC antes de encaminhá-la. Não se trata de limite de caracteres ou ausência de autorização da Juliana.
+
+**Backup:** backup/nutricao-rpc-salvamento-2026-11-25. **Correção:** commit cc097028adf85c1fac5207055db8f1379f21a422, exclusivamente uma linha case 'save_nutrition_plan_detailed_for_interface' no grupo existente que encaminha operação e argumentos via confirmedRpc. Comparação com backup confirma que essa é a única mudança em rpc.ts. Teste de regressão com o transportador real e cliente simulado, todos os 12 campos e texto longo, commit 29bd8a960026c91c44fd6da61df538c34c0bf533. Não houve alteração no banco, permissões, interface do plano, PDF ou registros reais. Teste versionado mas não executado; publicação Cloudflare e funcionamento na sessão real ainda não comprovados.
+
+**Homologação aberta:** após publicação, preservar eventual rascunho antes de atualizar a página; Juliana deverá salvar durante atendimento legítimo, verificar confirmação e persistência após reabrir, atualizar plano existente e gerar PDF oficial. Aguardar retorno expresso da nutricionista e aprovação da Titular. Não testar gravando conteúdo fictício em produção.
+
+---
+
 ## 25/11/2026 — VERDE — Oferta Inicial: segundo contato sem adesão transfere ao Resgate, sem novos ciclos de 72h
 
 **Decisão da Titular:** após a segunda chamada, recusa, ausência de resposta ou necessidade de novo contato não devem reiniciar a espera de 72 horas. Encaminhar automaticamente à fila de Resgate da Oferta CAPO, com nova tentativa após 15 dias. Aceite expresso continua gerando o vínculo e abre agendamento. Preservar justificativas, datas, responsáveis e histórico, bem como isolamento produção/manuteste. Não confundir com perda de seguimento, faltosos ou encerramentos assistenciais. VERDE expresso recebido.
