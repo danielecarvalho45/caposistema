@@ -1,3 +1,21 @@
+## 25/11/2026 — INVESTIGAÇÃO SEM ALTERAÇÃO — solicitação de Transporte não salva após preenchimento da justificativa
+
+**Relato:** a Gestora/Titular informou que o erro de solicitação de Transporte persiste, apesar das manutenções anteriores: ao preencher a justificativa e salvar, a solicitação não é gravada e o fluxo não avança. Solicitou exclusivamente **investigação da causa**, sem VERDE para correção.
+
+**Fontes consultadas:** histórico de Transporte neste Documento Mestre (especialmente mudanças de 24/11); `src/features/transport/TransportPage.tsx` e `src/lib/supabase/rpc.ts` da `main`; definição efetivamente instalada de `public.create_transport_request_for_interface(uuid,uuid,text)`, colunas, constraints e triggers de `public.transport_requests`; logs PostgREST/Edge e PostgreSQL do projeto Supabase `fftebavlhbfcrvrtnrld`.
+
+**Evidência concreta de erro em 25/11 (America/Sao_Paulo):** quatro chamadas `POST /rest/v1/rpc/create_transport_request_for_interface` retornaram **HTTP 400**, às **10:30:06, 10:30:19, 10:31:37 e 10:32:07**, com quatro erros correlatos no PostgreSQL: **`O motivo do transporte deve possuir entre 5 e 500 caracteres.`**. A leitura `get_transport_context_for_interface` respondeu HTTP 200. A tabela `transport_requests` contém apenas três registros históricos, o mais recente de 08/10/2026; nenhum pedido novo foi gravado em 25/11 no levantamento.
+
+**Causa demonstrada para essas quatro tentativas:** falta de correspondência entre a validação de `Motivo da solicitação` na tela e o limite aceito pelo banco. O frontend em `TransportPage.tsx`, seção `createRequest` e botão `Salvar solicitação`, só exige `reason.trim().length >= 5` e **não impede justificativas com mais de 500 caracteres**. A RPC instalada rejeita qualquer texto com comprimento fora de 5–500. As requisições chegaram ao Supabase e foram rejeitadas pela validação, antes do `INSERT`. Como a interface impede enviar texto com menos de cinco caracteres, **excesso de comprimento é a explicação mais provável para os erros concretos observados**, embora os logs consultados não exponham o comprimento exato dos textos enviados. Não atribuir essas tentativas a falha no PDF, falta de função RPC ou falha de conexão.
+
+**Histórico relevante:** a manutenção de 24/11 corrigiu a exigência de agendamento, permitindo pedido genérico, e ampliou permissões e fluxo administrativo; porém não alinhou o tamanho máximo da justificativa na UI com o contrato preexistente de até 500 caracteres. As novas alterações de PDF/links não corrigem uma RPC de criação que rejeita o texto antes de gravar o pedido.
+
+**Solução proposta, PENDENTE DE VERDE:** adicionar validação explícita de **até 500 caracteres** ao campo e ao `createRequest`, com indicação clara de tamanho e orientação visível ao operador; manter integralmente a justificativa digitada caso não passe na validação; preservar RPC, limite do banco, agendamento opcional, permissões Gestor/AO/Assistência Social, notificação, PDF, WhatsApp, isolamento produção/homologação. Testar com 5, 500 e 501 caracteres em homologação isolada e somente após confirmar o sucesso testar o avanço do fluxo completo. Qualquer rejeição restante deverá ser investigada separadamente, sem presumir que todos os problemas tenham a mesma causa.
+
+**Estado:** investigação concluída para as quatro tentativas de 25/11; **sem alteração de código, funções, dados, migrações, registros ou triggers**. Aguarda VERDE expresso antes da intervenção funcional.
+
+---
+
 ## 25/11/2026 — VERDE EXECUTADO — CORREÇÃO PONTUAL DA REGRESSÃO DE CONFIRMAÇÕES E REMARCAÇÕES POR LINK
 
 **Autorização:** a Gestora/Titular concedeu VERDE expresso após análise da investigação documental de 25/11 (commit `631c0ef8`). Manutenção delimitada à incompatibilidade entre `notifications.status='resolvida'` e o valor canônico permitido `resolvido`.
