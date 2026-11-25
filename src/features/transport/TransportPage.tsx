@@ -697,6 +697,7 @@ export function TransportPage({ accessContext }: Props) {
     })
     if (result.status === 'success') {
       setReason('')
+      setSelectedRequestId('')
       setSelectedAppointmentId('')
       await loadContext(patientId, patientName)
       if (canAdminister) { void reloadAdministrativeQueue(); void reloadReminders(); void reloadWorklists() }
