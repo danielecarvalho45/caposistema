@@ -1,3 +1,15 @@
+## 25/11/2026 — VERDE — Nutrição: ampliação e redução individual de campos do Plano Alimentar
+
+**Decisão da Titular:** após visualizar a proposta de ampliação individual, dispensou a nova implementação de fluxo e autorizou exclusivamente a inclusão de ícones Ampliar/Reduzir nos campos de texto existentes. Preservar formulário, tela própria, limites removidos anteriormente, salvamento, confirmação, PDF, estética e outras funcionalidades.
+
+**Backup:** branch `backup/nutricao-ampliar-campos-2026-11-25` anterior às alterações.
+
+**Implementação:** `NutritionPage.tsx` commit `d88ed32759c80c8b5cbc69445124fb5495acde09` acrescenta estado local independente por seção e botão type=button com ícone e rótulo Ampliar/Reduzir, aria-expanded/controls e associação acessível de rótulo ao textarea. Campo amplia para 13 linhas e retorna ao número de linhas original; o valor controlado e o onChange continuam os mesmos. Estado visual reinicia ao selecionar paciente. As 11 seções de texto são abrangidas; título de uma linha permanece como existente. `nutrition-document.css` commit `0405f443e425594dc3d12374e9f267192cb97ad3` acrescenta estilo exclusivamente local, discreto e responsivo. Não há gravação ao ampliar/reduzir; salvamento permanece explícito. Textos excepcionalmente extensos ainda podem exigir rolagem mesmo ampliados.
+
+**Verificação:** independentState=true; allSections=true; controlledText=true; resetOnPatient=true; noLengthLimits=true; saveFunctionUnchanged=true; noNewDbCall=true. Teste unitário para ampliar, editar, reduzir, preservar valor e salvar, sem alterar outro campo, incluído no commit `d2e89909c676cc1192653b64ace1be2419b7fe95`. Execução Vitest/build, deploy Cloudflare e homologação autenticada não comprovados. Nenhum SQL, paciente real, gerador PDF ou outro fluxo alterado. Manutenção aberta para homologação pela Titular.
+
+---
+
 ## 25/11/2026 — VERDE — Nutrição: retirada de limites artificiais dos campos de Plano Alimentar
 
 **Autorização da Titular:** digitação livre de textos extensos, sem limites fixos de caracteres, sem reconstruir o fluxo, alterar estética, permissões, histórico ou outros módulos. Investigação anterior demonstrou limites de 250 caracteres no título e 5000 por campo nas RPCs e na interface; não comprovado que fossem a causa específica do relato de falha real de salvamento.
