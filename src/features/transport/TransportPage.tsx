@@ -153,7 +153,6 @@ export function TransportPage({ accessContext }: Props) {
   const [documentsRequest, setDocumentsRequest] = useState<TransportRecord | null>(null)
   const [attachedDocuments, setAttachedDocuments] = useState<readonly TransportRecord[]>([])
   const [shareAccess, setShareAccess] = useState<{requestId: string; url: string; pin: string; expires: string} | null>(null)
-  const [pdfVersionHistory, setPdfVersionHistory] = useState<{requestId: string; versions: readonly TransportRecord[]} | null>(null)
   const [pdfDetailsRequest, setPdfDetailsRequest] = useState<TransportRecord | null>(null)
   const [pdfDetailsMode, setPdfDetailsMode] = useState<'address' | 'periodicity'>('address')
   const [boardingSource, setBoardingSource] = useState<'cadastro' | 'alternativo'>('cadastro')
@@ -502,7 +501,6 @@ export function TransportPage({ accessContext }: Props) {
     setPatientName(name)
     setShareAccess((value) => value?.requestId && id !== patientId ? null : value)
     setDocumentsRequest(null)
-    setPdfVersionHistory(null)
     setSelectedAppointmentId('')
     const result = await getRpcService().getTransportContext(id)
     if (result.status === 'success') {
@@ -620,17 +618,9 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(false)
   }
 
-  async function generatePdf(request: TransportRecord, reissue = false) {
+  async function generatePdf(request: TransportRecord) {
     const id = requestId(request)
     if (!id || !canAdminister || busy) return
-    if (reissue) {
-      if (field(request, 'status') !== 'confirmado' || !boolField(request, 'pdf_persisted') ||
-          !field(request, 'pdf_prepared_at') || field(request, 'external_forwarded_at')) {
-        setFeedback('Somente solicitações confirmadas, com PDF preparado e ainda não encaminhadas, podem ser reemitidas.')
-        return
-      }
-      if (!globalThis.confirm('Gerar nova versão do PDF? A anterior ficará preservada no histórico. Será necessário confirmar novamente o novo documento antes de encaminhá-lo.')) return
-    }
     const notes = field(request, 'transport_notes') ?? 'Necessidade de transporte registrada no CAPO.'
     const boarding = field(request, 'boarding_address')
     if (!boarding || !field(request, 'pdf_details_confirmed_at')) {
@@ -670,7 +660,7 @@ export function TransportPage({ accessContext }: Props) {
     const storagePath = `transport/${id}/solicitacao-transporte-${Date.now()}.pdf`
 
     setBusy(true)
-    setFeedback(reissue ? 'Gerando nova versão e arquivando o PDF anterior…' : 'Gerando e registrando PDF oficial…')
+    setFeedback('Gerando e registrando PDF oficial…')
     const { error: uploadError } = await getSupabaseClient()
       .storage.from('capo-documents')
       .upload(storagePath, blob, { contentType: 'application/pdf', upsert: false })
@@ -681,58 +671,14 @@ export function TransportPage({ accessContext }: Props) {
       return
     }
 
-    const result = reissue
-      ? await getRpcService().reissueTransportPdf(id, storagePath)
-      : await getRpcService().registerTransportPdf(id, storagePath)
+    const result = await getRpcService().registerTransportPdf(id, storagePath)
     if (result.status === 'success') {
-      setShareAccess(null)
       await loadContext(patientId, patientName)
-      setFeedback(reissue
-        ? 'Nova versão do PDF vinculada. O documento anterior está no histórico. Clique em Assinar PDF para confirmar a nova versão antes de encaminhar.'
-        : 'PDF oficial gerado e vinculado à solicitação.')
+      setFeedback('PDF oficial gerado e vinculado à solicitação.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o PDF.')
     }
     setBusy(false)
-  }
-
-  async function loadPdfVersionHistory(request: TransportRecord) {
-    const id = requestId(request)
-    if (!id || !canAdminister || busy) return
-    if (pdfVersionHistory?.requestId === id) {
-      setPdfVersionHistory(null)
-      return
-    }
-    setBusy(true)
-    try {
-      const result = await getRpcService().listTransportPdfVersions(id)
-      if (result.status === 'success') {
-        setPdfVersionHistory({ requestId: id, versions: Array.isArray(result.data)
-          ? result.data as readonly TransportRecord[] : [] })
-      } else {
-        setFeedback(result.status === 'error' ? result.error.message : 'Não foi possível consultar o histórico de PDFs.')
-      }
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function openPreviousPdf(version: TransportRecord) {
-    if (!canAdminister || busy) return
-    const path = field(version, 'previous_path')
-    if (!path) return
-    setBusy(true)
-    try {
-      const { data, error } = await getSupabaseClient()
-        .storage.from('capo-documents').createSignedUrl(path, 120)
-      if (error || !data?.signedUrl) {
-        setFeedback(error?.message ?? 'Não foi possível abrir a versão anterior.')
-        return
-      }
-      globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
-    } finally {
-      setBusy(false)
-    }
   }
 
   async function signPdf(request: TransportRecord) {
@@ -1184,11 +1130,6 @@ export function TransportPage({ accessContext }: Props) {
                     {canAdminister && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
                     )}
-                    {canAdminister && status === 'confirmado' && pdfPersisted && pdfPrepared && !forwarded && (
-                      <button type="button" disabled={busy} onClick={() => void generatePdf(request, true)}>
-                        Atualizar PDF para novo modelo
-                      </button>
-                    )}
                     {canAdminister && status !== 'cancelado' && (
                       <button type="button" disabled={busy} onClick={() => void openDocuments(request)}>
                         📎 Documentos complementares
@@ -1214,29 +1155,6 @@ export function TransportPage({ accessContext }: Props) {
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
                       </>
                     )}
-                    {canAdminister && pdfPersisted && (
-                      <button type="button" disabled={busy} onClick={() => void loadPdfVersionHistory(request)}>
-                        Versões anteriores do PDF
-                      </button>
-                    )}
-                    {pdfVersionHistory?.requestId === id && (
-                      <div className="transport-share-access">
-                        <strong>Histórico documental preservado</strong>
-                        {pdfVersionHistory.versions.length === 0 ? (
-                          <p>Nenhuma versão anterior registrada.</p>
-                        ) : pdfVersionHistory.versions.map((version, i) => (
-                          <div key={field(version, 'version_id') ?? i}>
-                            <span>Versão anterior {i + 1} — {field(version, 'superseded_at')
-                              ? new Date(field(version, 'superseded_at') ?? '').toLocaleString('pt-BR', {
-                                timeZone: 'America/Sao_Paulo', hour12: false,
-                              }) : 'Data não informada'}</span>
-                            <button type="button" disabled={busy} onClick={() => void openPreviousPdf(version)}>
-                              Visualizar versão anterior
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )
                     {canAdminister && status === 'solicitado' && (
                       <button type="button" disabled={busy} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
                     )}
