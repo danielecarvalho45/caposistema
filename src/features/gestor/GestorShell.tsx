@@ -46,6 +46,30 @@ const managementItems: readonly NavItem[] = [
   { path: '/gestor/suporte', icon: '?', label: 'Suporte' },
 ]
 
+const titularOperationalItems: readonly NavItem[] = [
+  { path: '/pacientes', icon: '👥', label: 'Pacientes' },
+  { path: '/agenda', icon: '🗓', label: 'Agenda Geral' },
+  { path: '/nutricao', icon: '◉', label: 'Nutrição' },
+  { path: '/familiar-cuidador', icon: '♧', label: 'Familiar / Cuidador' },
+  { path: '/fila', icon: '📋', label: 'Fila' },
+  { path: '/faltosos', icon: '⚑', label: 'Faltosos' },
+  { path: '/busca-ativa', icon: '⌕', label: 'Busca Ativa' },
+  { path: '/solicitacoes', icon: '▤', label: 'Solicitações' },
+  { path: '/comunicacao', icon: '✉', label: 'Comunicação Interna' },
+  { path: '/transporte', icon: '⇄', label: 'Transporte' },
+  { path: '/receita', icon: '💊', label: 'Renovação de Receita' },
+  { path: '/encaminhamentos', icon: '↗', label: 'Encaminhamentos' },
+  { path: '/odontologia', icon: '🦷', label: 'Odontologia' },
+  { path: '/encerramentos', icon: '✓', label: 'Encerramentos' },
+  { path: '/notificacoes', icon: '●', label: 'Notificações' },
+  { path: '/suporte', icon: '?', label: 'Suporte' },
+  { path: '/relatorios', icon: '▥', label: 'Relatórios' },
+]
+
+const titularRetainedItems = serviceItems.filter((item) =>
+  !titularOperationalItems.some((operational) => operational.path === item.path),
+)
+
 function NavGroup({ label, items, activePath, accessContext }: Readonly<{
   label: string
   items: readonly NavItem[]
@@ -211,7 +235,10 @@ export function GestorShell({
                     <span className="titular-chevron" aria-hidden="true">{titularArea === area.id ? '▴' : '▾'}</span>
                   </button>
                   <div id={`titular-menu-${area.id}`} hidden={titularArea !== area.id}>
-                    {area.id === 'operacional' && <NavGroup label="Atendimento e Acompanhamento" items={serviceItems} activePath={activePath} accessContext={accessContext} />}
+                    {area.id === 'operacional' && <>
+                      <NavGroup label="Rotinas operacionais" items={titularOperationalItems} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Acessos existentes — separação pendente" items={titularRetainedItems} activePath={activePath} accessContext={accessContext} />
+                    </>}
                     {area.id === 'gestor' && <>
                       <NavGroup label="Gestão do Serviço" items={managementItems.filter((item) => item.path !== '/gestor/suporte')} activePath={activePath} accessContext={accessContext} />
                       <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
