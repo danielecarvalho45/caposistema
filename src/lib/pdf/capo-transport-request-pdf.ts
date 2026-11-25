@@ -8,6 +8,8 @@ export type TransportPdfData = Readonly<{
   patientName: string
   cms: string | null
   capoNumber: string | null
+  phone: string | null
+  protocol: string | null
   registeredAddress: string | null
   boardingAddress: string
   boardingSource: 'cadastro' | 'alternativo'
@@ -159,6 +161,8 @@ export function buildTransportOfficialPdf(data: TransportPdfData): Blob {
   field('Nome completo:', data.patientName)
   field('Número CAPO:', data.capoNumber ?? 'Não informado')
   field('Número CMS:', data.cms ?? 'Não informado')
+  field('Telefone:', data.phone ?? 'Não informado')
+  field('Protocolo:', data.protocol ?? 'Não informado')
   field('Endereço residencial:', data.registeredAddress ?? 'Não informado')
 
   heading('TRAJETO SOLICITADO', true)
