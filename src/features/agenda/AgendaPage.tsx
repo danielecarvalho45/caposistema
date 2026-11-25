@@ -18,7 +18,7 @@ import { FamilyAgendaBookingPanel } from './FamilyAgendaBookingPanel'
 import { FamilyLinkRebookingAction } from './FamilyLinkRebookingAction'
 import { SocialHomeVisits } from './SocialHomeVisits'
 import { resolveProfessionalScreenKind } from '../professional/professional-screen'
-import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
+import { PatientWhatsAppButton, CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { openCapoWhatsAppTab, reserveCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import { movementWhatsAppMessage, type CommunicationContact } from './appointment-communication'
 import { prepareAppointmentReminder, prepareFamilyPsychologyReminder } from './appointment-confirmation-link'
@@ -3612,10 +3612,10 @@ export function AgendaPage({
         {familyReturnNotice && (
           <section className="agenda-schedule-form" aria-label="Aviso de retorno do Familiar/Cuidador">
             <p>Retorno de Familiar/Cuidador registrado. Confira a mensagem e envie manualmente.</p>
-            <button type="button" onClick={() => {
+            <button type="button" style={capoWhatsAppStyle} onClick={() => {
               const url = `https://web.whatsapp.com/send?phone=${encodeURIComponent(familyReturnNotice.phone)}&text=${encodeURIComponent(familyReturnNotice.text)}`
               if (!openCapoWhatsAppTab(url)) setAppointmentFeedback('O navegador bloqueou o WhatsApp do retorno. Autorize a abertura e tente novamente.')
-            }}>💬 WhatsApp de retorno do Familiar/Cuidador</button>
+            }}><CapoWhatsAppIcon /> WhatsApp de retorno do Familiar/Cuidador</button>
           </section>
         )}
 
@@ -3623,7 +3623,7 @@ export function AgendaPage({
           <section id="agenda-family-movement-notice" className="agenda-schedule-form" aria-label="Comunicação de remarcação familiar">
             <p>Consulta do familiar/cuidador remarcada. Confira o aviso de alteração antes de continuar.</p>
             {familyRescheduledNotice.contact.careLocation ? (
-              <button type="button" onClick={openFamilyRescheduledWhatsApp}>💬 WhatsApp de remarcação do familiar</button>
+              <button type="button" style={capoWhatsAppStyle} onClick={openFamilyRescheduledWhatsApp}><CapoWhatsAppIcon /> WhatsApp de remarcação do familiar</button>
             ) : (
               <div role="alert">
                 <p>O novo endereço do atendimento familiar não foi confirmado; aviso pendente.</p>
@@ -3824,7 +3824,7 @@ export function AgendaPage({
                         : notice === 'solicitou_cancelamento' ? 'Solicitou cancelamento'
                         : 'Ainda sem registro de contato prévio'}</td>
                       <td className="agenda-attendance-actions">
-                        <button type="button" onClick={() => openFamilyNotice(item)}>💬 Lembrar consulta</button>
+                        <button type="button" style={capoWhatsAppStyle} onClick={() => openFamilyNotice(item)}><CapoWhatsAppIcon /> Lembrar consulta</button>
                         <select aria-label={`Resultado do contato com ${String(item.family_name ?? 'Familiar')}`}
                           value={previsitOutcomes[aid] ?? (notice === 'avisado' || notice === 'solicitou_cancelamento' ? notice : '')}
                           onChange={(event) => setPrevisitOutcomes((current) => ({ ...current, [aid]: event.target.value }))}>
@@ -4018,7 +4018,7 @@ export function AgendaPage({
                     const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
                     if (family) return ['agendado', 'confirmado'].includes(String(family.attendance_status))
                       ? <>
-                          <button type="button" onClick={() => void openFamilyNotice(family)}>Lembrar consulta com link</button>
+                          <button type="button" style={capoWhatsAppStyle} onClick={() => void openFamilyNotice(family)}><CapoWhatsAppIcon /> Lembrar consulta com link</button>
                           <label>Resultado do aviso
                             <select value={previsitOutcomes[appointmentId] ?? String(family.last_notice_result ?? '')}
                               onChange={(event) => setPrevisitOutcomes((current) => ({ ...current, [appointmentId]: event.target.value }))}>
