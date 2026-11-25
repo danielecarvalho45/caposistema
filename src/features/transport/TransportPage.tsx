@@ -336,6 +336,7 @@ export function TransportPage({ accessContext }: Props) {
         const savedSelection = await getRpcService().setTransportSectorChannels(chosenChannels)
         if (savedSelection.status === 'success') {
           setSelectedContacts(chosenChannels)
+          setContactsEditing(false)
           setFeedback('Contatos e destinatários selecionados do Transporte salvos.')
         } else {
           setFeedback(savedSelection.status === 'error'
