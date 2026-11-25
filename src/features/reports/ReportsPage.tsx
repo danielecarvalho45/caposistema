@@ -1,5 +1,6 @@
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   loadingState,
   type AssistentialOperationalReport,
@@ -207,9 +208,16 @@ export function ReportsPage({
   accessContext: AccessContext
   integration?: CAPOReportsIntegration
 }>) {
+  const location = useLocation()
+  const isTitular = accessContext.user_account_id === '7a077538-471f-4f3a-9033-e30fec74dd9b'
+    && accessContext.primary_context.code === 'administrador'
+    && accessContext.roles.some((role) => role.code === 'administrador')
+  const isTitularOperationalView = isTitular && location.state
+    && typeof location.state === 'object'
+    && (location.state as Record<string, unknown>).titularReportView === 'operacional'
   const isAdministrativeOperationalContext =
     accessContext.primary_context.code === 'administrativo_operacional'
-  if (isAdministrativeOperationalContext) return <AdministrativeOperationalReport />
+  if (isAdministrativeOperationalContext || isTitularOperationalView) return <AdministrativeOperationalReport />
   return <AuthorizedReportsPage accessContext={accessContext} integration={integration} />
 }
 
