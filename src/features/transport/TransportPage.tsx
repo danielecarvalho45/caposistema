@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
-import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 import { buildTransportOfficialPdf } from '../../lib/pdf/capo-transport-request-pdf'
 import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import './transport-contacts.css'
@@ -51,56 +50,6 @@ function requestId(record: TransportRecord) {
   return field(record, 'request_id', 'id') ?? ''
 }
 
-function wrapLine(value: string, width = 86) {
-  const words = value.split(/\s+/).filter(Boolean)
-  if (words.length === 0) return ['']
-  const lines: string[] = []
-  let current = ''
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word
-    if (candidate.length <= width) {
-      current = candidate
-    } else {
-      if (current) lines.push(current)
-      current = word
-    }
-  }
-  if (current) lines.push(current)
-  return lines
-}
-
-function buildTransportClosurePdfBlob(input: Readonly<{
-  patientName: string
-  cms: string | null
-  channel: string | null
-  reference: string | null
-  requester: string
-  requesterRole: string
-}>) {
-  const lines = [
-    'ENCERRAMENTO DE SOLICITAÇÃO DE TRANSPORTE',
-    '',
-    'Ao Setor de Transportes da Secretaria Municipal de Saúde.',
-    '',
-    `Paciente: ${input.patientName}${input.cms ? ` · CMS ${input.cms}` : ''}`,
-    '',
-    'Informamos, para os devidos fins, o encerramento da solicitação de transporte vinculada ao paciente identificado neste documento, após conclusão do acompanhamento administrativo correspondente no CAPO.',
-    input.channel ? `Canal de encaminhamento: ${input.channel}` : '',
-    input.reference ? `Referência / protocolo: ${input.reference}` : '',
-    '',
-    `Responsável pela emissão: ${input.requester}`,
-    `Função: ${input.requesterRole}`,
-  ].flatMap((line) => wrapLine(line))
-
-  return buildCapoDocumentPdf(lines, {
-    fontSize: 10,
-    lineHeight: 14,
-    linesPerPage: 40,
-    generatedBy: input.requester,
-    generatedByRole: input.requesterRole,
-  })
-}
-
 export function TransportPage({ accessContext }: Props) {
   const hasRole = (code: string) =>
     accessContext.roles.some((role) => role.code === code)
@@ -131,6 +80,13 @@ export function TransportPage({ accessContext }: Props) {
       : accessContext.function_title?.trim() || accessContext.primary_context.name?.trim() || 'Profissional CAPO'
   const authorized = canCreateRequest || canAdminister
 
+  const [activeTab, setActiveTab] = useState<'principal' | 'recebidas' | 'concluidas'>('principal')
+  const [selectedRequestId, setSelectedRequestId] = useState('')
+  const [worklistQuery, setWorklistQuery] = useState('')
+  const [receivedRequests, setReceivedRequests] = useState<readonly TransportRecord[]>([])
+  const [completedRequests, setCompletedRequests] = useState<readonly TransportRecord[]>([])
+  const [contactsEditing, setContactsEditing] = useState(false)
+  const [closureReason, setClosureReason] = useState('')
   const [query, setQuery] = useState('')
   const [patients, setPatients] = useState<readonly ReferralPatient[]>([])
   const [patientId, setPatientId] = useState('')
@@ -147,7 +103,6 @@ export function TransportPage({ accessContext }: Props) {
   const [administrativeQueue, setAdministrativeQueue] = useState<readonly TransportRecord[]>([])
   const [reminderQueue, setReminderQueue] = useState<readonly TransportRecord[]>([])
   const [queueLoading, setQueueLoading] = useState(false)
-  const [contactsOpen, setContactsOpen] = useState(false)
   const [contactsBusy, setContactsBusy] = useState(false)
   const [contacts, setContacts] = useState<TransportContacts>(EMPTY_CONTACTS)
   const [selectedContacts, setSelectedContacts] = useState<readonly ContactKey[]>([])
@@ -188,15 +143,6 @@ export function TransportPage({ accessContext }: Props) {
     })
     return () => { active = false }
   }, [authorized])
-
-  useEffect(() => {
-    if (!contactsOpen) return
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setContactsOpen(false)
-    }
-    document.addEventListener('keydown', onEscape)
-    return () => document.removeEventListener('keydown', onEscape)
-  }, [contactsOpen])
 
   async function reloadReminders() {
     if (!canAdminister) return
@@ -239,6 +185,26 @@ export function TransportPage({ accessContext }: Props) {
     setFeedback('Mensagem de lembrete aberta para envio manual. Abrir o WhatsApp não confirma o envio nem o recebimento.')
   }
 
+  async function reloadWorklists() {
+    if (!canAdminister) return
+    const [received, completed] = await Promise.all([
+      getRpcService().getTransportWorklist('recebidas', worklistQuery.trim()),
+      getRpcService().getTransportWorklist('concluidas', worklistQuery.trim()),
+    ])
+    if (received.status === 'success') setReceivedRequests(Array.isArray(received.data) ? received.data as readonly TransportRecord[] : [])
+    else if (received.status === 'error') setFeedback(received.error.message)
+    if (completed.status === 'success') setCompletedRequests(Array.isArray(completed.data) ? completed.data as readonly TransportRecord[] : [])
+    else if (completed.status === 'error') setFeedback(completed.error.message)
+  }
+
+  async function openProtocol(item: TransportRecord) {
+    const id = field(item, 'patient_id')
+    if (!id) return
+    setSelectedRequestId(requestId(item))
+    setActiveTab('principal')
+    await loadContext(id, field(item, 'patient_name') ?? 'Paciente')
+  }
+
   async function reloadAdministrativeQueue() {
     if (!canAdminister) return
     setQueueLoading(true)
@@ -259,6 +225,7 @@ export function TransportPage({ accessContext }: Props) {
   useEffect(() => {
     if (!canAdminister) return
     void reloadReminders()
+    void reloadWorklists()
     let mounted = true
     void getRpcService().getTransportAdministrativeQueue(50).then((result) => {
       if (!mounted) return
@@ -550,6 +517,8 @@ export function TransportPage({ accessContext }: Props) {
       'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
       'O CAPO solicita providências de transporte para o(a) paciente abaixo identificado(a), em acompanhamento pelo serviço.',
       'Paciente: ' + fullPatientName,
+      'Telefone do paciente: ' + (field(patient, 'phone') || field(patient, 'phone_secondary') || 'Não informado'),
+      'Protocolo: ' + (field(request, 'protocol') || 'Não informado'),
       'Endereço de embarque: ' + (boardingLocation ?? 'Não informado'),
       vehicleType === 'carro' ? 'Veículo solicitado: CARRO'
         : vehicleType === 'ambulancia' ? 'Veículo solicitado: AMBULÂNCIA' : '',
@@ -719,7 +688,7 @@ export function TransportPage({ accessContext }: Props) {
       setReason('')
       setSelectedAppointmentId('')
       await loadContext(patientId, patientName)
-      if (canAdminister) { void reloadAdministrativeQueue(); void reloadReminders() }
+      if (canAdminister) { void reloadAdministrativeQueue(); void reloadReminders(); void reloadWorklists() }
       setFeedback(canAdminister
         ? 'Solicitação salva. Confirme a solicitação na seção Acompanhamento para gerar o PDF oficial.'
         : 'Solicitação enviada ao Administrativo com sua justificativa. O Administrativo gerará o PDF.')
@@ -742,7 +711,14 @@ export function TransportPage({ accessContext }: Props) {
         return
       }
       args.p_channel = channel.trim()
-      args.p_reference = reference.trim() || null
+      args.p_reference = field(request, 'protocol') || reference.trim() || null
+    }
+    if (action === 'complete') {
+      if (closureReason.trim().length < 5) {
+        setFeedback('Informe o motivo do encerramento do protocolo.')
+        return
+      }
+      args.p_reason = closureReason.trim()
     }
     if (action === 'cancel') {
       if (cancellationReason.trim().length < 5) {
@@ -760,9 +736,11 @@ export function TransportPage({ accessContext }: Props) {
         setReference('')
       }
       if (action === 'cancel') setCancellationReason('')
+      if (action === 'complete') setClosureReason('')
       await loadContext(patientId, patientName)
       void reloadAdministrativeQueue()
       void reloadReminders()
+      void reloadWorklists()
       setFeedback('Providência de transporte registrada no banco.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou a providência.')
@@ -804,6 +782,8 @@ export function TransportPage({ accessContext }: Props) {
       patientName: patientName || field(patient, 'full_name') || 'Paciente',
       cms: field(patient, 'cms'),
       capoNumber: field(patient, 'patient_number'),
+      phone: field(patient, 'phone') || field(patient, 'phone_secondary'),
+      protocol: field(request, 'protocol'),
       registeredAddress: field(patient, 'address'),
       boardingAddress: boarding,
       boardingSource: field(request, 'boarding_source') === 'alternativo' ? 'alternativo' : 'cadastro',
@@ -903,47 +883,6 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(false)
   }
 
-  async function completeWithClosurePdf(request: TransportRecord) {
-    const id = requestId(request)
-    if (!id || !canForwardExternally || busy) return
-
-    const blob = buildTransportClosurePdfBlob({
-      patientName: patientName || field(patient, 'full_name') || 'Paciente',
-      cms: field(patient, 'cms'),
-      channel: field(request, 'external_channel'),
-      reference: field(request, 'external_reference'),
-      requester: accessContext.full_name ?? accessContext.username,
-      requesterRole: issuerRole,
-    })
-    const storagePath = `transport/${id}/encerramento-transporte-${Date.now()}.pdf`
-
-    setBusy(true)
-    setFeedback('Gerando PDF de encerramento e concluindo solicitação…')
-    const { error: uploadError } = await getSupabaseClient()
-      .storage.from('capo-documents')
-      .upload(storagePath, blob, { contentType: 'application/pdf', upsert: false })
-
-    if (uploadError) {
-      setFeedback(uploadError.message)
-      setBusy(false)
-      return
-    }
-
-    const result = await getRpcService()
-      .completeTransportRequestWithClosurePdf(id, storagePath)
-    if (result.status === 'success') {
-      setFeedback('Transporte concluído com PDF de encerramento vinculado.')
-      await loadContext(patientId, patientName)
-    } else {
-      setFeedback(
-        result.status === 'error'
-          ? result.error.message
-          : 'O banco não confirmou a conclusão documental do transporte.',
-      )
-    }
-    setBusy(false)
-  }
-
   async function openPdf(
     request: TransportRecord,
     download: boolean,
@@ -1001,66 +940,48 @@ export function TransportPage({ accessContext }: Props) {
         <p>Solicitação, documento oficial e acompanhamento da providência.</p>
       </div>
 
-      {canCreateRequest && (
-        <div className="home-ops" aria-label="Orientação sobre a solicitação de transporte">
-          <h2>Solicitação de Transporte</h2>
-          <p>
-            Selecione o paciente e informe a justificativa. Se houver atendimento agendado, vincule-o à solicitação.
-            Sem agendamento, a solicitação será genérica. A necessidade de transporte permanece ativa até o cancelamento formal.
-          </p>
-        </div>
+      {canAdminister && (
+        <nav className="transport-tabs" aria-label="Áreas do Transporte">
+          <button type="button" aria-current={activeTab === 'principal' ? 'page' : undefined}
+            onClick={() => setActiveTab('principal')}>Solicitar / Acompanhar</button>
+          <button type="button" aria-current={activeTab === 'recebidas' ? 'page' : undefined}
+            onClick={() => { setActiveTab('recebidas'); void reloadWorklists() }}>Recebidas</button>
+          <button type="button" aria-current={activeTab === 'concluidas' ? 'page' : undefined}
+            onClick={() => { setActiveTab('concluidas'); void reloadWorklists() }}>Concluídas</button>
+        </nav>
       )}
-
-      <div className="home-ops transport-sector-contacts">
-        <button type="button" className="transport-contact-toggle" aria-expanded={contactsOpen}
-          onClick={() => setContactsOpen((value) => !value)}>
-          <span aria-hidden="true">✉</span> Contatos do Transporte
-        </button>
-        {contactsOpen && (
-          <div className="transport-contact-overlay">
-            <button type="button" className="transport-contact-backdrop"
-              aria-label="Fechar janela de contatos" onClick={() => setContactsOpen(false)} />
-            <section className="transport-contact-modal" role="dialog" aria-modal="true" aria-label="Contatos do Transporte">
-              <div className="transport-contact-modal-head">
-                <h2>Contatos do Transporte</h2>
-                <button type="button" onClick={() => setContactsOpen(false)} aria-label="Fechar contatos">✕ Fechar</button>
-              </div>
-              <div className="transport-contact-details">
-                <p>Contatos institucionais utilizados no encaminhamento de PDFs e documentos.</p>
-            {CONTACT_FIELDS.map(({ key, label }) => (
-              <label key={key} className="transport-contact-field">{label}
-                {isManager ? (
-                  <input type={key === 'email' ? 'email' : 'tel'} autoComplete="off"
-                    value={contacts[key]} onChange={(event) => setContacts((current) => ({
-                      ...current, [key]: event.target.value,
-                    }))} placeholder={key === 'email' ? 'E-mail do setor' : 'DDD e número'} />
-                ) : (
-                  <span className="transport-contact-value">{contacts[key] || 'Não cadastrado'}</span>
-                )}
-              </label>
-            ))}
-            {isManager && (
-              <button type="button" disabled={contactsBusy} onClick={() => void saveContacts()}>
-                {contactsBusy ? 'Salvando…' : 'Salvar contatos'}
-              </button>
-            )}
-            {canForwardExternally && (
-              <fieldset className="transport-contact-selection">
-                <legend>Destinatários do encaminhamento</legend>
-                {CONTACT_FIELDS.map(({ key, label }) => (
-                  <label key={key}>
-                    <input type="checkbox" disabled={!isManager || !contacts[key].trim()}
-                      checked={selectedContacts.includes(key)}
-                      onChange={(event) => chooseContact(key, event.target.checked)} />
-                    {label}
-                  </label>
-                ))}
-                <small>O Gestor seleciona os destinatários que aparecerão após gerar o link. Clique em Salvar contatos para manter a seleção nos próximos acessos.</small>
-              </fieldset>
-            )}
-              </div>
-            </section>
-          </div>
+      <div className="home-ops transport-sector-contacts transport-contacts-inline">
+        <div className="transport-queue-head">
+          <h2>✉ Contatos do Transporte</h2>
+          {isManager && <button type="button" onClick={() => setContactsEditing((value) => !value)}>
+            {contactsEditing ? 'Fechar edição' : CONTACT_FIELDS.some(({key}) => contacts[key]) ? 'Atualizar' : 'Cadastrar contato'}
+          </button>}
+        </div>
+        <div className="transport-inline-fields">
+          {CONTACT_FIELDS.map(({key,label}) => (
+            <label key={key} className="transport-contact-field">
+              <span>{label}</span>
+              {contactsEditing && isManager
+                ? <input type={key === 'email' ? 'email' : 'tel'} value={contacts[key]}
+                    onChange={(event) => setContacts((current) => ({...current,[key]:event.target.value}))}
+                    placeholder={key === 'email' ? 'E-mail do setor' : 'DDD e número'} />
+                : <strong>{contacts[key] || 'Não cadastrado'}</strong>}
+            </label>
+          ))}
+        </div>
+        {contactsEditing && isManager && (
+          <>
+            <fieldset className="transport-contact-selection">
+              <legend>Destinatários institucionais</legend>
+              {CONTACT_FIELDS.map(({key,label}) => (
+                <label key={key}><input type="checkbox" checked={selectedContacts.includes(key)}
+                  disabled={!contacts[key].trim()} onChange={(event) => chooseContact(key,event.target.checked)}/>{label}</label>
+              ))}
+            </fieldset>
+            <button type="button" disabled={contactsBusy} onClick={() => void saveContacts()}>
+              {contactsBusy ? 'Salvando…' : 'Salvar contatos'}
+            </button>
+          </>
         )}
       </div>
 
@@ -1152,6 +1073,35 @@ export function TransportPage({ accessContext }: Props) {
 
       {feedback && <p role="status">{feedback}</p>}
 
+      {canAdminister && activeTab !== 'principal' && (
+        <div className="home-ops">
+          <div className="transport-queue-head">
+            <h2>{activeTab === 'recebidas' ? 'Solicitações recebidas — Assistência Social' : 'Solicitações concluídas'}</h2>
+            <button type="button" onClick={() => void reloadWorklists()}>Atualizar</button>
+          </div>
+          <div className="patient-search">
+            <label>Buscar nome, Nº CAPO ou protocolo
+              <input value={worklistQuery} onChange={(event) => setWorklistQuery(event.target.value)} />
+            </label>
+            <button type="button" onClick={() => void reloadWorklists()}>Buscar</button>
+          </div>
+          {(activeTab === 'recebidas' ? receivedRequests : completedRequests).length === 0
+            ? <p>Nenhuma solicitação encontrada.</p>
+            : <ul className="transport-queue">
+              {(activeTab === 'recebidas' ? receivedRequests : completedRequests).map((item) => (
+                <li key={requestId(item)}>
+                  <button type="button" onClick={() => void openProtocol(item)}>
+                    <strong>{field(item,'patient_name') || 'Paciente'}</strong>
+                    <small>{field(item,'protocol') || 'Sem protocolo'} · {field(item,'status') || ''} · {field(item,'requester_name') || ''}</small>
+                    <span>{field(item,'transport_notes') || field(item,'closure_reason') || 'Sem justificativa'}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>}
+        </div>
+      )}
+      {(activeTab === 'principal' || !canAdminister) && (
+        <>
       {canAdminister && reminderQueue.length > 0 && (
         <div className="home-ops" aria-label="Avisos de transporte recorrente">
           <div className="transport-queue-head">
@@ -1300,7 +1250,10 @@ export function TransportPage({ accessContext }: Props) {
               <input value={channel} readOnly placeholder="Clique no WhatsApp ou Gmail para selecionar o canal" />
             </label>
             <label>Referência / protocolo
-              <input value={reference} onChange={(event) => setReference(event.target.value)} />
+              <input readOnly value={field(requests.find((item) => requestId(item) === selectedRequestId) || requests[0], 'protocol') || reference} />
+            </label>
+            <label>Motivo do encerramento deste protocolo
+              <textarea value={closureReason} onChange={(event) => setClosureReason(event.target.value)} rows={2} />
             </label>
             <label>Motivo de cancelamento
               <textarea value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} rows={2} />
@@ -1310,8 +1263,9 @@ export function TransportPage({ accessContext }: Props) {
 
         {requests.length === 0 && <p>Nenhuma solicitação de transporte encontrada.</p>}
         {requests.length > 0 && (
+          {selectedRequestId && <button type="button" onClick={() => setSelectedRequestId('')}>Mostrar todos os protocolos do paciente</button>}
           <ul>
-            {requests.map((request, index) => {
+            {requests.filter((request) => !selectedRequestId || requestId(request) === selectedRequestId).map((request, index) => {
               const id = requestId(request)
               const status = field(request, 'status') ?? 'Situação não informada'
               const pdfPersisted = boolField(request, 'pdf_persisted')
@@ -1320,6 +1274,7 @@ export function TransportPage({ accessContext }: Props) {
               return (
                 <li key={id || index}>
                   <strong>{patientName || 'Paciente'}</strong>
+                  <small>Protocolo: {field(request, 'protocol') || 'Não informado'} · Solicitante: {field(request, 'requested_by') || 'Não identificado'}</small>
                   <span>{status}</span>
                   <small>{field(request, 'appointment_id') ? 'Agendamento vinculado' : 'Solicitação genérica (sem agendamento)'}</small>
                   <small>{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
@@ -1429,7 +1384,7 @@ export function TransportPage({ accessContext }: Props) {
                       <button type="button" disabled={busy || channel.trim().length < 2} onClick={() => void manage(request, 'forward')}>Registrar encaminhamento</button>
                     )}
                     {canForwardExternally && status === 'confirmado' && forwarded && (
-                      <button type="button" disabled={busy} onClick={() => void completeWithClosurePdf(request)}>Concluir e gerar PDF de encerramento</button>
+                      <button type="button" disabled={busy || closureReason.trim().length < 5} onClick={() => void manage(request, 'complete')}>Encerrar protocolo</button>
                     )}
                     {status === 'realizado' && (
                       <>
@@ -1447,6 +1402,8 @@ export function TransportPage({ accessContext }: Props) {
           </ul>
         )}
       </div>
+        </>
+      )}
     </section>
   )
 }
