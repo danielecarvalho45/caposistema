@@ -1,3 +1,13 @@
+## 25/11/2026 — CONFIRMAÇÃO OPERACIONAL DA TITULAR — atualização manual carrega a nova versão
+
+A Gestora/Titular informou expressamente que realizou testes e confirmou que a nova versão é carregada pelo CAPO. Registrar como evidência operacional relatada pela Titular da efetividade do carregamento da nova versão, no contexto da investigação do botão “Atualizar agora” da janela de atualização. Não atribuir o problema relatado a falha de publicação ou entrega da versão sem evidência adicional. A confirmação não constitui homologação da preservação integral de rascunhos, retomada do paciente/etapa ou proteção de operações em andamento durante recarga manual.
+
+**Investigação técnica:** CapoAutomaticVersionUpdate.tsx mantém recarga automática restrita à Home ociosa, sem edição, editor em foco ou modal; minimização em cinco segundos preservada. O botão manual chama window.location.reload(), exigindo confirmação se houve edição na sessão, inclusive quando a edição já foi salva. NutritionPage mantém o texto ainda não salvo em estado React; não há garantia de restauração integral após recarga. Plano confirmado no Supabase permanece persistido. A questão de bloqueio manual indevido e congelamento integral continua em investigação, sem alteração funcional nesta etapa. Não retirar as proteções vigentes. Aguardar VERDE específico para qualquer manutenção.
+
+**Escopo desta anotação:** exclusivamente documental, conforme solicitação expressa da Titular. Nenhuma alteração no frontend, banco, permissões, autenticação ou dados de pacientes. A confirmação da nova versão foi fornecida pela Titular; não representa teste independente do Cloudflare executado pelo assistente.
+
+---
+
 ## 25/11/2026 — VERDE — correção pontual do salvamento detalhado do Plano Alimentar da Juliana
 
 **Relato:** nutricionista Juliana Teixeira Rios Camargo não consegue salvar Plano Alimentar no login real. Investigação antes do VERDE confirmou conta ativa de produção, vínculo profissional, especialidade Nutrição, papel profissional e aceite do termo vigentes. Última autenticação observada 25/11 às 15h53 (Brasília). Consulta de contexto nutricional respondeu HTTP 200 nos logs; não foram encontradas chamadas recentes de salvamento na API. Não foi alterado login nem registro de paciente.
