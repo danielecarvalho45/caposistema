@@ -188,7 +188,7 @@ export function HomePage({
                           </small>
                         )}
                         {isAdministrativeOperational && (
-                          <PatientWhatsAppButton
+                          <PatientWhatsAppButton compact
                             patientId={patient.patient_id}
                             message={`Olá, ${patient.full_name}. 🎉 A equipe do CAPO deseja a você um feliz aniversário, com saúde, alegria e bons momentos. Receba nosso carinho e nossos melhores votos!`}
                           />
