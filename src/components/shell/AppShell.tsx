@@ -136,12 +136,15 @@ export function AppShell({
   const professionalItems = hasRole('profissional') && primaryRole !== 'profissional'
     ? mainItems.filter((item) => professionalOnlyPaths.includes(item.path)) : []
   const mainArea = primaryRole === 'profissional' ? 'profissional' : primaryRole === 'coordenador' ? 'coordenacao' : primaryRole === 'administrador_tecnico' ? 'ti' : 'operacional'
+  const operationalOnlyPaths = ['/faltosos', '/busca-ativa']
+  const operationalItems = hasRole('administrativo_operacional') && mainArea !== 'operacional' ? mainItems.filter((item) => operationalOnlyPaths.includes(item.path)) : []
+  const primaryItems = mainItems.filter((item) => !operationalItems.includes(item))
   const groups = [
-    { id: 'operacional', label: 'Operacional', tone: 'operacional', icon: 'operacional' as const, items: mainArea === 'operacional' ? mainItems.filter((item) => !professionalItems.includes(item)) : [] },
-    { id: 'profissional', label: 'Profissional', tone: 'profissional', icon: 'profissional' as const, items: mainArea === 'profissional' ? mainItems : professionalItems },
+    { id: 'operacional', label: 'Operacional', tone: 'operacional', icon: 'operacional' as const, items: mainArea === 'operacional' ? primaryItems.filter((item) => !professionalItems.includes(item)) : operationalItems },
+    { id: 'profissional', label: 'Profissional', tone: 'profissional', icon: 'profissional' as const, items: mainArea === 'profissional' ? primaryItems : professionalItems },
     { id: 'gestor', label: 'Gestor', tone: 'gestor', icon: 'gestor' as const, items: accumulatedNavigation.filter((item) => item.path.startsWith('/gestor/')) },
-    { id: 'coordenacao', label: 'Coordenação', tone: 'gestor', icon: 'gestor' as const, items: [...(mainArea === 'coordenacao' ? mainItems.filter((item) => !professionalItems.includes(item)) : []), ...accumulatedNavigation.filter((item) => item.path === '/coordenacao')] },
-    { id: 'ti', label: 'TI', tone: 'ti', icon: 'ti' as const, items: [...(mainArea === 'ti' ? mainItems.filter((item) => !professionalItems.includes(item)) : []), ...technicalNavigation] },
+    { id: 'coordenacao', label: 'Coordenação', tone: 'gestor', icon: 'gestor' as const, items: [...(mainArea === 'coordenacao' ? primaryItems.filter((item) => !professionalItems.includes(item)) : []), ...accumulatedNavigation.filter((item) => item.path === '/coordenacao')] },
+    { id: 'ti', label: 'TI', tone: 'ti', icon: 'ti' as const, items: [...(mainArea === 'ti' ? primaryItems.filter((item) => !professionalItems.includes(item)) : []), ...technicalNavigation] },
   ].filter((group) => group.items.length > 0)
   useEffect(() => {
     mainRef.current?.focus()
