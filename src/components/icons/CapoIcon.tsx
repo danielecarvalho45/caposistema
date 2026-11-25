@@ -37,3 +37,23 @@ export function CapoIcon({ name, size = 18, className }: Readonly<{
     {shapes[name]}
   </svg>
 }
+
+/** A aparência do atalho depende do destino, nunca do papel ou da autorização. */
+export function CapoShortcutIcon({ path, size = 24 }: { path: string; size?: number }) {
+  const route = path.split('?')[0]
+  const icons: Record<string, CapoIconName> = {
+    '/pacientes': 'people', '/atuacao': 'people', '/familiar-cuidador': 'people',
+    '/gestor/familiares': 'people', '/gestor/equipe': 'people', '/gestor/administracao': 'person',
+    '/agenda': 'calendar', '/minha-agenda/gerenciar': 'clock', '/minha-agenda/solicitar-alteracao': 'clipboard',
+    '/nutricao': 'meal', '/assistencia-social': 'people', '/luto': 'people',
+    '/fila': 'list', '/faltosos': 'clock', '/busca-ativa': 'search', '/gestor/busca-ativa': 'search',
+    '/coordenacao/busca-ativa': 'search', '/solicitacoes': 'clipboard', '/comunicacao': 'message',
+    '/transporte': 'truck', '/receita': 'medical', '/encaminhamentos': 'clipboard', '/odontologia': 'medical',
+    '/encerramentos': 'check', '/notificacoes': 'message', '/suporte': 'settings', '/tecnica': 'monitor',
+    '/relatorios': 'chart', '/coordenacao': 'people', '/coordenacao/timeline': 'clock',
+    '/coordenacao/auditoria': 'file', '/gestor/timeline': 'clock', '/gestor/auditoria': 'file',
+    '/gestor/social': 'people', '/gestor/luto': 'people', '/gestor/suporte': 'settings',
+    '/gestor/fluxos': 'list', '/gestor/operacional': 'clipboard',
+  }
+  return <CapoIcon name={icons[route] ?? 'file'} size={size} />
+}
