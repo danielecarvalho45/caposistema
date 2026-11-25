@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { useEffect, useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
@@ -152,7 +153,7 @@ export function FamilyLinkRebookingAction({
       </label>}
       <button type="button" disabled={!slot || busy} onClick={() => void save()}>Confirmar remarcação do familiar</button>
     </>}
-    {notice && <button type="button" onClick={() => openWhatsApp(notice)}>💬 Abrir WhatsApp de remarcação</button>}
+    {notice && <button type="button" style={capoWhatsAppStyle} onClick={() => openWhatsApp(notice)}><CapoWhatsAppIcon /> Abrir WhatsApp de remarcação</button>}
     {feedback && <p role="status">{feedback}</p>}
   </section>
 }
