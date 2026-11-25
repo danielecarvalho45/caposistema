@@ -37,6 +37,7 @@ import { TechnicalSupportRequest } from '../components/forms/TechnicalSupportReq
 import { canAccessAppRoute, isKnownAppRoute, type AppRoute } from './route-access'
 import type { Notification } from '../features/notifications/notifications-integration'
 import '../styles/home-mobile-standard.css'
+import '../styles/quick-access.css'
 
 function notificationContextHref(
   notification: Notification,
