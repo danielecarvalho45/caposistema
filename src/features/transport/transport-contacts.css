@@ -235,3 +235,62 @@
 }
 .transport-share-access p { margin: 0; }
 .transport-share-access button { justify-self: start; }
+
+
+/* Nova navegação administrativa: abas leves e contatos sempre na página. */
+.transport-tabs {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  flex-wrap: wrap;
+  margin: .6rem 0 1rem;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid #dce9e7;
+}
+.transport-tabs button {
+  padding: .42rem .75rem;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: .6rem;
+  color: var(--color-text-secondary, #4e6874);
+  font: inherit;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.transport-tabs button[aria-current="page"] {
+  border-color: #c8dedc;
+  background: #eff7f5;
+  color: #235869;
+  font-weight: 700;
+}
+.transport-tabs button:hover, .transport-tabs button:focus-visible {
+  border-color: #e90059;
+}
+.transport-contacts-inline {
+  display: grid;
+  gap: .65rem;
+}
+.transport-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: .7rem;
+}
+.transport-inline-fields .transport-contact-field {
+  font-size: .82rem;
+  padding: .5rem .65rem;
+  background: #f6faf9;
+  border: 1px solid #e4eeef;
+  border-radius: .5rem;
+}
+.transport-inline-fields .transport-contact-field span {
+  color: var(--color-text-secondary, #516875);
+}
+.transport-inline-fields .transport-contact-field strong {
+  overflow-wrap: anywhere;
+  font-size: .88rem;
+}
+@media(max-width:700px) {
+  .transport-inline-fields { grid-template-columns: minmax(0,1fr); }
+  .transport-tabs { gap: .15rem; }
+  .transport-tabs button { font-size: .79rem; padding: .42rem .48rem; }
+}
