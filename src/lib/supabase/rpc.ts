@@ -3795,6 +3795,9 @@ export function createRpcService(transport: RpcTransport) {
     revokeTransportShare: (requestId: string) =>
       execute({ transport, operation: 'revoke_transport_share_for_interface',
         args: { p_request_id: requestId }, parse: parseConfirmedJson }),
+    setTransportVehicleType: (requestId: string, vehicleType: 'carro' | 'ambulancia' | null) =>
+      execute({ transport, operation: 'set_transport_vehicle_type_for_interface',
+        args: { p_request_id: requestId, p_vehicle_type: vehicleType }, parse: parseConfirmedJson }),
     setTransportPdfDetails: (requestId: string, source: 'cadastro' | 'alternativo', address: string, periodicity: 'unica' | 'semanal' | 'quinzenal') =>
       execute({ transport, operation: 'set_transport_pdf_details_for_interface', args: {
         p_request_id: requestId, p_boarding_source: source, p_boarding_address: address, p_periodicity: periodicity,
@@ -3984,6 +3987,7 @@ export function createSupabaseTransport(
       case 'get_transport_direct_share_for_interface':
       case 'revoke_transport_share_for_interface':
       case 'set_transport_pdf_details_for_interface':
+      case 'set_transport_vehicle_type_for_interface':
       case 'get_transport_reminder_queue_for_interface':
       case 'get_transport_administrative_queue_for_interface':
       case 'get_transport_sector_contacts_for_interface':
