@@ -62,7 +62,6 @@ const titularOperationalItems: readonly NavItem[] = [
   { path: '/odontologia', icon: '🦷', label: 'Odontologia' },
   { path: '/encerramentos', icon: '✓', label: 'Encerramentos', state: { titularClosureView: 'operacional' } },
   { path: '/notificacoes', icon: '●', label: 'Notificações' },
-  { path: '/suporte', icon: '?', label: 'Suporte' },
   { path: '/relatorios', icon: '▥', label: 'Relatórios', state: { titularReportView: 'operacional' } },
 ]
 
@@ -121,24 +120,25 @@ function TitularIcon({ kind }: { kind: 'inicio' | 'operacional' | 'gestor' | 'ti
 
 const titularMenuStyles = `
 .gestor-sidebar--titular .titular-menu-button {
-  --titular-light: #e1f3ff; --titular-base: #94c7ea; --titular-edge: #6398bf; --titular-ink: #245c88;
+  --titular-light: rgb(235 246 255 / 78%); --titular-base: rgb(184 213 234 / 49%); --titular-edge: rgb(91 135 171 / 32%); --titular-ink: #365d7e;
   box-sizing: border-box; display: flex; align-items: center; gap: 12px;
   width: calc(100% - 16px); min-height: 54px; margin: 8px 8px 16px; padding: 10px 12px;
-  border: 1px solid var(--titular-light); border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 75%); border-radius: 12px;
   background: linear-gradient(170deg, var(--titular-light), var(--titular-base));
-  box-shadow: 0 5px 0 var(--titular-edge), 0 8px 9px -3px var(--titular-edge), inset 0 2px 0 rgb(255 255 255 / 68%);
+  box-shadow: 0 3px 0 var(--titular-edge), 0 5px 10px -4px var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 68%);
+  backdrop-filter: blur(3px);
   color: var(--titular-ink); line-height: 1.2; font-family: inherit; font-size: 15px; font-weight: 600;
   text-decoration: none; text-align: left; cursor: pointer; transition: transform 120ms ease, box-shadow 120ms ease;
 }
-.gestor-sidebar--titular .titular-menu-button[data-tone="operacional"] { --titular-light: #fce9f0; --titular-base: #eca6bf; --titular-edge: #c6809a; --titular-ink: #873c5b; }
-.gestor-sidebar--titular .titular-menu-button[data-tone="gestor"] { --titular-light: #fff6d7; --titular-base: #f1d47d; --titular-edge: #c6a550; --titular-ink: #80611e; }
-.gestor-sidebar--titular .titular-menu-button[data-tone="ti"] { --titular-light: #eaf7e1; --titular-base: #afd49a; --titular-edge: #7ea96c; --titular-ink: #3b6735; }
-.gestor-sidebar--titular .titular-menu-button[data-tone="sair"] { --titular-light: #f3eafb; --titular-base: #cdb8e2; --titular-edge: #a08ab7; --titular-ink: #654c7c; width: auto; min-height: 34px; padding: 5px 18px; margin: 10px auto 8px; border-radius: 999px; gap: 7px; font-size: 12px; box-shadow: 0 3px 0 var(--titular-edge), 0 5px 7px -3px var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 70%); }
+.gestor-sidebar--titular .titular-menu-button[data-tone="operacional"] { --titular-light: rgb(255 239 245 / 78%); --titular-base: rgb(230 188 205 / 48%); --titular-edge: rgb(160 106 130 / 30%); --titular-ink: #79425c; }
+.gestor-sidebar--titular .titular-menu-button[data-tone="gestor"] { --titular-light: rgb(255 249 229 / 80%); --titular-base: rgb(235 216 158 / 48%); --titular-edge: rgb(156 129 67 / 30%); --titular-ink: #765b22; }
+.gestor-sidebar--titular .titular-menu-button[data-tone="ti"] { --titular-light: rgb(242 250 235 / 80%); --titular-base: rgb(190 215 177 / 48%); --titular-edge: rgb(100 140 83 / 30%); --titular-ink: #46673c; }
+.gestor-sidebar--titular .titular-menu-button[data-tone="sair"] { --titular-light: rgb(249 241 255 / 78%); --titular-base: rgb(215 197 231 / 48%); --titular-edge: rgb(130 106 158 / 30%); --titular-ink: #654c7c; width: auto; min-height: 34px; padding: 5px 18px; margin: 10px auto 8px; border-radius: 999px; gap: 7px; font-size: 12px; box-shadow: 0 2px 0 var(--titular-edge), 0 4px 7px -3px var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 70%); }
 .gestor-sidebar--titular .titular-menu-button[data-tone="sair"] svg { width: 19px; height: 19px; }
 .gestor-sidebar--titular .titular-menu-button svg { flex-shrink: 0; }
 .gestor-sidebar--titular .titular-menu-button .titular-chevron { margin-left: auto; width: auto; font-size: 13px; }
-.gestor-sidebar--titular .titular-menu-button:hover { transform: translateY(-2px); }
-.gestor-sidebar--titular .titular-menu-button:active, .gestor-sidebar--titular .titular-menu-button[aria-expanded="true"] { transform: translateY(2px); box-shadow: 0 2px 0 var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 65%); }
+.gestor-sidebar--titular .titular-menu-button:hover { transform: translateY(-1px); }
+.gestor-sidebar--titular .titular-menu-button:active, .gestor-sidebar--titular .titular-menu-button[aria-expanded="true"] { transform: translateY(1px); box-shadow: 0 1px 0 var(--titular-edge), inset 0 1px 0 rgb(255 255 255 / 65%); }
 .gestor-sidebar--titular .titular-menu-button:focus-visible { outline: 2px solid var(--titular-ink); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .gestor-sidebar--titular .titular-menu-button { transition: none; } }
 `
@@ -304,11 +304,6 @@ export function GestorShell({
             <p>Administrador do Sistema / Titular</p>
           </div>
           <div className="gestor-header-actions">
-            {isDanieleTitular && (
-              <button type="button" onClick={() => navigate('/')} aria-label="Ir para Início">
-                ⌂ <span>Início</span>
-              </button>
-            )}
             <CommunicationUnreadLink accessContext={accessContext} />
             <button type="button" onClick={goBack}>← <span>Voltar</span></button>
             {canAccessAppRoute(accessContext, '/notificacoes') && (
