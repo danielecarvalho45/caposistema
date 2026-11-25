@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -750,8 +751,8 @@ export function QueuePage({
         </button>
 
         {familyNewAppointmentNotice && (
-          <button type="button" onClick={() => openFamilyAppointmentWhatsApp(familyNewAppointmentNotice)}>
-            💬 Abrir aviso de agendamento no WhatsApp
+          <button type="button" style={capoWhatsAppStyle} onClick={() => openFamilyAppointmentWhatsApp(familyNewAppointmentNotice)}>
+            <CapoWhatsAppIcon /> Abrir aviso de agendamento no WhatsApp
           </button>
         )}
         {familySlots.length > 0 && (
