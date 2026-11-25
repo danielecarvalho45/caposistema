@@ -1,3 +1,17 @@
+## 25/11/2026 — VERDE — Nutrição: identidade visual do PDF e identificação profissional específica da Juliana
+
+**Autorização da Titular:** preservar integralmente o timbre existente e adequar somente o conteúdo interno do PDF do Plano Alimentar ao padrão visual homologado do Transporte: tons suaves azul/verde, títulos centralizados e em negrito, identificação do paciente, texto justificado em coluna única, ausência de seções vazias, paginação, data/hora no rodapé e autoria ao final. Identificação específica aprovada: Juliana Teixeira Rios Camargo / Nutricionista Oncológica e Paliativista / CRN cadastrado. Não reconstruir fluxo, tela, banco, timbre nem PDF Transporte.
+
+**Backup:** `backup/nutricao-pdf-estetica-2026-11-25` criado antes da intervenção.
+
+**Implementação exclusiva no gerador nutricional:** `src/lib/pdf/nutrition-document-pdf.ts`, commits `ee7639976b52421460cb1a2d5128a09af08f0bbc` e `015da48c74bf1a20c8b1049d1ad7c95919ca6a39`. Reutilizada a paleta do Transporte sem importar ou alterar seu gerador. Faixas suaves, títulos centralizados, identificação do paciente abaixo do título, conteúdo justificado existente, seções preenchidas somente, autoria centralizada ao final e data/hora da geração capturada uma vez em America/Sao_Paulo com paginação. A imagem oficial, largura, altura proporcional, coordenadas e comando do timbre nutricional ficaram idênticos ao backup. A identificação específica depende do professional_id persistido do documento (Juliana, ID confirmado por SELECT no Supabase), não de nome digitado; a autoria original continua sendo a do documento, inclusive na eventual geração gerencial já autorizada. CRN proveniente do author_registration do banco, sem número inventado ou prefixo duplicado. Outros autores mantêm nome e registro próprios, sem a qualificação exclusiva. Não foi alterado nenhum PDF anterior.
+
+**Verificação:** leitura posterior confirmou timbre/posição, paleta, autoria vinculada ao ID, CRN, data/hora, justificação, omissão de seções vazias e lista de seções preservadas. SHA idêntico ao backup para `capo-document-brand.ts`, `capo-transport-request-pdf.ts` e `NutritionPage.tsx`. Testes de regressão atualizados em `tests/unit/nutrition-document-justification.test.ts`, commit `2da8775f3eecc187ce53b946724244a03d9f4aaf`, para assinatura exclusiva e não duplicada, ordem da autoria, paleta, rodapé e timbre. Supabase somente leitura; nenhuma migração, alteração de dados ou emissão real.
+
+**Limites:** não houve execução comprovada de Vitest/build, publicação Cloudflare nem renderização/homologação autenticada. A limitação anterior de representação Unicode pela fonte WinAnsi permanece. Conferir CRN real cadastrado, aparência em A4, textos extensos, múltiplas páginas, autoria e emissão no ambiente autorizado sem usar pacientes reais como ensaio. Manutenção em aberto até homologação expressa.
+
+---
+
 ## 25/11/2026 — VERDE — Nutrição: ampliação e redução individual de campos do Plano Alimentar
 
 **Decisão da Titular:** após visualizar a proposta de ampliação individual, dispensou a nova implementação de fluxo e autorizou exclusivamente a inclusão de ícones Ampliar/Reduzir nos campos de texto existentes. Preservar formulário, tela própria, limites removidos anteriormente, salvamento, confirmação, PDF, estética e outras funcionalidades.
