@@ -24,7 +24,7 @@ Deno.serve(async (request: Request) => {
   if (origin !== allowedOrigin) return respond({ error: "Origem inválida." }, 403);
   const declaredLength = Number(request.headers.get("content-length") ?? 0);
   if (declaredLength > 4096) return respond({ error: "Requisição muito grande." }, 413);
-  let payload: { token?: unknown; pin?: unknown };
+  let payload: { token?: unknown; pin?: unknown; check_only?: unknown };
   try { payload = await request.json(); } catch { return respond({ error: "Dados inválidos." }, 400); }
   const token = typeof payload.token === "string" ? payload.token : "";
   const pin = typeof payload.pin === "string" ? payload.pin : "";
@@ -36,6 +36,23 @@ Deno.serve(async (request: Request) => {
     const db = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    // Verificação rápida de acesso sem contabilizar visualização ou gerar URLs de arquivos.
+    if (payload.check_only === true) {
+      if (pin) return respond({ error: "Verificação de links antigos não suportada." }, 400);
+      const check = await db.rpc("probe_transport_direct_share_for_edge", { p_token: token });
+      if (check.error) return respond({ error: "Falha técnica ao verificar o link." }, 503);
+      const result = check.data;
+      if (!result || result.status !== "ok") {
+        const messages: Record<string, string> = {
+          revoked: "Este link foi revogado. Gere outro.",
+          expired: "O link venceu após 24 horas. Gere outro.",
+          invalid: "O endereço do link não foi reconhecido. Gere outro.",
+          unavailable: "Os documentos desta solicitação estão indisponíveis.",
+        };
+        return respond({ error: messages[result?.status] || messages.invalid, reason: result?.status || "invalid" }, 403);
+      }
+      return respond({ valid: true, access_expires_at: result.expires_at, document_count: result.document_count });
+    }
     // Links diretos novos não têm PIN. Links legados seguem exigindo seu PIN.
     const { data, error } = pin
       ? await db.rpc("open_transport_share_for_edge", { p_token: token, p_pin: pin })
