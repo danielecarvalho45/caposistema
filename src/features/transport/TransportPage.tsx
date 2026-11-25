@@ -468,9 +468,14 @@ export function TransportPage({ accessContext }: Props) {
       setFeedback('O link venceu. Gere um novo antes de encaminhar.')
       return
     }
-    const testTab = globalThis.open(activeShare.url, '_blank', 'noopener,noreferrer')
-    if (!testTab) setFeedback('O navegador bloqueou o teste. Permita pop-ups para o CAPO.')
-    else setFeedback('Página de documentos aberta para conferência. Verifique se o PDF oficial e os anexos podem ser visualizados e baixados antes de enviar.')
+    const testTab = globalThis.open(activeShare.url, 'capo_transporte_teste_documentos')
+    if (!testTab) {
+      setFeedback('O navegador bloqueou o teste. Permita pop-ups para o CAPO.')
+    } else {
+      testTab.opener = null
+      testTab.focus()
+      setFeedback('Página de documentos aberta para conferência. Verifique se o PDF oficial e os anexos podem ser visualizados e baixados antes de enviar.')
+    }
   }
 
   async function revokeShare(request: TransportRecord) {
