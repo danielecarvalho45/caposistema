@@ -61,9 +61,16 @@ Deno.serve(async (request) => {
     && !['comparecera', 'nao_comparecera'].includes(String(body.decision))) {
     return json({ error: 'Resposta inválida.' }, 400, origin)
   }
+  // Somente a recusa com preferência usa a sobrecarga de três argumentos.
+  // Confirmação e respostas legadas conservam a função homologada de dois.
+  const preference = body.decision === 'nao_comparecera' ? body.preference : undefined
+  if (preference !== undefined && !['proxima_disponivel', 'apos_15_dias', 'nao_remarcar'].includes(String(preference))) {
+    return json({ error: 'Preferência inválida.' }, 400, origin)
+  }
   const args = operation === 'read_appointment_confirmation_link'
     ? { p_token_hash: tokenHash }
-    : { p_token_hash: tokenHash, p_decision: body.decision }
+    : { p_token_hash: tokenHash, p_decision: body.decision,
+        ...(preference !== undefined ? { p_preference: preference } : {}) }
   const { data, error } = await client.rpc(operation, args)
   if (error) {
     console.error('CAPO confirmation operation failed', operation, error.code)
