@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useBackToPreviousFunction } from '../../lib/navigation/back'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { AccessContext } from '../../types/access'
@@ -17,7 +17,7 @@ type GestorShellProps = Readonly<{
   onLogout: () => Promise<void>
 }>
 
-type NavItem = Readonly<{ path: string; icon: string; label: string }>
+type NavItem = Readonly<{ path: string; icon: string; label: string; state?: Readonly<Record<string, string>> }>
 
 const serviceItems: readonly NavItem[] = [
   { path: '/pacientes', icon: '👥', label: 'Pacientes' },
@@ -49,26 +49,32 @@ const managementItems: readonly NavItem[] = [
 const titularOperationalItems: readonly NavItem[] = [
   { path: '/pacientes', icon: '👥', label: 'Pacientes' },
   { path: '/agenda', icon: '🗓', label: 'Agenda Geral' },
-  { path: '/nutricao', icon: '◉', label: 'Nutrição' },
+  { path: '/nutricao', icon: '◉', label: 'Nutrição', state: { titularNutritionView: 'operacional' } },
   { path: '/familiar-cuidador', icon: '♧', label: 'Familiar / Cuidador' },
   { path: '/fila', icon: '📋', label: 'Fila' },
   { path: '/faltosos', icon: '⚑', label: 'Faltosos' },
   { path: '/busca-ativa', icon: '⌕', label: 'Busca Ativa' },
   { path: '/solicitacoes', icon: '▤', label: 'Solicitações' },
   { path: '/comunicacao', icon: '✉', label: 'Comunicação Interna' },
-  { path: '/transporte', icon: '⇄', label: 'Transporte' },
+  { path: '/transporte', icon: '⇄', label: 'Transporte', state: { titularTransportView: 'operacional' } },
   { path: '/receita', icon: '💊', label: 'Renovação de Receita' },
   { path: '/encaminhamentos', icon: '↗', label: 'Encaminhamentos' },
   { path: '/odontologia', icon: '🦷', label: 'Odontologia' },
-  { path: '/encerramentos', icon: '✓', label: 'Encerramentos' },
+  { path: '/encerramentos', icon: '✓', label: 'Encerramentos', state: { titularClosureView: 'operacional' } },
   { path: '/notificacoes', icon: '●', label: 'Notificações' },
   { path: '/suporte', icon: '?', label: 'Suporte' },
-  { path: '/relatorios', icon: '▥', label: 'Relatórios' },
+  { path: '/relatorios', icon: '▥', label: 'Relatórios', state: { titularReportView: 'operacional' } },
 ]
 
-const titularRetainedItems = serviceItems.filter((item) =>
-  !titularOperationalItems.some((operational) => operational.path === item.path),
-)
+// Keep legacy destinations available through the existing flow hub, without duplicate sidebar entries.
+const titularFlowItems: readonly NavItem[] = [
+  { path: '/gestor/operacional', icon: '●', label: 'Central de Pendências' },
+  { path: '/gestor/fluxos', icon: '◉', label: 'Fluxos e Acompanhamentos' },
+]
+const titularManagementFlowItems: readonly NavItem[] = [
+  { path: '/gestor/social', icon: '❤', label: 'Acompanhamento Social' },
+  { path: '/gestor/luto', icon: '✿', label: 'Luto' },
+]
 
 function NavGroup({ label, items, activePath, accessContext }: Readonly<{
   label: string
@@ -76,6 +82,7 @@ function NavGroup({ label, items, activePath, accessContext }: Readonly<{
   activePath: string
   accessContext: AccessContext
 }>) {
+  const location = useLocation()
   const authorizedItems = items.filter((item) =>
     canAccessAppRoute(accessContext, item.path as AppRoute),
   )
@@ -87,8 +94,9 @@ function NavGroup({ label, items, activePath, accessContext }: Readonly<{
       {authorizedItems.map((item) => (
         <Link
           className="gestor-nav-link"
-          aria-current={activePath === item.path ? 'page' : undefined}
+          aria-current={activePath === item.path && (item.state ? Object.entries(item.state).every(([key, value]) => location.state?.[key] === value) : !location.state?.titularReportView && !location.state?.titularNutritionView && !location.state?.titularTransportView && !location.state?.titularClosureView) ? 'page' : undefined}
           to={item.path}
+          state={item.state}
           key={item.path}
         >
           <span aria-hidden="true">{item.icon}</span>
@@ -237,11 +245,18 @@ export function GestorShell({
                   <div id={`titular-menu-${area.id}`} hidden={titularArea !== area.id}>
                     {area.id === 'operacional' && <>
                       <NavGroup label="Rotinas operacionais" items={titularOperationalItems} activePath={activePath} accessContext={accessContext} />
-                      <NavGroup label="Acessos existentes — separação pendente" items={titularRetainedItems} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Centrais de acompanhamento" items={titularFlowItems} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'gestor' && <>
-                      <NavGroup label="Gestão do Serviço" items={managementItems.filter((item) => item.path !== '/gestor/suporte')} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Gestão do Serviço" items={[
+                        ...managementItems.filter((item) => item.path === '/gestor/equipe'),
+                        ...titularManagementFlowItems,
+                        { path: '/nutricao', icon: '◉', label: 'Nutrição — Gestão Documental', state: { titularNutritionView: 'gestor' } },
+                        { path: '/transporte', icon: '⇄', label: 'Transporte — Contatos', state: { titularTransportView: 'gestor' } },
+                        { path: '/encerramentos', icon: '✓', label: 'Encerramentos — Decisão Profissional', state: { titularClosureView: 'gestor' } },
+                      ]} activePath={activePath} accessContext={accessContext} />
                       <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Governança e Indicadores" items={managementItems.filter((item) => ['/gestor/timeline', '/gestor/auditoria', '/relatorios'].includes(item.path)).map((item) => item.path === '/relatorios' ? { ...item, label: 'Relatórios Gerenciais' } : item)} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'ti' && <>
                       <a className="gestor-nav-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> IA de Desenvolvimento do CAPO</a>
