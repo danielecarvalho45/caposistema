@@ -58,6 +58,26 @@ function transportWith(data: unknown, error: unknown = null): RpcTransport {
 }
 
 describe('camada de RPCs CAPO', () => {
+  it('encaminha todos os campos do plano alimentar detalhado pelo transportador real', async () => {
+    const confirmation = { success: true, plan_id: 'plan-test' }
+    const rpc = vi.fn().mockResolvedValue({ data: confirmation, error: null })
+    const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
+    const service = createRpcService(createSupabaseTransport(client))
+    const args = {
+      p_patient_id: 'patient-test',
+      p_breakfast: 'Campo de teste '.repeat(500),
+      p_lunch: 'Almoço', p_snack: 'Lanche', p_dinner: 'Jantar',
+      p_hydration: 'Hidratação', p_nutritional_supplement: 'Suplementação',
+      p_other_guidance: 'Outras orientações', p_dessert_lunch: 'Sobremesa almoço',
+      p_dessert_dinner: 'Sobremesa jantar', p_oncology_guidance: 'Orientações',
+      p_additional_notes: 'Observações', p_document_title: 'PLANO ALIMENTAR ORAL',
+    }
+    const result = await service.saveDetailedNutritionPlan(args)
+    expect(rpc).toHaveBeenCalledTimes(1)
+    expect(rpc).toHaveBeenCalledWith('save_nutrition_plan_detailed_for_interface', args)
+    expect(result).toEqual({ status: 'success', data: confirmation })
+  })
+
   it('libera leitura, gravação de contatos e conclusão documental do Transporte', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { success: true }, error: null })
     const client = { rpc } as unknown as Parameters<typeof createSupabaseTransport>[0]
