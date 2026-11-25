@@ -66,9 +66,15 @@ const titularOperationalItems: readonly NavItem[] = [
   { path: '/relatorios', icon: '▥', label: 'Relatórios' },
 ]
 
-const titularRetainedItems = serviceItems.filter((item) =>
-  !titularOperationalItems.some((operational) => operational.path === item.path),
-)
+// Keep legacy destinations available through the existing flow hub, without duplicate sidebar entries.
+const titularFlowItems: readonly NavItem[] = [
+  { path: '/gestor/operacional', icon: '●', label: 'Central de Pendências' },
+  { path: '/gestor/fluxos', icon: '◉', label: 'Fluxos e Acompanhamentos' },
+]
+const titularManagementFlowItems: readonly NavItem[] = [
+  { path: '/gestor/social', icon: '❤', label: 'Acompanhamento Social' },
+  { path: '/gestor/luto', icon: '✿', label: 'Luto' },
+]
 
 function NavGroup({ label, items, activePath, accessContext }: Readonly<{
   label: string
@@ -237,11 +243,15 @@ export function GestorShell({
                   <div id={`titular-menu-${area.id}`} hidden={titularArea !== area.id}>
                     {area.id === 'operacional' && <>
                       <NavGroup label="Rotinas operacionais" items={titularOperationalItems} activePath={activePath} accessContext={accessContext} />
-                      <NavGroup label="Acessos existentes — separação pendente" items={titularRetainedItems} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Centrais de acompanhamento" items={titularFlowItems} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'gestor' && <>
-                      <NavGroup label="Gestão do Serviço" items={managementItems.filter((item) => item.path !== '/gestor/suporte')} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Gestão do Serviço" items={[
+                        ...managementItems.filter((item) => item.path === '/gestor/equipe'),
+                        ...titularManagementFlowItems,
+                      ]} activePath={activePath} accessContext={accessContext} />
                       <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Governança e Indicadores" items={managementItems.filter((item) => ['/gestor/timeline', '/gestor/auditoria', '/relatorios'].includes(item.path))} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'ti' && <>
                       <a className="gestor-nav-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> IA de Desenvolvimento do CAPO</a>
