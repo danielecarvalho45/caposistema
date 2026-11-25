@@ -48,7 +48,8 @@ it('separa Oferta Inicial de Perda de Seguimento sem encaminhar para Faltosos', 
 })
 
 
-it('após 72 horas, salvar Sem resposta transfere para Resgate sem criar nova tentativa inicial', async () => {
+it.each(['sem_resposta', 'recusou', 'novo_contato'] as const)('após 72 horas, salvar %s transfere para Resgate por confirmação do banco', async (outcome) => {
+  const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true)
   rpc.getInitialActiveSearches.mockResolvedValue({ status: 'success', data: { items: [{
     patient_id: 'initial-patient', patient_name: 'Paciente aguardando oferta',
     patient_number: '12', flow_status: 'ativo',
@@ -60,8 +61,8 @@ it('após 72 horas, salvar Sem resposta transfere para Resgate sem criar nova te
     next_contact_at: '2026-11-07T12:00:00.000Z',
   }] } })
   rpc.getOfferRescueSearches.mockResolvedValue({ status: 'success', data: { items: [] } })
-  rpc.registerOfferRescueContact.mockResolvedValue({
-    status: 'success', data: { success: true, attempt_id: 'rescue-1' },
+  rpc.registerInitialActiveSearchAttempt.mockResolvedValue({
+    status: 'success', data: { success: true, attempt_id: 'rescue-1', transferred_to_rescue: true },
   })
   const context = { roles: [{ code: 'administrativo_operacional' }],
     primary_context: { code: 'administrativo_operacional' } } as unknown as AccessContext
@@ -71,16 +72,17 @@ it('após 72 horas, salvar Sem resposta transfere para Resgate sem criar nova te
   </MemoryRouter>)
   await user.click(await screen.findByRole('button', { name: 'Oferta CAPO' }))
   await user.click(screen.getByRole('button', { name: 'Registrar resposta / observação' }))
-  await user.selectOptions(screen.getByLabelText('Desfecho do contato'), 'sem_resposta')
+  await user.selectOptions(screen.getByLabelText('Desfecho do contato'), outcome)
+  await user.type(screen.getByLabelText('Observação administrativa (opcional)'), 'Justificativa registrada')
   await user.click(screen.getByRole('button', { name: 'Salvar resposta' }))
 
-  await waitFor(() => expect(rpc.registerOfferRescueContact).toHaveBeenCalledWith({
-    patientId: 'initial-patient',
-    contactMethod: 'whatsapp',
-    contactResult: 'Sem resposta / contato não conseguido',
-    outcome: 'sem_resposta',
-  }))
-  expect(rpc.registerInitialActiveSearchAttempt).not.toHaveBeenCalled()
+  await waitFor(() => expect(rpc.registerInitialActiveSearchAttempt).toHaveBeenCalledWith(expect.objectContaining({
+    patientId: 'initial-patient', contactMethod: 'whatsapp',
+    acceptedService: outcome === 'recusou' ? false : null,
+    notes: 'Justificativa registrada', nextContactAt: null, closeFlow: false,
+  })))
+  expect(rpc.registerOfferRescueContact).not.toHaveBeenCalled()
+  confirmation.mockRestore()
   expect(await screen.findByRole('button', { name: 'Resgate da Oferta CAPO' }))
     .toHaveAttribute('aria-pressed', 'true')
 })
@@ -112,13 +114,13 @@ it('não antecipa Resgate antes das 72 horas da primeira Oferta', async () => {
 
 
 it.each(['aceitou', 'recusou'] as const)(
-  'mantém o desfecho expresso %s na Oferta Inicial sem transferir indevidamente',
+  'mantém o desfecho expresso %s antes das 72 horas sem transferir indevidamente',
   async (outcome) => {
     const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true)
     rpc.getInitialActiveSearches.mockResolvedValue({ status: 'success', data: { items: [{
       patient_id: 'patient-outcome', patient_name: 'Paciente de decisão',
-      flow_status: 'ativo', contact_date: '2026-11-04T12:00:00.000Z',
-      history: [{ contact_date: '2026-11-04T12:00:00.000Z' }],
+      flow_status: 'ativo', contact_date: new Date(Date.now() - 24 * 3600000).toISOString(),
+      history: [{ contact_date: new Date(Date.now() - 24 * 3600000).toISOString() }],
     }] } })
     rpc.registerInitialActiveSearchAttempt.mockResolvedValue({
       status: 'success', data: { success: true, attempt_id: 'initial-decision' },
@@ -138,7 +140,7 @@ it.each(['aceitou', 'recusou'] as const)(
       .toHaveBeenCalledWith(expect.objectContaining({
         patientId: 'patient-outcome',
         acceptedService: outcome === 'aceitou',
-        closeFlow: true,
+        closeFlow: outcome === 'aceitou',
       })))
     expect(rpc.registerOfferRescueContact).not.toHaveBeenCalled()
     expect(confirmation).toHaveBeenCalled()
