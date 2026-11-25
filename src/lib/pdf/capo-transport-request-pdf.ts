@@ -11,6 +11,7 @@ export type TransportPdfData = Readonly<{
   registeredAddress: string | null
   boardingAddress: string
   boardingSource: 'cadastro' | 'alternativo'
+  vehicleType: 'carro' | 'ambulancia' | null
   periodicity: 'unica' | 'semanal' | 'quinzenal'
   reason: string
   requestedBy: string
@@ -163,6 +164,9 @@ export function buildTransportOfficialPdf(data: TransportPdfData): Blob {
   heading('TRAJETO SOLICITADO', true)
   field('Local de embarque:', data.boardingSource === 'cadastro'
     ? 'Mesmo do endereço residencial cadastrado.' : data.boardingAddress)
+  if (data.vehicleType) {
+    field('Veículo solicitado:', data.vehicleType === 'ambulancia' ? 'AMBULÂNCIA' : 'CARRO')
+  }
   if (data.appointmentLabel) {
     field('Data e horário da consulta:', data.appointmentLabel)
     field('Profissional:', data.professionalName ?? 'Não informado')
