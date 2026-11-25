@@ -618,9 +618,17 @@ export function TransportPage({ accessContext }: Props) {
     setBusy(false)
   }
 
-  async function generatePdf(request: TransportRecord) {
+  async function generatePdf(request: TransportRecord, reissue = false) {
     const id = requestId(request)
     if (!id || !canAdminister || busy) return
+    if (reissue) {
+      if (field(request, 'status') !== 'confirmado' || !boolField(request, 'pdf_persisted') ||
+          !field(request, 'pdf_prepared_at') || field(request, 'external_forwarded_at')) {
+        setFeedback('O pedido precisa estar confirmado, com PDF preparado e ainda não encaminhado.')
+        return
+      }
+      if (!window.confirm('Gerar nova versão do PDF mantendo a anterior no histórico? A nova versão precisará ser confirmada novamente.')) return
+    }
     const notes = field(request, 'transport_notes') ?? 'Necessidade de transporte registrada no CAPO.'
     const boarding = field(request, 'boarding_address')
     if (!boarding || !field(request, 'pdf_details_confirmed_at')) {
@@ -660,7 +668,7 @@ export function TransportPage({ accessContext }: Props) {
     const storagePath = `transport/${id}/solicitacao-transporte-${Date.now()}.pdf`
 
     setBusy(true)
-    setFeedback('Gerando e registrando PDF oficial…')
+    setFeedback(reissue ? 'Gerando nova versão do PDF e preservando a anterior…' : 'Gerando e registrando PDF oficial…')
     const { error: uploadError } = await getSupabaseClient()
       .storage.from('capo-documents')
       .upload(storagePath, blob, { contentType: 'application/pdf', upsert: false })
@@ -671,10 +679,15 @@ export function TransportPage({ accessContext }: Props) {
       return
     }
 
-    const result = await getRpcService().registerTransportPdf(id, storagePath)
+    const result = reissue
+      ? await getRpcService().reissueTransportPdf(id, storagePath)
+      : await getRpcService().registerTransportPdf(id, storagePath)
     if (result.status === 'success') {
+      if (reissue) setShareAccess(null)
       await loadContext(patientId, patientName)
-      setFeedback('PDF oficial gerado e vinculado à solicitação.')
+      setFeedback(reissue
+        ? 'Nova versão registrada; documento anterior preservado. Confirme novamente o PDF antes de encaminhar.'
+        : 'PDF oficial gerado e vinculado à solicitação.')
     } else {
       setFeedback(result.status === 'error' ? result.error.message : 'O banco não confirmou o PDF.')
     }
@@ -1129,6 +1142,11 @@ export function TransportPage({ accessContext }: Props) {
                     )}
                     {canAdminister && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
+                    )}
+                    {canAdminister && status === 'confirmado' && pdfPersisted && pdfPrepared && !forwarded && (
+                      <button type="button" disabled={busy} onClick={() => void generatePdf(request, true)}>
+                        Atualizar PDF para novo modelo
+                      </button>
                     )}
                     {canAdminister && status !== 'cancelado' && (
                       <button type="button" disabled={busy} onClick={() => void openDocuments(request)}>
