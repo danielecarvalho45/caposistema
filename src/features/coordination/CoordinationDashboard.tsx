@@ -1,3 +1,4 @@
+import { CapoShortcutIcon } from '../../components/icons/CapoIcon'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getRpcService, loadingState, type AgendaScheduleSlot, type AsyncState } from '../../lib/supabase/rpc'
@@ -111,7 +112,7 @@ export function CoordinationDashboard({ accessContext }: { accessContext: Access
     setBusy(false)
   }
   return <div className="home-page home-mobile-standard"><header className="home-welcome"><p className="eyebrow">Coordenação</p><h1>Painel da Coordenação</h1><p>Visão gerencial da equipe e dos fluxos autorizados.</p></header>
-    <section className="home-profile home-profile-standard"><h2>Acessos rápidos</h2><div className="home-profile-grid">{links.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title, description, icon, tone }) => <Link className={`home-profile-card ${tone}`} to={path} key={path}><span className="home-profile-icon" aria-hidden="true">{icon}</span><strong>{title}</strong><span>{description}</span></Link>)}</div></section>
+    <section className="home-profile home-profile-standard"><h2>Acessos rápidos</h2><div className="home-profile-grid">{links.filter(({ path }) => canAccessAppRoute(accessContext, path)).map(({ path, title, description, tone }) => <Link className={`home-profile-card ${tone}`} to={path} key={path}><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path={path} /></span><strong>{title}</strong><span>{description}</span></Link>)}</div></section>
     <section className="home-profile"><h2>Equipe e Profissionais</h2>
       {team.status === 'loading' && <p>Carregando…</p>}
       {team.status === 'error' && <p role="alert">{team.error.message}</p>}
