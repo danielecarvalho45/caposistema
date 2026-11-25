@@ -315,6 +315,28 @@ export function TransportPage({ accessContext }: Props) {
     }
   }
 
+  async function selectTransportVehicle(request: TransportRecord, type: 'carro' | 'ambulancia') {
+    if (busy || !canCreateRequest) return
+    const id = requestId(request)
+    const current = field(request, 'vehicle_type')
+    const next = current === type ? null : type
+    if (!id) return
+    setBusy(true)
+    try {
+      const result = await getRpcService().setTransportVehicleType(id, next)
+      if (result.status !== 'success') {
+        setFeedback(result.status === 'error' ? result.error.message : 'Não foi possível salvar o veículo.')
+        return
+      }
+      await loadContext(patientId, patientName)
+      setFeedback(next
+        ? 'Veículo ' + (next === 'carro' ? 'Carro' : 'Ambulância') + ' salvo nesta solicitação; será incluído no PDF e nas mensagens.'
+        : 'Tipo de veículo desmarcado nesta solicitação (opcional).')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function saveContacts() {
     if (!isManager || contactsBusy) return
     setContactsBusy(true)
@@ -516,10 +538,17 @@ export function TransportPage({ accessContext }: Props) {
       timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23',
     }).format(new Date()))
     const greeting = brazilHour < 12 ? 'Bom dia!' : brazilHour < 18 ? 'Boa tarde!' : 'Boa noite!'
+    const vehicleType = field(request, 'vehicle_type')
+    const fullPatientName = field(patient, 'full_name') ?? patientName
+    const boardingLocation = field(request, 'boarding_address') ?? field(patient, 'address')
     const message = [
       greeting,
       'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
-      'O CAPO solicita providências de transporte para o(a) paciente ' + patientName + ', em acompanhamento pelo serviço.',
+      'O CAPO solicita providências de transporte para o(a) paciente abaixo identificado(a), em acompanhamento pelo serviço.',
+      'Paciente: ' + fullPatientName,
+      'Endereço de embarque: ' + (boardingLocation ?? 'Não informado'),
+      vehicleType === 'carro' ? 'Veículo solicitado: CARRO'
+        : vehicleType === 'ambulancia' ? 'Veículo solicitado: AMBULÂNCIA' : '',
       appointmentLabel ? 'Atendimento previsto: ' + appointmentLabel + '.' : '',
       'Toda a documentação necessária ao transporte, incluindo o PDF oficial da solicitação e os documentos complementares anexados, está disponível no link abaixo:',
       '',
@@ -774,6 +803,8 @@ export function TransportPage({ accessContext }: Props) {
       registeredAddress: field(patient, 'address'),
       boardingAddress: boarding,
       boardingSource: field(request, 'boarding_source') === 'alternativo' ? 'alternativo' : 'cadastro',
+      vehicleType: field(request, 'vehicle_type') === 'carro' ? 'carro'
+        : field(request, 'vehicle_type') === 'ambulancia' ? 'ambulancia' : null,
       periodicity: cadence,
       reason: notes,
       requestedBy: field(request, 'requested_by') ?? 'Não identificado',
@@ -1288,6 +1319,25 @@ export function TransportPage({ accessContext }: Props) {
                   <span>{status}</span>
                   <small>{field(request, 'appointment_id') ? 'Agendamento vinculado' : 'Solicitação genérica (sem agendamento)'}</small>
                   <small>{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
+                  {canCreateRequest && ['solicitado','confirmado'].includes(status) && !pdfPersisted && (
+                    <div className="transport-vehicle-selection">
+                      <strong>Tipo de veículo (opcional)</strong>
+                      <button type="button" disabled={busy}
+                        aria-pressed={field(request, 'vehicle_type') === 'carro'}
+                        onClick={() => void selectTransportVehicle(request, 'carro')}>
+                        🚗 Carro
+                      </button>
+                      <button type="button" disabled={busy}
+                        aria-pressed={field(request, 'vehicle_type') === 'ambulancia'}
+                        onClick={() => void selectTransportVehicle(request, 'ambulancia')}>
+                        🚑 Ambulância
+                      </button>
+                      <small>Clique para marcar ou desmarcar; a escolha é salva automaticamente antes de gerar o PDF.</small>
+                    </div>
+                  )}
+                  {field(request, 'vehicle_type') && (pdfPersisted || !canCreateRequest) && (
+                    <small>Veículo solicitado: {field(request, 'vehicle_type') === 'ambulancia' ? 'Ambulância' : 'Carro'}</small>
+                  )}
                   <div>
                     {canAdminister && status === 'confirmado' && !pdfPersisted && (
                       <>
