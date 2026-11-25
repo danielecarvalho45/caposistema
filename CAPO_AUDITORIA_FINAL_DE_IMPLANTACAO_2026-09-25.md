@@ -1,3 +1,103 @@
+## 25/11/2026 — CONSOLIDAÇÃO DO FLUXO VIGENTE — Plano Alimentar e PDF da Nutrição — HOMOLOGAÇÃO ABERTA
+
+**Decisão da Gestora/Titular:** manter o fluxo existente e dispensar a reconstrução anteriormente cogitada. Consolidar os ajustes pontuais autorizados. A homologação operacional será feita por Juliana Teixeira Rios Camargo durante atendimentos efetivos de pacientes reais, mediante construção, salvamento e emissão dos planos alimentares no uso normal do serviço. Não criar consultas, planos, PDFs ou dados artificiais em produção para ensaios técnicos. A confirmação de sucesso da Nutricionista será comunicada à Titular, que autorizará a homologação e fechamento. Até lá, manter testes e manutenção em aberto. Registro exclusivamente documental.
+
+### 1. Desenho do fluxo vigente
+
+```text
+LOGIN PROFISSIONAL DA NUTRICIONISTA
+  |
+  +-- HOME / Minha Agenda
+  |     Confirmar presença -> banco registra confirmado
+  |     Revalidar consulta, especialidade e vínculo profissional
+  |     Abrir /nutricao com o mesmo paciente selecionado
+  |
+  +-- Atalho Planejamento Alimentar
+        Abrir /nutricao -> pesquisar paciente autorizado
+                       |
+                       v
+           CONTEXTO NUTRICIONAL DO PACIENTE
+          Identificação, plano atual, alerta mínimo
+                       |
+             +---------+---------+
+             |                   |
+          Sem plano         Plano existente
+          Campos livres     Recuperar conteúdo
+             |              Editar se autorizado
+             +---------+---------+
+                       v
+           CONSTRUIR / ATUALIZAR PLANO
+          12 campos, 11 com Ampliar/Reduzir
+          Prévia opcional
+                       |
+                       v
+           SALVAR / ATUALIZAR PLANO
+          Gravar no Supabase e reler contexto
+          Conferir plan_id e os 12 campos
+                       |
+           Banco confirmou conteúdo?
+             |                   |
+            NÃO                 SIM
+             |                   |
+       Preservar texto           |
+       Informar falha            |
+       Bloquear PDF              |
+       Corrigir e repetir        v
+             +---> Salvar   GERAR DOCUMENTO OFICIAL
+                             Criar revisão / snapshot
+                             Recuperar documento autorizado
+                             Compor PDF nutricional
+                             Upload em capo-documents
+                             Registrar vínculo do PDF
+                                      |
+                            Registro confirmado?
+                             |                 |
+                            NÃO               SIM
+                     Informar falha      PDF disponível
+                     Plano preservado         |
+                                    +---------+---------+
+                                    |         |         |
+                                 Visualizar  Baixar   Enviar ao
+                                    PDF       PDF   Administrativo
+
+REABERTURA POSTERIOR -> recuperar plano autorizado -> atualizar
+-> salvar e conferir -> nova revisão PDF, sem substituir documentos antigos.
+```
+
+### 2. Comportamento esperado da interface e do banco
+
+- Tela própria de Planejamento Alimentar: Home não recebe formulário alongado; Voltar retorna à Home ou agenda de origem. Confirmação de presença e atalho existente são portas de entrada distintas.
+- Identificação automática do paciente (nome, Nº CAPO, CMS), com sinalização mínima de vulnerabilidade quando autorizada. Registro clínico permanece no VIVVER.
+- Campos na ordem vigente: título editável (padrão PLANO ALIMENTAR ORAL); café da manhã; almoço; sobremesa do almoço; lanche da tarde; jantar; sobremesa do jantar; hidratação; suplementação nutricional; outras orientações; orientações nutricionais em tratamento oncológico; observações complementares.
+- Campos livres sem limites fixos artificiais anteriores de 250/5000 caracteres no formulário e nas duas RPCs de salvamento, respeitados limites técnicos naturais. Nenhuma orientação nutricional pré-preenchida automaticamente.
+- Ícones independentes Ampliar/Reduzir nas 11 áreas de texto: 13 linhas ao ampliar, tamanho original ao reduzir, mesmo valor preservado. Texto excepcionalmente extenso pode exigir rolagem. Ampliar não salva automaticamente; título permanece de uma linha.
+- Prévia facultativa, não equivale ao PDF oficial. Salvar/atualizar e gerar PDF são ações separadas. Exigir paciente autorizado e permissão de edição. Plano de outro profissional permanece sem edição. Ao falhar a gravação ou conferência de releitura, preservar rascunho, informar erro e não declarar sucesso. PDF somente após confirmação do plano salvo, sem alterações pendentes.
+- PDF oficial criado do snapshot persistido da revisão; criação, geração, upload privado e registro são etapas distintas. Falha não apaga o plano salvo. Histórico e documentos oficiais anteriores preservados.
+- Após registro confirmado, disponibilizar Visualizar PDF, Baixar PDF e Enviar ao Administrativo. Este último solicita entrega administrativa vinculada ao documento, não confirma entrega externa automaticamente. Administrativo não assume autoria nutricional nem altera conteúdo profissional; preservar permissões vigentes de consulta/entrega e emissão gerencial autorizada.
+- Reabertura do mesmo paciente recupera o plano atual; atualização autorizada e emissão posterior geram nova revisão documental, sem sobrescrever PDFs anteriores.
+
+### 3. Padrão visual vigente do PDF
+
+Timbre oficial CAPO preservado integralmente, inclusive imagem, dimensões proporcionais e posicionamento existentes no gerador nutricional. Apenas conteúdo abaixo do timbre: azul-claro e verde suave conforme referência homologada do Transporte; títulos centralizados e em negrito; identificação do paciente; texto justificado em coluna única; seções vazias omitidas; quebra automática de textos extensos e páginas A4; rodapé com data/hora de emissão (America/Sao_Paulo) e paginação. Nenhuma mudança no PDF de Transporte ou no gerador global.
+
+Identificação profissional centralizada no final, sem autoria repetida no início:
+
+```text
+Juliana Teixeira Rios Camargo
+Nutricionista Oncológica e Paliativista
+CRN: [registro profissional cadastrado]
+```
+
+Qualificação específica condicionada ao professional_id persistido da Juliana; nome e registro obtidos do documento oficial, sem inventar número. Outros profissionais mantêm autoria própria. Na geração gerencial autorizada, preservar autoria original do documento, sem atribuir o ato nutricional ao Administrativo.
+
+### 4. Homologação operacional — ABERTA
+
+Verificar no atendimento real legítimo: confirmação abre o paciente correto; recuperar plano anterior quando existente; preencher e editar textos extensos, ampliar/reduzir sem perder conteúdo; salvar e conferir persistência após reabrir; gerar PDF somente de plano salvo; conferir timbre, paleta, títulos, margens, acentos/símbolos, conteúdo integral, múltiplas páginas, CRN e identificação profissional, data/hora e histórico; visualizar, baixar e solicitar entrega administrativa quando necessário. Confirmar publicação Cloudflare e registrar o retorno da Juliana. Não declarar Vitest/build, renderização ou execução ponta a ponta já comprovados. Limitação conhecida: fonte WinAnsi ainda não representa todos os caracteres Unicode; permanece pendência de validação/correção pontual se necessário.
+
+**Governança:** produção e manuteste isolados; preservar dados reais e funcionalidades homologadas. Transporte permanece fechado. Nenhuma intervenção funcional, SQL ou deploy nesta consolidação. Futuras correções somente após investigação e novo VERDE. Aguardando aprovação expressa da Titular após retorno da Nutricionista.
+
+---
+
 ## 25/11/2026 — VERDE — Nutrição: identidade visual do PDF e identificação profissional específica da Juliana
 
 **Autorização da Titular:** preservar integralmente o timbre existente e adequar somente o conteúdo interno do PDF do Plano Alimentar ao padrão visual homologado do Transporte: tons suaves azul/verde, títulos centralizados e em negrito, identificação do paciente, texto justificado em coluna única, ausência de seções vazias, paginação, data/hora no rodapé e autoria ao final. Identificação específica aprovada: Juliana Teixeira Rios Camargo / Nutricionista Oncológica e Paliativista / CRN cadastrado. Não reconstruir fluxo, tela, banco, timbre nem PDF Transporte.
