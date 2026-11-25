@@ -1,3 +1,4 @@
+import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { CapoShortcutIcon } from '../../components/icons/CapoIcon'
 import { useEffect, useState } from 'react'
 import { TeamMonthlyBirthdays } from '../../components/birthdays/TeamMonthlyBirthdays'
@@ -715,6 +716,17 @@ export function NutritionPage({
                       <>
                         <button type="button" disabled={busy} onClick={() => void openNutritionDocument(field(delivery, 'document_id') ?? '', false)}>Visualizar PDF</button>
                         <button type="button" disabled={busy} onClick={() => void openNutritionDocument(field(delivery, 'document_id') ?? '', true)}>Baixar PDF</button>
+                        {!managementView && ['pending', 'in_progress'].includes(status ?? '') && (
+                          <PatientWhatsAppButton
+                            patientId={field(delivery, 'patient_id') ?? ''}
+                            label="WhatsApp"
+                            prepareMessage={async () => {
+                              const hour = Number(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23' }).format(new Date()))
+                              const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite'
+                              return greeting + '! 🌻\n\nEstamos encaminhando seu plano alimentar, elaborado pela nutricionista do Centro de Apoio ao Paciente Oncológico (CAPO), especialmente para auxiliar no seu tratamento e bem-estar.\n\nPedimos que siga as orientações nutricionais e, em caso de dúvidas, entre em contato com nossa equipe.\n\nCom carinho,\nEquipe CAPO.'
+                            }}
+                          />
+                        )}
                       </>
                     )}
                     {status === 'pending' && <>{actionButton('start', 'Iniciar')}{actionButton('complete', 'Concluir')}{actionButton('cancel', 'Cancelar')}</>}
