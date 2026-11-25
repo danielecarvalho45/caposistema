@@ -3789,6 +3789,9 @@ export function createRpcService(transport: RpcTransport) {
     createTransportDirectShare: (requestId: string) =>
       execute({ transport, operation: 'create_transport_direct_share_for_interface',
         args: { p_request_id: requestId }, parse: parseConfirmedJson }),
+    getTransportDirectShare: (requestId: string) =>
+      execute({ transport, operation: 'get_transport_direct_share_for_interface',
+        args: { p_request_id: requestId }, parse: parseConfirmedJson }),
     revokeTransportShare: (requestId: string) =>
       execute({ transport, operation: 'revoke_transport_share_for_interface',
         args: { p_request_id: requestId }, parse: parseConfirmedJson }),
@@ -3978,6 +3981,7 @@ export function createSupabaseTransport(
       case 'list_transport_attachments_for_interface':
       case 'create_transport_share_for_interface':
       case 'create_transport_direct_share_for_interface':
+      case 'get_transport_direct_share_for_interface':
       case 'revoke_transport_share_for_interface':
       case 'set_transport_pdf_details_for_interface':
       case 'get_transport_reminder_queue_for_interface':
