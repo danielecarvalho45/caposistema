@@ -3811,6 +3811,12 @@ export function createRpcService(transport: RpcTransport) {
       execute({ transport, operation: 'create_transport_request_for_interface', args, parse: parseConfirmedJson }),
     registerTransportPdf: (requestId: string, storagePath: string) =>
       execute({ transport, operation: 'register_transport_pdf_for_interface', args: { p_request_id: requestId, p_storage_path: storagePath }, parse: parseConfirmedJson }),
+    reissueTransportPdf: (requestId: string, storagePath: string) =>
+      execute({ transport, operation: 'reissue_transport_pdf_for_interface',
+        args: { p_request_id: requestId, p_storage_path: storagePath }, parse: parseConfirmedJson }),
+    listTransportPdfVersions: (requestId: string) =>
+      execute({ transport, operation: 'list_transport_pdf_versions_for_interface',
+        args: { p_request_id: requestId }, parse: (value) => value }),
     signTransportPdf: (requestId: string) =>
       execute({ transport, operation: 'sign_transport_pdf_for_interface', args: { p_request_id: requestId }, parse: parseConfirmedJson }),
     getTransportDocument: (requestId: string) =>
@@ -3973,6 +3979,8 @@ export function createSupabaseTransport(
       case 'complete_transport_request_with_closure_pdf_for_interface':
       case 'get_transport_context_for_interface':
       case 'create_transport_request_for_interface':
+      case 'reissue_transport_pdf_for_interface':
+      case 'list_transport_pdf_versions_for_interface':
       case 'register_transport_pdf_for_interface':
       case 'sign_transport_pdf_for_interface':
       case 'get_transport_document_for_interface':
