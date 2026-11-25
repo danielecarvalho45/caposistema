@@ -246,8 +246,12 @@ export function GestorShell({
                       <NavGroup label="Centrais de acompanhamento" items={titularFlowItems} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'gestor' && <>
-                      <NavGroup label="Gestão do Serviço" items={[...managementItems.filter((item) => item.path !== '/gestor/suporte' && item.path !== '/gestor/operacional'), ...titularManagementFlowItems]} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Gestão do Serviço" items={[
+                        ...managementItems.filter((item) => item.path === '/gestor/equipe'),
+                        ...titularManagementFlowItems,
+                      ]} activePath={activePath} accessContext={accessContext} />
                       <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Governança e Indicadores" items={managementItems.filter((item) => ['/gestor/timeline', '/gestor/auditoria', '/relatorios'].includes(item.path))} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'ti' && <>
                       <a className="gestor-nav-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↗</span> IA de Desenvolvimento do CAPO</a>
