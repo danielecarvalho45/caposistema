@@ -4,6 +4,7 @@ import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { buildCapoDocumentPdf } from '../../lib/pdf/capo-document-pdf'
 import { buildTransportOfficialPdf } from '../../lib/pdf/capo-transport-request-pdf'
+import { openCapoWhatsAppTab } from '../../components/contact/whatsapp-tab'
 import './transport-contacts.css'
 
 type TransportRecord = Readonly<Record<string, unknown>>
@@ -477,18 +478,28 @@ export function TransportPage({ accessContext }: Props) {
       'Link válido até: ' + new Date(activeShare.expires).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', hour12:false}) + '.',
       'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
     ].filter(Boolean).join('\n')
-    const digits = destination.replace(/\D/g, '')
-    const url = key === 'email'
-      ? 'mailto:' + encodeURIComponent(destination) + '?subject=' + encodeURIComponent('CAPO — Solicitação de Transporte') + '&body=' + encodeURIComponent(message)
-      : 'https://wa.me/' + (digits.startsWith('55') ? digits : '55' + digits) + '?text=' + encodeURIComponent(message)
     if (key === 'email') {
-      globalThis.open(url, '_blank', 'noopener,noreferrer')
-    } else {
-      // Reutilizar a janela de WhatsApp do Transporte para não criar uma aba a cada envio.
-      const destinationWindow = globalThis.open(url, 'capo-transporte-whatsapp')
-      if (destinationWindow) destinationWindow.opener = null
+      // Compor diretamente no Gmail da conta já aberta no navegador.
+      const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to='
+        + encodeURIComponent(destination)
+        + '&su=' + encodeURIComponent('CAPO — Solicitação de Transporte')
+        + '&body=' + encodeURIComponent(message)
+      const gmailTab = globalThis.open(gmailUrl, '_blank', 'noopener,noreferrer')
+      setFeedback(gmailTab
+        ? 'Gmail aberto com a mensagem preparada. Confira o destinatário e envie manualmente.'
+        : 'Tentativa de abrir o Gmail realizada. Caso não abra, permita pop-ups do CAPO.')
+      return
     }
-    setFeedback('Mensagem com o link seguro aberta. O envio é manual e não registra recebimento automático.')
+
+    const digits = destination.replace(/\D/g, '')
+    const normalizedPhone = digits.startsWith('55') ? digits : '55' + digits
+    const whatsappUrl = 'https://web.whatsapp.com/send?phone=' + encodeURIComponent(normalizedPhone)
+      + '&text=' + encodeURIComponent(message)
+    if (!openCapoWhatsAppTab(whatsappUrl)) {
+      setFeedback('Não foi possível abrir o WhatsApp. Autorize pop-ups para o CAPO e tente novamente.')
+      return
+    }
+    setFeedback('WhatsApp aberto com a mensagem preparada. Confira os dados e envie manualmente.')
   }
 
 
