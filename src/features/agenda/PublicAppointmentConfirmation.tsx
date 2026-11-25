@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import './public-confirmation.css'
 
+type ReschedulePreference = 'proxima_disponivel' | 'apos_15_dias' | 'nao_remarcar'
+
 type Details = {
   valid: boolean
   available?: boolean
@@ -16,13 +18,13 @@ const confirmationService = new URLSearchParams(window.location.search).get('f')
   ? 'family-appointment-confirmation' : 'appointment-confirmation'
 const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${confirmationService}`
 
-async function requestConfirmation(action: 'read' | 'respond', decision?: string) {
+async function requestConfirmation(action: 'read' | 'respond', decision?: string, preference?: ReschedulePreference) {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     cache: 'no-store',
     referrerPolicy: 'no-referrer',
-    body: JSON.stringify({ action, token, ...(decision ? { decision } : {}) }),
+    body: JSON.stringify({ action, token, ...(decision ? { decision } : {}), ...(preference ? { preference } : {}) }),
   })
   if (!response.ok) throw new Error('O serviço de confirmação está indisponível. Tente novamente.')
   return response.json() as Promise<Record<string, unknown>>
@@ -40,6 +42,8 @@ export function PublicAppointmentConfirmation() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showPreferences, setShowPreferences] = useState(false)
+  const [reschedulePreference, setReschedulePreference] = useState<ReschedulePreference | ''>('')
 
   useEffect(() => {
     document.title = 'Confirmar consulta — CAPO'
@@ -52,14 +56,15 @@ export function PublicAppointmentConfirmation() {
     return () => { active = false }
   }, [])
 
-  async function choose(decision: 'comparecera' | 'nao_comparecera') {
+  async function choose(decision: 'comparecera' | 'nao_comparecera', preference?: ReschedulePreference) {
     if (busy || !details?.available) return
     setBusy(true)
     setError('')
     try {
-      const result = await requestConfirmation('respond', decision)
+      const result = await requestConfirmation('respond', decision, preference)
       if (result.success === true) {
         setDetails((current) => current ? { ...current, decision, available: false } : current)
+        setShowPreferences(false)
       } else {
         setError('Não foi possível registrar esta resposta. Entre em contato com o CAPO.')
       }
@@ -88,12 +93,37 @@ export function PublicAppointmentConfirmation() {
         {details.decision === 'comparecera' ? (
           <p className="capo-confirmation-done" role="status">✅ Sua presença foi confirmada antecipadamente. Aguardamos você!</p>
         ) : details.decision === 'nao_comparecera' ? (
-          <p className="capo-confirmation-done" role="status">✅ Recebemos sua resposta. O horário foi liberado e o administrativo entrará em contato para a remarcação.</p>
+          <p className="capo-confirmation-done" role="status">✅ Recebemos sua resposta. O horário foi liberado e o Administrativo recebeu sua orientação.</p>
         ) : !details.available ? (
           <p role="status">Esta consulta não está mais disponível para confirmação. Consulte a equipe CAPO.</p>
         ) : <div className="capo-confirmation-actions">
           <button type="button" disabled={busy} onClick={() => void choose('comparecera')} className="capo-confirmation-yes">✅ Vou comparecer</button>
-          <button type="button" disabled={busy} onClick={() => void choose('nao_comparecera')} className="capo-confirmation-no">🟠 Não poderei comparecer</button>
+          <button type="button" disabled={busy}
+            onClick={() => confirmationService === 'appointment-confirmation'
+              ? setShowPreferences(true) : void choose('nao_comparecera')}
+            className="capo-confirmation-no">🟠 Não poderei comparecer</button>
+          {confirmationService === 'appointment-confirmation' && showPreferences && (
+            <fieldset className="capo-reschedule-preferences" disabled={busy}>
+              <legend>Quando prefere remarcar sua consulta?</legend>
+              {([
+                ['proxima_disponivel', 'Próxima consulta disponível'],
+                ['apos_15_dias', 'Daqui a 15 dias ou após esse período'],
+                ['nao_remarcar', 'Não desejo remarcar'],
+              ] as const).map(([value, label]) => (
+                <label className="capo-reschedule-choice" key={value}>
+                  <input type="radio" name="capo-reschedule-preference" value={value}
+                    checked={reschedulePreference === value}
+                    onChange={() => setReschedulePreference(value)} />
+                  <span>{label}</span>
+                </label>
+              ))}
+              <button type="button" className="capo-confirmation-no"
+                disabled={busy || !reschedulePreference}
+                onClick={() => { if (reschedulePreference) void choose('nao_comparecera', reschedulePreference) }}>
+                Confirmar minha escolha
+              </button>
+            </fieldset>
+          )}
           <p>Se não responder, sua consulta continuará agendada.</p>
         </div>}
       </>}
