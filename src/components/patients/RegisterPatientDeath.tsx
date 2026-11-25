@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../contact/PatientWhatsAppButton'
 import { CapoTimeInput } from '../inputs/CapoTimeInput'
 import { capoTodayIso } from '../../lib/date/capo-locale'
 import { CapoDateInput } from '../inputs/CapoDateInput'
@@ -187,8 +188,8 @@ export function RegisterPatientDeath({ patientId, patientName, onChanged }: Read
       </button>}
       {contactsLoaded && contactChoices.length > 0 && <>
         <p>Selecione o número cadastrado. Verifique antes do envio se pertence a um contato familiar autorizado; o número pode ser de uso exclusivo do paciente falecido.</p>
-        {contactChoices.map((choice) => <button type="button" key={choice.phone} disabled={busy} onClick={() => openCondolences(choice)}>
-          {choice.label}: {choice.phone}
+        {contactChoices.map((choice) => <button type="button" style={capoWhatsAppStyle} key={choice.phone} disabled={busy} onClick={() => openCondolences(choice)}>
+          <CapoWhatsAppIcon /> {choice.label}: {choice.phone}
         </button>)}
       </>}
       {contactsLoaded && contactChoices.length === 0 && <button type="button" disabled={busy} onClick={() => void loadCondolenceContacts()}>
