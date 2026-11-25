@@ -21,6 +21,8 @@
 
 **Próximas validações:** conferir build/deploy; testar Gestor/AO/Assistência Social nos respectivos acessos isolados; cadastrar/atualizar contatos e seleção de destinatários, recebidas sociais e protocolo certo, outros pedidos do mesmo paciente, consulta genérica, periodicidade, PDF com telefone/protocolo, assinatura/histórico de versões, link 24h, WhatsApp/Gmail, encerramento com motivo sem PDF adicional, cancelamento isolado, aba concluídas, busca, responsividade, histórico de PDF antigo e lembretes sem falso encerramento. Não usar paciente real para testes nem registrar mensagem como enviada automaticamente.
 
+**Complemento de navegação (mesmo VERDE):** commit `54edc917` limpa o filtro de protocolo ao salvar uma **nova** solicitação, para o Administrativo visualizar imediatamente todos os pedidos do paciente sem ficar preso ao protocolo que estava aberto. Mudança pontual na mesma tela, sem alteração adicional de banco.
+
 **Estado:** **CÓDIGO E MIGRAÇÕES IMPLEMENTADOS; HOMOLOGAÇÃO FUNCIONAL E PUBLICAÇÃO AINDA NÃO COMPROVADAS.** Não alterar fluxos homologados de outros módulos sem novo comando.
 
 ---
