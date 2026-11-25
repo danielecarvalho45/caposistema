@@ -154,6 +154,7 @@ export function TransportPage({ accessContext }: Props) {
   const [documentsRequest, setDocumentsRequest] = useState<TransportRecord | null>(null)
   const [attachedDocuments, setAttachedDocuments] = useState<readonly TransportRecord[]>([])
   const [shareAccess, setShareAccess] = useState<{requestId: string; url: string; expires: string} | null>(null)
+  const [verifiedShareRequestId, setVerifiedShareRequestId] = useState<string | null>(null)
   const [pdfHistoryRequestId, setPdfHistoryRequestId] = useState<string | null>(null)
   const [archivedPdfVersions, setArchivedPdfVersions] = useState<readonly TransportRecord[]>([])
   const [pdfDetailsRequest, setPdfDetailsRequest] = useState<TransportRecord | null>(null)
@@ -385,6 +386,7 @@ export function TransportPage({ accessContext }: Props) {
         return
       }
       setShareAccess(null)
+      setVerifiedShareRequestId(null)
       const updated = await getRpcService().listTransportAttachments(id)
       if (updated.status === 'success') setAttachedDocuments(Array.isArray(updated.data) ? updated.data as readonly TransportRecord[] : [])
       setFeedback('Documento complementar anexado. Qualquer link anterior foi revogado; gere outro após concluir os anexos.')
@@ -404,9 +406,28 @@ export function TransportPage({ accessContext }: Props) {
     globalThis.open(data.signedUrl, '_blank', 'noopener,noreferrer')
   }
 
+  async function verifyTransportShareToken(token: string): Promise<string | null> {
+    try {
+      const response = await fetch(
+        'https://fftebavlhbfcrvrtnrld.supabase.co/functions/v1/transport-share-access',
+        {
+          method: 'POST', mode: 'cors', cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, check_only: true }),
+        },
+      )
+      const data = await response.json() as { valid?: boolean; error?: string }
+      return response.ok && data.valid === true
+        ? null : data.error ?? 'A validação automática do link não foi confirmada.'
+    } catch {
+      return 'Não foi possível verificar o link. Confira sua conexão e tente novamente.'
+    }
+  }
+
   async function issueShare(request: TransportRecord) {
     if (busy || !canAdminister) return
     setBusy(true)
+    setVerifiedShareRequestId(null)
     try {
       const id = requestId(request)
       const result = await getRpcService().createTransportDirectShare(id)
@@ -423,9 +444,15 @@ export function TransportPage({ accessContext }: Props) {
       }
       const url = `https://caposistema.pages.dev/transporte-documentos.html#direto=${token}`
       setShareAccess({requestId: id, url, expires})
+      const verificationError = await verifyTransportShareToken(token)
+      if (verificationError) {
+        setFeedback('O link foi gerado, mas não está liberado para envio: ' + verificationError)
+        return
+      }
+      setVerifiedShareRequestId(id)
       setFeedback(data.reused === true
-        ? 'Link atual recuperado. O prazo original de 24 horas foi mantido, sem revogar o endereço encaminhado.'
-        : 'Link criado, válido por 24 horas e sem código. Teste o acesso antes de enviar aos destinatários.')
+        ? 'Link atual recuperado e validado. O prazo original foi preservado.'
+        : 'Link criado e validado automaticamente. Válido por 24 horas, sem código. Confira os documentos antes de enviar.')
     } finally {
       setBusy(false)
     }
@@ -453,6 +480,7 @@ export function TransportPage({ accessContext }: Props) {
       const result = await getRpcService().revokeTransportShare(requestId(request))
       if (result.status === 'success') {
         setShareAccess(null)
+        setVerifiedShareRequestId(null)
         setFeedback('Link externo revogado no banco.')
       } else {
         setFeedback(result.status === 'error' ? result.error.message : 'Falha ao revogar o link.')
@@ -552,6 +580,7 @@ export function TransportPage({ accessContext }: Props) {
     setPatientId(id)
     setPatientName(name)
     setShareAccess(null)
+    setVerifiedShareRequestId(null)
     setDocumentsRequest(null)
     setPdfHistoryRequestId(null)
     setArchivedPdfVersions([])
@@ -575,11 +604,18 @@ export function TransportPage({ accessContext }: Props) {
           const token = field(info, 'token')
           const expires = field(info, 'expires_at')
           if (token && expires) {
+            const linkedRequestId = requestId(request)
             setShareAccess({
-              requestId: requestId(request),
+              requestId: linkedRequestId,
               url: `https://caposistema.pages.dev/transporte-documentos.html#direto=${token}`,
               expires,
             })
+            const validationError = await verifyTransportShareToken(token)
+            if (validationError) {
+              setFeedback('O link existente não passou na verificação: ' + validationError)
+            } else {
+              setVerifiedShareRequestId(linkedRequestId)
+            }
             break
           }
         }
@@ -761,7 +797,7 @@ export function TransportPage({ accessContext }: Props) {
       ? await getRpcService().reissueTransportPdf(id, storagePath)
       : await getRpcService().registerTransportPdf(id, storagePath)
     if (result.status === 'success') {
-      if (reissue) setShareAccess(null)
+      if (reissue) { setShareAccess(null); setVerifiedShareRequestId(null) }
       await loadContext(patientId, patientName)
       setFeedback(reissue
         ? 'Nova versão registrada; documento anterior preservado. Confirme novamente o PDF antes de encaminhar.'
@@ -1313,12 +1349,13 @@ export function TransportPage({ accessContext }: Props) {
                           <p>Selecione o destinatário em Contatos do Transporte para abrir a mensagem.</p>
                         )}
                         {selectedContacts.map((key) => contacts[key].trim() ? (
-                          <button type="button" key={key} disabled={busy}
+                          <button type="button" key={key} disabled={busy || verifiedShareRequestId !== id}
                             onClick={() => openTransportChannel(key, request)}>
                             {key === 'email' ? '✉ ' + contacts[key] : key === 'phone_responsible'
                               ? '☏ WhatsApp responsável · ' + contacts[key] : '✉ WhatsApp setor · ' + contacts[key]}
                           </button>
                         ) : null)}
+                        {verifiedShareRequestId !== id && <small>Envio bloqueado até a validação automática do link. Use Gerar link para verificar novamente.</small>}
                         <small>Clique em Testar acesso para conferir os PDFs antes de enviar. O WhatsApp ou Gmail abrirá com a mensagem e o link. O canal é preenchido automaticamente, mas o envio permanece manual. O link vence após 24 horas.</small>
                       </div>
                     )}
