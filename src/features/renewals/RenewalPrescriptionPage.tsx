@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
@@ -554,8 +555,8 @@ export function RenewalPrescriptionPage({ accessContext, service = getRpcService
                       Digite o endereço para este aviso
                       <input value={otherAddress} onChange={(event) => setOtherAddress(event.target.value)} placeholder="Rua, número, bairro e cidade" />
                     </label>}
-                    <button type="button" onClick={() => void avisarReceitaPronta()} disabled={busy || openingWhatsApp || (addressMode === 'registered' && addressLoading)}>
-                      {openingWhatsApp ? 'Abrindo WhatsApp...' : 'Avisar paciente — WhatsApp'}
+                    <button type="button" style={capoWhatsAppStyle} onClick={() => void avisarReceitaPronta()} disabled={busy || openingWhatsApp || (addressMode === 'registered' && addressLoading)}>
+                      <CapoWhatsAppIcon /> {openingWhatsApp ? 'Abrindo WhatsApp...' : 'Avisar paciente — WhatsApp'}
                     </button>
                     <small>O WhatsApp abre em um clique, com a mensagem pronta. Enviar o aviso não conclui nem confirma o contato automaticamente.</small>
                   </fieldset>)}
