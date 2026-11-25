@@ -328,10 +328,14 @@ export function TransportPage({ accessContext }: Props) {
         setFeedback(result.status === 'error' ? result.error.message : 'Não foi possível salvar o veículo.')
         return
       }
+      setShareAccess(null)
+      setVerifiedShareRequestId(null)
       await loadContext(patientId, patientName)
-      setFeedback(next
-        ? 'Veículo ' + (next === 'carro' ? 'Carro' : 'Ambulância') + ' salvo nesta solicitação; será incluído no PDF e nas mensagens.'
-        : 'Tipo de veículo desmarcado nesta solicitação (opcional).')
+      setFeedback(field(request, 'pdf_prepared_at')
+        ? 'Veículo atualizado. O PDF assinado anterior foi preservado; clique em Gerar nova versão do PDF e assine novamente antes de encaminhar.'
+        : next
+          ? 'Veículo ' + (next === 'carro' ? 'Carro' : 'Ambulância') + ' salvo nesta solicitação; será incluído no PDF e nas mensagens.'
+          : 'Tipo de veículo desmarcado nesta solicitação (opcional).')
     } finally {
       setBusy(false)
     }
@@ -1319,7 +1323,11 @@ export function TransportPage({ accessContext }: Props) {
                   <span>{status}</span>
                   <small>{field(request, 'appointment_id') ? 'Agendamento vinculado' : 'Solicitação genérica (sem agendamento)'}</small>
                   <small>{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
-                  {canCreateRequest && ['solicitado','confirmado'].includes(status) && !pdfPersisted && (
+                  {(pdfPersisted && boolField(request, 'vehicle_pdf_update_pending')) && (
+                    <p role="status">Alteração de veículo pendente: gere uma nova versão do PDF e assine novamente antes de encaminhar. O PDF anterior permanece no histórico.</p>
+                  )}
+                  {(canAdminister || (canCreateRequest && !pdfPersisted)) && ['solicitado','confirmado'].includes(status)
+                    && (!pdfPersisted || (pdfPrepared && !forwarded)) && (
                     <div className="transport-vehicle-selection">
                       <strong>Tipo de veículo (opcional)</strong>
                       <button type="button" disabled={busy}
@@ -1332,7 +1340,7 @@ export function TransportPage({ accessContext }: Props) {
                         onClick={() => void selectTransportVehicle(request, 'ambulancia')}>
                         🚑 Ambulância
                       </button>
-                      <small>Clique para marcar ou desmarcar; a escolha é salva automaticamente antes de gerar o PDF.</small>
+                      <small>Escolha salva em um clique. Se já houver PDF assinado, será necessária uma nova versão antes do encaminhamento.</small>
                     </div>
                   )}
                   {field(request, 'vehicle_type') && (pdfPersisted || !canCreateRequest) && (
@@ -1349,6 +1357,9 @@ export function TransportPage({ accessContext }: Props) {
                           onClick={() => void generatePdf(request)}>Gerar PDF</button>
                       </>
                     )}
+                    {canAdminister && status === 'confirmado' && pdfPersisted && boolField(request, 'vehicle_pdf_update_pending') && pdfPrepared && !forwarded && (
+                      <button type="button" disabled={busy} onClick={() => void generatePdf(request, true)}>Gerar nova versão do PDF com veículo</button>
+                    )}
                     {canAdminister && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
                     )}
@@ -1361,12 +1372,12 @@ export function TransportPage({ accessContext }: Props) {
                       <>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
-                        {canAdminister && !forwarded && (
+                        {canAdminister && !forwarded && !boolField(request, 'vehicle_pdf_update_pending') && (
                           <button type="button" disabled={busy} onClick={() => void issueShare(request)}>{shareAccess?.requestId === id ? '🔗 Consultar link' : '🔗 Gerar link'}</button>
                         )}
                       </>
                     )}
-                    {canAdminister && status === 'confirmado' && pdfPrepared && shareAccess?.requestId === id && !forwarded && (
+                    {canAdminister && status === 'confirmado' && pdfPrepared && !boolField(request, 'vehicle_pdf_update_pending') && shareAccess?.requestId === id && !forwarded && (
                       <div className="transport-share-access">
                         <p><strong>Link ativo — válido por 24 horas desde a emissão, sem código.</strong> O PDF oficial e os anexos estão no mesmo endereço. Consultar não reinicia o prazo.</p>
                         <p><small>Oriente o destinatário a visualizar ou baixar a documentação antes do vencimento. Depois, o link ficará indisponível.</small></p>
@@ -1397,7 +1408,7 @@ export function TransportPage({ accessContext }: Props) {
                     {canAdminister && status === 'solicitado' && (
                       <button type="button" disabled={busy} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
                     )}
-                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && shareAccess?.requestId === id && (
+                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !boolField(request, 'vehicle_pdf_update_pending') && !forwarded && shareAccess?.requestId === id && (
                       <div className="transport-send-actions">
                         <strong>Encaminhar documentação</strong>
                         {selectedContacts.length === 0 && (
@@ -1414,7 +1425,7 @@ export function TransportPage({ accessContext }: Props) {
                         <small>Clique em Testar acesso para conferir os PDFs antes de enviar. O WhatsApp ou Gmail abrirá com a mensagem e o link. O canal é preenchido automaticamente, mas o envio permanece manual. O link vence após 24 horas.</small>
                       </div>
                     )}
-                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && shareAccess?.requestId === id && (
+                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !boolField(request, 'vehicle_pdf_update_pending') && !forwarded && shareAccess?.requestId === id && (
                       <button type="button" disabled={busy || channel.trim().length < 2} onClick={() => void manage(request, 'forward')}>Registrar encaminhamento</button>
                     )}
                     {canForwardExternally && status === 'confirmado' && forwarded && (
