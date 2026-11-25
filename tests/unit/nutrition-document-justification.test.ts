@@ -65,4 +65,22 @@ describe('PDF documental da Nutrição — justificação e limpeza', () => {
     expect(latin1).toContain('Página 1 de ')
     expect(latin1).toContain('Página 2 de ')
   })
+
+  it('wraps unbroken long content and preserves the complete sequence', () => {
+    const text = 'A'.repeat(6001)
+    const lines = layoutNutritionParagraph(text)
+    expect(lines.length).toBeGreaterThan(1)
+    expect(lines.map(line => line.text).join('')).toBe(text)
+  })
+
+  it('wraps long document titles and keeps subsequent sections visible', async () => {
+    const pdf = buildNutritionDocumentPdf({
+      ...document,
+      plan_snapshot: { ...document.plan_snapshot, document_title: 'TÍTULO '.repeat(100), additional_notes: 'FIM DO PLANO' },
+    })
+    const bytes = new Uint8Array(await pdf.arrayBuffer())
+    const latin1 = Array.from(bytes, b => String.fromCharCode(b)).join('')
+    expect(latin1).toContain('FIM DO PLANO')
+    expect((latin1.match(/TÍTULO/g) ?? []).length).toBe(100)
+  })
 })
