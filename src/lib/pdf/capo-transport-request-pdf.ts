@@ -8,8 +8,8 @@ export type TransportPdfData = Readonly<{
   patientName: string
   cms: string | null
   capoNumber: string | null
-  phone: string | null
-  protocol: string | null
+  phone?: string | null
+  protocol?: string | null
   registeredAddress: string | null
   boardingAddress: string
   boardingSource: 'cadastro' | 'alternativo'
