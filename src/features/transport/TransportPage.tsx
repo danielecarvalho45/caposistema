@@ -484,10 +484,14 @@ export function TransportPage({ accessContext }: Props) {
         + encodeURIComponent(destination)
         + '&su=' + encodeURIComponent('CAPO — Solicitação de Transporte')
         + '&body=' + encodeURIComponent(message)
-      const gmailTab = globalThis.open(gmailUrl, '_blank', 'noopener,noreferrer')
-      setFeedback(gmailTab
-        ? 'Gmail aberto com a mensagem preparada. Confira o destinatário e envie manualmente.'
-        : 'Tentativa de abrir o Gmail realizada. Caso não abra, permita pop-ups do CAPO.')
+      const gmailTab = globalThis.open(gmailUrl, 'capo_transporte_gmail')
+      if (!gmailTab) {
+        setFeedback('Não foi possível abrir o Gmail. Autorize pop-ups para o CAPO e tente novamente.')
+        return
+      }
+      gmailTab.opener = null
+      gmailTab.focus()
+      setFeedback('Gmail aberto com a mensagem preparada. Confira o destinatário e envie manualmente.')
       return
     }
 
