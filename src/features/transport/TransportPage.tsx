@@ -457,8 +457,9 @@ export function TransportPage({ accessContext }: Props) {
       'Ao Setor de Transportes da Secretaria Municipal de Saúde,',
       'O CAPO solicita providências de transporte para o(a) paciente ' + patientName + ', em acompanhamento pelo serviço.',
       appointmentLabel ? 'Atendimento previsto: ' + appointmentLabel + '.' : '',
-      'PDF oficial e documentos complementares: ' + activeShare.url,
-      'Abra o link para visualizar, baixar ou imprimir os documentos.',
+      'Toda a documentação necessária ao transporte, incluindo o PDF oficial da solicitação e os documentos complementares anexados, está disponível no link abaixo:',
+      activeShare.url,
+      'Acesse o link para visualizar, baixar ou imprimir a documentação.',
       'Código de acesso: fornecido separadamente pelo CAPO.',
       'Link válido até: ' + new Date(activeShare.expires).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', hour12:false}) + '.',
       'Atenciosamente, ' + sender + ' — ' + issuerRole + ' / CAPO.',
@@ -1187,69 +1188,69 @@ export function TransportPage({ accessContext }: Props) {
                     {canAdminister && status === 'confirmado' && pdfPersisted && !pdfPrepared && (
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
                     )}
-                    {canAdminister && status === 'confirmado' && pdfPersisted && pdfPrepared && !forwarded && (
-                      <button type="button" disabled={busy} onClick={() => void generatePdf(request, true)}>
-                        Atualizar PDF para novo modelo
-                      </button>
-                    )}
                     {canAdminister && status !== 'cancelado' && (
                       <button type="button" disabled={busy} onClick={() => void openDocuments(request)}>
                         📎 Documentos complementares
                       </button>
                     )}
-                    {canAdminister && status === 'confirmado' && pdfPrepared && (
-                      <>
-                        <button type="button" disabled={busy} onClick={() => void issueShare(request)}>🔗 Gerar link seguro</button>
-                        <button type="button" disabled={busy} onClick={() => void revokeShare(request)}>Revogar link</button>
-                        {shareAccess?.requestId === id && (
-                          <div className="transport-share-access">
-                            <p><strong>Link válido por 7 dias.</strong> Envie o link pelo WhatsApp e o código por outro canal.</p>
-                            <p>Código de acesso: <strong>{shareAccess.pin}</strong></p>
-                            <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.pin)}>Copiar código</button>
-                            <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.url)}>Copiar link</button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {pdfPersisted && (
+                    {status === 'confirmado' && pdfPersisted && pdfPrepared && (
                       <>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
+                        {canAdminister && !forwarded && (
+                          <button type="button" disabled={busy} onClick={() => void issueShare(request)}>🔗 Gerar link</button>
+                        )}
                       </>
                     )}
-                    {canAdminister && pdfPersisted && (
-                      <button type="button" disabled={busy} onClick={() => void loadPdfHistory(request)}>
-                        Versões anteriores do PDF
-                      </button>
-                    )}
-                    {pdfHistoryRequestId === id && (
+                    {canAdminister && status === 'confirmado' && pdfPrepared && shareAccess?.requestId === id && !forwarded && (
                       <div className="transport-share-access">
-                        <strong>Histórico documental</strong>
-                        {archivedPdfVersions.length === 0 && <p>Não há versões anteriores.</p>}
-                        {archivedPdfVersions.map((version, versionIndex) => (
-                          <button type="button"
-                            key={field(version, 'version_id') ?? versionIndex}
-                            disabled={busy} onClick={() => void viewArchivedPdf(version)}>
-                            Visualizar versão anterior {versionIndex + 1}
-                          </button>
-                        ))}
+                        <p><strong>Link seguro gerado (válido por 7 dias).</strong> O PDF oficial e os documentos complementares anexados estão no mesmo link.</p>
+                        <p>Código de acesso: <strong>{shareAccess.pin}</strong></p>
+                        <p><small>Envie o código separadamente do link, para proteger os documentos.</small></p>
+                        <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.pin)}>Copiar código</button>
+                        <button type="button" onClick={() => void navigator.clipboard.writeText(shareAccess.url)}>Copiar link</button>
+                        <button type="button" disabled={busy} onClick={() => void revokeShare(request)}>Revogar link</button>
                       </div>
+                    )}
+                    {canAdminister && pdfPersisted && (
+                      <details className="transport-pdf-history">
+                        <summary>Histórico documental (auditoria)</summary>
+                        <button type="button" disabled={busy} onClick={() => void loadPdfHistory(request)}>
+                          Consultar versões anteriores
+                        </button>
+                        {pdfHistoryRequestId === id && (
+                          <div className="transport-share-access">
+                            {archivedPdfVersions.length === 0 && <p>Não há versões anteriores.</p>}
+                            {archivedPdfVersions.map((version, versionIndex) => (
+                              <button type="button" key={field(version, 'version_id') ?? versionIndex}
+                                disabled={busy} onClick={() => void viewArchivedPdf(version)}>
+                                Visualizar versão anterior {versionIndex + 1}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </details>
                     )}
                     {canAdminister && status === 'solicitado' && (
                       <button type="button" disabled={busy} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
                     )}
-                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && selectedContacts.length > 0 && (
+                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && shareAccess?.requestId === id && (
                       <div className="transport-send-actions">
+                        <strong>Encaminhar documentação</strong>
+                        {selectedContacts.length === 0 && (
+                          <p>Selecione o destinatário em Contatos do Transporte para abrir a mensagem.</p>
+                        )}
                         {selectedContacts.map((key) => contacts[key].trim() ? (
                           <button type="button" key={key} disabled={busy}
                             onClick={() => openTransportChannel(key, request)}>
-                            {key === 'email' ? '✉ Abrir e-mail' : key === 'phone_responsible' ? '☏ WhatsApp responsável' : '✉ WhatsApp setor'}
+                            {key === 'email' ? '✉ ' + contacts[key] : key === 'phone_responsible'
+                              ? '☏ WhatsApp responsável · ' + contacts[key] : '✉ WhatsApp setor · ' + contacts[key]}
                           </button>
                         ) : null)}
-                        <small>A mensagem contém um único link seguro. Informe o código de acesso por canal separado. Confirme o envio manual antes de registrar o encaminhamento.</small>
+                        <small>O WhatsApp ou e-mail abrirá com a mensagem já preenchida e o link contendo o PDF oficial e os anexos. Compartilhe o código de acesso separadamente e registre o encaminhamento apenas após enviar.</small>
                       </div>
                     )}
-                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && (
+                    {canForwardExternally && status === 'confirmado' && pdfPrepared && !forwarded && shareAccess?.requestId === id && (
                       <button type="button" disabled={busy || channel.trim().length < 2} onClick={() => void manage(request, 'forward')}>Registrar encaminhamento</button>
                     )}
                     {canForwardExternally && status === 'confirmado' && forwarded && (
