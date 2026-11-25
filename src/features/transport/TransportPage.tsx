@@ -1137,9 +1137,9 @@ export function TransportPage({ accessContext }: Props) {
             <ul className="transport-queue">
               {administrativeQueue.map((item) => (
                 <li key={requestId(item)}>
-                  <button type="button" disabled={busy} onClick={() => void loadContext(
+                  <button type="button" disabled={busy} onClick={() => { setSelectedRequestId(requestId(item)); void loadContext(
                     field(item, 'patient_id') ?? '', field(item, 'patient_name') ?? 'Paciente',
-                  )}>
+                  ) }}>
                     <strong>{field(item, 'patient_name') ?? 'Paciente'}</strong>
                     <small>{field(item, 'status') === 'solicitado' ? 'Aguardando confirmação administrativa' : 'Em processamento'}</small>
                     <span>{field(item, 'transport_notes') ?? 'Sem justificativa informada'}</span>
@@ -1166,7 +1166,7 @@ export function TransportPage({ accessContext }: Props) {
                 key={item.patient_id}
                 type="button"
                 className={item.patient_id === patientId ? 'is-selected' : ''}
-                onClick={() => void loadContext(item.patient_id, item.full_name)}
+                onClick={() => { setSelectedRequestId(''); void loadContext(item.patient_id, item.full_name) }}
               >
                 {item.full_name}
                 <small>{item.patient_number ?? item.cms ?? 'Identificação disponível no cadastro'}</small>
@@ -1250,7 +1250,7 @@ export function TransportPage({ accessContext }: Props) {
               <input value={channel} readOnly placeholder="Clique no WhatsApp ou Gmail para selecionar o canal" />
             </label>
             <label>Referência / protocolo
-              <input readOnly value={field(requests.find((item) => requestId(item) === selectedRequestId) || requests[0], 'protocol') || reference} />
+              <input readOnly value={field(requests.find((item) => requestId(item) === selectedRequestId) || requests[0] || null, 'protocol') || reference} />
             </label>
             <label>Motivo do encerramento deste protocolo
               <textarea value={closureReason} onChange={(event) => setClosureReason(event.target.value)} rows={2} />
@@ -1263,6 +1263,7 @@ export function TransportPage({ accessContext }: Props) {
 
         {requests.length === 0 && <p>Nenhuma solicitação de transporte encontrada.</p>}
         {requests.length > 0 && (
+          <>
           {selectedRequestId && <button type="button" onClick={() => setSelectedRequestId('')}>Mostrar todos os protocolos do paciente</button>}
           <ul>
             {requests.filter((request) => !selectedRequestId || requestId(request) === selectedRequestId).map((request, index) => {
@@ -1323,11 +1324,11 @@ export function TransportPage({ accessContext }: Props) {
                         📎 Documentos complementares
                       </button>
                     )}
-                    {status === 'confirmado' && pdfPersisted && pdfPrepared && (
+                    {['confirmado','realizado'].includes(status) && pdfPersisted && pdfPrepared && (
                       <>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
                         <button type="button" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
-                        {canAdminister && !forwarded && !boolField(request, 'vehicle_pdf_update_pending') && (
+                        {canAdminister && status === 'confirmado' && !forwarded && !boolField(request, 'vehicle_pdf_update_pending') && (
                           <button type="button" disabled={busy} onClick={() => void issueShare(request)}>{shareAccess?.requestId === id ? '🔗 Consultar link' : '🔗 Gerar link'}</button>
                         )}
                       </>
@@ -1386,10 +1387,11 @@ export function TransportPage({ accessContext }: Props) {
                     {canForwardExternally && status === 'confirmado' && forwarded && (
                       <button type="button" disabled={busy || closureReason.trim().length < 5} onClick={() => void manage(request, 'complete')}>Encerrar protocolo</button>
                     )}
-                    {status === 'realizado' && (
+                    {status === 'realizado' && <small>Protocolo encerrado. {field(request, 'closure_reason') ? 'Motivo: ' + field(request, 'closure_reason') : 'Consulte o histórico documental.'}</small>}
+                    {status === 'realizado' && field(request, 'closure_pdf_path') && (
                       <>
-                        <button type="button" disabled={busy} onClick={() => void openPdf(request, false, 'closure')}>Visualizar PDF de encerramento</button>
-                        <button type="button" disabled={busy} onClick={() => void openPdf(request, true, 'closure')}>Baixar PDF de encerramento</button>
+                        <button type="button" disabled={busy} onClick={() => void openPdf(request, false, 'closure')}>Visualizar PDF de encerramento anterior</button>
+                        <button type="button" disabled={busy} onClick={() => void openPdf(request, true, 'closure')}>Baixar PDF de encerramento anterior</button>
                       </>
                     )}
                     {canAdminister && ['solicitado', 'confirmado'].includes(status) && (
@@ -1400,6 +1402,7 @@ export function TransportPage({ accessContext }: Props) {
               )
             })}
           </ul>
+          </>
         )}
       </div>
         </>
