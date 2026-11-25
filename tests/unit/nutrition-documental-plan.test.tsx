@@ -126,6 +126,37 @@ describe('Plano Alimentar documental — Nutrição', () => {
     ))
   })
 
+  it('amplia e reduz somente o campo escolhido e mantém o conteúdo editado', async () => {
+    const user = userEvent.setup()
+    rpc.getNutritionContext.mockResolvedValue({
+      status: 'success',
+      data: { ...nutritionContext, current_plan: {
+        plan_id: 'test-plan-id', owned_by_me: true, breakfast: 'Texto anterior.',
+      } },
+    })
+    renderHomeAndPlan()
+    await user.click(screen.getByRole('button', { name: 'Confirmar paciente da Nutrição' }))
+    await screen.findByText('Paciente selecionado: Paciente da homologação')
+    const breakfast = screen.getByLabelText('Café da manhã')
+    const lunch = screen.getByLabelText('Almoço')
+    expect(breakfast).toHaveAttribute('rows', '5')
+    expect(lunch).toHaveAttribute('rows', '6')
+    await user.click(screen.getByRole('button', { name: 'Ampliar Café da manhã' }))
+    expect(breakfast).toHaveAttribute('rows', '13')
+    expect(lunch).toHaveAttribute('rows', '6')
+    expect(screen.getByRole('button', { name: 'Reduzir Café da manhã' })).toHaveAttribute('aria-expanded', 'true')
+    await user.clear(breakfast)
+    await user.type(breakfast, 'Texto atualizado.')
+    await user.click(screen.getByRole('button', { name: 'Reduzir Café da manhã' }))
+    expect(breakfast).toHaveAttribute('rows', '5')
+    expect(breakfast).toHaveValue('Texto atualizado.')
+    expect(rpc.saveDetailedNutritionPlan).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Salvar / atualizar plano' }))
+    await waitFor(() => expect(rpc.saveDetailedNutritionPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ p_breakfast: 'Texto atualizado.' }),
+    ))
+  })
+
   it('informa erro real de salvamento e mantém os textos editados na tela', async () => {
     const user = userEvent.setup()
     rpc.saveDetailedNutritionPlan.mockResolvedValue({
