@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
@@ -272,7 +273,7 @@ export function FamilyAgendaBookingPanel({
           Consultar prioridade e elegibilidade na fila de familiares
         </Link></p>}
     </>}
-    {notice && <button type="button" onClick={openNotice}>💬 Abrir aviso familiar no WhatsApp</button>}
+    {notice && <button type="button" style={capoWhatsAppStyle} onClick={openNotice}><CapoWhatsAppIcon /> Abrir aviso familiar no WhatsApp</button>}
     {feedback && <p role="status">{feedback}</p>}
   </div>
 }
