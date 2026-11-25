@@ -93,7 +93,9 @@ export function PublicAppointmentConfirmation() {
         {details.decision === 'comparecera' ? (
           <p className="capo-confirmation-done" role="status">✅ Sua presença foi confirmada antecipadamente. Aguardamos você!</p>
         ) : details.decision === 'nao_comparecera' ? (
-          <p className="capo-confirmation-done" role="status">✅ Recebemos sua resposta. O horário foi liberado e o Administrativo recebeu sua orientação.</p>
+          <p className="capo-confirmation-done" role="status">{confirmationService === 'family-appointment-confirmation'
+            ? '✅ Recebemos sua resposta. O horário foi liberado e o administrativo entrará em contato para a remarcação.'
+            : '✅ Recebemos sua resposta. O horário foi liberado e o Administrativo recebeu sua orientação.'}</p>
         ) : !details.available ? (
           <p role="status">Esta consulta não está mais disponível para confirmação. Consulte a equipe CAPO.</p>
         ) : <div className="capo-confirmation-actions">
