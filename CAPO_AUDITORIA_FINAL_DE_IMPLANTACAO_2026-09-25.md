@@ -1,3 +1,17 @@
+## 25/11/2026 — INVESTIGAÇÃO — Cloudflare Pages falhou após versão de PDF de Transporte
+
+**Relato:** Gestora/Titular informou que as mudanças do documento de Maria do Bom Parto não apareceram e, em seguida, esclareceu explicitamente: **"falhou no cloud"** (falha de publicação na Cloudflare Pages). O diagnóstico deve considerar o pipeline de publicação, não somente cache local ou botão de visualização.
+
+**Evidências conferidas, apenas leitura:** branch `main` do repositório `danielecarvalho45/caposistema` contém `src/lib/pdf/capo-transport-request-pdf.ts` (novo modelo), integração `buildTransportOfficialPdf` em `src/features/transport/TransportPage.tsx`, botão `Atualizar PDF para novo modelo` e chamadas à RPC de versionamento. A consulta ao banco Supabase confirma que a solicitação `ae365b56-7a9a-4899-810a-a9a52b1754cc` de Maria do Bom Parto continua com mesmo `request_pdf_path`, status `confirmado`, PDF anteriormente assinado/preparado, sem encaminhamento externo e **zero registros em `transport_pdf_versions`**. Nenhuma reemissão foi executada em produção.
+
+**Limite da evidência:** ferramentas conectadas não forneceram log do build/deploy da Cloudflare Pages. Sem linhas de erro do pipeline, não é possível indicar com segurança o arquivo/linha responsável ou mesmo se a falha é compilação TypeScript, instalação, configuração, GitHub/Cloudflare ou outra etapa. Consulta ao GitHub não apresentou checks ou workflows associados à publicação; a ausência deles não é evidência de sucesso. A simples presença dos arquivos na `main` **não significa que o deploy foi publicado**. Não fazer correções especulativas nem afirmar build/deploy executados.
+
+**Próximo passo técnico:** obter a primeira linha de erro relevante da implantação falha em Cloudflare Pages → projeto `caposistema` → Deployments/Implantações → implantação com falha → Build logs/Logs de compilação; registrar a etapa, arquivo, linha, mensagem e commit. Só então aplicar correção pontual, verificando TypeScript/build, preservação da branch de backup, procedimentos de Transporte, isolamento `manuteste` e documento original, após autorização VERDE específica se necessária.
+
+**Situação:** diagnóstico de bloqueio de publicação confirmado pelo relato; causa raiz da falha de build ainda sem log e, portanto, **pendente**. Nenhum código, banco, dado de paciente, PDF ou configuração Cloudflare foi alterado nesta investigação.
+
+---
+
 ## 25/11/2026 — VERDE EXECUTADO — nova versão de PDF de Transporte com histórico e reconfirmação
 
 **Autorização:** a Gestora/Titular autorizou VERDE após investigar por que o PDF da paciente Maria do Bom Parto Santos Sousa permanecia com a estética antiga. A investigação documentou que o botão Visualizar PDF lê o arquivo PDF já armazenado, que não muda quando o layout do gerador é alterado. O objetivo autorizado é permitir atualizar documentos já gerados, sem perder a versão anterior e sem desconstituir o fluxo de encaminhamento.
