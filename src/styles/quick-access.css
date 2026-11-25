@@ -112,3 +112,8 @@
 @media (prefers-reduced-motion: reduce) {
   :is(.app-shell,.gestor-shell) :is(.home-profile-card,.social-quick-card,.technical-quick-card,.gestor-quick-card) { transition: none; transform: none !important; }
 }
+
+/* Boas-vindas: relevo estático e delicado, preservando fundo, dimensões e conteúdo aprovados. */
+:is(.app-shell,.gestor-shell) :is(.app-welcome-approved,.gestor-welcome-approved) {
+  box-shadow: 0 3px 0 rgb(94 125 157 / 13%), 0 7px 15px -5px rgb(48 80 114 / 19%), inset 0 1px 0 rgb(255 255 255 / 85%);
+}

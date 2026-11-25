@@ -98,8 +98,7 @@ export function GestorDashboard() {
   }
 
   return (
-    <section className="gestor-dashboard" aria-labelledby="gestor-dashboard-title">
-      <h2 id="gestor-dashboard-title">Painel Geral do CAPO</h2>
+    <section className="gestor-dashboard" aria-label="Painel Geral do CAPO">
       <CareLocationNotices />
       <section aria-labelledby="gestor-quick-title">
         <h3 id="gestor-quick-title">Acessos rápidos</h3>
