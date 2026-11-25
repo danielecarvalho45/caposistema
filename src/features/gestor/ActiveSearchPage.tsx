@@ -62,7 +62,6 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
   const [expandedOfferPatientId, setExpandedOfferPatientId] = useState('')
   const [initialOutcome, setInitialOutcome] = useState<'' | 'aceitou' | 'novo_contato' | 'sem_resposta' | 'recusou'>('')
   const [initialNotes, setInitialNotes] = useState('')
-  const [initialNextAt, setInitialNextAt] = useState('')
   const [rescuePatientId, setRescuePatientId] = useState('')
   const [rescueResult, setRescueResult] = useState('')
   const [rescueMethod, setRescueMethod] = useState('whatsapp')
@@ -98,15 +97,10 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
 
   async function registerInitialOutcome() {
     if (busy || !initialPatientId || !initialOutcome) return
-    if (initialOutcome === 'novo_contato' && !initialNextAt) {
-      setFeedback('Informe a data e o horário do próximo contato.')
-      return
-    }
     if ((initialOutcome === 'aceitou' || initialOutcome === 'recusou') &&
       !window.confirm(`Confirma que o paciente ${initialOutcome === 'aceitou' ? 'aceitou' : 'recusou'} expressamente a Oferta CAPO?`)) return
     const accepted = initialOutcome === 'aceitou'
     const declined = initialOutcome === 'recusou'
-    const closed = accepted || declined
     const resultText = {
       aceitou: 'Aceitou a Oferta CAPO',
       novo_contato: 'Novo contato necessário',
@@ -114,52 +108,15 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
       recusou: 'Recusou a Oferta CAPO',
     }[initialOutcome]
 
-    // O prazo de 72 horas começa no PRIMEIRO contato da oferta, não no
-    // registro mais recente. A transferência é uma única operação no banco.
+    // O banco decide a transferência com base na primeira Oferta registrada.
+    // Não gerar um novo prazo de 72h a partir de cada resposta.
     const patient = rows(state.status === 'success' ? state.data : null)
       .find((item) => item.patient_id === initialPatientId)
     const firstContact = patient && (offerHistory(patient)[0]?.contact_date ?? patient.contact_date)
     const initialContact = typeof firstContact === 'string' ? Date.parse(firstContact) : NaN
-    const canTransferToRescue = initialOutcome === 'sem_resposta' &&
-      Number.isFinite(initialContact) && Date.now() >= initialContact + 72 * 60 * 60 * 1000
-
-    if (canTransferToRescue) {
-      const contactResult = initialNotes.trim()
-        ? `${resultText} — ${initialNotes.trim()}`
-        : resultText
-      if (contactResult.length > 500) {
-        setFeedback('O resultado e a observação do segundo contato devem ter até 500 caracteres.')
-        return
-      }
-      setBusy(true)
-      setFeedback('Registrando o segundo contato e transferindo para Resgate…')
-      const transfer = await getRpcService().registerOfferRescueContact({
-        patientId: initialPatientId,
-        contactMethod: 'whatsapp',
-        contactResult,
-        outcome: 'sem_resposta',
-      })
-      setBusy(false)
-      if (transfer.status !== 'success') {
-        setFeedback(transfer.status === 'error' ? transfer.error.message
-          : 'O banco não confirmou a transferência para Resgate.')
-        return
-      }
-      setInitialPatientId('')
-      setInitialOutcome('')
-      setInitialNotes('')
-      setInitialNextAt('')
-      setExpandedOfferPatientId('')
-      setFeedback('Segundo contato sem resposta registrado. Paciente transferido para a fila Resgate da Oferta CAPO.')
-      setMode('resgate')
-      return
-    }
-
-    const nextContactAt = closed ? null : initialNextAt
-      ? new Date(initialNextAt).toISOString()
-      : new Date(initialOutcome === 'sem_resposta' && Number.isFinite(initialContact)
-          ? Math.max(Date.now() + 60000, initialContact + 72 * 60 * 60 * 1000)
-          : Date.now() + 72 * 60 * 60 * 1000).toISOString()
+    const nextContactAt = accepted || !Number.isFinite(initialContact) ||
+      Date.now() >= initialContact + 72 * 60 * 60 * 1000
+      ? null : new Date(initialContact + 72 * 60 * 60 * 1000).toISOString()
 
     setBusy(true)
     setFeedback('Registrando a resposta no banco…')
@@ -168,27 +125,27 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
       contactMethod: 'whatsapp',
       contactResult: resultText,
       acceptedService: accepted ? true : declined ? false : null,
-      nextAction: closed ? null : 'Acompanhar resposta e realizar novo contato administrativo.',
+      nextAction: accepted ? null : 'Realizar segundo contato administrativo após 72 horas da Oferta Inicial.',
       notes: initialNotes.trim() || null,
       nextContactAt,
-      closeFlow: closed,
-      closureReason: accepted
-        ? 'Oferta CAPO aceita expressamente pelo paciente.'
-        : declined ? 'Oferta CAPO recusada expressamente pelo paciente.' : null,
+      closeFlow: accepted,
+      closureReason: accepted ? 'Oferta CAPO aceita expressamente pelo paciente.' : null,
     })
     setBusy(false)
     if (response.status === 'success') {
       const acceptedPatientId = initialPatientId
       const acceptedPatient = rows(state.status === 'success' ? state.data : null)
         .find((item) => item.patient_id === acceptedPatientId)
+      const transferred = Boolean(response.data && typeof response.data === 'object' &&
+        'transferred_to_rescue' in response.data && response.data.transferred_to_rescue === true)
       setFeedback(accepted
         ? 'Aceite registrado pelo administrativo. Verifique o vínculo CAPO confirmado no banco.'
-        : declined ? 'Recusa expressa registrada e Oferta Inicial encerrada.'
-          : 'Contato/observação registrado. A Oferta Inicial continua em acompanhamento.')
+        : transferred ? 'Segundo contato registrado. Paciente transferido para Resgate da Oferta CAPO; próxima tentativa em 15 dias.'
+          : declined ? 'Recusa registrada. Aguardar segundo contato da Oferta Inicial.'
+            : 'Contato/observação registrado. A Oferta Inicial continua em acompanhamento.')
       setInitialPatientId('')
       setInitialOutcome('')
       setInitialNotes('')
-      setInitialNextAt('')
       if (accepted) {
         navigate('/agenda', {
           state: {
@@ -197,6 +154,10 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
             origin: 'patient_record',
           },
         })
+      } else if (transferred) {
+        setExpandedOfferPatientId('')
+        setFilter('ativo')
+        setMode('resgate')
       } else {
         void load()
       }
@@ -222,13 +183,21 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
     })
     setBusy(false)
     if (response.status === 'success') {
-      setFeedback(rescueOutcome === 'sem_resposta'
-        ? 'Segundo contato/tentativa registrado. Próxima tentativa em 15 dias.'
+      const transferred = mode === 'oferta' && rescueOutcome !== 'aceitou'
+      const acceptedPatient = rows(state.status === 'success' ? state.data : null)
+        .find(item => item.patient_id === rescuePatientId)
+      setFeedback(transferred || rescueOutcome === 'sem_resposta'
+        ? 'Contato registrado. Próxima tentativa no Resgate em 15 dias.'
         : 'Resposta do paciente registrada e confirmada pelo banco.')
+      if (rescueOutcome === 'aceitou' && mode === 'oferta') {
+        navigate('/agenda', { state: { patientId: rescuePatientId,
+          patientName: acceptedPatient ? label(acceptedPatient, 'patient_name', 'full_name') : '',
+          origin: 'patient_record' } })
+      }
       setRescuePatientId('')
       setRescueResult('')
       setRescueOutcome('sem_resposta')
-      if (mode === 'oferta') setMode('resgate')
+      if (mode === 'oferta') { setFilter('ativo'); setMode('resgate') }
       else void load()
     } else {
       setFeedback(response.status === 'error' ? response.error.message : 'O banco não confirmou o contato.')
@@ -450,7 +419,6 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                               setInitialPatientId(initialPatientId === patientId ? '' : patientId)
                               setInitialOutcome('')
                               setInitialNotes('')
-                              setInitialNextAt('')
                             }}>
                             {initialPatientId === patientId ? 'Fechar resposta' : 'Registrar resposta / observação'}
                           </button>
@@ -466,11 +434,8 @@ export function ActiveSearchPage({ accessContext }: Readonly<{ accessContext: Ac
                                   <option value="recusou">Recusou expressamente</option>
                                 </select>
                               </label>
-                              {(initialOutcome === 'novo_contato' || initialOutcome === 'sem_resposta') && (
-                                <label>Próximo contato
-                                  <CapoDateTimeInput  value={initialNextAt}
-                                    onChange={(event) => setInitialNextAt(event.target.value)} />
-                                </label>
+                              {initialOutcome && initialOutcome !== 'aceitou' && (
+                                <small>O primeiro contato mantém o prazo original de 72 horas. Após esse prazo, a segunda tentativa sem adesão entra no Resgate por 15 dias.</small>
                               )}
                               <label>Observação administrativa (opcional)
                                 <textarea rows={2} value={initialNotes}
