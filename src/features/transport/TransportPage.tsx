@@ -1,5 +1,6 @@
 import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import type { AccessContext } from '../../types/access'
 import { getRpcService, type ReferralPatient } from '../../lib/supabase/rpc'
 import { getSupabaseClient } from '../../lib/supabase/client'
@@ -55,6 +56,13 @@ export function TransportPage({ accessContext }: Props) {
   const hasRole = (code: string) =>
     accessContext.roles.some((role) => role.code === code)
   const isManager = hasRole('administrador')
+  const location = useLocation()
+  const isTitular = isManager && accessContext.user_account_id === '7a077538-471f-4f3a-9033-e30fec74dd9b'
+    && accessContext.primary_context.code === 'administrador'
+  const view = isTitular && location.state && typeof location.state === 'object'
+    ? (location.state as Record<string, unknown>).titularTransportView : null
+  const contactsOnly = view === 'gestor'
+  const canEditContacts = isManager && view !== 'operacional'
   const isAdministrativeOperational = hasRole('administrativo_operacional')
   const hasTransportCapability = accessContext.capabilities.includes(
     'preencher_solicitacao_transporte',
@@ -89,6 +97,7 @@ export function TransportPage({ accessContext }: Props) {
   const [receivedRequests, setReceivedRequests] = useState<readonly TransportRecord[]>([])
   const [completedRequests, setCompletedRequests] = useState<readonly TransportRecord[]>([])
   const [contactsEditing, setContactsEditing] = useState(false)
+  useEffect(() => { setContactsEditing(false) }, [view])
   const [closureReason, setClosureReason] = useState('')
   const [query, setQuery] = useState('')
   const [patients, setPatients] = useState<readonly ReferralPatient[]>([])
@@ -145,7 +154,7 @@ export function TransportPage({ accessContext }: Props) {
       }
     })
     return () => { active = false }
-  }, [authorized])
+  }, [authorized, view])
 
   async function reloadReminders() {
     if (!canAdminister) return
@@ -234,7 +243,7 @@ export function TransportPage({ accessContext }: Props) {
   }
 
   useEffect(() => {
-    if (!canAdminister) return
+    if (!canAdminister || contactsOnly) return
     void reloadReminders()
     void reloadWorklists()
     let mounted = true
@@ -247,7 +256,7 @@ export function TransportPage({ accessContext }: Props) {
       }
     })
     return () => { mounted = false }
-  }, [canAdminister])
+  }, [canAdminister, contactsOnly])
 
   function editPdfDetails(request: TransportRecord, mode: 'address' | 'periodicity') {
     const savedSource = field(request, 'boarding_source')
@@ -320,7 +329,7 @@ export function TransportPage({ accessContext }: Props) {
   }
 
   async function saveContacts() {
-    if (!isManager || contactsBusy) return
+    if (!canEditContacts || contactsBusy) return
     setContactsBusy(true)
     try {
       const result = await getRpcService().setTransportSectorContacts(
@@ -949,11 +958,11 @@ export function TransportPage({ accessContext }: Props) {
     <section className="home-page" aria-labelledby="transport-title">
       <div className="home-welcome">
         <p className="eyebrow">Fluxos e Providências</p>
-        <h1 id="transport-title">Transporte</h1>
-        <p>Solicitação, documento oficial e acompanhamento da providência.</p>
+        <h1 id="transport-title">{contactsOnly ? 'Transporte — Contatos institucionais' : 'Transporte'}</h1>
+        <p>{contactsOnly ? 'Cadastro e configuração dos destinatários do setor.' : 'Solicitação, documento oficial e acompanhamento da providência.'}</p>
       </div>
 
-      {canAdminister && (
+      {!contactsOnly && canAdminister && (
         <nav className="transport-tabs" aria-label="Áreas do Transporte">
           <button type="button" aria-current={activeTab === 'principal' ? 'page' : undefined}
             onClick={() => setActiveTab('principal')}>Solicitar / Acompanhar</button>
@@ -966,7 +975,7 @@ export function TransportPage({ accessContext }: Props) {
       <div className="home-ops transport-sector-contacts transport-contacts-inline">
         <div className="transport-queue-head">
           <h2>✉ Contatos do Transporte</h2>
-          {isManager && <button type="button" onClick={() => setContactsEditing((value) => !value)}>
+          {canEditContacts && <button type="button" onClick={() => setContactsEditing((value) => !value)}>
             {contactsEditing ? 'Fechar edição' : CONTACT_FIELDS.some(({key}) => contacts[key]) ? 'Atualizar' : 'Cadastrar contato'}
           </button>}
         </div>
@@ -974,7 +983,7 @@ export function TransportPage({ accessContext }: Props) {
           {CONTACT_FIELDS.map(({key,label}) => (
             <label key={key} className="transport-contact-field">
               <span>{label}</span>
-              {contactsEditing && isManager
+              {contactsEditing && canEditContacts
                 ? <input type={key === 'email' ? 'email' : 'tel'} value={contacts[key]}
                     onChange={(event) => setContacts((current) => ({...current,[key]:event.target.value}))}
                     placeholder={key === 'email' ? 'E-mail do setor' : 'DDD e número'} />
@@ -982,7 +991,7 @@ export function TransportPage({ accessContext }: Props) {
             </label>
           ))}
         </div>
-        {contactsEditing && isManager && (
+        {contactsEditing && canEditContacts && (
           <>
             <fieldset className="transport-contact-selection">
               <legend>Destinatários institucionais</legend>
@@ -998,6 +1007,8 @@ export function TransportPage({ accessContext }: Props) {
         )}
       </div>
 
+      {contactsOnly && feedback && <p role="status">{feedback}</p>}
+      {!contactsOnly && <>
       {documentsRequest && (
         <div className="transport-contact-overlay">
           <button type="button" className="transport-contact-backdrop" aria-label="Fechar anexos"
@@ -1446,6 +1457,7 @@ export function TransportPage({ accessContext }: Props) {
       </div>
         </>
       )}
+      </>}
     </section>
   )
 }

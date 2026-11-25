@@ -83,6 +83,15 @@ export function NutritionPage({
   const canManageDeliveries = isController || isAdministrativeOperational
   const canGenerateManagementPdf = isAdministrativeManager
   const canConsultDocuments = isController || isCoordinator || isAdministrativeManager
+  // Presentation only: the real access context and RPC authorization remain unchanged.
+  const isTitular = accessContext.user_account_id === '7a077538-471f-4f3a-9033-e30fec74dd9b'
+    && accessContext.primary_context.code === 'administrador' && isController
+  const requestedView = isTitular && !homeOnly && !isNutritionProfessional
+    && location.state && typeof location.state === 'object'
+    ? (location.state as Record<string, unknown>).titularNutritionView : null
+  const operationalView = requestedView === 'operacional'
+  const managementView = requestedView === 'gestor'
+  const showDocuments = canConsultDocuments && !operationalView
   const authorized = isNutritionProfessional || canManageDeliveries || canConsultDocuments
   const [patientId, setPatientId] = useState('')
   const [patientIdentification, setPatientIdentification] = useState<NutritionRecord | null>(null)
@@ -106,6 +115,9 @@ export function NutritionPage({
   const [deliveries, setDeliveries] = useState<readonly NutritionRecord[]>([])
   const [deliveriesFeedback, setDeliveriesFeedback] = useState<string | null>(null)
   const [deliveryReason, setDeliveryReason] = useState('')
+  const visibleDeliveries = managementView
+    ? deliveries.filter((item) => ['completed', 'cancelled'].includes(field(item, 'status')?.toLowerCase() ?? ''))
+    : deliveries
   const [managementDocuments, setManagementDocuments] = useState<readonly NutritionRecord[]>([])
   const [managementFeedback, setManagementFeedback] = useState<string | null>(null)
   const [managementPatientQuery, setManagementPatientQuery] = useState('')
@@ -146,7 +158,7 @@ export function NutritionPage({
   }, [canManageDeliveries])
 
   useEffect(() => {
-    if (!canConsultDocuments) return
+    if (!showDocuments) return
     let active = true
     void getRpcService().getNutritionDocumentsForManagement(50, 0).then((result) => {
       if (!active) return
@@ -162,7 +174,7 @@ export function NutritionPage({
       }
     })
     return () => { active = false }
-  }, [canConsultDocuments])
+  }, [showDocuments])
 
   useEffect(() => {
     if (!isNutritionProfessional) return
@@ -681,18 +693,18 @@ export function NutritionPage({
       {!homeOnly && canManageDeliveries && (
         <section className="home-profile" aria-labelledby="nutrition-admin-title">
           <p className="eyebrow">Gestão administrativa</p>
-          <h2 id="nutrition-admin-title">Entregas nutricionais</h2>
-          <label>Motivo administrativo para cancelar ou reabrir<textarea value={deliveryReason} minLength={5} maxLength={500} onChange={(event) => setDeliveryReason(event.target.value)} /></label>
+          <h2 id="nutrition-admin-title">{managementView ? 'Reabertura de entregas nutricionais' : 'Entregas nutricionais'}</h2>
+          <label>{managementView ? 'Motivo administrativo para reabrir' : operationalView ? 'Motivo administrativo para cancelar' : 'Motivo administrativo para cancelar ou reabrir'}<textarea value={deliveryReason} minLength={5} maxLength={500} onChange={(event) => setDeliveryReason(event.target.value)} /></label>
           {deliveriesFeedback && <p role="status">{deliveriesFeedback}</p>}
-          {deliveries.length === 0 && <p>Nenhuma entrega nutricional pendente.</p>}
-          {deliveries.length > 0 && (
+          {visibleDeliveries.length === 0 && <p>{managementView ? 'Nenhuma entrega disponível para reabertura.' : 'Nenhuma entrega nutricional pendente.'}</p>}
+          {visibleDeliveries.length > 0 && (
             <ul>
-              {deliveries.map((delivery, index) => {
+              {visibleDeliveries.map((delivery, index) => {
                 const id = field(delivery, 'delivery_id', 'id')
                 const status = field(delivery, 'status')?.toLowerCase()
                 const requiresReason = (action: NutritionDeliveryAction) => ['cancel', 'reopen'].includes(action)
                 const actionButton = (action: NutritionDeliveryAction, label: string) =>
-                  id && (action !== 'reopen' || isController) &&
+                  id && (action !== 'reopen' || (isController && !operationalView)) && (!managementView || action === 'reopen') &&
                   <button type="button" disabled={busy || (requiresReason(action) && deliveryReason.trim().length < 5)} onClick={() => void manageDelivery(id, action)}>{label}</button>
                 return (
                   <li key={id ?? index}>
@@ -715,7 +727,7 @@ export function NutritionPage({
         </section>
       )}
 
-      {!homeOnly && canConsultDocuments && (
+      {!homeOnly && showDocuments && (
         <section className="home-profile" aria-labelledby="nutrition-management-title">
           <p className="eyebrow">Consulta gerencial</p>
           <h2 id="nutrition-management-title">Documentos nutricionais oficiais</h2>
