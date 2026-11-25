@@ -59,7 +59,7 @@ begin
   ) into v_result;
   return v_result;
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.manage_transport_request_for_interface(p_request_id uuid, p_action text, p_reason text DEFAULT NULL::text, p_channel text DEFAULT NULL::text, p_reference text DEFAULT NULL::text, p_transport_notes text DEFAULT NULL::text)
  RETURNS jsonb
@@ -281,7 +281,7 @@ begin
     'updated_at',v_now
   );
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.get_transport_reminder_queue_for_interface()
  RETURNS jsonb
@@ -330,7 +330,7 @@ begin
  where q.next_date between (now() at time zone 'America/Sao_Paulo')::date
                      and (now() at time zone 'America/Sao_Paulo')::date+1;
  return v_result;
-end; $function$
+end; $function$;
 
 create or replace function public.get_transport_worklist_for_interface(p_view text default 'recebidas',p_query text default '',p_limit integer default 100)
 returns jsonb language plpgsql stable security definer set search_path to 'pg_catalog','public','auth','pg_temp' as $body$
