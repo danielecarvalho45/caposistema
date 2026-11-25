@@ -1,3 +1,15 @@
+## 25/11/2026 — HOMOLOGAÇÃO OPERACIONAL APROVADA E ETAPA ENCERRADA: aviso de receita pronta por WhatsApp
+
+**Confirmação expressa da Gestora/Titular:** em 25/11/2026, após a implementação do botão **Avisar paciente — WhatsApp** na etapa administrativa de **Renovação de Receita**, informou **“testado ok pode fechar etapa”**. A etapa foi, portanto, **testada e aprovada operacionalmente pela Titular**, e está **encerrada**.
+
+**Escopo aprovado:** aviso independente do encerramento administrativo, abertura do WhatsApp em um clique com mensagem preparada; escolha entre endereço de atendimento cadastrado do médico e endereço alternativo específico do aviso; manutenção da exigência de confirmação consciente de contato para concluir a receita. O WhatsApp não confirma envio nem conclui automaticamente a solicitação.
+
+**Regra de preservação:** não refazer nem alterar o fluxo homologado sem relato concreto de erro e novo VERDE da Titular. A branch de restauração `backup/receita-antes-aviso-whatsapp-2026-11-25` permanece guardada. Nenhuma alteração funcional, SQL ou de dados nesta homologação documental.
+
+**Evidência e limite:** homologação baseada no teste operacional confirmado pela Titular. Não confundir com execução independente de testes automatizados ou auditoria externa, que não foram afirmadas.
+
+---
+
 ## 25/11/2026 — VERDE: WhatsApp independente para aviso de receita pronta no Administrativo
 
 **Relato e decisão da Titular:** na tela de Detalhes da Renovação de Receita, status `Aguardando processamento administrativo`, a receita já foi marcada como pronta pelo Clínico Geral e foi informado um local de retirada. A Titular solicitou botão `Avisar paciente — WhatsApp` visível nesse momento, com **um único clique abrindo automaticamente a aba de WhatsApp do CAPO e preenchendo a mensagem**. O aviso deve ser **independente** de concluir a receita e da confirmação `Paciente contatado/orientado`. Endereço cadastrado do médico fica marcado por padrão; operador pode escolher `Outro endereço de retirada` e digitar local alternativo **somente para o aviso**, sem modificar o cadastro original.
