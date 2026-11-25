@@ -17,7 +17,7 @@ type GestorShellProps = Readonly<{
   onLogout: () => Promise<void>
 }>
 
-type NavItem = Readonly<{ path: string; icon: string; label: string }>
+type NavItem = Readonly<{ path: string; icon: string; label: string; closureView?: 'operacional' | 'gestor' }>
 
 const serviceItems: readonly NavItem[] = [
   { path: '/pacientes', icon: '👥', label: 'Pacientes' },
@@ -60,7 +60,7 @@ const titularOperationalItems: readonly NavItem[] = [
   { path: '/receita', icon: '💊', label: 'Renovação de Receita' },
   { path: '/encaminhamentos', icon: '↗', label: 'Encaminhamentos' },
   { path: '/odontologia', icon: '🦷', label: 'Odontologia' },
-  { path: '/encerramentos', icon: '✓', label: 'Encerramentos' },
+  { path: '/encerramentos', icon: '✓', label: 'Encerramentos', closureView: 'operacional' },
   { path: '/notificacoes', icon: '●', label: 'Notificações' },
   { path: '/suporte', icon: '?', label: 'Suporte' },
   { path: '/relatorios', icon: '▥', label: 'Relatórios' },
@@ -89,6 +89,7 @@ function NavGroup({ label, items, activePath, accessContext }: Readonly<{
           className="gestor-nav-link"
           aria-current={activePath === item.path ? 'page' : undefined}
           to={item.path}
+          state={item.closureView ? { titularClosureView: item.closureView } : undefined}
           key={item.path}
         >
           <span aria-hidden="true">{item.icon}</span>
@@ -240,7 +241,7 @@ export function GestorShell({
                       <NavGroup label="Acessos existentes — separação pendente" items={titularRetainedItems} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'gestor' && <>
-                      <NavGroup label="Gestão do Serviço" items={managementItems.filter((item) => item.path !== '/gestor/suporte')} activePath={activePath} accessContext={accessContext} />
+                      <NavGroup label="Gestão do Serviço" items={[...managementItems.filter((item) => item.path !== '/gestor/suporte'), { path: '/encerramentos', icon: '✓', label: 'Encerramentos — Decisão profissional', closureView: 'gestor' }]} activePath={activePath} accessContext={accessContext} />
                       <NavGroup label="Administração do Sistema" items={[{ path: '/gestor/administracao', icon: '⚙', label: 'Usuários e Contas' }]} activePath={activePath} accessContext={accessContext} />
                     </>}
                     {area.id === 'ti' && <>
