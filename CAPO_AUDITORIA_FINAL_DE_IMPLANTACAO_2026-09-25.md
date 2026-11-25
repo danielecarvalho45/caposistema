@@ -1,3 +1,22 @@
+## 25/11/2026 — VERDE — correção GLOBAL da incompatibilidade de origem da remarcação por link
+
+**Solicitação e escopo:** após identificar a falha de remarcação da paciente Simone Rodrigues Silva, a Gestora/Titular esclareceu que não deseja uma exceção para o caso individual: **"Verifica a incompatibilidade em todo sistema [...] localiza o erro do sistema e corrige o erro do sistema a remarcação da paciente faço manual"**. Autorização para corrigir a regra do sistema de forma global; **não reagendar a paciente nem alterar dados de consultas ou resolver notificações pendentes**.
+
+**Investigação e comparação (somente leituras antes de corrigir):**
+- A regra global `patient_appointments_reschedule_origin_check` de `public.patient_appointments` permitia `NULL`, `manual`, `bloqueio_agenda`, `alteracao_agenda`, `faltoso`; **não permitia `paciente_link`**.
+- A RPC de uso geral `reschedule_appointment_for_interface` grava origens aceitas, enquanto a RPC dedicada `rebook_patient_link_cancellation_for_interface`, já implantada e com controle de autorização/ciclo/profissional/consulta cancelada, grava **`reschedule_origin='paciente_link'`** após criar a consulta sucessora. Por isso, a tentativa de remarcação pelo link era abortada pela constraint, com erro PostgreSQL `patient_appointments_reschedule_origin_check`, independentemente do paciente. A falha **não se limita à Simone**, e explica por que remarcações `manual` / `alteracao_agenda` funcionavam.
+- Varredura das funções do banco com referência a `reschedule_origin` e comparação das origens persistidas não identificou outro literal necessário fora dos quatro já autorizados e o `paciente_link`. Não reconstruir agendamento, nem modificar código de agenda/PDF/WhatsApp.
+- Os logs PostgreSQL de 25/11/2026 exibiam **cinco falhas** de violação dessa constraint antes da correção. Não foi possível atribuir cada registro individual de log a um paciente sem uma correlação identificada.
+- Existiam **oito notificações** de `appointment_patient_reschedule` pendentes globalmente, inclusive pedidos de Simone; manter pendências intactas, para uso administrativo normal.
+
+**Proteção:** branch GitHub `backup/constraint-origem-remarcacao-2026-11-25` criada a partir de `main` antes da mudança. Migração versionada na `main`: `supabase/migrations/20261125235930_fix_link_reschedule_origin_check.sql`, commit `d174c3199578e73618b9604243f7210eef1618c7`. Aplica guarda prévia do contrato e substitui **somente a CHECK** pela mesma lista anterior + `paciente_link`, ainda aceitando `NULL` e rejeitando valores imprevistos. Nenhuma RPC, trigger, grants, RLS, cadastro ou registro de agendamento foi alterado.
+
+**Banco:** migration `fix_link_reschedule_origin_check_20261125` aplicada no projeto Supabase CAPO `fftebavlhbfcrvrtnrld` com resultado **success**. A restrição foi relida com `convalidated=true` e definição explícita contendo as cinco origens. Consulta read-only depois da migração: **222 agendamentos**, **26 com origem de remarcação registrada**, **zero origens inválidas**, **oito notificações de remarcação por link pendentes** e **sete registros de consultas para Simone**; nenhum pedido foi concluído ou agendamento foi criado como parte dos testes. A função `rebook_patient_link_cancellation_for_interface` permaneceu com validação de papéis, contexto do paciente, vínculo `rescheduled_from_id` e resolução da notificação somente depois do sucesso da remarcação.
+
+**Resultado:** **CAUSA GLOBAL CORRIGIDA E CONSTRAINT DO BANCO VALIDADA**. A operação ponta-a-ponta na interface ainda requer teste de homologação com conta `manuteste` (paciente/consulta simulados, sem interferir em dados reais), inclusive primeira consulta de Nutrição de 60 minutos e demais especialidades. A migração no banco já atua em produção e homologação dentro do mesmo projeto, respeitando os contextos isolados; **não declarar a interface testada por clique nem afirmar publicação Cloudflare**. A remarcação da paciente Simone será feita manualmente pela Gestora, conforme determinação; não automatizar nem alterar seus registros.
+
+---
+
 ## 25/11/2026 — VERDE — correção pontual de confirmação indevida no reagendamento de primeira consulta pelo link
 
 **Relato da Gestora/Titular:** o Administrativo tentou reagendar primeira consulta solicitada pelo link do paciente e o CAPO passou a pedir uma confirmação adicional fora do fluxo. Após investigação somente leitura, Gestora/Titular autorizou expressamente: **VERDE**.
