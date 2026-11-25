@@ -1,3 +1,48 @@
+## 25/11/2026 — NORMA PERMANENTE — Identidade visual e paleta oficial do Sistema CAPO
+
+Registro documental solicitado pela Titular após aprovação visual das boas-vindas em 3D e da padronização estética. Esta norma complementa as PRs 20–24; não autoriza alteração funcional nem declara homologação operacional dos demais perfis. Referência é a estética aprovada, nunca a reprodução dos atalhos da Titular nos outros perfis.
+
+### 1. Conceito estético e elementos institucionais
+
+Estilo clássico, elegante, delicado, confortável para uso prolongado: vidro acetinado translúcido em tons pastéis, degradês suaves, relevo 3D discreto, sombras leves, cantos arredondados, ícones vetoriais de traço arredondado. Evitar cores chapadas intensas, brilho excessivo, animações decorativas e poluição visual. Preservar fonte Arial, Helvetica, sans-serif dos shells canônicos, logomarca CAPO original, cabeçalho, rodapé institucional e fundo original. Azul institucional de texto #17365f. Na composição Gestor, fundo base branco a #f8fbfe com halos translúcidos azul rgb(0 96 182 / 21%), rosa rgb(241 72 153 / 19%), amarelo rgb(250 186 3 / 18%) e verde rgb(130 195 43 / 18%); sidebar rgb(250 253 255 / 72%) com blur 5px. Não substituir a composição de fundo dos perfis em manutenção funcional.
+
+### 2. Paleta dos botões principais laterais — valores efetivos aprovados
+
+| Identidade / aplicação | Luz do degradê | Base translúcida | Sombra de relevo | Texto e ícone |
+|---|---|---|---|---|
+| Azul — Início e gestão da agenda | rgb(235 246 255 / 78%) | rgb(184 213 234 / 49%) | rgb(91 135 171 / 32%) | #365d7e |
+| Rosa — Operacional, profissional e atendimento | rgb(255 239 245 / 78%) | rgb(230 188 205 / 48%) | rgb(160 106 130 / 30%) | #79425c |
+| Amarelo — Gestor, Coordenação e grupos administrativos conforme perfil | rgb(255 249 229 / 80%) | rgb(235 216 158 / 48%) | rgb(156 129 67 / 30%) | #765b22 |
+| Verde — TI, suporte e manutenção | rgb(242 250 235 / 80%) | rgb(190 215 177 / 48%) | rgb(100 140 83 / 30%) | #46673c |
+| Lilás — Sair | rgb(249 241 255 / 78%) | rgb(215 197 231 / 48%) | rgb(130 106 158 / 30%) | #654c7c |
+
+Botões agrupadores: degradê 170deg, raio 12px, altura mínima 54px, fonte 15px/peso 600, relevo externo de aproximadamente 3px com sombra difusa e brilho interno discreto. Sair: cápsula centralizada, altura mínima 34px, fonte 12px, ícone 19px. Preservar grupos inicialmente recolhidos e abertura exclusiva nos perfis já organizados; Início direto. Os links internos usam acabamento neutro azul translúcido, raio 9px, separação 4px e marca de página ativa. Não trocar função real, permissões ou contexto para obter efeito visual. Os estilos legados de acumulados são suavizados pelas sobrescritas compartilhadas em quick-access.css.
+
+### 3. Paleta dos cartões de acesso rápido
+
+| Família de cor | Base translúcida (--capo-glass) | Texto/ícone (--capo-ink) |
+|---|---|---|
+| Azul padrão | rgb(190 213 237 / 53%) | #365d7e |
+| Verde / menta | rgb(183 221 193 / 55%) | #236b43 |
+| Rosa | rgb(235 188 208 / 55%) | #96375c |
+| Roxo / violeta | rgb(211 193 239 / 55%) | #64409b |
+| Amarelo / âmbar | rgb(242 216 163 / 55%) | #865a18 |
+| Cinza azulado | rgb(204 214 228 / 55%) | #405a75 |
+
+Degradê 155deg de branco a 67% para a base; borda branca 80% de 1px, raio 12px; sombra 0 3px 0 rgb(66 91 120 / 12%), 0 6px 11px -4px rgb(66 91 120 / 24%) e brilho interno inset 0 1px 0 rgb(255 255 255 / 70%). Texto e ícones com cor opaca de leitura, preservando família cromática de cada atalho. Retirar somente a faixa branca que envolve os acessos rápidos; fundo transparente sem caixa, borda ou sombra de seção. Não eliminar fundos de outros painéis. Preservar títulos e descrições dos atalhos, ordem, dimensões responsivas e destinos. Nas grades compartilhadas padrão: 8 colunas em tela larga, 4 até 1250px, 1 até 620px, respeitando as regras específicas e móveis existentes. Elevação ao passar mouse de 2px, pressão de 1px, foco visível; respeitar redução de movimento. Não aplicar esse efeito indiscriminadamente a controles clínicos, formulários, tabelas ou alertas.
+
+### 4. Boas-vindas e iconografia
+
+Quadro de boas-vindas permanece branco translúcido rgb(255 255 255 / 72%), borda #d9e7f3 e raio 9px, com relevo estático: 0 3px 0 rgb(94 125 157 / 13%), 0 7px 15px -5px rgb(48 80 114 / 19%), inset 0 1px 0 rgb(255 255 255 / 85%). Preservar saudação contextual, mensagem de boas-vindas, girassol, coração, “Cuidar hoje. Mais possibilidades amanhã.” e comportamento responsivo. Título visual redundante “Painel Geral do CAPO” removido na Home Gestor/Titular, mantendo aria-label; não remover títulos funcionais de outras páginas.
+
+Ícones de pacientes, profissionais e familiares: silhuetas clássicas de pessoas em SVG, sem depender de fontes emoji; traço 1.8 e extremidades arredondadas no CapoIcon, viewBox 24x24, CapoShortcutIcon padrão 24px nos atalhos e 18px nos links laterais. Utilizar catálogo de CapoIcon e mapeamento por destino; manter ícones dos botões agrupadores aprovados. Não utilizar emoji de aparência variável em novos atalhos de navegação. Ícones decorativos não substituem rótulos acessíveis.
+
+### 5. Regra de continuidade obrigatória
+
+Fontes de referência na main: src/styles/quick-access.css (blob aa45182f950ffe5e98079ab290fcdeb9aef63428), src/components/icons/CapoIcon.tsx (b9ddc02af68856f8c6ab96f4e1b8de126b821d0a), src/components/shell/AppShell.tsx (68436ae33beec098c127c8b0602b37a02db462c5), src/features/gestor/GestorShell.tsx (ccf10d89b0ee34849d53dc5ecb45684b42dea7bd), app-shell.css, gestor.css e home-mobile-standard.css. quick-access.css importado globalmente em App.tsx. Reutilizar classes/componentes compartilhados nos perfis existentes, acumulados, novos cadastros e novas especialidades, sem CSS individual por profissional. Novas telas devem aderir explicitamente a esses componentes. A paleta não é mecanismo de autorização. Não copiar atalhos de outro perfil, criar rotas, alterar fluxos, permissões, banco, dados, cabeçalho, Home ou funcionalidades homologadas em nome de estética. Qualquer mudança posterior do padrão aprovado requer autorização expressa VERDE, backup, registro e homologação. Preservar isolamento da homologação e conferir desktop/mobile, contraste, navegação por teclado e acesso a todos os destinos. Titular informou que o acabamento das boas-vindas ficou ótimo; conferência visual dos demais perfis e validação técnica permanecem abertas. Este registro é exclusivamente documental, sem mudança de código de interface.
+
+---
+
 ## 25/11/2026 — VERDE — Destaque 3D do quadro de boas-vindas e retirada do título redundante
 
 Autorizada retirada exclusivamente visual de “Painel Geral do CAPO” da Home do Gestor/Titular, preservando identificação acessível da seção via aria-label. Aplicado relevo estático e delicado com sombra externa e brilho interno nos dois componentes compartilhados de boas-vindas, via quick-access.css, mantendo integralmente fundo branco translúcido, dimensões, posicionamento, saudação, girassol, coração e mensagem institucional. Abrange os perfis atuais e futuros que utilizam AppShell/GestorShell. Atalhos, menus, rotas, permissões, dados, RPCs e fluxos não alterados. Backup backup/boas-vindas-antes-3d-2026-11-25. PR 24 integrada na main, merge 86746802647bf5d10f613086b995cf095407ee4f; conferidos blobs GestorDashboard.tsx 307bbcf6fe74ca81e5c94d91a583ceea84c268d9 e quick-access.css aa45182f950ffe5e98079ab290fcdeb9aef63428. Comparação confirmou apenas dois arquivos de interface. Compilação, testes e publicação Cloudflare não confirmados. Homologação visual ABERTA até conferência desktop/mobile.
