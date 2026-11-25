@@ -74,14 +74,22 @@ export function ClosuresPage({
 
   const hasRole = (code: string) =>
     accessContext.roles.some((role) => role.code === code)
+  const isTitular = hasRole('administrador')
+    && accessContext.user_account_id === '7a077538-471f-4f3a-9033-e30fec74dd9b'
+    && accessContext.primary_context.code === 'administrador'
+  const view = isTitular && location.state && typeof location.state === 'object'
+    ? (location.state as Record<string, unknown>).titularClosureView : null
+  const managementView = view === 'gestor'
+  const operationalView = view === 'operacional'
   const canAdministrativeAction =
     hasRole('administrador') || hasRole('administrativo_operacional')
+  const showAdministrativeActions = canAdministrativeAction && !managementView
   const isProfessional =
     Boolean(accessContext.professional_id) && hasRole('profissional')
 
   const closureId = selected ? textValue(selected, 'closure_id', 'id') : ''
   const canRegisterProfessionalDecision =
-    hasRole('administrador') &&
+    !operationalView && hasRole('administrador') &&
     Boolean(selected) &&
     textValue(selected!, 'status') === 'pendente' &&
     textValue(selected!, 'professional_id') !== '—'
@@ -356,7 +364,7 @@ export function ClosuresPage({
       <header className="closures-header">
         <div>
           <p className="eyebrow">Continuidade do cuidado</p>
-          <h1 id="closures-title">Encerramentos por especialidade</h1>
+          <h1 id="closures-title">{managementView ? 'Encerramentos — Registro de decisão profissional' : 'Encerramentos por especialidade'}</h1>
           <p>
             Cada profissional encerra somente a própria atuação, de forma independente.
             Os demais profissionais do paciente são avisados, sem criar dependência entre os encerramentos.
@@ -430,8 +438,8 @@ export function ClosuresPage({
                 <div><dt>Encerramento</dt><dd>{textValue(selected, 'closed_at')}</dd></div>
               </dl>
 
-              {(booleanValue(selected, 'can_close') ||
-                booleanValue(selected, 'can_reopen') ||
+              {((!managementView && (booleanValue(selected, 'can_close') ||
+                booleanValue(selected, 'can_reopen'))) ||
                 canRegisterProfessionalDecision) && (
                 <label>
                   Motivo / observação
@@ -444,7 +452,7 @@ export function ClosuresPage({
                 </label>
               )}
 
-              {canAdministrativeAction &&
+              {showAdministrativeActions &&
                 textValue(selected, 'status') === 'pendente' &&
                 textValue(selected, 'professional_id') === '—' && (
                   <label>
@@ -468,7 +476,7 @@ export function ClosuresPage({
                 )}
 
               <div className="closures-actions">
-                {booleanValue(selected, 'can_close') && (
+                {!managementView && booleanValue(selected, 'can_close') && (
                   <button
                     type="button"
                     disabled={busy}
@@ -506,7 +514,7 @@ export function ClosuresPage({
                   </button>
                 )}
 
-                {canAdministrativeAction && booleanValue(selected, 'can_reopen') && (
+                {showAdministrativeActions && booleanValue(selected, 'can_reopen') && (
                   <button
                     type="button"
                     disabled={busy}
@@ -525,7 +533,7 @@ export function ClosuresPage({
                   </button>
                 )}
 
-                {canAdministrativeAction &&
+                {showAdministrativeActions &&
                   textValue(selected, 'status') === 'pendente' &&
                   textValue(selected, 'professional_id') === '—' && (
                     <button
@@ -557,7 +565,7 @@ export function ClosuresPage({
         </div>
       </section>
 
-      {isProfessional && (
+      {isProfessional && !managementView && (
         <section className="closures-request" aria-labelledby="own-closure-title">
           <h2 id="own-closure-title">Encerrar minha atuação</h2>
           <p>
@@ -620,7 +628,7 @@ export function ClosuresPage({
         </section>
       )}
 
-      {canAdministrativeAction && (
+      {showAdministrativeActions && (
         <section className="closures-request" aria-labelledby="waiting-start-closure-title">
           <h2 id="waiting-start-closure-title">Encerramento administrativo — Aguardando início</h2>
           <p>
@@ -661,7 +669,7 @@ export function ClosuresPage({
         </section>
       )}
 
-      {canAdministrativeAction && (
+      {showAdministrativeActions && (
         <section className="closures-request" aria-labelledby="return-cycle-title">
           <h2 id="return-cycle-title">Abrir novo ciclo de retorno</h2>
           <p>
