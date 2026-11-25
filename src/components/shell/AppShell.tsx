@@ -158,7 +158,12 @@ export function AppShell({
   const multipleRoles = knownRoles.filter(hasRole).length > 1
   const primaryRole = accessContext.primary_context.code
   const singleProfessional = primaryRole === 'profissional' && hasRole('profissional') && new Set(accessContext.roles.map((role) => role.code)).size === 1
-  const groupedMenu = multipleRoles || singleProfessional
+  const singleRole = new Set(accessContext.roles.map((role) => role.code)).size === 1
+  const singleOperational = singleRole && primaryRole === 'administrativo_operacional' && hasRole('administrativo_operacional')
+  const singleCoordinator = singleRole && primaryRole === 'coordenador' && hasRole('coordenador')
+  const singleTechnical = singleRole && primaryRole === 'administrador_tecnico' && hasRole('administrador_tecnico')
+  const singleGrouped = singleProfessional || singleOperational || singleCoordinator || singleTechnical
+  const groupedMenu = multipleRoles || singleGrouped
   const mainItems = [...primaryNavigation.filter((item) => item.path !== '/'), ...managementNavigation]
   const professionalOnlyPaths = ['/minha-agenda/gerenciar', '/minha-agenda/solicitar-alteracao', '/assistencia-social', '/luto']
   const professionalItems = hasRole('profissional') && primaryRole !== 'profissional'
@@ -185,7 +190,32 @@ export function AppShell({
     { id: 'agenda', label: 'Gestão da Minha Agenda', tone: 'inicio', icon: 'agenda' as const, items: professionalLinks.filter((item) => agendaPaths.includes(item.path)) },
     { id: 'manutencao', label: 'Suporte e Manutenção', tone: 'ti', icon: 'ti' as const, items: professionalLinks.filter((item) => supportPaths.includes(item.path)) },
   ].filter((group) => group.items.length > 0)
-  const groups = singleProfessional ? professionalGroups : accumulatedGroups
+  // Reuse authorized destinations; coordination-specific shortcuts already exist on its Home.
+  const coordinationLinks: readonly { path: AppRoute; label: string; icon: string }[] = [
+    { path: '/coordenacao', label: 'Painel da Coordenação', icon: '◇' },
+    { path: '/coordenacao/busca-ativa', label: 'Busca Ativa', icon: '⌕' },
+    { path: '/coordenacao/timeline', label: 'Linha do Tempo Operacional', icon: '◷' },
+    { path: '/coordenacao/auditoria', label: 'Auditoria Operacional', icon: '▥' },
+  ]
+  const singleLinks = [...professionalLinks, ...(singleCoordinator ? coordinationLinks.filter((item) => canAccessAppRoute(accessContext, item.path) && !professionalLinks.some((existing) => existing.path === item.path)) : [])]
+  const commonPaths: readonly AppRoute[] = ['/notificacoes', '/comunicacao', '/relatorios', '/coordenacao/timeline', '/coordenacao/auditoria']
+  const followupPaths: readonly AppRoute[] = ['/fila', '/faltosos', '/busca-ativa', '/coordenacao/busca-ativa', '/encerramentos']
+  const requestPaths: readonly AppRoute[] = ['/solicitacoes', '/encaminhamentos', '/transporte', '/receita', '/odontologia', '/nutricao']
+  const servicePaths: readonly AppRoute[] = ['/pacientes', '/agenda', '/familiar-cuidador', '/coordenacao']
+  const serviceGroups = [
+    { id: 'servico', label: singleCoordinator ? 'Gestão da Equipe e Agendas' : 'Atendimento e Agendamento', tone: singleCoordinator ? 'gestor' : 'profissional', icon: singleCoordinator ? 'gestor' as const : 'operacional' as const, items: singleLinks.filter((item) => servicePaths.includes(item.path)) },
+    { id: 'acompanhamento', label: 'Filas e Acompanhamento', tone: 'inicio', icon: 'agenda' as const, items: singleLinks.filter((item) => followupPaths.includes(item.path)) },
+    { id: 'demandas', label: 'Solicitações e Fluxos', tone: 'gestor', icon: 'operacional' as const, items: singleLinks.filter((item) => requestPaths.includes(item.path)) },
+    { id: 'registros', label: singleCoordinator ? 'Relatórios e Governança' : 'Comunicação e Relatórios', tone: 'inicio', icon: 'gestor' as const, items: singleLinks.filter((item) => commonPaths.includes(item.path)) },
+    { id: 'suporte', label: 'Suporte e Manutenção', tone: 'ti', icon: 'ti' as const, items: singleLinks.filter((item) => supportPaths.includes(item.path)) },
+    { id: 'outros', label: 'Outros Acessos Autorizados', tone: 'inicio', icon: 'operacional' as const, items: singleLinks.filter((item) => ![...servicePaths, ...followupPaths, ...requestPaths, ...commonPaths, ...supportPaths].includes(item.path)) },
+  ].filter((group) => group.items.length > 0)
+  // TechnicalPage owns its existing four internal tabs; do not create fake destinations.
+  const technicalGroups = [
+    { id: 'area-tecnica', label: 'TI e Manutenção', tone: 'ti', icon: 'ti' as const, items: singleLinks.filter((item) => supportPaths.includes(item.path)) },
+    { id: 'avisos-tecnicos', label: 'Notificações e Acessos', tone: 'inicio', icon: 'operacional' as const, items: singleLinks.filter((item) => !supportPaths.includes(item.path)) },
+  ].filter((group) => group.items.length > 0)
+  const groups = singleProfessional ? professionalGroups : singleTechnical ? technicalGroups : singleOperational || singleCoordinator ? serviceGroups : accumulatedGroups
 
   useEffect(() => {
     mainRef.current?.focus()
@@ -261,7 +291,7 @@ export function AppShell({
     <div className="app-shell">
       <aside
         id="app-sidebar"
-        className={`app-sidebar${menuOpen ? ' is-open' : ''}${singleProfessional ? ' app-sidebar--professional' : multipleRoles ? ' app-sidebar--accumulated' : ''}`}
+        className={`app-sidebar${menuOpen ? ' is-open' : ''}${singleGrouped ? ' app-sidebar--professional' : multipleRoles ? ' app-sidebar--accumulated' : ''}`}
         aria-label="Navegação do CAPO"
       >
         <div className="app-brand">
@@ -276,7 +306,7 @@ export function AppShell({
           </button>
         </div>
 
-        {groupedMenu && <style>{singleProfessional ? professionalMenuStyles : accumulatedMenuStyles}</style>}
+        {groupedMenu && <style>{singleGrouped ? professionalMenuStyles : accumulatedMenuStyles}</style>}
         <nav className="app-nav" aria-label="Navegação principal">
           {groupedMenu ? <>
             <Link className="titular-menu-button" data-tone="inicio" to="/" aria-current={currentPath === '/' ? 'page' : undefined} onClick={() => setExpandedArea(null)}><AccumulatedIcon kind="inicio" /> Início</Link>
