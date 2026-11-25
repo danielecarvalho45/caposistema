@@ -1787,10 +1787,10 @@ export function AgendaPage({
       setAppointmentFeedback('A consulta cancelada pelo link ainda não foi validada. Reabra a solicitação pela Home.')
       return
     }
-    // Conferência obrigatória da agenda existente, antes da reserva e da gravação.
-    // Permite consultas extras legítimas (inclusive slots consecutivos), mas exige
-    // confirmação explícita quando o paciente já tem consulta ativa com o profissional.
-    if (!isProfessional) {
+    // A remarcação pelo link é substituição da consulta cancelada, não vaga adicional.
+    // A RPC específica valida vínculo com o agendamento anterior e duplicidade.
+    // Preservar a confirmação de consultas extras somente para agendamentos comuns.
+    if (!isProfessional && !isPatientLinkRebooking) {
       const checkKey = [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':')
       const history = await getRpcService().getPatientAppointmentHistory(appointmentPatientId, 100, 0)
       if (history.status === 'error' || history.status === 'loading') {
@@ -2544,6 +2544,8 @@ export function AgendaPage({
     setSelectedProfessionalId('')
     setSelectedSlotStart('')
     setAppointmentOrigin('cancelamento_link_paciente')
+    setExistingAppointmentWarning(null)
+    setAdditionalAppointmentApproval('')
     setPatientLinkCancelledSourceId(appointmentId)
     setAppointmentFeedback('Consultando os dados da consulta cancelada para preparar um novo agendamento…')
     void (async () => {
@@ -3366,7 +3368,7 @@ export function AgendaPage({
                 onBooked={() => { void loadProfessionalConsultation() }}
               />
             )}
-            {existingAppointmentWarning && existingAppointmentWarning.key ===
+            {location.state?.origin !== 'patient_link_cancellation' && existingAppointmentWarning && existingAppointmentWarning.key ===
               [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && (
               <div className="agenda-contract-note" role="alert">
                 <strong>Consulta anterior ainda ativa</strong>
@@ -3381,8 +3383,8 @@ export function AgendaPage({
               </div>
             )}
             <div className="agenda-form-actions">
-              {!selectedAppointmentFamily && <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedProfessionalId || !validSlotStart || !appointmentType || Boolean(existingAppointmentWarning && existingAppointmentWarning.key === [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && additionalAppointmentApproval !== existingAppointmentWarning.key)} onClick={() => void createAppointment()}>
-                Confirmar agendamento
+              {!selectedAppointmentFamily && <button type="button" disabled={awaitingNextAppointmentChoice || !appointmentPatientId || !selectedSpecialtyId || !selectedProfessionalId || !validSlotStart || (!appointmentType && !(location.state?.origin === 'patient_link_cancellation' && patientLinkCancelledSourceId.length > 0)) || Boolean(location.state?.origin !== 'patient_link_cancellation' && existingAppointmentWarning && existingAppointmentWarning.key === [appointmentPatientId, selectedProfessionalId, selectedSpecialtyId, validSlotStart].join(':') && additionalAppointmentApproval !== existingAppointmentWarning.key)} onClick={() => void createAppointment()}>
+                {location.state?.origin === 'patient_link_cancellation' ? 'Confirmar remarcação' : 'Confirmar agendamento'}
               </button>}
               {!isProfessional && awaitingNextAppointmentChoice && appointmentType === 'Retorno' && !returnNoticeAcknowledged && (
                 <div className="agenda-contract-note" role="group" aria-label="Aviso obrigatório de retorno agendado">
