@@ -1,3 +1,4 @@
+import { CapoShortcutIcon } from '../../components/icons/CapoIcon'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import {
@@ -239,16 +240,16 @@ export function AssistentialPage({
       <nav className="assistential-card home-profile-standard" aria-label="Acessos rápidos do profissional">
         <h2 id="assistential-title">Acessos rápidos</h2>
         <div className="home-profile-grid">
-          <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true">▣</span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
-          <Link className="home-profile-card quick-blue" to="/atuacao"><span className="home-profile-icon" aria-hidden="true">👥</span><strong>Pacientes</strong><span>Consultar a própria atuação</span></Link>
-          <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true">⏱</span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
-          <Link className="home-profile-card quick-purple" to="/minha-agenda/solicitar-alteracao"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
-          {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true">▤</span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
-          {canAccessAppRoute(accessContext, '/encaminhamentos') && accessContext.capabilities.includes('encaminhamento_interprofissional') && <Link className="home-profile-card quick-mint" to="/encaminhamentos"><span className="home-profile-icon" aria-hidden="true">↗</span><strong>Encaminhamentos</strong><span>Consultar e encaminhar</span></Link>}
-          {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/receita') && <Link className="home-profile-card quick-yellow" to="/receita"><span className="home-profile-icon" aria-hidden="true">▰</span><strong>Renovação de Receita</strong><span>Solicitações recebidas</span></Link>}
-          {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/odontologia') && <Link className="home-profile-card quick-mint" to="/odontologia"><span className="home-profile-icon" aria-hidden="true">🦷</span><strong>Odontologia</strong><span>Encaminhamento externo</span></Link>}
-          <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true">▥</span><strong>Relatórios</strong><span>Indicadores da própria atuação</span></Link>
-          <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true">?</span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
+          <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/agenda" /></span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
+          <Link className="home-profile-card quick-blue" to="/atuacao"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/atuacao" /></span><strong>Pacientes</strong><span>Consultar a própria atuação</span></Link>
+          <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/minha-agenda/gerenciar" /></span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
+          <Link className="home-profile-card quick-purple" to="/minha-agenda/solicitar-alteracao"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/minha-agenda/solicitar-alteracao" /></span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
+          {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/solicitacoes" /></span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
+          {canAccessAppRoute(accessContext, '/encaminhamentos') && accessContext.capabilities.includes('encaminhamento_interprofissional') && <Link className="home-profile-card quick-mint" to="/encaminhamentos"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/encaminhamentos" /></span><strong>Encaminhamentos</strong><span>Consultar e encaminhar</span></Link>}
+          {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/receita') && <Link className="home-profile-card quick-yellow" to="/receita"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/receita" /></span><strong>Renovação de Receita</strong><span>Solicitações recebidas</span></Link>}
+          {profileKind === 'clinico_geral' && canAccessAppRoute(accessContext, '/odontologia') && <Link className="home-profile-card quick-mint" to="/odontologia"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/odontologia" /></span><strong>Odontologia</strong><span>Encaminhamento externo</span></Link>}
+          <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/relatorios" /></span><strong>Relatórios</strong><span>Indicadores da própria atuação</span></Link>
+          <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/suporte" /></span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
         </div>
       </nav>
 
