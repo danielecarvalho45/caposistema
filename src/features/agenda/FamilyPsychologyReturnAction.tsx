@@ -1,3 +1,4 @@
+import { CapoWhatsAppIcon, capoWhatsAppStyle } from '../../components/contact/PatientWhatsAppButton'
 import { useState } from 'react'
 import type { AccessContext } from '../../types/access'
 import { CapoDateInput } from '../../components/inputs/CapoDateInput'
@@ -153,8 +154,8 @@ export function FamilyPsychologyReturnAction({
       </label>}
       <button type="button" disabled={!slot || busy} onClick={() => void save()}>Confirmar retorno</button>
     </span>}
-    {notice && <button type="button" onClick={() => openNotice(notice)}>
-      💬 Abrir WhatsApp do retorno
+    {notice && <button type="button" style={capoWhatsAppStyle} onClick={() => openNotice(notice)}>
+      <CapoWhatsAppIcon /> Abrir WhatsApp do retorno
     </button>}
     {feedback && <small role="status">{feedback}</small>}
   </span>
