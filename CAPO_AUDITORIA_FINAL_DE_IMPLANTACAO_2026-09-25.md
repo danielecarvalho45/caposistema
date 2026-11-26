@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — posição de Cancelamentos do Dia na lateral da Home profissional
+
+Titular aprovou expressamente apenas deslocar o quadro existente Cancelamentos do Dia para a primeira posição da mesma coluna lateral, mantendo integralmente as cores, dimensões, estilo, conteúdo, comportamento e demais quadros. A nova ordem é: Cancelamentos do Dia; resumo Agendados/Confirmados/Faltosos; Notificações; Faltosos encaminhados ao Administrativo. Esta decisão substitui exclusivamente a posição abaixo de Faltosos homologada em 19/11/2026; todas as demais regras permanecem congeladas.
+
+Backup: backup/home-profissional-ordem-cancelamentos-2026-11-26. Alteração exclusiva em src/features/agenda/AgendaPage.tsx, commit 7531af6458d43a48729db5fad77cfe3c7cc69f1d, blob 70fbbefa782922127002df8ed06012d341a6b876. O componente ProfessionalDailyCancellations foi deslocado de último para primeiro filho do mesmo aside agenda-home-side, dentro da condição embeddedHome && isProfessional. Conferência posterior na main comprovou que a única diferença é essa movimentação de uma linha. O componente, CSS, consultas, filtros, contadores, agenda, notificações, banco, permissões e demais fluxos não foram alterados. Abrangência: perfis profissionais atuais e futuros que utilizam a Home compartilhada AssistentialPage/AgendaPage; não alterar telas administrativas.
+
+Check do GitHub Actions aguardava execução e Cloudflare Pages estava em andamento na consulta do commit. Não executados testes interativos ou visualização autenticada nesta sessão. Homologação ABERTA até a Titular conferir a Home profissional, inclusive com cancelamentos e sem cancelamentos, e aprovar fechamento. Nenhuma alteração adicional autorizada.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — restauração cirúrgica da denominação institucional dos PDFs
 
 Titular concedeu VERDE específico após registro da Regra Suprema. Correção exclusivamente da denominação errada no timbre, sem redesenho. Backup preexistente backup/pdf-identidade-antes-correcao-2026-11-26 preservado.
