@@ -17,11 +17,13 @@ export function createTechnicalSupportService(): TechnicalSupportService {
 
 export function TechnicalSupportRequest({
   affectedModule,
+  initialSubject = '',
+  initialDescription = '',
   service = createTechnicalSupportService(),
-}: Readonly<{ affectedModule: string; service?: TechnicalSupportService }>) {
-  const [subject, setSubject] = useState('')
+}: Readonly<{ affectedModule: string; initialSubject?: string; initialDescription?: string; service?: TechnicalSupportService }>) {
+  const [subject, setSubject] = useState(initialSubject)
   const [category, setCategory] = useState('')
-  const [description, setDescription] = useState('')
+  const [description, setDescription] = useState(initialDescription)
   const [priority, setPriority] = useState('normal')
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
