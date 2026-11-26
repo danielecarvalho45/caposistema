@@ -12,6 +12,12 @@
 
 ---
 
+## 26/11/2026 — HOMOLOGAÇÃO E FECHAMENTO — Manual visual do Assistente CAPO
+
+Gestora/Titular declarou expressamente “HOMOLOGADO PERFEITO” após confirmação do comportamento de pesquisa, orientação por assunto e visualização do modelo preenchido. Manual visual dos 18 assuntos iniciais aprovado e etapa ENCERRADA / CONGELADA conforme Regra Suprema. Preservar botão Visualizar exemplo preenchido, modelos fictícios, ampliação/redução/fechamento, permissões existentes, ausência de gravação e de abertura de outra aba na orientação. Manter atualização dos modelos vinculada a futuras manutenções especificamente autorizadas e homologadas. Não alterar a funcionalidade por iniciativa técnica. Registro de homologação pela Titular, não declaração de execução independente de testes automatizados ou validação técnica do deploy. Não estender este aceite a etapas distintas sem confirmação expressa. Nenhuma alteração de código ou banco neste fechamento.
+
+---
+
 ## 26/11/2026 — VERDE — Manual visual do Assistente CAPO
 
 Titular autorizou substituir a abertura de módulo em outra aba nas orientações pelo botão “Visualizar exemplo preenchido”, com modelos fiéis aos campos existentes, dados fictícios, possibilidade de ampliar/reduzir/fechar, sem navegar ou gravar. Consultados Documento Mestre, Matriz Funcional, Manual Técnico e campos/controles dos componentes de Agenda, Transporte, Nutrição, Assistência Social, Familiar/Cuidador, Solicitações, Receita, Faltosos, Relatórios, TI, Coordenação e Notificações. Backup backup/assistente-modelos-visuais-2026-11-26.
