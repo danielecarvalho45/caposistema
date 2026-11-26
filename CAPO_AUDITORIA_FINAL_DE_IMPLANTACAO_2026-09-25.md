@@ -12,6 +12,18 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — Pendências do Dia na Home do Gestor/Titular
+
+Relato: quadro existente no AO ausente na Home da Titular. Matriz Funcional 12/09, seções 18.1 e 18.2, determina espelhamento funcional do administrativo no Gestor autorizado. Documento Mestre registra que a composição anterior da lateral das duas Homes era diferente. Titular aprovou VERDE específico para incluir o quadro no topo da lateral Gestor sem modificar demais quadros, estética ou Home AO.
+
+Diagnóstico físico: HomePage.tsx possui quadro e consulta getPendingItems(8,0), com até cinco ocorrências exibidas, mas GestorDashboard.tsx não consultava nem renderizava esse resumo. RPC get_pending_items_for_interface existente no Supabase reconhece administrador e AO, com diferenças de escopo autorizadas. Apesar do rótulo Pendências do Dia, retorna também pendências anteriores abertas, priorizando vencidas; manter sem alteração o contrato e os filtros existentes.
+
+Backup backup/gestor-pendencias-dia-2026-11-26. Alteração exclusiva em src/features/gestor/GestorDashboard.tsx, commit 57923dd24356f04e0851537228f544a04579dc8a, blob 11307fb7f6f8fb348c43db12ecffadaab6b5531e. Adicionada leitura da mesma RPC pelo serviço existente, com proteção contra atualização após desmontagem, e reprodução do quadro AO, incluindo estados carregando, erro, vazio e até cinco ocorrências. Inserido antes de Aniversariantes no mesmo aside. Conferência posterior confirmou diff restrito e quadro idêntico ao AO salvo indentação. HomePage.tsx, gestor.css e home-page.css mantiveram blobs anteriores. Sem nova fila, tabela, migração, permissão ou mudança em registros, agendas, atalhos e demais perfis.
+
+Limites: GitHub Actions npm run build apresentou failure (causa não apurada nesta etapa), Cloudflare Pages em andamento na consulta do commit. Não executados testes automatizados independentes ou teste autenticado. Homologação ABERTA até Titular conferir o quadro após publicação e aprovar fechamento; então congelar conforme Regra Suprema. Não confundir com manutenção independente de Faltosos ou PDFs.
+
+---
+
 ## 26/11/2026 — HOMOLOGADO E CONGELADO — Cancelamentos do Dia no topo da lateral profissional
 
 Gestora/Titular declarou expressamente “homologado” após a alteração de posição registrada abaixo. Etapa ENCERRADA e CONGELADA conforme Regra Suprema. Preservar a ordem aprovada e todo o visual, dados e comportamento anteriores; somente reabrir mediante solicitação específica e novo VERDE. Homologação operacional informada pela Titular; não equivale a execução independente de testes automatizados pelo assistente. Esta aprovação não abrange a manutenção dos PDFs nem o link/mensagem de Faltosos, que permanecem separados.
