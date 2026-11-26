@@ -2138,3 +2138,36 @@
 .agenda-month-compact .agenda-month-compact-group {
   border: 0;
 }
+
+
+/* 26/11/2026 — agenda mensal resumida: nomes e horas maiores, conteúdo integral. */
+.agenda-schedule-grid.agenda-schedule-grid--month.agenda-month-compact,
+.agenda-home-card .agenda-schedule-grid.agenda-schedule-grid--month.agenda-month-compact,
+.agenda-month.agenda-month-compact,
+.agenda-home-card .agenda-month.agenda-month-compact {
+  overflow: visible;
+}
+.agenda-month-compact.agenda-schedule-grid--month > .agenda-schedule-day,
+.agenda-home-card .agenda-month-compact.agenda-schedule-grid--month > .agenda-schedule-day,
+.agenda-month-compact.agenda-month > .agenda-month-day,
+.agenda-home-card .agenda-month-compact.agenda-month > .agenda-month-day {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+  grid-template-rows: auto auto;
+}
+.agenda-month-compact.agenda-schedule-grid--month > .agenda-schedule-day > .agenda-schedule-slots,
+.agenda-home-card .agenda-month-compact.agenda-schedule-grid--month > .agenda-schedule-day > .agenda-schedule-slots {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+.agenda-month-compact .agenda-month-compact-line > time {
+  font-size: 12px;
+}
+.agenda-month-compact .agenda-month-compact-line > .agenda-month-name-link,
+.agenda-month-compact .agenda-month-compact-line > span {
+  font-size: 13px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
