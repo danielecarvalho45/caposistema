@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getRpcService, loadingState, type AsyncState, type BirthdayOverview } from '../../lib/supabase/rpc'
+import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type PendingItem } from '../../lib/supabase/rpc'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { TeamMonthlyBirthdays } from '../../components/birthdays/TeamMonthlyBirthdays'
 import { CareLocationNotices } from '../home/CareLocationNotices'
@@ -57,6 +57,14 @@ const quickAccess = [
 ] as const satisfies readonly (readonly [string, CapoIconName, string, string, string])[]
 
 export function GestorDashboard() {
+  const [operationalPending, setOperationalPending] = useState<AsyncState<readonly PendingItem[]>>(loadingState)
+  useEffect(() => {
+    let active = true
+    void getRpcService().getPendingItems(8, 0).then((state) => {
+      if (active) setOperationalPending(state)
+    })
+    return () => { active = false }
+  }, [])
   const [birthdays, setBirthdays] = useState<AsyncState<BirthdayOverview>>(loadingState)
   const [approvedAgendaChanges, setApprovedAgendaChanges] = useState<AsyncState<unknown>>(loadingState)
   const [agendaChangeBusyId, setAgendaChangeBusyId] = useState<string | null>(null)
@@ -112,7 +120,19 @@ export function GestorDashboard() {
       </section>
       <section className="gestor-dashboard-grid" aria-label="Visão geral do sistema">
         <AdministrativeTwoDayAgenda />
-        <aside className="gestor-side-stack"><article className="gestor-panel"><h3><CapoIcon name="cake" /> Aniversariantes</h3>
+        <aside className="gestor-side-stack">
+        <article className="gestor-panel">
+          <header className="gestor-panel-head"><div><p className="eyebrow">Ação necessária</p><h2>Pendências do dia</h2></div></header>
+          {operationalPending.status === 'loading' && <p>Carregando pendências…</p>}
+          {operationalPending.status === 'error' && <p role="alert">Não foi possível carregar as pendências.</p>}
+          {(operationalPending.status === 'empty' || (operationalPending.status === 'success' && operationalPending.data.length === 0)) && <div className="gestor-empty-state">Nenhuma pendência encontrada.</div>}
+          {operationalPending.status === 'success' && operationalPending.data.length > 0 && (
+            <ul className="operational-compact-list">
+              {operationalPending.data.slice(0, 5).map((item) => <li key={item.source_id}><strong>{item.title}</strong>{item.patient_name && <span>{item.patient_name}</span>}</li>)}
+            </ul>
+          )}
+        </article>
+        <article className="gestor-panel"><h3><CapoIcon name="cake" /> Aniversariantes</h3>
           {birthdays.status === 'loading' && <p>Carregando aniversariantes…</p>}
           {birthdays.status === 'error' && <p role="alert">{birthdays.error.message}</p>}
           {birthdays.status === 'empty' && <p>Nenhum aniversariante encontrado.</p>}
