@@ -83,14 +83,14 @@ function GestorMonthlyCalendar() {
         <strong aria-live="polite" style={{ textTransform: 'capitalize', fontSize: 13 }}>{label}</strong>
         <button type="button" aria-label="Próximo mês" onClick={() => move(1)} style={{ border: '1px solid #d4e4f3', borderRadius: 6, background: '#f5faff', color: '#006bd9', padding: '5px 10px', cursor: 'pointer' }}>›</button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 3, textAlign: 'center', fontSize: 11 }}>
-        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => <strong key={day} style={{ color: '#617b9c', fontSize: 10 }}>{day}</strong>)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0, textAlign: 'center', fontSize: 11, border: '1px solid #d9e7f3', borderRadius: 6, overflow: 'hidden', background: '#fff' }}>
+        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => <strong key={day} style={{ color: '#17365f', fontSize: 10, background: '#e8f4ff', padding: '6px 0', borderBottom: '1px solid #d9e7f3', borderRight: day === 'Sáb' ? 0 : '1px solid #d9e7f3' }}>{day}</strong>)}
         {Array.from({ length: Math.ceil((offset + total) / 7) * 7 }, (_, index) => {
           const day = index - offset + 1
-          if (day < 1 || day > total) return <span key={index} aria-hidden="true" />
+          if (day < 1 || day > total) return <span key={index} aria-hidden="true" style={{ minHeight: 30, boxSizing: 'border-box', background: '#f1f4f7', borderRight: index % 7 === 6 ? 0 : '1px solid #d9e7f3', borderBottom: index >= Math.ceil((offset + total) / 7) * 7 - 7 ? 0 : '1px solid #d9e7f3' }} />
           const date = month + '-' + String(day).padStart(2, '0')
           const current = date === today
-          return <time key={index} dateTime={date} aria-current={current ? 'date' : undefined} style={{ padding: '5px 0', borderRadius: 6, background: current ? '#006bd9' : '#f5f9fd', color: current ? '#fff' : index % 7 === 0 || index % 7 === 6 ? '#ad6671' : '#17365f', fontWeight: current ? 700 : 400 }}>{day}</time>
+          return <time key={index} dateTime={date} aria-current={current ? 'date' : undefined} style={{ display: 'grid', placeItems: 'center', minHeight: 30, boxSizing: 'border-box', padding: '5px 0', borderRight: index % 7 === 6 ? 0 : '1px solid #d9e7f3', borderBottom: index >= Math.ceil((offset + total) / 7) * 7 - 7 ? 0 : '1px solid #d9e7f3', background: current ? '#006bd9' : index % 7 === 0 || index % 7 === 6 ? '#f4f8fc' : '#fff', color: current ? '#fff' : index % 7 === 0 || index % 7 === 6 ? '#ad6671' : '#17365f', fontWeight: current ? 700 : 400 }}>{day}</time>
         })}
       </div>
     </article>
