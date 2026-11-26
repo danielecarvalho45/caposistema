@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — compactação dos dias de atendimento na agenda mensal
+
+Titular solicitou retirar da visualização mensal os dias em que profissionais não atendem; aprovou VERDE específico para alterar somente apresentação, inclusive Agenda Geral sem filtro (união dos dias efetivos) e perfis atuais/futuros. Substitui exclusivamente a apresentação fixa de 42 células da manutenção de 23/11; não modifica demais regras homologadas.
+
+Backup backup/agenda-mensal-dias-atendimento-2026-11-26. Alteração exclusiva em src/features/agenda/AgendaPage.tsx, commit c55a72e372e612ecbc8834556cac799fddceffb8, blob 46faa69bd9c4b2302b698a55fb128534c1dd4e43. HomeScheduleGrid filtra somente view=month pelas datas efetivamente retornadas da grade autorizada (livres, agendadas e bloqueadas, incluindo atendimentos extraordinários), visitas domiciliares e sessões coletivas. Mantém ordem cronológica dos cartões, reduz colunas ao número de dias da semana efetivamente presentes, sem células de datas vazias ou externas ao período; informa ausência de dias quando vazio. Cada cartão mantém sua própria data, não se trata de alinhamento rígido por dia da semana em caso de exceções. Fallback AgendaResults, utilizado quando a grade indisponível, apresenta somente datas com consultas retornadas, sem inferir disponibilidade. Vistas dia e semana, navegação, ações, estilos gerais, dados, configurações, grupos, bloqueios, permissões, isolamento e Supabase não alterados. Diff conferido no GitHub, restrito a um arquivo.
+
+Limites: dias dependem da grade autorizada efetivamente retornada, não se inventam dias ausentes por falha do backend. Na última consulta CI build aguardava execução e Cloudflare Pages estava em andamento. Sem execução independente de testes automatizados ou navegação autenticada. Homologação ABERTA: conferir mês integral, profissionais com dois ou mais dias, bloqueios e horários extraordinários, grupos, todos os profissionais, desktop/mobile, vistas dia/semana preservadas e fallback. Congelar somente após aprovação expressa da Titular.
+
+---
+
 ## 26/11/2026 — HOMOLOGADO E CONGELADO — apresentação dos grupos de Psicologia
 
 Gestora/Titular autorizou expressamente homologar a manutenção de apresentação de Arteterapia e demais grupos de Psicologia registrada abaixo, abrangendo agenda profissional, reserva, Agenda Geral e Homes administrativas. Etapa encerrada e congelada conforme Regra Suprema. A aprovação é da Titular; não equivale a confirmação independente de build, testes automatizados ou cenários técnicos ainda não verificados pelo assistente. Preservar regras, dados, isolamento e demais funcionalidades. Reabertura somente mediante solicitação específica e novo VERDE. Demais manutenções permanecem independentes.
