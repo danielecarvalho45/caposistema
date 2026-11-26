@@ -42,3 +42,17 @@
 .capo-help .capo-help-sunflower {width:22px;height:29px;object-fit:contain;flex-shrink:0;display:block;}
 .capo-help-header .capo-help-sunflower {width:32px;height:42px;}
 .capo-help .capo-help-trigger:hover {background:linear-gradient(150deg,rgb(255 255 255 / 68%),rgb(218 237 255 / 45%));}
+
+/* Manual visual: recortes estáticos, sem campos editáveis ou ações reais. */
+.capo-help-example {display:grid;gap:10px;background:#fff;border:1px solid #d9e7f3;border-radius:12px;padding:10px;min-width:0;}
+.capo-help-example-toolbar {display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.capo-help-example-toolbar strong {flex:1;color:#17365f;}
+.capo-help-example-warning {font-size:11px;font-weight:700;color:#765b22;background:#fff6df;padding:8px;border-radius:7px;}
+.capo-help-example-sheet {display:grid;gap:9px;border:1px solid #d9e7f3;border-radius:9px;padding:12px;background:#fafcfe;}
+.capo-help-example-sheet h3 {margin:0;color:#17365f;font-size:1rem;}
+.capo-help-example-field {display:grid;gap:4px;min-width:0;}
+.capo-help-example-field strong {font-size:.85em;color:#17365f;}
+.capo-help-example-field>div {background:white;border:1px solid #cdddeb;border-radius:7px;padding:8px;overflow-wrap:anywhere;white-space:pre-wrap;}
+.capo-help-example-action {background:#e7f3eb;color:#386650;padding:8px;border-radius:7px;text-align:center;font-weight:600;}
+.capo-help-example-sheet p {font-size:.85em;color:#52697c;}
+.capo-help-example-large {position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,calc(100vw - 32px));max-height:82dvh;overflow:auto;box-sizing:border-box;z-index:905;box-shadow:0 8px 40px #17365f40;font-size:1rem;pointer-events:auto;overscroll-behavior:contain;}
