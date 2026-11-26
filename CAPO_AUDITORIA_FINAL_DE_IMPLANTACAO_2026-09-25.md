@@ -12,6 +12,14 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — agenda mensal resumida sem bordas
+
+Titular solicitou retirar bordas e divisórias da agenda mensal de consultas e autorizou VERDE exclusivamente estético. Documento Mestre, Matriz Funcional e Manual Técnico consultados. Backup backup/agenda-mensal-sem-bordas-2026-11-26. Alteração única em src/features/agenda/agenda-page.css, commit 7b163c217dec628d6717eec395331ea1a1ca4375, blob 5fca0a982da8ee7f68fd3a4bf92fa83b6be76b38: seletores restritos a agenda-month-compact retiram contornos externos, internos e divisórias dos grupos, mantendo separação discreta de 6px, cabeçalhos, grade, alturas, horários e nomes clicáveis. Sem alteração em TSX, regras, dados, banco, vistas diária/semanal ou calendários civis homologados. Diff conferido: apenas acréscimo CSS.
+
+Limites: npm run build=completed/failure; Cloudflare Pages=in_progress/pendente. Teste visual autenticado e automatizado independente não executados. Homologação ABERTA até aprovação expressa da Titular.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — resumo mensal de consultas com nome clicável
 
 Titular aprovou mostrar somente horário e nome clicável de paciente na grade mensal, ocultando horários livres e botões operacionais, mantendo os dias efetivos, grupos, bloqueios, visitas domiciliares e acesso ao agendamento. Matriz Funcional §3, Manual Técnico e Documento Mestre consultados. Calendários civis homologados permanecem congelados.
