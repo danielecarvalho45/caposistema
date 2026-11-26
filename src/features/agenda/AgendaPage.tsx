@@ -71,6 +71,8 @@ function HomeVisitCalendarCard({ visit, actions }: Readonly<{ visit: HomeVisitBl
 
 
 type PsychologyGroupSession = {
+  professional_id: string
+  professional_name: string
   group_id: string
   name: string
   capacity: number
@@ -469,7 +471,7 @@ export function HomeScheduleGrid({
           </thead>
           <tbody>
             {daySlots.map((slot) => {
-              const group = groupSessions?.find((item) => item.date === slot.slot_date
+              const group = groupSessions?.find((item) => item.professional_id === slot.professional_id && item.date === slot.slot_date
                 && Date.parse(item.start) === Date.parse(slot.slot_start)
                 && Date.parse(item.end) === Date.parse(slot.slot_end))
               const appointment = slot.appointment_id
@@ -510,6 +512,7 @@ export function HomeScheduleGrid({
                   <td data-label="Paciente">
                     <div className="agenda-home-patient-line">
                       <strong>{group ? group.name : patientName}</strong>
+                      {group?.participants.map((person) => <small key={person.appointment_id}>{person.patient_name} · {person.attendance_status}</small>)}
                       {familyCard && <small>Familiar/Cuidador · CAPO {String(familyCard.family_capo_number ?? 'Pendente')} · CMS {String(familyCard.family_cms ?? 'Não informado')}</small>}
                       {familyCard?.source_patient_deceased === true && <small>Paciente vinculado em óbito · {String(familyCard.source_patient_death_date ?? '').split('-').reverse().join('/')}</small>}
                       {familyCard?.confirmation_decision === 'comparecera' && <small>✓ Confirmado antecipadamente pelo link</small>}
@@ -619,7 +622,7 @@ export function HomeScheduleGrid({
                   <HomeVisitCalendarCard key={visit.block_id} visit={visit} actions={renderVisitActions?.(visit)} />
                 ))}
                 {daySlots.map((slot) => {
-                  const group = groupSessions?.find((item) => item.date === slot.slot_date
+                  const group = groupSessions?.find((item) => item.professional_id === slot.professional_id && item.date === slot.slot_date
                     && Date.parse(item.start) === Date.parse(slot.slot_start)
                     && Date.parse(item.end) === Date.parse(slot.slot_end))
                   const appointment = slot.appointment_id
@@ -650,6 +653,7 @@ export function HomeScheduleGrid({
                             ? 'Bloqueado'
                             : patientName}
                       </span>
+                      {group?.participants.map((person) => <small key={person.appointment_id}>{person.patient_name} · {person.attendance_status}</small>)}
                       {familyCard && <small>Familiar/Cuidador · CAPO {String(familyCard.family_capo_number ?? 'Pendente')} · CMS {String(familyCard.family_cms ?? 'Não informado')}</small>}
                       {familyCard?.source_patient_deceased === true && <small>Paciente vinculado em óbito · {String(familyCard.source_patient_death_date ?? '').split('-').reverse().join('/')}</small>}
                       {familyCard?.confirmation_decision === 'comparecera' && <small>✓ Confirmado antecipadamente pelo link</small>}
@@ -1453,25 +1457,32 @@ export function AgendaPage({
   }, [canAccess, canConsultFamilyPsychologyAgenda, state, startDate, endDate, professionalId])
 
   useEffect(() => {
-    if (!canAccess || !professionalId) {
-      setPsychologyGroupSessions([])
-      setPsychologyGroupError('')
-      return
-    }
+    setPsychologyGroupSessions([])
+    setPsychologyGroupError('')
+    if (!canAccess) return
+    const scoped = scheduleGrid.status === 'success' ? scheduleGrid.data : []
+    const professionals = professionalId
+      ? [[professionalId, scoped.find((slot) => slot.professional_id === professionalId)?.professional_name ?? ''] as const]
+      : Array.from(new Map(scoped.filter((slot) => slot.block_type === 'outro')
+          .map((slot) => [slot.professional_id, slot.professional_name] as const)))
+    if (!professionals.length) return
     let active = true
-    void getRpcService().getPsychologyGroupSessions(professionalId, startDate, endDate)
-      .then((result) => {
-        if (!active) return
-        if (result.status === 'success') {
-          setPsychologyGroupSessions(result.data)
-          setPsychologyGroupError('')
-        } else {
-          setPsychologyGroupSessions([])
-          setPsychologyGroupError(result.status === 'error' ? result.error.message : '')
-        }
-      })
+    void Promise.all(professionals.map(async ([id, name]) => {
+      const result = await getRpcService().getPsychologyGroupSessions(id, startDate, endDate)
+      return { result, id, name }
+    })).then((results) => {
+      if (!active) return
+      setPsychologyGroupSessions(results.flatMap(({ result, id, name }) =>
+        result.status === 'success' ? result.data.map((session) => ({
+          ...session, professional_id: id, professional_name: name,
+        })) : []))
+      setPsychologyGroupError(results.filter(({ result }) => result.status === 'error')
+        .map(({ result }) => result.status === 'error' ? result.error.message : '').join('; '))
+    }).catch(() => {
+      if (active) setPsychologyGroupError('Não foi possível consultar os grupos.')
+    })
     return () => { active = false }
-  }, [canAccess, professionalId, startDate, endDate, state])
+  }, [canAccess, professionalId, startDate, endDate, state, scheduleGrid])
 
   async function searchGroupPatients() {
     if (groupPatientQuery.trim().length < 2) {
@@ -1520,7 +1531,7 @@ export function AgendaPage({
     if (!careLocation) throw new Error('Local do agendamento não confirmado. Confira antes de avisar.')
     return appointmentNoticeMessage({
       patientName: participant.patient_name,
-      professionalName: catalogRows.find((row) => row.professional_id === professionalId)?.professional_name ?? '',
+      professionalName: session.professional_name || catalogRows.find((row) => row.professional_id === session.professional_id)?.professional_name || '',
       specialtyName: 'Psicologia — ' + session.name,
       slotStart: session.start, careLocation,
       senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
@@ -1554,7 +1565,7 @@ export function AgendaPage({
         typeof locationResult.data === 'object' && !Array.isArray(locationResult.data)
         ? locationResult.data as Record<string, unknown> : null
       const careLocation = typeof location?.care_location === 'string' ? location.care_location.trim() : ''
-      const groupProfessionalName = catalogRows.find((row) => row.professional_id === professionalId)?.professional_name ?? ''
+      const groupProfessionalName = session.professional_name || catalogRows.find((row) => row.professional_id === session.professional_id)?.professional_name || ''
       setLastRescheduledContact(groupProfessionalName ? {
         patientId: participant.patient_id,
         appointmentId: result.data.new_appointment_id,
@@ -3879,7 +3890,7 @@ export function AgendaPage({
                           prepareMessage={() => prepareAppointmentReminder({
                             appointmentId: person.appointment_id,
                             patientName: person.patient_name,
-                            professionalName: professionalOptions.find(([id]) => id === professionalId)?.[1] ?? 'Profissional CAPO',
+                            professionalName: session.professional_name || professionalOptions.find(([id]) => id === session.professional_id)?.[1] || 'Profissional CAPO',
                             specialtyName: 'Psicologia — ' + session.name,
                             appointmentDate: session.start,
                             senderName: accessContext.real_identity.full_name?.trim() || accessContext.full_name?.trim() || accessContext.username,
@@ -4065,7 +4076,7 @@ export function AgendaPage({
           )}
 
 
-          {professionalId && psychologyGroupSessions.length > 0 && (
+          {psychologyGroupSessions.length > 0 && (
             <section className="agenda-psychology-sessions" aria-label="Terapia em grupo na agenda oficial">
               <h3>Atendimentos em grupo — Psicologia</h3>
               {psychologyGroupSessions.map((session) => {
@@ -4078,6 +4089,7 @@ export function AgendaPage({
                     <div className="agenda-psychology-session-heading">
                       <div>
                         <strong>{session.name}</strong>
+                        {!professionalId && <span>{session.professional_name}</span>}
                         <span>{session.date.split('-').reverse().join('/')} · {slotClock(session.start)}–{slotClock(session.end)}</span>
                       </div>
                       <strong>{session.blocked ? 'Grupo bloqueado' : `${occupied}/${session.capacity} vagas`}</strong>
@@ -4109,7 +4121,7 @@ export function AgendaPage({
                                   prepareMessage={() => prepareAppointmentReminder({
                                     appointmentId: participant.appointment_id,
                                     patientName: participant.patient_name,
-                                    professionalName: professionalOptions.find(([id]) => id === professionalId)?.[1] ?? 'Profissional CAPO',
+                                    professionalName: session.professional_name || professionalOptions.find(([id]) => id === session.professional_id)?.[1] || 'Profissional CAPO',
                                     specialtyName: 'Psicologia — ' + session.name,
                                     appointmentDate: session.start,
                                     senderName: accessContext.real_identity.full_name?.trim()
@@ -4227,7 +4239,7 @@ export function AgendaPage({
             </section>
           )}
           {familyAgendaError && <p className="assistential-error" role="alert">Falha ao consultar familiares: {familyAgendaError}</p>}
-          {professionalId && psychologyGroupError && (
+          {psychologyGroupError && (
             <p role="alert">Não foi possível consultar os grupos: {psychologyGroupError}</p>
           )}
 
