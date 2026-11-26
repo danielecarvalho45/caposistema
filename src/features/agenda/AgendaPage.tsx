@@ -4317,6 +4317,7 @@ export function AgendaPage({
       </div>
       {embeddedHome && isProfessional && (
         <aside className="agenda-home-side" aria-label="Indicadores da agenda">
+          <ProfessionalDailyCancellations />
           <div className="agenda-home-summary" aria-label="Resumo rápido da agenda">
             <article><span>Agendados</span><strong>{periodScheduled ?? '—'}</strong></article>
             <article><span>Confirmados</span><strong>{periodConfirmed ?? '—'}</strong></article>
@@ -4332,7 +4333,6 @@ export function AgendaPage({
             <strong>{periodNoShows ?? '—'}</strong>
             <small>Encaminhados ao Administrativo</small>
           </article>
-          <ProfessionalDailyCancellations />
         </aside>
       )}
     </section>
