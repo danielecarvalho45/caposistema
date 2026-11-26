@@ -111,6 +111,9 @@ export function buildTransportOfficialPdf(data: TransportPdfData): Blob {
     commands = []
     const logoHeight = 505 * CAPO_DOCUMENT_LOGO_HEIGHT / CAPO_DOCUMENT_LOGO_WIDTH
     commands.push('q', '505 0 0 ' + logoHeight.toFixed(2) + ' 45 748 cm', '/Logo Do', 'Q',
+      'q', '1 1 1 rg', '220 792 158 31 re f', 'Q', 'BT', '/F1 8 Tf',
+      '0 0.27 0.53 rg', '241 810 Td', '(CENTRO DE APOIO AO) Tj',
+      '0 -11 Td', '(PACIENTE ONCOLÓGICO) Tj', 'ET',
       '0.56 0.76 0.67 RG', '1 w', '45 743 m 550 743 l S')
     cursor = 708
   }
