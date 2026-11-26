@@ -112,6 +112,16 @@ export function TransportPage({ accessContext }: Props) {
   const [needReason, setNeedReason] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // O banco permite ler todos os pacientes de teste, mas gravar somente no
+  // paciente selecionado no contexto de homologação. Não alterar essa regra.
+  const homologationPatientId = accessContext.homologation_context?.enabled
+    ? accessContext.homologation_context.test_patient_id : null
+  function isTransportTestPatientAllowed(id: string) {
+    return !accessContext.is_homologation_account || Boolean(id && homologationPatientId === id)
+  }
+  const homologationMismatch = Boolean(patientId && !isTransportTestPatientAllowed(patientId))
+  const homologationGuidance = 'Este paciente não é o selecionado para gravação na homologação. Selecione o paciente deste protocolo no contexto manuteste ou abra um protocolo do paciente de teste atualmente selecionado. Nenhuma proteção do banco será alterada.'
+
   const [administrativeQueue, setAdministrativeQueue] = useState<readonly TransportRecord[]>([])
   const [reminderQueue, setReminderQueue] = useState<readonly TransportRecord[]>([])
   const [queueLoading, setQueueLoading] = useState(false)
@@ -212,6 +222,7 @@ export function TransportPage({ accessContext }: Props) {
   async function openProtocol(item: TransportRecord) {
     const id = field(item, 'patient_id')
     if (!id) return
+    if (!isTransportTestPatientAllowed(id)) { setFeedback(homologationGuidance); return }
     setSelectedRequestId(requestId(item))
     setActiveTab('principal')
     await loadContext(id, field(item, 'patient_name') ?? 'Paciente')
@@ -605,6 +616,10 @@ export function TransportPage({ accessContext }: Props) {
   }
 
   async function loadContext(id: string, name: string) {
+    if (!isTransportTestPatientAllowed(id)) {
+      setFeedback(homologationGuidance)
+      return
+    }
     setPatientId(id)
     setPatientName(name)
     setShareAccess(null)
@@ -695,6 +710,7 @@ export function TransportPage({ accessContext }: Props) {
   }
 
   async function createRequest() {
+    if (homologationMismatch) { setFeedback(homologationGuidance); return }
     if (!patientId || (appointments.length > 0 && !selectedAppointmentId) || reason.trim().length < 5 || busy) {
       setFeedback('Selecione o paciente, informe a justificativa e, se houver agendamento, selecione o atendimento.')
       return
@@ -723,6 +739,7 @@ export function TransportPage({ accessContext }: Props) {
   async function manage(request: TransportRecord, action: string) {
     const id = requestId(request)
     if (!id || busy) return
+    if (homologationMismatch || !isTransportTestPatientAllowed(field(request, 'patient_id') ?? patientId)) { setFeedback(homologationGuidance); return }
     const args: Record<string, unknown> = {
       p_request_id: id,
       p_action: action,
@@ -773,6 +790,7 @@ export function TransportPage({ accessContext }: Props) {
   async function generatePdf(request: TransportRecord, reissue = false) {
     const id = requestId(request)
     if (!id || !canAdminister || busy) return
+    if (homologationMismatch || !isTransportTestPatientAllowed(field(request, 'patient_id') ?? patientId)) { setFeedback(homologationGuidance); return }
     if (reissue) {
       if (field(request, 'status') !== 'confirmado' || !boolField(request, 'pdf_persisted') ||
           !field(request, 'pdf_prepared_at') || field(request, 'external_forwarded_at')) {
@@ -1096,6 +1114,9 @@ export function TransportPage({ accessContext }: Props) {
       )}
 
       {feedback && <p role="status">{feedback}</p>}
+      {!contactsOnly && accessContext.is_homologation_account && (
+        <p role="status">Paciente autorizado para operações de teste: <strong>{accessContext.homologation_context?.test_patient_name ?? 'Nenhum paciente selecionado'}</strong>. Para operar outro paciente simulado, altere a seleção no contexto de homologação.</p>
+      )}
 
       {canAdminister && activeTab !== 'principal' && (
         <div className="home-ops">
@@ -1161,9 +1182,7 @@ export function TransportPage({ accessContext }: Props) {
             <ul className="transport-queue">
               {administrativeQueue.map((item) => (
                 <li key={requestId(item)}>
-                  <button type="button" disabled={busy} onClick={() => { setSelectedRequestId(requestId(item)); void loadContext(
-                    field(item, 'patient_id') ?? '', field(item, 'patient_name') ?? 'Paciente',
-                  ) }}>
+                  <button type="button" disabled={busy} onClick={() => void openProtocol(item)}>
                     <strong>{field(item, 'patient_name') ?? 'Paciente'}</strong>
                     <small>{field(item, 'status') === 'solicitado' ? 'Aguardando confirmação administrativa' : 'Em processamento'}</small>
                     <span>{field(item, 'transport_notes') ?? 'Sem justificativa informada'}</span>
@@ -1190,7 +1209,10 @@ export function TransportPage({ accessContext }: Props) {
                 key={item.patient_id}
                 type="button"
                 className={item.patient_id === patientId ? 'is-selected' : ''}
-                onClick={() => { setSelectedRequestId(''); void loadContext(item.patient_id, item.full_name) }}
+                onClick={() => {
+                  if (!isTransportTestPatientAllowed(item.patient_id)) { setFeedback(homologationGuidance); return }
+                  setSelectedRequestId(''); void loadContext(item.patient_id, item.full_name)
+                }}
               >
                 {item.full_name}
                 <small>{item.patient_number ?? item.cms ?? 'Identificação disponível no cadastro'}</small>
@@ -1268,6 +1290,7 @@ export function TransportPage({ accessContext }: Props) {
 
       <div className="home-ops transport-tracking-panel">
         <h2>Acompanhamento</h2>
+        {homologationMismatch && <p role="alert">{homologationGuidance}</p>}
         {canAdminister && (
           <div className="transport-tracking-search">
             <div className="patient-search">
@@ -1412,7 +1435,7 @@ export function TransportPage({ accessContext }: Props) {
                       </details>
                     )}
                     {canAdminister && status === 'solicitado' && (
-                      <button type="button" disabled={busy} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
+                      <button type="button" disabled={busy || homologationMismatch} onClick={() => void manage(request, 'confirm')}>Confirmar solicitação</button>
                     )}
                     {canForwardExternally && status === 'confirmado' && pdfPrepared && !boolField(request, 'vehicle_pdf_update_pending') && !forwarded && shareAccess?.requestId === id && (
                       <div className="transport-send-actions">
