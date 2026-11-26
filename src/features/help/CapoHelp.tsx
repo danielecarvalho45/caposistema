@@ -18,7 +18,7 @@ export function CapoHelp({accessContext, path}: {accessContext: AccessContext; p
   const technicalAllowed=canAccessAppRoute(accessContext,'/tecnica')
   function reset() {setQuery('');setSubmitted('');setSelected('');setResolved(false);setSupport(false)}
   return <aside className="capo-help" aria-label="Assistente Virtual CAPO">
-    {open && <section id="capo-help-panel" className="capo-help-panel" aria-label="Posso ajudar?">
+    {<section hidden={!open} style={!open ? {display: 'none'} : undefined} id="capo-help-panel" className="capo-help-panel" aria-label="Posso ajudar?">
       <header className="capo-help-header">
         <span aria-hidden="true">🌻</span><div><strong>Assistente CAPO</strong><small>Seu apoio dentro do sistema</small></div>
         <button type="button" aria-label="Minimizar assistente" onClick={()=>setOpen(false)}>−</button>
@@ -35,8 +35,8 @@ export function CapoHelp({accessContext, path}: {accessContext: AccessContext; p
           {!support && !topic && <div className="capo-help-topics">
             <strong>{submitted?'Orientações encontradas':'Assuntos sugeridos'}</strong>
             {results.length===0 && <p role="status">Não encontrei uma orientação confiável. Tente outros termos ou solicite suporte.</p>}
-            {results.slice(0,8).map(t=><button type="button" key={t.id} onClick={()=>{setSelected(t.id);setSupport(false)}}>{t.title} <span aria-hidden="true">›</span></button>)}
-            {submitted && <button type="button" onClick={reset}>Ver todos os assuntos sugeridos</button>}
+            {results.map(t=><button type="button" key={t.id} onClick={()=>{setSelected(t.id);setSupport(false)}}>{t.title} <span aria-hidden="true">›</span></button>)}
+            {submitted && <button type="button" onClick={reset}>Limpar pesquisa e ver assuntos sugeridos</button>}
           </div>}
           {!support && topic && <div className="capo-help-answer" aria-live="polite">
             <strong>{topic.title}</strong>
@@ -58,6 +58,6 @@ export function CapoHelp({accessContext, path}: {accessContext: AccessContext; p
         <small className="capo-help-footer">Orientações internas CAPO • Sem IA externa</small>
       </div>
     </section>}
-    <button className="capo-help-trigger" type="button" aria-expanded={open} aria-controls={open?'capo-help-panel':undefined} onClick={()=>setOpen(v=>!v)}><span aria-hidden="true">🌻</span> Posso ajudar?</button>
+    <button className="capo-help-trigger" type="button" aria-expanded={open} aria-controls="capo-help-panel" onClick={()=>setOpen(v=>!v)}><span aria-hidden="true">🌻</span> Posso ajudar?</button>
   </aside>
 }
