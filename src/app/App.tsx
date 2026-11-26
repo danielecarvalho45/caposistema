@@ -33,6 +33,7 @@ import { GestorDashboard } from '../features/gestor/GestorDashboard'
 import { GestorManagementPage } from '../features/gestor/GestorManagementPage'
 import { GestorFamilyPage } from '../features/gestor/GestorFamilyPage'
 import { GestorOperationalPage } from '../features/gestor/GestorOperationalPage'
+import { CapoHelp } from '../features/help/CapoHelp'
 import { TechnicalSupportRequest } from '../components/forms/TechnicalSupportRequest'
 import { canAccessAppRoute, isKnownAppRoute, type AppRoute } from './route-access'
 import type { Notification } from '../features/notifications/notifications-integration'
@@ -308,9 +309,10 @@ export function App() {
     return (
       <GestorShell accessContext={accessContext} onLogout={logout} activePath={location.pathname}>
         {content}
+        <CapoHelp key={accessContext.user_account_id+'-'+accessContext.primary_context.code+'-'+(accessContext.homologation_context?.test_patient_id ?? '')} accessContext={accessContext} path={location.pathname} />
       </GestorShell>
     )
   }
 
-  return <AppShell accessContext={accessContext} onLogout={logout} onRefreshAccessContext={refreshAccessContext} activePath={location.pathname}>{content}</AppShell>
+  return <AppShell accessContext={accessContext} onLogout={logout} onRefreshAccessContext={refreshAccessContext} activePath={location.pathname}>{content}<CapoHelp key={accessContext.user_account_id+'-'+accessContext.primary_context.code+'-'+(accessContext.homologation_context?.test_patient_id ?? '')} accessContext={accessContext} path={location.pathname} /></AppShell>
 }
