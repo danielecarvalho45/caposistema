@@ -1963,3 +1963,92 @@
     font-size: 0.61rem;
   }
 }
+
+
+/* 26/11/2026 — agenda de consultas: grade mensal quadrada e compacta.
+   A quantidade de colunas continua definida pelas datas efetivas no React.
+   Não alcança Dia, Semana ou calendários civis das Homes. */
+.agenda-schedule-grid.agenda-schedule-grid--month,
+.agenda-home-card .agenda-schedule-grid.agenda-schedule-grid--month {
+  width: 100%;
+  min-width: 0;
+  gap: 1px;
+  padding: 1px;
+  border: 1px solid #d9e7f3;
+  border-radius: 8px;
+  background: #d9e7f3;
+  align-items: stretch;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day,
+.agenda-home-card .agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  aspect-ratio: 1 / 1;
+  min-height: 150px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day > h3,
+.agenda-home-card .agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day > h3 {
+  margin: 0;
+  padding: 6px;
+  background: #e8f4ff;
+  color: #17365f;
+  border-bottom: 1px solid #d9e7f3;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day > .agenda-schedule-slots,
+.agenda-home-card .agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day > .agenda-schedule-slots {
+  min-height: 0;
+  min-width: 0;
+  max-height: none;
+  overflow: auto;
+  align-content: start;
+  padding: 4px;
+  gap: 4px;
+  scrollbar-width: thin;
+}
+.agenda-schedule-grid--month .agenda-schedule-slot {
+  overflow-wrap: anywhere;
+}
+.agenda-month,
+.agenda-home-card .agenda-month {
+  width: 100%;
+  min-width: 0;
+  gap: 1px;
+  padding: 1px;
+  background: #d9e7f3;
+  box-sizing: border-box;
+}
+.agenda-month > .agenda-month-day,
+.agenda-home-card .agenda-month > .agenda-month-day {
+  aspect-ratio: 1 / 1;
+  min-height: 150px;
+  overflow: auto;
+  border: 0;
+  background: #fff;
+}
+.agenda-month > .agenda-month-day > time {
+  display: block;
+  padding: 5px;
+  background: #e8f4ff;
+  color: #17365f;
+  text-align: center;
+  font-weight: 700;
+}
+@media (max-width: 760px) {
+  .agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day,
+  .agenda-home-card .agenda-schedule-grid.agenda-schedule-grid--month > .agenda-schedule-day,
+  .agenda-month > .agenda-month-day,
+  .agenda-home-card .agenda-month > .agenda-month-day {
+    min-height: 120px;
+  }
+}
