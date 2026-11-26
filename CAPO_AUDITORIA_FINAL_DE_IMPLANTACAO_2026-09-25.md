@@ -12,6 +12,12 @@
 
 ---
 
+## 26/11/2026 — HOMOLOGADO E CONGELADO — Cancelamentos do Dia no topo da lateral profissional
+
+Gestora/Titular declarou expressamente “homologado” após a alteração de posição registrada abaixo. Etapa ENCERRADA e CONGELADA conforme Regra Suprema. Preservar a ordem aprovada e todo o visual, dados e comportamento anteriores; somente reabrir mediante solicitação específica e novo VERDE. Homologação operacional informada pela Titular; não equivale a execução independente de testes automatizados pelo assistente. Esta aprovação não abrange a manutenção dos PDFs nem o link/mensagem de Faltosos, que permanecem separados.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — posição de Cancelamentos do Dia na lateral da Home profissional
 
 Titular aprovou expressamente apenas deslocar o quadro existente Cancelamentos do Dia para a primeira posição da mesma coluna lateral, mantendo integralmente as cores, dimensões, estilo, conteúdo, comportamento e demais quadros. A nova ordem é: Cancelamentos do Dia; resumo Agendados/Confirmados/Faltosos; Notificações; Faltosos encaminhados ao Administrativo. Esta decisão substitui exclusivamente a posição abaixo de Faltosos homologada em 19/11/2026; todas as demais regras permanecem congeladas.
