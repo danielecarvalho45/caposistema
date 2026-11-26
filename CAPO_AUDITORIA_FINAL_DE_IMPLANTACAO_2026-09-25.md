@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — grade quadrada da agenda mensal de consultas
+
+Titular informou que visualização mensal da agenda de consultas não apresentou mudança esperada; autorizou correção distinta dos calendários civis já congelados. Documento Mestre, Matriz Funcional §3 e Manual Técnico consultados. Diagnóstico: main já contém filtro de datas efetivas e número dinâmico de colunas (AgendaPage.tsx); Cloudflare do commit fd70e3bd2a5fb7e18ea4de26e981202662005391 consta success. RPC física get_agenda_schedule_grid_for_interface consultada somente leitura: datas derivadas de dias ativos da configuração, horários e bloqueios; nenhum ajuste de banco autorizado ou efetuado. CSS anterior ainda definia cartões de altura variável e rolagem horizontal/limite interno, sem geometria quadrada uniforme. Esta é uma causa visual identificada no código, não comprovação da causa de toda a ocorrência relatada.
+
+Backup backup/agenda-mensal-grade-quadrada-2026-11-26. Alteração somente em src/features/agenda/agenda-page.css, commit 079edc2da416e52bdfdcb11be39177013f14980a, blob 325afe0659965600ed2584f44bda533e46e21992. Regras anexadas para vista mensal efetiva e fallback: proporção 1:1 com altura mínima para legibilidade, divisórias, cabeçalhos azul suave, rolagem interna para preservar todos os horários e ações, largura disponível e colunas dinâmicas já existentes. Em telas estreitas a altura mínima pode impedir quadrados perfeitos; não sacrificar ações ou legibilidade. Nenhuma mudança na lógica de datas, Dia/Semana, calendário civil, grupos, agendamentos ou banco. Diff restrito ao CSS.
+
+Limites: build anterior GitHub Actions failure, tentativa de consultar logs retornou 404; não diagnosticada causa. Checks deste commit: npm run build=completed/failure; Cloudflare Pages=in_progress/pendente. Sem teste visual autenticado ou execução independente do build. Homologação ABERTA; conferir grade mensal filtrada e geral, profissionais com diferentes dias, grupos, bloqueios e rolagem, desktop/mobile. Se dias sem atendimento continuarem visíveis, identificar perfil/período e dados efetivamente recebidos, sem modificar calendário civil homologado.
+
+---
+
 ## 26/11/2026 — HOMOLOGADO, ENCERRADO E CONGELADO — calendário mensal civil nas Homes
 
 Gestora/Titular declarou expressamente “CONCLUIDO CALENDARIO HOMOLOGADO”. Registra-se a aprovação do calendário mensal civil compacto na Home profissional, imediatamente abaixo de Faltosos, e a estética de grade do calendário correspondente do Gestor/Titular, com sua posição ao lado do Status do Sistema, conforme os registros abaixo. Preservar células delimitadas, cores, dimensões, navegação, Hoje, destaque da data atual e independência dos agendamentos. Demais quadros permanecem intactos. Homologação da Titular não equivale a confirmação independente de compilação, publicação ou testes automatizados. Encerramento e congelamento conforme Regra Suprema; reabertura somente mediante solicitação específica e novo VERDE. Não abrange a manutenção distinta de compactação da agenda mensal de consultas nem outras pendências.
