@@ -678,3 +678,23 @@
     drop-shadow(0 20px 20px rgb(22 66 103 / 9%));
   transform: translateY(-2px);
 }
+
+
+/* 26/11/2026 — somente a linha inferior da Home Gestor com calendário. */
+.gestor-dashboard .gestor-summary-grid.gestor-summary-with-calendar {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+@media (max-width: 1050px) {
+  .gestor-dashboard .gestor-summary-grid.gestor-summary-with-calendar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .gestor-dashboard .gestor-summary-with-calendar > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 620px) {
+  .gestor-dashboard .gestor-summary-grid.gestor-summary-with-calendar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
