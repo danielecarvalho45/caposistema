@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — Calendário Mensal na Home Gestor/Titular
+
+Titular solicitou calendário mensal na parte inferior, ao lado de Status do Sistema, e aprovou modelo/VERDE específico: calendário civil compacto, navegação mensal/anual por setas, Hoje, destaque azul na data atual e fins de semana diferenciados, sem integração adicional com agenda ou dados. Matriz Funcional e Documento Mestre consultados; proteger indicadores existentes.
+
+Backup backup/gestor-calendario-mensal-2026-11-26. GestorDashboard.tsx commit fbe7f48946e76d678f2576a1b344ed05dfc5072f, blob 593595456db33d6fa082b656d4f20c3d2e873862: componente local GestorMonthlyCalendar, data civil via utilitário capoTodayIso (America/Sao_Paulo), atualização do destaque a cada minuto e foco, navegação e retorno Hoje. Acrescentado depois de HomeTechnicalStatus na seção inferior, sem alterar os dois componentes existentes. gestor.css commit 7490d9d5960b91ae30d1c7206087b22e07176ee7, blob 29e04f8ffbeecc18556b09355708fa0096bd2dbf: apenas regras anexadas e restritas à nova classe da seção, três colunas desktop, dois painéis lado a lado abaixo dos indicadores até 1050px e uma coluna até 620px. Nenhuma mudança de agenda, RPC, banco, permissões ou demais perfis. Conferência das árvores comprovou somente dois arquivos de frontend alterados; CSS anterior preservado integralmente. Cálculo de datas conferido isoladamente para novembro/dezembro 2026, janeiro 2027, fevereiro comum e bissexto.
+
+Limites: GitHub Actions npm run build apresentou failure, causa ainda não determinada; Cloudflare Pages em andamento na última consulta. Não executado teste automatizado do componente nem teste autenticado visual. Homologação ABERTA até Titular confirmar apresentação, navegação, Hoje e responsividade; congelar somente após aprovação expressa. Manutenções anteriores independentes.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — compactação dos dias de atendimento na agenda mensal
 
 Titular solicitou retirar da visualização mensal os dias em que profissionais não atendem; aprovou VERDE específico para alterar somente apresentação, inclusive Agenda Geral sem filtro (união dos dias efetivos) e perfis atuais/futuros. Substitui exclusivamente a apresentação fixa de 42 células da manutenção de 23/11; não modifica demais regras homologadas.
