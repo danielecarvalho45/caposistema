@@ -12,6 +12,12 @@
 
 ---
 
+## 26/11/2026 — HOMOLOGADO, ENCERRADO E CONGELADO — calendário mensal civil nas Homes
+
+Gestora/Titular declarou expressamente “CONCLUIDO CALENDARIO HOMOLOGADO”. Registra-se a aprovação do calendário mensal civil compacto na Home profissional, imediatamente abaixo de Faltosos, e a estética de grade do calendário correspondente do Gestor/Titular, com sua posição ao lado do Status do Sistema, conforme os registros abaixo. Preservar células delimitadas, cores, dimensões, navegação, Hoje, destaque da data atual e independência dos agendamentos. Demais quadros permanecem intactos. Homologação da Titular não equivale a confirmação independente de compilação, publicação ou testes automatizados. Encerramento e congelamento conforme Regra Suprema; reabertura somente mediante solicitação específica e novo VERDE. Não abrange a manutenção distinta de compactação da agenda mensal de consultas nem outras pendências.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — calendário compacto na lateral das Homes profissionais
 
 Titular autorizou exclusivamente acrescentar calendário civil mensal pequeno e discreto imediatamente após o quadro Faltosos encaminhados ao Administrativo. Demais quadros mencionados apenas como referência de localização, sem autorização para alterar ordem, estética, conteúdo ou comportamento. Preservar homologação dos Cancelamentos do Dia e outras funcionalidades.
