@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — calendário compacto na lateral das Homes profissionais
+
+Titular autorizou exclusivamente acrescentar calendário civil mensal pequeno e discreto imediatamente após o quadro Faltosos encaminhados ao Administrativo. Demais quadros mencionados apenas como referência de localização, sem autorização para alterar ordem, estética, conteúdo ou comportamento. Preservar homologação dos Cancelamentos do Dia e outras funcionalidades.
+
+Backup backup/calendario-home-profissionais-2026-11-26. Alteração única em src/features/agenda/AgendaPage.tsx, commit 8169c1c73f43c5cffedae3e28dcc3ab457dc8633, blob 8163e26f665b51b0295c8ca4b8a47eda483d07ac: componente local ProfessionalMonthlyCalendar reproduz calendário civil do Gestor em dimensões compactas (grade sete colunas, células de altura mínima 23px, cabeçalho azul suave, bordas, dia atual azul, fins de semana diferenciados, setas, Hoje, data America/Sao_Paulo). Inserção de uma chamada após quadro Faltosos dentro de embeddedHome && isProfessional. Confirmados consumidores do componente compartilhado NutritionPage, SocialPage e AssistentialPage, abrangendo perfis profissionais atuais e futuros que utilizam essa Home. Calendário independente da agenda de consultas, sem RPC ou dados. Diff conferido: somente componente novo e chamada; nenhum quadro existente removido, deslocado ou reescrito. Gestor, CSS global, banco, permissões e demais perfis intocados.
+
+Limites: último check npm run build aguardava execução e Cloudflare Pages em andamento. Teste visual autenticado e automatizado independente não executados. Homologação ABERTA até aprovação da Titular; verificar posição, legibilidade desktop/mobile, navegação e destaque da data atual; congelar após aprovação expressa.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — estética em grade do Calendário Mensal da Home Gestor/Titular
 
 Titular solicitou e aprovou expressamente o modelo de calendário tradicional com células delimitadas, linhas horizontais e verticais, fundo branco, cabeçalho azul suave e destaque azul da data atual. VERDE específico exclusivamente estético, sem alterar calendário de consultas nem outros quadros.
