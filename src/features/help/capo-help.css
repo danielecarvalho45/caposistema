@@ -1,0 +1,29 @@
+/* Isolado: não altera os estilos globais do CAPO. */
+.capo-help { position:fixed; right:max(12px,env(safe-area-inset-right)); bottom:max(12px,env(safe-area-inset-bottom)); z-index:900; display:flex; flex-direction:column; align-items:flex-end; gap:8px; width:min(370px,calc(100vw - 24px)); pointer-events:none; color:#28465f; font-size:.88rem; }
+.capo-help button,.capo-help a,.capo-help-panel {pointer-events:auto;}
+.capo-help button {font:inherit; cursor:pointer; border:1px solid #d3e3ef; border-radius:9px; padding:7px 10px; color:#315b80; background:#edf5fc; white-space:normal;}
+.capo-help button:disabled {opacity:.55;cursor:not-allowed;}
+.capo-help button:focus-visible,.capo-help a:focus-visible,.capo-help input:focus-visible {outline:2px solid #507aa6;outline-offset:2px;}
+.capo-help .capo-help-trigger {border-radius:999px; padding:10px 15px; font-weight:650; background:linear-gradient(150deg,#f5fbff,#dcebf8); box-shadow:0 3px 9px #315b8026,inset 0 1px 1px #fff; display:flex;align-items:center;gap:6px;}
+.capo-help-panel {width:100%; max-height:min(72dvh,640px); overflow:auto; background:#fff; border:1px solid #d2e2ef; border-radius:16px; box-shadow:0 7px 28px #234e7926; overscroll-behavior:contain;}
+.capo-help-header {display:flex;gap:9px;align-items:center;padding:12px;background:linear-gradient(140deg,#edf6fd,#e0edf9);position:sticky;top:0;z-index:1;}
+.capo-help-header>span {font-size:1.6rem;}
+.capo-help-header>div {flex:1;min-width:0;}
+.capo-help-header strong,.capo-help-header small {display:block;}
+.capo-help-header button {padding:3px 8px;font-size:1.1rem;}
+.capo-help-body {display:grid;gap:10px;padding:12px;}
+.capo-help-body p {margin:0;line-height:1.45;}
+.capo-help-welcome,.capo-help-answer {padding:12px;border-radius:10px;background:#f0f6fb;display:grid;gap:8px;}
+.capo-help-search,.capo-help-topics,.capo-help-answer form {display:grid;gap:7px;}
+.capo-help-search>div {display:flex;gap:5px;}
+.capo-help-search input {flex:1;min-width:0;}
+.capo-help input,.capo-help textarea,.capo-help select {font:inherit;max-width:100%;box-sizing:border-box;color:#28465f;background:#fff;border:1px solid #cdddeb;border-radius:7px;padding:7px;}
+.capo-help-answer form label {display:grid;gap:4px;}
+.capo-help-topics button {display:flex;justify-content:space-between;text-align:left;gap:7px;}
+.capo-help-topics button:nth-of-type(3n+2) {background:#e7f3eb;color:#386650;border-color:#d3e7da;}
+.capo-help-topics button:nth-of-type(3n+3) {background:#fff5df;color:#775b2c;border-color:#efdfb8;}
+.capo-help-answer ol {margin:0;padding-left:20px;display:grid;gap:6px;}
+.capo-help-actions {display:flex;flex-wrap:wrap;gap:5px;}
+.capo-help-actions button:first-child {background:#e7f3eb;color:#386650;}
+.capo-help-footer {text-align:center;color:#52697c;}
+@media(max-width:540px) {.capo-help {bottom:max(8px,env(safe-area-inset-bottom));right:8px;width:min(350px,calc(100vw - 16px));}.capo-help-panel{max-height:68dvh;}.capo-help .capo-help-trigger {padding:8px 12px;}}
