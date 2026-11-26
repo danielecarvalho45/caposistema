@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { capoTodayIso } from '../../lib/date/capo-locale'
 import { getRpcService, loadingState, type AsyncState, type BirthdayOverview, type PendingItem } from '../../lib/supabase/rpc'
 import { PatientWhatsAppButton } from '../../components/contact/PatientWhatsAppButton'
 import { TeamMonthlyBirthdays } from '../../components/birthdays/TeamMonthlyBirthdays'
@@ -55,6 +56,46 @@ const quickAccess = [
   ['/encerramentos', 'check', 'Encerramentos', 'Por especialidade', 'slate'],
   ['/relatorios', 'chart', 'Relatórios', 'Consultas e indicadores', 'violet'],
 ] as const satisfies readonly (readonly [string, CapoIconName, string, string, string])[]
+
+function GestorMonthlyCalendar() {
+  const [today, setToday] = useState(() => capoTodayIso())
+  const [month, setMonth] = useState(() => capoTodayIso().slice(0, 7))
+  useEffect(() => {
+    const refresh = () => setToday(capoTodayIso())
+    const timer = window.setInterval(refresh, 60000)
+    window.addEventListener('focus', refresh)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh) }
+  }, [])
+  const [year, number] = month.split('-').map(Number)
+  const first = new Date(Date.UTC(year, number - 1, 1))
+  const offset = first.getUTCDay()
+  const total = new Date(Date.UTC(year, number, 0)).getUTCDate()
+  const label = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(first)
+  function move(delta: number) {
+    const next = new Date(Date.UTC(year, number - 1 + delta, 1))
+    setMonth(next.toISOString().slice(0, 7))
+  }
+  return (
+    <article className="gestor-panel gestor-home-snapshot" aria-label="Calendário mensal">
+      <header><h3><CapoIcon name="calendar" /> Calendário Mensal</h3><button type="button" onClick={() => { const now = capoTodayIso(); setToday(now); setMonth(now.slice(0, 7)) }}>Hoje</button></header>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+        <button type="button" aria-label="Mês anterior" onClick={() => move(-1)} style={{ border: '1px solid #d4e4f3', borderRadius: 6, background: '#f5faff', color: '#006bd9', padding: '5px 10px', cursor: 'pointer' }}>‹</button>
+        <strong aria-live="polite" style={{ textTransform: 'capitalize', fontSize: 13 }}>{label}</strong>
+        <button type="button" aria-label="Próximo mês" onClick={() => move(1)} style={{ border: '1px solid #d4e4f3', borderRadius: 6, background: '#f5faff', color: '#006bd9', padding: '5px 10px', cursor: 'pointer' }}>›</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 3, textAlign: 'center', fontSize: 11 }}>
+        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => <strong key={day} style={{ color: '#617b9c', fontSize: 10 }}>{day}</strong>)}
+        {Array.from({ length: Math.ceil((offset + total) / 7) * 7 }, (_, index) => {
+          const day = index - offset + 1
+          if (day < 1 || day > total) return <span key={index} aria-hidden="true" />
+          const date = month + '-' + String(day).padStart(2, '0')
+          const current = date === today
+          return <time key={index} dateTime={date} aria-current={current ? 'date' : undefined} style={{ padding: '5px 0', borderRadius: 6, background: current ? '#006bd9' : '#f5f9fd', color: current ? '#fff' : index % 7 === 0 || index % 7 === 6 ? '#ad6671' : '#17365f', fontWeight: current ? 700 : 400 }}>{day}</time>
+        })}
+      </div>
+    </article>
+  )
+}
 
 export function GestorDashboard() {
   const [operationalPending, setOperationalPending] = useState<AsyncState<readonly PendingItem[]>>(loadingState)
@@ -179,9 +220,10 @@ export function GestorDashboard() {
         </article>
         </aside>
       </section>
-      <section className="gestor-summary-grid" aria-label="Resumo do sistema">
+      <section className="gestor-summary-grid gestor-summary-with-calendar" aria-label="Resumo do sistema">
         <HomeIndicatorSummary />
         <HomeTechnicalStatus />
+        <GestorMonthlyCalendar />
       </section>
     </section>
   )
