@@ -262,6 +262,7 @@ export function buildNutritionDocumentPdf(document: NutritionDocument): Blob {
     const footer = 'Página ' + (index + 1) + ' de ' + pages.length
     const content = [
       'q\n505 0 0 ' + logoHeight.toFixed(2) + ' 45 745 cm\n/Logo Do\nQ\n',
+      'q\n1 1 1 rg\n220 789 158 31 re f\nQ\nBT\n/F1 8 Tf\n0 0.27 0.53 rg\n241 807 Td\n(CENTRO DE APOIO AO) Tj\n0 -11 Td\n(PACIENTE ONCOLÓGICO) Tj\nET\n',
       bands, lines, rules,
       'q\n0.80 0.89 0.89 RG\n0.5 w\n55 45 m 540 45 l S\nQ\n',
       'BT\n/F1 8.5 Tf\n0.39 0.45 0.5 rg\n1 0 0 1 55 34 Tm\n(' + pdfEscape('Documento gerado em: ' + generatedAt) + ') Tj\nET\n',
