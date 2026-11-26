@@ -1266,7 +1266,7 @@ export function TransportPage({ accessContext }: Props) {
         </div>
       )}
 
-      <div className="home-ops">
+      <div className="home-ops transport-tracking-panel">
         <h2>Acompanhamento</h2>
         {canAdminister && (
           <div className="transport-tracking-search">
@@ -1311,7 +1311,7 @@ export function TransportPage({ accessContext }: Props) {
         {requests.length > 0 && (
           <>
           {selectedRequestId && <button type="button" onClick={() => setSelectedRequestId('')}>Mostrar todos os protocolos do paciente</button>}
-          <ul>
+          <ul className="transport-protocol-list">
             {requests.filter((request) => !selectedRequestId || requestId(request) === selectedRequestId).map((request, index) => {
               const id = requestId(request)
               const status = field(request, 'status') ?? 'Situação não informada'
@@ -1319,15 +1319,15 @@ export function TransportPage({ accessContext }: Props) {
               const pdfPrepared = Boolean(field(request, 'pdf_prepared_at'))
               const forwarded = Boolean(field(request, 'external_forwarded_at'))
               return (
-                <li key={id || index}>
-                  <strong>{patientName || 'Paciente'}</strong>
+                <li key={id || index} className="transport-protocol-card">
+                  <strong className="transport-protocol-name">{patientName || 'Paciente'}</strong>
                   <small>Protocolo: {field(request, 'protocol') || 'Não informado'} · Solicitante: {field(request, 'requested_by') || 'Não identificado'}</small>
                   <small>Canal: {field(request, 'external_channel') || 'Ainda não encaminhado'}</small>
                   {field(request,'external_forwarded_at') && <small>Encaminhado em: {new Date(field(request,'external_forwarded_at') || '').toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',hour12:false})}</small>}
                   {!selectedRequestId && <button type="button" disabled={busy} onClick={() => setSelectedRequestId(id)}>Acompanhar este protocolo</button>}
-                  <span>{status}</span>
+                  <span className="transport-protocol-status">{status}</span>
                   <small>{field(request, 'appointment_id') ? 'Agendamento vinculado' : 'Solicitação genérica (sem agendamento)'}</small>
-                  <small>{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
+                  <small className="transport-protocol-notes">{field(request, 'transport_notes') ?? 'Sem observação operacional.'}</small>
                   {(pdfPersisted && boolField(request, 'vehicle_pdf_update_pending')) && (
                     <p role="status">Alteração de veículo pendente: gere uma nova versão do PDF e assine novamente antes de encaminhar. O PDF anterior permanece no histórico.</p>
                   )}
@@ -1351,7 +1351,7 @@ export function TransportPage({ accessContext }: Props) {
                   {field(request, 'vehicle_type') && (pdfPersisted || !canCreateRequest) && (
                     <small>Veículo solicitado: {field(request, 'vehicle_type') === 'ambulancia' ? 'Ambulância' : 'Carro'}</small>
                   )}
-                  <div>
+                  <div className="transport-protocol-actions">
                     {canAdminister && status === 'confirmado' && !pdfPersisted && (
                       <>
                         <button type="button" disabled={busy} title="Confirmar local de embarque"
@@ -1369,14 +1369,14 @@ export function TransportPage({ accessContext }: Props) {
                       <button type="button" disabled={busy} onClick={() => void signPdf(request)}>Assinar PDF</button>
                     )}
                     {canAdminister && status !== 'cancelado' && (
-                      <button type="button" disabled={busy} onClick={() => void openDocuments(request)}>
+                      <button type="button" className="transport-action-documents" disabled={busy} onClick={() => void openDocuments(request)}>
                         📎 Documentos complementares
                       </button>
                     )}
                     {['confirmado','realizado'].includes(status) && pdfPersisted && pdfPrepared && (
                       <>
-                        <button type="button" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
-                        <button type="button" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
+                        <button type="button" className="transport-action-view" disabled={busy} onClick={() => void openPdf(request, false)}>Visualizar PDF</button>
+                        <button type="button" className="transport-action-download" disabled={busy} onClick={() => void openPdf(request, true)}>Baixar PDF</button>
                         {canAdminister && status === 'confirmado' && !forwarded && !boolField(request, 'vehicle_pdf_update_pending') && (
                           <button type="button" disabled={busy} onClick={() => void issueShare(request)}>{shareAccess?.requestId === id ? '🔗 Consultar link' : '🔗 Gerar link'}</button>
                         )}
@@ -1391,13 +1391,14 @@ export function TransportPage({ accessContext }: Props) {
                         <button type="button" disabled={busy} onClick={() => void revokeShare(request)}>Revogar link</button>
                       </div>
                     )}
-                    {canAdminister && pdfPersisted && (
+                    {(canAdminister && pdfPersisted || status === 'realizado' && field(request, 'closure_pdf_path')) && (
                       <details className="transport-pdf-history">
                         <summary>Histórico documental (auditoria)</summary>
-                        <button type="button" disabled={busy} onClick={() => void loadPdfHistory(request)}>
+                        {status === 'realizado' && field(request, 'closure_pdf_path') && <button type="button" className="transport-action-view" disabled={busy} onClick={() => void openPdf(request, false, 'closure')}>Visualizar PDF de encerramento anterior</button>}
+                        {canAdminister && pdfPersisted && <button type="button" disabled={busy} onClick={() => void loadPdfHistory(request)}>
                           Consultar versões anteriores
-                        </button>
-                        {pdfHistoryRequestId === id && (
+                        </button>}
+                        {canAdminister && pdfPersisted && pdfHistoryRequestId === id && (
                           <div className="transport-share-access">
                             {archivedPdfVersions.length === 0 && <p>Não há versões anteriores.</p>}
                             {archivedPdfVersions.map((version, versionIndex) => (
@@ -1420,7 +1421,7 @@ export function TransportPage({ accessContext }: Props) {
                           <p>Selecione o destinatário em Contatos do Transporte para abrir a mensagem.</p>
                         )}
                         {selectedContacts.map((key) => contacts[key].trim() ? (
-                          <button type="button" key={key} style={key === 'email' ? undefined : capoWhatsAppStyle} disabled={busy || verifiedShareRequestId !== id}
+                          <button type="button" key={key} className={key === 'email' ? 'transport-action-email' : 'transport-action-whatsapp'} disabled={busy || verifiedShareRequestId !== id}
                             onClick={() => openTransportChannel(key, request)}>
                             {key !== 'email' && <CapoWhatsAppIcon />}
                             {key === 'email' ? '✉ ' + contacts[key] : key === 'phone_responsible'
@@ -1435,17 +1436,16 @@ export function TransportPage({ accessContext }: Props) {
                       <button type="button" disabled={busy || channel.trim().length < 2} onClick={() => void manage(request, 'forward')}>Registrar encaminhamento</button>
                     )}
                     {canForwardExternally && status === 'confirmado' && forwarded && (
-                      <button type="button" disabled={busy || closureReason.trim().length < 5} onClick={() => void manage(request, 'complete')}>Encerrar protocolo</button>
+                      <button type="button" className="transport-action-complete" disabled={busy || closureReason.trim().length < 5} onClick={() => void manage(request, 'complete')}>Encerrar protocolo</button>
                     )}
                     {status === 'realizado' && <small>Protocolo encerrado. {field(request, 'closure_reason') ? 'Motivo: ' + field(request, 'closure_reason') : 'Consulte o histórico documental.'}</small>}
                     {status === 'realizado' && field(request, 'closure_pdf_path') && (
                       <>
-                        <button type="button" disabled={busy} onClick={() => void openPdf(request, false, 'closure')}>Visualizar PDF de encerramento anterior</button>
-                        <button type="button" disabled={busy} onClick={() => void openPdf(request, true, 'closure')}>Baixar PDF de encerramento anterior</button>
+                        <button type="button" className="transport-action-download" disabled={busy} onClick={() => void openPdf(request, true, 'closure')}>PDF de encerramento</button>
                       </>
                     )}
                     {canAdminister && ['solicitado', 'confirmado'].includes(status) && (
-                      <button type="button" disabled={busy || cancellationReason.trim().length < 5} onClick={() => void manage(request, 'cancel')}>Cancelar</button>
+                      <button type="button" className="transport-action-cancel" disabled={busy || cancellationReason.trim().length < 5} onClick={() => void manage(request, 'cancel')}>Cancelar</button>
                     )}
                   </div>
                 </li>
