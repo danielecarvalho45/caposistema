@@ -12,6 +12,27 @@
 
 ---
 
+## 26/11/2026 — CAPO INCLUSIVO — ACESSIBILIDADE DIGITAL — PENDÊNCIA ESTRUTURAL
+
+Gestora/Titular autorizou expressamente (VERDE) o registro do projeto CAPO INCLUSIVO no Documento Mestre, mantendo-o como PENDÊNCIA para continuidade futura. Autorização restrita à documentação; não autoriza implementação neste momento.
+
+Objetivo: promover autonomia de profissionais e pacientes, incluindo pessoas cegas, com baixa visão, daltonismo, deficiência auditiva, motora ou cognitiva, pessoas idosas e com dificuldades de leitura. Adotar WCAG 2.2 AA e eMAG como referências técnicas de projeto, sem declarar conformidade antes de auditoria e testes.
+
+**Etapas pendentes, em ordem proposta:**
+1. Links enviados aos pacientes: investigar contratos existentes de confirmação e remarcação; propor botão acessível “Ouvir informações”, leitura em português brasileiro sob comando do usuário, controles de repetição e interrupção, orientação das escolhas e anúncio de resultado somente após confirmação efetiva pelo sistema. Preservar endereço, validade, segurança, estética e fluxo homologado. Priorizar voz local no dispositivo quando disponível, sem transmitir dados sensíveis a serviços externos nem armazenar áudio; disponibilizar alternativa textual acessível e compatibilidade com TalkBack/VoiceOver. Posteriormente avaliar demais links efetivamente existentes.
+2. Painel universal de acessibilidade: preferências individuais, ampliação de fonte, contraste e redução de efeitos, mantendo estética original como padrão.
+3. Navegação inclusiva: teclado, foco visível, nomes acessíveis, leitores de tela, mensagens e avisos; acessibilidade essencial permanente, independente de ativação do painel.
+4. Assistente CAPO inclusivo: leitura das orientações e equivalentes textuais dos modelos visuais, sem reconstruir manual visual homologado.
+5. Agendas e formulários: identificação textual de situações, campos obrigatórios e erros; não depender exclusivamente de cor ou ícone.
+6. Documentos e PDFs acessíveis: ordem de leitura, texto selecionável, estrutura semântica e alternativas acessíveis quando necessário, preservando timbres e documentos homologados.
+7. Testes e homologação individual por etapa, perfil, tecnologia assistiva e dispositivo; idealmente participação de pessoas com deficiência visual.
+
+Regras permanentes: preservar Regra Suprema e isolamento lógico produção/homologação; não exigir declaração de deficiência; incluir perfis atuais e futuros; proteger privacidade e dados de saúde; priorizar recursos sem licença recorrente adicional, sem presumir ausência de custo de desenvolvimento; incorporar acessibilidade às futuras manutenções mediante escopo autorizado. Toda etapa exige investigação, proposta, VERDE específico, backup, testes, registro e homologação da Titular. Não alterar funções já homologadas sem autorização específica.
+
+**STATUS: PENDENTE — planejamento registrado, implementação não iniciada. Próxima etapa: diagnóstico somente leitura dos links de confirmação e remarcação, após retomada pela Titular.** Nenhuma alteração de código, banco, links ou interface neste registro.
+
+---
+
 ## 26/11/2026 — HOMOLOGAÇÃO E FECHAMENTO — Manual visual do Assistente CAPO
 
 Gestora/Titular declarou expressamente “HOMOLOGADO PERFEITO” após confirmação do comportamento de pesquisa, orientação por assunto e visualização do modelo preenchido. Manual visual dos 18 assuntos iniciais aprovado e etapa ENCERRADA / CONGELADA conforme Regra Suprema. Preservar botão Visualizar exemplo preenchido, modelos fictícios, ampliação/redução/fechamento, permissões existentes, ausência de gravação e de abertura de outra aba na orientação. Manter atualização dos modelos vinculada a futuras manutenções especificamente autorizadas e homologadas. Não alterar a funcionalidade por iniciativa técnica. Registro de homologação pela Titular, não declaração de execução independente de testes automatizados ou validação técnica do deploy. Não estender este aceite a etapas distintas sem confirmação expressa. Nenhuma alteração de código ou banco neste fechamento.
