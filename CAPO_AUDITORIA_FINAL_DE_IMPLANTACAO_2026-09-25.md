@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE ESTÉTICO — Assistente CAPO à esquerda e girassol institucional
+
+Titular aprovou posição inferior esquerda, botão flutuante transparente e discreto, cores padrão CAPO e mesmo girassol da saudação “Tenha um ótimo dia de trabalho!”. Determinou somente elevar Sair e Status do Sistema, sem modificar sua aparência ou ação. Modelo ilustrativo aprovado exclusivamente quanto ao posicionamento; não substituir Home, logo, menus ou cartões. Conferidos Documento Mestre, Matriz, Manual Técnico, AppShell/GestorShell e estilos. Ambos os menus utilizam Conexão como indicador inferior; mantido texto e comportamento, sem deslocar quadro Status do Sistema da Home. Backup backup/assistente-estetica-esquerda-2026-11-26.
+
+CapoHelp.tsx commit bf95efbfd80c4f877b1e5fcfc6afadf59baf9152: substituição exclusiva das duas representações emoji por /assets/capo-girassol-natural.svg, mesma imagem da saudação em ambos os shells. capo-help.css commit fccaaa83c782dede453504cd205490cb59b068a8: âncora esquerda, alinhamento esquerdo, botão compacto com gradiente translúcido azul CAPO e relevo discreto, imagem proporcional, adaptação mobile, reserva inferior de 64px + área segura nos dois menus quando assistente presente, min-height 0 nas listas para preservar rolagem. Não altera markup, estilo individual, ordem ou comportamento de Sair/Conexão. Preserva demais elementos e funções; nenhuma alteração no banco, rotas, base de conhecimento, permissões ou suporte.
+
+Diferenças conferidas nos dois arquivos. Checks: npm run build=completed/failure; Cloudflare Pages=in_progress/pendente. Teste visual autenticado e responsivo ainda não realizado; homologação estética ABERTA até confirmação Titular. Conferir menus fechados/abertos, perfis acumulados, telas baixas e mobile, legibilidade e ausência de sobreposição de Sair/Conexão com assistente minimizado. Não considerar publicação confirmada sem evidência. Regra Suprema mantida.
+
+---
+
 ## 26/11/2026 — VERDE DE IMPLEMENTAÇÃO — Assistente Virtual CAPO — versão inicial
 
 Titular autorizou execução após aprovação e registro estrutural. Documento Mestre, Matriz Funcional, Manual Técnico e contratos frontend de rotas, contexto e suporte consultados. As Especificações Estruturais e Manual da Interface completos não foram localizados como arquivos independentes na árvore main consultada; não declarar inventário exaustivo de todas as regras. Backup backup/assistente-capo-2026-11-26 a partir de 310d61303466a46144e2d657f0131889bc3c71dd.
