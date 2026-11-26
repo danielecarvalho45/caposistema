@@ -12,6 +12,12 @@
 
 ---
 
+## 26/11/2026 — HOMOLOGADO, ENCERRADO E CONGELADO — correção pontual do contexto de homologação no Transporte
+
+Gestora/Titular declarou expressamente “HOMOLOGADO” em resposta à manutenção imediatamente anterior, relativa à orientação de seleção do paciente autorizado em manuteste e à continuidade da confirmação da solicitação e emissão do PDF de Transporte. Correção pontual aprovada pela Titular, encerrada e congelada conforme Regra Suprema. Preservar isolamento, regras de gravação, permissões, geração de documentos, assinaturas, links, canais e histórico. Fluxo funcional de Transporte permanece homologado e fechado. Esta aprovação operacional não equivale a execução independente de testes automatizados ou confirmação técnica de build/publicação. Nenhuma alteração de código ou banco nesta etapa; somente registro documental. Não estender esta homologação às manutenções estéticas ou de outros módulos ainda pendentes. Reabertura somente mediante erro concreto, solicitação específica e novo VERDE.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — orientação de contexto de homologação no Transporte
 
 Relato: Administrativo Operacional simulado não avança confirmação e geração do PDF. Consulta somente leitura confirmou protocolo de homologação ainda solicitado, sem confirmação de dados ou PDF, última atualização em 30/09/2026. Conta manuteste ativa, contexto habilitado e paciente selecionado diferente do paciente do protocolo. Contratos físicos capo_patient_visible_in_current_context e capo_patient_write_allowed_in_current_context distinguem leitura dos pacientes de teste e gravação exclusiva no paciente selecionado; manage_transport_request_for_interface chama capo_assert_patient_write_context. Incompatibilidade comprovada; clique autenticado não reproduzido e logs não disponíveis. Não remover proteção nem mudar contexto automaticamente. Matriz Funcional, Manual Técnico e Documento Mestre consultados.
