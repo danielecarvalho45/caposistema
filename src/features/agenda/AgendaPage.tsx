@@ -71,6 +71,13 @@ function ProfessionalMonthlyCalendar() {
   )
 }
 
+type MonthlyAgendaTarget = { date: string; professionalId?: string; appointmentId?: string; groupId?: string; visitId?: string }
+type OpenMonthlyAgenda = (target: MonthlyAgendaTarget) => void
+
+function MonthlyAgendaLine({ time, name, onOpen, description }: Readonly<{ time: string; name: string; onOpen?: () => void; description?: string }>) {
+  return <div className="agenda-month-compact-line"><time>{time}</time>{onOpen ? <button type="button" className="agenda-month-name-link" title={description} onClick={onOpen}>{name}</button> : <span title={description}>{name}</span>}</div>
+}
+
 type AgendaView = 'day' | 'week' | 'month'
 
 type HomeVisitPatient = Readonly<{
@@ -369,7 +376,7 @@ function AppointmentTable({
         </thead>
         <tbody>
           {appointments.map((appointment) => (
-            <tr key={appointment.appointment_id}>
+            <tr key={appointment.appointment_id} data-month-appointment={appointment.appointment_id}>
               <td data-label={includeDate ? 'Data e hora' : 'Horário'}>
                 {includeDate
                   ? formatDateTime(appointment.appointment_date)
@@ -437,6 +444,7 @@ export function HomeScheduleGrid({
   renderVisitActions,
   renderAdministrativeActions,
   renderFamilyReturnAction,
+  onOpenMonthly,
   showProfessional = false,
 }: Readonly<{
   slots: readonly AgendaScheduleSlot[]
@@ -459,6 +467,7 @@ export function HomeScheduleGrid({
   showProfessional?: boolean
   renderAdministrativeActions?: (appointmentId: string) => ReactNode
   renderFamilyReturnAction?: (appointmentId: string) => ReactNode
+  onOpenMonthly?: OpenMonthlyAgenda
 }>) {
   const appointmentById = new Map(
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
@@ -550,7 +559,7 @@ export function HomeScheduleGrid({
                     ? 'Retorno — Familiar/Cuidador — Psicologia'
                     : slot.appointment_type ?? '—'
               return (
-                <tr key={`${slot.professional_id}:${slot.slot_start}`} className={`is-${slot.slot_status}`}>
+                <tr key={`${slot.professional_id}:${slot.slot_start}`} className={`is-${slot.slot_status}`} data-month-appointment={slot.appointment_id ?? undefined}>
                   <td data-label="Horário"><strong>{slotClock(slot.slot_start)}–{slotClock(slot.slot_end)}</strong></td>
                   {showProfessional && <td data-label="Profissional"><strong>{slot.professional_name}</strong></td>}
                   <td data-label="Paciente">
@@ -631,7 +640,7 @@ export function HomeScheduleGrid({
               )
             })}
             {homeVisits.filter((visit) => visit.date === days[0]).map((visit) => (
-              <tr key={`home-visit:${visit.block_id}`} className="agenda-home-visit-row">
+              <tr key={`home-visit:${visit.block_id}`} className="agenda-home-visit-row" data-month-visit={visit.block_id}>
                 <td data-label="Horário">{visit.start_time.slice(0, 5)}–{visit.end_time.slice(0, 5)}</td>
                 <td data-label="Paciente"><HomeVisitCalendarCard visit={visit} actions={renderVisitActions?.(visit)} /></td>
                 <td data-label="Especialidades">Assistência Social</td>
@@ -646,20 +655,65 @@ export function HomeScheduleGrid({
     )
   }
 
+  if (view === 'month') {
+    return (
+      <div className="agenda-schedule-grid agenda-schedule-grid--month agenda-month-compact" style={{ gridTemplateColumns: `repeat(${monthlyColumns}, minmax(0, 1fr))` }} aria-label="Grade efetiva da agenda">
+        {days.map((day) => {
+          const seen = new Set<string>()
+          const dayGroups = (groupSessions ?? []).filter((group) => group.date === day)
+          const entries: { time: string; key: string; node: ReactNode }[] = []
+          for (const group of dayGroups) {
+            const time = slotClock(group.start)
+            const target = { date: day, professionalId: group.professional_id, groupId: group.group_id }
+            entries.push({ time, key: 'group:' + group.group_id, node: <div className="agenda-month-compact-group">
+              <MonthlyAgendaLine time={time} name={group.name + (group.blocked ? ' · Bloqueado' : '')} onOpen={onOpenMonthly ? () => onOpenMonthly(target) : undefined} />
+              {group.participants.map((person) => {
+                seen.add(person.appointment_id)
+                return <MonthlyAgendaLine key={person.appointment_id} time={time} name={person.patient_name} onOpen={onOpenMonthly ? () => onOpenMonthly({ ...target, appointmentId: person.appointment_id }) : undefined} />
+              })}
+            </div> })
+          }
+          for (const visit of homeVisits.filter((item) => item.date === day)) {
+            const time = visit.start_time.slice(0, 5)
+            entries.push({ time, key: 'visit:' + visit.block_id, node: <MonthlyAgendaLine time={time} name={'Visita domiciliar · ' + visit.patients.length} onOpen={onOpenMonthly ? () => onOpenMonthly({ date: day, visitId: visit.block_id }) : undefined} /> })
+          }
+          for (const slot of ordinarySlots.filter((item) => item.slot_date === day && item.slot_status !== 'livre')) {
+            if (dayGroups.some((group) => group.professional_id === slot.professional_id && Date.parse(group.start) === Date.parse(slot.slot_start) && Date.parse(group.end) === Date.parse(slot.slot_end))) continue
+            const id = slot.appointment_id
+            const time = slotClock(slot.slot_start)
+            const target = { date: day, professionalId: slot.professional_id, appointmentId: id ?? undefined }
+            if (slot.slot_status === 'bloqueado') {
+              entries.push({ time, key: 'block:' + slot.professional_id + ':' + slot.slot_start, node: <MonthlyAgendaLine time={time} name="Bloqueado" description={slot.professional_name} onOpen={onOpenMonthly ? () => onOpenMonthly(target) : undefined} /> })
+              continue
+            }
+            if (!id || seen.has(id)) continue
+            seen.add(id)
+            const appointment = appointmentById.get(id)
+            const family = familyAppointments?.find((item) => String(item.appointment_id) === id)
+            const name = appointment?.patient_name ?? (slot.patient_id || family ? slot.patient_name : null)
+            entries.push({ time, key: id, node: <MonthlyAgendaLine time={appointment ? slotClock(appointment.appointment_date) : time} name={name ?? 'Horário ocupado'} description={slot.professional_name} onOpen={name && onOpenMonthly ? () => onOpenMonthly(target) : undefined} /> })
+          }
+          return <article className="agenda-schedule-day" key={day}>
+            <h3>{dateFormatter.format(localDate(day))}</h3>
+            <div className="agenda-schedule-slots">{entries.sort((a, b) => a.time.localeCompare(b.time)).map((entry) => <div key={entry.key}>{entry.node}</div>)}</div>
+          </article>
+        })}
+      </div>
+    )
+  }
+
   return (
     <div
       className={[
         'agenda-schedule-grid',
         view === 'week' ? 'agenda-schedule-grid--week' : '',
-        view === 'month' ? 'agenda-schedule-grid--month' : '',
       ].filter(Boolean).join(' ')}
-      style={view === 'month' ? { gridTemplateColumns: `repeat(${monthlyColumns}, minmax(0, 1fr))` } : undefined}
       aria-label="Grade efetiva da agenda"
     >
       {days.map((day) => {
         const daySlots = ordinarySlots.filter((slot) => slot.slot_date === day)
         return (
-          <article className={`agenda-schedule-day${view === 'month' && localDate(day).getMonth() !== localDate(startDate).getMonth() ? ' is-outside' : ''}`} key={day}>
+          <article className="agenda-schedule-day" key={day}>
             <h3>{dateFormatter.format(localDate(day))}</h3>
             <div className="agenda-schedule-slots">
                 {daySlots.length === 0 && !homeVisits.some((visit) => visit.date === day) && <small className="agenda-schedule-no-hours">Sem horários</small>}
@@ -792,6 +846,7 @@ function AgendaResults({
   busyAppointmentId,
   patientSpecialties,
   previsitContacts,
+  onOpenMonthly,
   embeddedHome = false,
 }: Readonly<{
   appointments: readonly AgendaAppointment[]
@@ -806,6 +861,7 @@ function AgendaResults({
   patientSpecialties?: Readonly<Record<string, PatientSpecialtiesState>>
   previsitContacts?: Readonly<Record<string, { result: string }>>
   embeddedHome?: boolean
+  onOpenMonthly?: OpenMonthlyAgenda
 }>) {
   if (view === 'day') {
     return (
@@ -898,7 +954,7 @@ function AgendaResults({
   const monthlyFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
 
   return (
-    <div className="agenda-month" aria-label="Agenda do mês" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+    <div className="agenda-month agenda-month-compact" aria-label="Agenda do mês" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
       {calendarDays.length === 0 && <p>Nenhum atendimento retornado neste período.</p>}
       {calendarDays.map((day) => {
         const dayAppointments = appointmentsForDay(appointments, day)
@@ -909,31 +965,7 @@ function AgendaResults({
           >
             <time dateTime={day}>{monthlyFormatter.format(localDate(day))}</time>
             {dayAppointments.map((appointment) => (
-              <div
-                className="agenda-month-appointment"
-                key={appointment.appointment_id}
-              >
-                <strong>{formatTimeRange(appointment)}</strong>
-                <span>{appointment.patient_name}</span>
-                {attendanceMarker(appointment.attendance_status)}
-                {previsitContacts?.[appointment.appointment_id] && <small title="Aviso administrativo prévio; não representa presença">{previsitIndicator(previsitContacts[appointment.appointment_id].result)}</small>}
-                {patientSpecialties?.[appointment.patient_id] && <small>{specialtyText(patientSpecialties[appointment.patient_id])}</small>}
-                <small>
-                  {showSpecialty
-                    ? appointment.specialty_name ?? appointment.appointment_type
-                    : appointment.appointment_type}
-                </small>
-                {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
-                  <button
-                    type="button"
-                    className="agenda-cancel-button agenda-cancel-button--month"
-                    disabled={busyAppointmentId === appointment.appointment_id}
-                    onClick={() => onCancel(appointment.appointment_id)}
-                  >
-                    Cancelar
-                  </button>
-                )}
-              </div>
+              <MonthlyAgendaLine key={appointment.appointment_id} time={slotClock(appointment.appointment_date)} name={appointment.patient_name} description={appointment.professional_name} onOpen={onOpenMonthly ? () => onOpenMonthly({ date: day, professionalId: appointment.professional_id, appointmentId: appointment.appointment_id }) : undefined} />
             ))}
           </article>
         )
@@ -985,6 +1017,7 @@ export function AgendaPage({
   const location = useLocation()
   const navigate = useNavigate()
   const [view, setView] = useState<AgendaView>('day')
+  const [monthlyTarget, setMonthlyTarget] = useState<MonthlyAgendaTarget | null>(null)
   const [showScheduleForm, setShowScheduleForm] = useState(false)
   const [socialVisitMode, setSocialVisitMode] = useState(false)
   const [activeHomeVisitId, setActiveHomeVisitId] = useState('')
@@ -1213,6 +1246,19 @@ export function AgendaPage({
     if (selected) setSelectedProfessionalId(selected.professional_id)
   }, [appointmentFromHistoryId, isProfessional, selectedProfessionalId, state])
 
+  function openMonthlyAgenda(target: MonthlyAgendaTarget) {
+    setMonthlyTarget(target.appointmentId || target.groupId || target.visitId ? target : null)
+    setShowScheduleForm(false)
+    setShowRescheduleForm(false)
+    setView('day')
+    setAnchorDate(target.date)
+    setConsultationStartDate(target.date)
+    setConsultationEndDate(target.date)
+    if (!isProfessional && target.professionalId) setSelectedProfessionalId(target.professionalId)
+  }
+
+
+
   const periodScheduled =
     state.status === 'success'
       ? visibleAppointments.filter((appointment) => appointment.attendance_status === 'agendado').length
@@ -1384,6 +1430,30 @@ export function AgendaPage({
   }, [canReadHomeVisits, professionalId, homeVisitKey, homeVisitRevision, startDate, endDate])
   const visibleHomeVisits = canReadHomeVisits && homeVisitResult?.key === homeVisitKey
     ? homeVisitResult.visits : []
+
+  useEffect(() => {
+    if (!monthlyTarget || view !== 'day' || startDate !== monthlyTarget.date || endDate !== monthlyTarget.date) return
+    if (!isProfessional && monthlyTarget.professionalId && professionalId !== monthlyTarget.professionalId) return
+    if (scheduleGrid.status === 'loading' || state.status === 'loading') return
+    const timer = window.setTimeout(() => {
+      const target = monthlyTarget.groupId && monthlyTarget.appointmentId
+        ? document.getElementById('month-group-participant-' + monthlyTarget.appointmentId)
+        : monthlyTarget.groupId
+          ? document.getElementById('grupo-' + monthlyTarget.groupId + '-' + monthlyTarget.date)
+          : monthlyTarget.appointmentId
+            ? Array.from(document.querySelectorAll<HTMLElement>('[data-month-appointment]')).find((element) => element.dataset.monthAppointment === monthlyTarget.appointmentId)
+            : monthlyTarget.visitId
+              ? Array.from(document.querySelectorAll<HTMLElement>('[data-month-visit]')).find((element) => element.dataset.monthVisit === monthlyTarget.visitId)
+              : undefined
+      if (target) {
+        target.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+        target.setAttribute('tabindex', '-1')
+        target.focus({ preventScroll: true })
+        setMonthlyTarget(null)
+      }
+    }, 50)
+    return () => window.clearTimeout(timer)
+  }, [monthlyTarget, view, startDate, endDate, professionalId, isProfessional, scheduleGrid, state, psychologyGroupSessions, familyPsychologyCards, homeVisitResult])
 
   const load = useCallback(async () => {
     const requestId = ++requestSequence.current
@@ -3707,6 +3777,7 @@ export function AgendaPage({
                 onClick={() => {
                   setState(loadingState())
                   setScheduleGrid(loadingState())
+                  setMonthlyTarget(null)
                   setView(option)
                   if (!embeddedHome) {
                     setConsultationRangeForView(capoTodayIso(), option)
@@ -4020,6 +4091,7 @@ export function AgendaPage({
               endDate={endDate}
               view={view}
               appointments={calendarAppointments}
+              onOpenMonthly={openMonthlyAgenda}
               showProfessional={!professionalId}
               homeVisits={visibleHomeVisits}
               renderVisitActions={isSocialWorkerAgenda ? (visit) => (
@@ -4111,7 +4183,7 @@ export function AgendaPage({
           )}
 
 
-          {psychologyGroupSessions.length > 0 && (
+          {view !== 'month' && psychologyGroupSessions.length > 0 && (
             <section className="agenda-psychology-sessions" aria-label="Terapia em grupo na agenda oficial">
               <h3>Atendimentos em grupo — Psicologia</h3>
               {psychologyGroupSessions.map((session) => {
@@ -4132,7 +4204,7 @@ export function AgendaPage({
                     {session.blocked && <p role="status">Período bloqueado na agenda da Psicologia. Novas reservas indisponíveis; participantes precisam de remanejamento.</p>}
                     {session.participants.length === 0 && <p>Nenhum paciente agendado neste grupo.</p>}
                     {session.participants.map((participant) => (
-                      <div className="agenda-psychology-participant" key={participant.appointment_id}>
+                      <div className="agenda-psychology-participant" id={`month-group-participant-${participant.appointment_id}`} key={participant.appointment_id}>
                         <span><strong>{participant.patient_name}</strong> · {participant.attendance_status}</span>
                         {canRegisterAttendance && participant.attendance_status === 'agendado' && (
                           <span className="agenda-home-patient-actions">
@@ -4293,6 +4365,7 @@ export function AgendaPage({
                 <p role="status">A consulta de horários livres e bloqueados está indisponível. Abaixo aparecem somente os agendamentos, sem indicação de disponibilidade.</p>
                 <AgendaResults
                   appointments={calendarAppointments}
+                  onOpenMonthly={openMonthlyAgenda}
                   startDate={startDate}
                   endDate={endDate}
                   view={view}
