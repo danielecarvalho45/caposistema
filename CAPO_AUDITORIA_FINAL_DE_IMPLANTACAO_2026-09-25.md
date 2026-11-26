@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — resumo mensal de consultas com nome clicável
+
+Titular aprovou mostrar somente horário e nome clicável de paciente na grade mensal, ocultando horários livres e botões operacionais, mantendo os dias efetivos, grupos, bloqueios, visitas domiciliares e acesso ao agendamento. Matriz Funcional §3, Manual Técnico e Documento Mestre consultados. Calendários civis homologados permanecem congelados.
+
+Backup backup/agenda-mensal-resumo-clicavel-2026-11-26. AgendaPage.tsx commit d1f8c775716627b1fbb8d75172d8c99890d8cf88: ramo exclusivo month e fallback compacto, nome como botão de navegação para a vista diária canônica, data e profissional correspondentes, localização/foco por identificador do agendamento, grupo/participante ou visita após carregamento. Não inicia atendimento nem altera dados automaticamente. Horários livres omitidos apenas visualmente, dias configurados mantidos, nomes duplicados por mesma consulta suprimidos; grupos com participantes e links para ações no dia, visitas resumidas e bloqueios identificados. Ações diárias e semanais preservadas; painel detalhado de grupos permanece acessível na vista diária e semanal. Identidade de pacientes somente quando autorizada pelo retorno existente, sem ampliar escopo. CSS commit 1d5725584d563a8887787684cac947f85ae31d6b: grade delimitada, células compactas com altura entre 100 e 180px (proporção pode variar para visão ampla), rolagem interna e nomes azuis clicáveis. Teste existente adaptado para navegação mês/dia no commit c9c2f6e78d4d26dbfd3af59f41d764ed487cdc23; não executado independentemente. Nenhuma alteração Supabase, RPC, calendário civil, rotas ou dados.
+
+Limites: abertura usa tela diária existente e foco na linha, não cria formulário individual novo. Foco depende de agendamento ainda disponível no retorno autorizado. Testes de interação, responsividade e renderização autenticada pendentes. Check observado: npm run build=completed/failure; Cloudflare Pages=in_progress/pendente. Build anterior failure sem diagnóstico confirmado. Homologação ABERTA: conferir nome clicável em todos os perfis e agenda geral, data/profissional corretos, grupos, familiar, visita, bloqueios, ausência de horários livres na vista mensal e ações inalteradas no dia/semana. Não declarar homologação sem aprovação da Titular.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — grade quadrada da agenda mensal de consultas
 
 Titular informou que visualização mensal da agenda de consultas não apresentou mudança esperada; autorizou correção distinta dos calendários civis já congelados. Documento Mestre, Matriz Funcional §3 e Manual Técnico consultados. Diagnóstico: main já contém filtro de datas efetivas e número dinâmico de colunas (AgendaPage.tsx); Cloudflare do commit fd70e3bd2a5fb7e18ea4de26e981202662005391 consta success. RPC física get_agenda_schedule_grid_for_interface consultada somente leitura: datas derivadas de dias ativos da configuração, horários e bloqueios; nenhum ajuste de banco autorizado ou efetuado. CSS anterior ainda definia cartões de altura variável e rolagem horizontal/limite interno, sem geometria quadrada uniforme. Esta é uma causa visual identificada no código, não comprovação da causa de toda a ocorrência relatada.
