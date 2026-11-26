@@ -189,7 +189,8 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
       {state.error && <p role="alert">Não foi possível verificar as confirmações; confirmação manual indisponível. {state.error}</p>}
       {feedback && <p role="status">{feedback}</p>}
       {groupError && <p role="alert">Não foi possível consultar os atendimentos em grupo.</p>}
-      {groupRows.filter((group) => group.participants.length > 0).sort((a, b) => Date.parse(a.start) - Date.parse(b.start)).map((group) => (
+      {[
+        ...groupRows.filter((group) => group.participants.length > 0).map((group) => ({ time: group.start, professional: group.professional_name, node: (
         <div className="capo-team-day-entry is-agendado" key={`grupo:${group.group_id}:${group.date}`}>
           <div className="capo-team-day-primary">
             <strong className="capo-team-day-time">{clock(group.start)}–{clock(group.end)}</strong>
@@ -201,8 +202,11 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
           </div>
           {group.participants.map((person) => <div className="capo-team-day-secondary" key={person.appointment_id}><span>{person.patient_name}</span><small>{person.attendance_status}</small></div>)}
         </div>
-      ))}
-      {orderedSlots([...visibleSlots, ...cancelledLinks]).map((slot) => {
+        ) })),
+        ...orderedSlots([...visibleSlots.filter((slot) => !groupRows.some((group) =>
+          group.participants.length > 0 && group.professional_id === slot.professional_id &&
+          slot.block_type === 'outro' && Date.parse(group.start) === Date.parse(slot.slot_start) &&
+          Date.parse(group.end) === Date.parse(slot.slot_end))), ...cancelledLinks]).map((slot) => {
         const id = slot.appointment_id
         const decision = id ? state.decisions[id] : null
         const contact = id ? state.contacts[id] : null
@@ -213,7 +217,7 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
         const canConfirm = slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily) && !confirmed && !requestedChange && !state.error && ready
         const canReschedule = slot.slot_status === 'agendado' && !!id && (!!slot.patient_id || isFamily)
         // Aviso/confirmação prévia não muda a elegibilidade de remarcação administrativa.
-        return (
+        return { time: slot.slot_start, professional: slot.professional_name, node: (
           <div className={`capo-team-day-entry is-${slot.slot_status}`} key={`${slot.professional_id}:${slot.slot_start}:${id ?? ''}`}>
             <div className="capo-team-day-primary">
               <strong className="capo-team-day-time">{clock(slot.slot_start)}</strong>
@@ -286,8 +290,8 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
               </div>
             </div>
           </div>
-        )
-      })}
+        ) }
+      })].sort((a, b) => Date.parse(a.time) - Date.parse(b.time) || a.professional.localeCompare(b.professional, 'pt-BR')).map((entry) => entry.node)}
       {mode === 'today' && (
         <section className="capo-today-free-summary" aria-label="Profissionais com horários disponíveis neste dia">
           <h4>{summaryLabel}</h4>
