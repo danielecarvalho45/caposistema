@@ -20,7 +20,7 @@ export function CapoHelp({accessContext, path}: {accessContext: AccessContext; p
   return <aside className="capo-help" aria-label="Assistente Virtual CAPO">
     {<section hidden={!open} style={!open ? {display: 'none'} : undefined} id="capo-help-panel" className="capo-help-panel" aria-label="Posso ajudar?">
       <header className="capo-help-header">
-        <span aria-hidden="true">🌻</span><div><strong>Assistente CAPO</strong><small>Seu apoio dentro do sistema</small></div>
+        <img className="capo-help-sunflower" src="/assets/capo-girassol-natural.svg" alt="" aria-hidden="true" width="32" height="42" /><div><strong>Assistente CAPO</strong><small>Seu apoio dentro do sistema</small></div>
         <button type="button" aria-label="Minimizar assistente" onClick={()=>setOpen(false)}>−</button>
         <button type="button" aria-label="Fechar e limpar assistente" onClick={()=>{reset();setOpen(false)}}>×</button>
       </header>
@@ -58,6 +58,6 @@ export function CapoHelp({accessContext, path}: {accessContext: AccessContext; p
         <small className="capo-help-footer">Orientações internas CAPO • Sem IA externa</small>
       </div>
     </section>}
-    <button className="capo-help-trigger" type="button" aria-expanded={open} aria-controls="capo-help-panel" onClick={()=>setOpen(v=>!v)}><span aria-hidden="true">🌻</span> Posso ajudar?</button>
+    <button className="capo-help-trigger" type="button" aria-expanded={open} aria-controls="capo-help-panel" onClick={()=>setOpen(v=>!v)}><img className="capo-help-sunflower" src="/assets/capo-girassol-natural.svg" alt="" aria-hidden="true" width="32" height="42" /> Posso ajudar?</button>
   </aside>
 }
