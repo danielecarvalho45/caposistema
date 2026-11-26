@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — apresentação de Arteterapia e demais grupos de Psicologia
+
+Titular relatou ausência dos participantes na agenda profissional, durante reserva, na Agenda Geral sem filtro e nas Homes administrativas; autorizou correção pontual. Diagnóstico somente leitura: grupo ativo, sexta-feira 13h30–17h00, capacidade 8, bloco tipo outro, configuração vigente desde 12/11. Contagem física de agendados por sessão: 13/11 = 5; 27/11 = 6. Sem dados pessoais de pacientes neste registro. Grade oficial representa período coletivo como bloqueado/outro, enquanto Home filtra agendados. RPC de sessões exige profissional específico e preserva controle de escopo; frontend anteriormente não consultava sem filtro.
+
+Backup backup/agenda-grupo-visualizacao-2026-11-26. Alterações exclusivamente frontend: AgendaPage.tsx commit 5e36de3ef62f1275e55cd5970dede44698eb797c (blob 031cfdd4b06d4ef04531a1c6a122762933481070): consulta RPC existente por profissional selecionado ou por profissionais presentes na grade autorizada com bloco outro, associa profissional à sessão e ao pareamento por data e horário, mostra participantes na faixa dia/semana/mês, mantém painel de participantes e reserva também sem filtro; identificação profissional nas comunicações do grupo passa a usar a sessão. DailyTeamAgendaRows.tsx commits 5281a3b5e583e62d2d26ca41403cbae7813c692c e 1f446dc3bf55cad74cdb0052f7c41b20e97290b2 (blob bdb265d938ab4ee852c223bcfe60c03e50858ffb): carrega sessões por profissionais da grade autorizada com bloco outro, exibe grupos com participantes, capacidade e link para agenda filtrada, mantém ordem cronológica e elimina duplicação da faixa correspondente no modo completo. Ações de grupo permanecem no painel canônico da Agenda, não são substituídas por ações individuais da Home. Não alterada RPC, capacidade, configuração, banco, registros de pacientes, regras de bloqueio ou rotas. Conferência de árvores comprovou somente os dois arquivos alterados antes do registro.
+
+Limites: consulta de grupos sem filtro depende de bloco outro presente na grade retornada; cenários de configuração/bloqueio que ocultem integralmente essa faixa e testes por perfil ainda exigem validação. Não executados build independente, testes automatizados ou navegador autenticado. GitHub Actions npm run build failure (causa não confirmada), Cloudflare Pages em andamento na última consulta. Homologação ABERTA: conferir 27/11 na Home GT/AO, Agenda Geral todos, filtro da psicóloga, Home profissional, dia/semana/mês e reserva com seis nomes/duas vagas; validar grupo bloqueado, outros profissionais, isolamento e atualização após ações em homologação, sem criar consulta real de teste. Não declarar funcionamento operacional homologado antes de aprovação Titular.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — Pendências do Dia na Home do Gestor/Titular
 
 Relato: quadro existente no AO ausente na Home da Titular. Matriz Funcional 12/09, seções 18.1 e 18.2, determina espelhamento funcional do administrativo no Gestor autorizado. Documento Mestre registra que a composição anterior da lateral das duas Homes era diferente. Titular aprovou VERDE específico para incluir o quadro no topo da lateral Gestor sem modificar demais quadros, estética ou Home AO.
