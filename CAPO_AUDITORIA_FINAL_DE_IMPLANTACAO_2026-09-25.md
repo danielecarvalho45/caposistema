@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — orientação de contexto de homologação no Transporte
+
+Relato: Administrativo Operacional simulado não avança confirmação e geração do PDF. Consulta somente leitura confirmou protocolo de homologação ainda solicitado, sem confirmação de dados ou PDF, última atualização em 30/09/2026. Conta manuteste ativa, contexto habilitado e paciente selecionado diferente do paciente do protocolo. Contratos físicos capo_patient_visible_in_current_context e capo_patient_write_allowed_in_current_context distinguem leitura dos pacientes de teste e gravação exclusiva no paciente selecionado; manage_transport_request_for_interface chama capo_assert_patient_write_context. Incompatibilidade comprovada; clique autenticado não reproduzido e logs não disponíveis. Não remover proteção nem mudar contexto automaticamente. Matriz Funcional, Manual Técnico e Documento Mestre consultados.
+
+Backup backup/transporte-contexto-homologacao-2026-11-26. TransportPage.tsx commit 6613bedc8027e58cd4b7dae5407f1fc29e51557c, blob ca113c0aed9086e210495be22d5af47628de5b13: orientação do paciente autorizado na tela, validação de seleção antes de carregar contexto de transporte, abrir protocolo ou selecionar paciente; bloqueio local da confirmação, criação e geração do PDF em contexto incompatível, aviso explícito. Contas reais não recebem essa restrição de interface; proteção física permanece intacta. Nenhuma alteração de banco, dados, contexto de homologação, gerador, PDF, assinatura, canais, permissões ou demais módulos. Para testar protocolo anterior, selecionar seu paciente simulado no contexto manuteste, reabrir Transporte e confirmar solicitação; não gerar nova solicitação desnecessariamente. Fluxo funcional homologado permanece fechado.
+
+Limites: npm run build=completed/failure; Cloudflare Pages=in_progress/pendente. Diff conferido; teste autenticado e automatizado independente não executado. Homologação pontual ABERTA até verificar seleção compatível e confirmação/PDF em ambiente isolado. Não afirmar que o protocolo foi confirmado nem que o PDF foi gerado.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — harmonização estética do acompanhamento de Transporte
 
 Titular autorizou manutenção pontual de apresentação em fluxo de Transporte homologado e FECHADO. Preservar explicitamente Documentos complementares, Visualizar PDF, Baixar PDF, emissão/consulta/reuso, teste, cópia e revogação de link, canais WhatsApp setor/responsável e Gmail, validação prévia, registro manual de encaminhamento, encerramento, cancelamento, assinaturas, anexos, PDF e histórico. Somente um botão de download do PDF de encerramento visível na área de ações do protocolo encerrado; visualização anterior mantida dentro da auditoria. Documento Mestre, regra específica de congelamento do Transporte, Matriz Funcional §18.11 e Manual Técnico consultados.
