@@ -12,6 +12,72 @@
 
 ---
 
+## 26/11/2026 — VERDE DOCUMENTAL — Fluxo estrutural do Assistente Virtual CAPO — Posso ajudar?
+
+**Autorização e estado:** a Gestora/Titular aprovou o registro deste desenho estrutural no Documento Mestre da branch main. Escopo deste VERDE exclusivamente documental. **FLUXO ESTRUTURAL APROVADO E REGISTRADO — IMPLEMENTAÇÃO NÃO INICIADA.** Não autoriza modificar interface, código, banco, permissões, dados, rotas ou serviços. A implantação dependerá de novo VERDE específico. Aplicar integralmente a Regra Suprema.
+
+### 1. Objetivo e abrangência
+Assistente de orientação operacional integrado ao CAPO para esclarecer dúvidas, orientar rotinas, distinguir etapas obrigatórias pendentes de possíveis dificuldades técnicas, facilitar treinamento e encaminhar problemas ao suporte existente. Disponível em todos os perfis atuais e futuros, nas telas autenticadas, conforme permissões efetivas. Não substituir os fluxos existentes.
+
+### 2. Fluxo estrutural
+Usuário clica em Posso ajudar? → abertura não intrusiva → identificação automática de perfil, permissões e tela/contexto operacional autorizado → apresentação de assuntos relevantes ou pergunta digitada → pesquisa na base de conhecimento aprovada → orientação objetiva passo a passo ou esclarecimento adicional → acesso opcional à funcionalidade autorizada, sem perda de dados → pergunta “Conseguiu resolver sua dificuldade?” → Sim: encerra orientação e continua atividade; Não: complementa orientação ou oferece encaminhamento ao suporte. Distinguir dúvida operacional, etapa pendente (somente se tecnicamente verificável) e possível falha técnica; não diagnosticar como comprovado um erro sem evidências.
+
+### 3. Identidade e comportamento visual
+Botão flutuante “Posso ajudar?” no canto inferior direito, símbolo do girassol e identidade institucional CAPO, tons suaves, acabamento translúcido e efeito 3D discreto conforme padrão homologado. Inicialização minimizada; abertura exclusivamente por ação do usuário; janela independente, minimizável, adaptável a desktop, tablet e celular. Não interromper atendimento, não recarregar a página, não cobrir controles essenciais, preservar menus, atalhos e espaço de trabalho.
+
+### 4. Orientação por perfil e contexto
+Reutilizar contexto efetivo de acesso e permissões existentes, sem criar autorização paralela. Gestor/Titular: gestão e operações autorizadas; Administrativo Operacional: agendas, filas, confirmações, transporte e documentos; Coordenação: gestão e acompanhamento autorizados; Psicologia: individual, grupos, retornos e familiar cuidador; Nutrição: atendimento, plano alimentar e documentos; Assistência Social: acompanhamento social, visitas domiciliares, vulnerabilidade e luto; Clínico Geral: atendimento, receitas, retornos e encaminhamentos; Fisioterapia: atendimentos, agenda e retornos; TI/Manutenção: suporte e diagnóstico; novos perfis: conforme atribuições e permissões efetivas. Não expor funcionalidades restritas nem presumir que todos os perfis tenham as mesmas ações.
+
+### 5. Base oficial de conhecimento
+Fontes: Documento Mestre de Auditoria e Manutenção, Matriz Funcional de Perfis e Automações, Especificação Funcional Estrutural, Especificação Estrutural, Manual Técnico Integrado Banco/Interface, Manual da Interface, registros de manutenções e homologações. Base de orientações revisada, versionada e organizada por módulo, perfil, funcionalidade, etapa e dificuldade, com prevalência das regras vigentes e mais recentes homologadas. Não publicar integralmente manuais técnicos internos, segredos, credenciais ou dados de pacientes. Não apresentar propostas pendentes como funcionalidades vigentes.
+
+### 6. Atendimento da dúvida
+1. Abrir assistente.
+2. Identificar perfil e tela.
+3. Mostrar assuntos relevantes.
+4. Permitir seleção de assunto ou digitação de pergunta.
+5. Pesquisar base oficial revisada.
+6. Apresentar orientação objetiva em etapas.
+7. Oferecer acesso opcional à funcionalidade existente, somente quando autorizado e sem perder dados digitados ou interromper atividade.
+8. Perguntar se resolveu.
+9. Se sim, encerrar orientação.
+10. Se não, complementar ou oferecer suporte.
+Minimizar e reabrir sem interromper o trabalho. Se não houver resposta confiável, informar a limitação e pedir esclarecimento ou oferecer suporte, sem inventar respostas.
+
+### 7. Encaminhamento ao suporte
+Quando necessário, oferecer solicitação de manutenção no fluxo já existente. Pré-preencher, quando disponível e autorizado, perfil, módulo/tela, dificuldade relatada e orientações realizadas; permitir complemento e revisão pelo usuário; oferecer cancelar ou encaminhar. Enviar exclusivamente mediante confirmação expressa, reutilizando chamados, notificações, acompanhamento e feedback existentes. Não criar fila paralela. Minimizar dados, não incluir conteúdo clínico, credenciais ou identificadores desnecessários. Não afirmar envio/resolução sem confirmação do fluxo existente.
+
+### 8. Atualização permanente
+Manutenção/implantação → testes e homologação pela Titular → registro no Documento Mestre → atualização da base revisada do assistente → disponibilização aos perfis autorizados. Toda nova funcionalidade ou manutenção homologada deve contemplar atualização das orientações quando aplicável. Não publicar orientações de funcionalidades não homologadas. Manter rastreabilidade da fonte e versão.
+
+### 9. Segurança e limites
+Caráter exclusivamente orientativo. Permitido orientar, pesquisar base oficial, identificar contexto autorizado, direcionar para ações existentes e encaminhar chamado mediante confirmação do usuário. Proibido alterar pacientes, agendar/cancelar automaticamente, mudar permissões, executar manutenção, modificar banco autonomamente, ignorar regras homologadas ou expor informações restritas. Preservar LGPD, confidencialidade e isolamento lógico de produção/homologação no banco existente. Não criar acesso privilegiado ou substituir verificações existentes.
+
+### 10. Estrutura técnica proposta
+Primeira versão interna sem API externa de IA: componente flutuante global adaptado às estruturas de navegação existentes; base de conhecimento versionada; pesquisa por termos, sinônimos, abreviações e normalização de acentos; identificação de contexto; navegação autorizada; integração com suporte existente. Não equivale a IA generativa e não compreende ilimitadamente perguntas livres nem diagnostica qualquer erro automaticamente. Custo adicional previsto de API: R$ 0,00; impactos de infraestrutura ainda devem ser avaliados. Qualquer integração externa, IA paga, ampliação de autonomia ou alteração estrutural exige autorização específica.
+
+### 11. Etapas de implantação e critérios de aceite
+1. Aprovação do fluxo estrutural pela Titular (concluída).
+2. Registro no Documento Mestre (concluído nesta entrada).
+3. Inventário de funcionalidades homologadas.
+4. Construção da base de conhecimento por perfil.
+5. Desenvolvimento do assistente flutuante.
+6. Integração com contexto operacional.
+7. Integração com suporte existente.
+8. Testes no ambiente manuteste, sem dados reais: todos os perfis, perfis acumulados e futuros, desktop/mobile, minimização, dúvida respondida/não respondida, navegação sem perda de estado, autorização de acesso e encaminhamento confirmado, isolamento e ausência de regressões.
+9. Homologação expressa da Titular.
+10. Publicação e fechamento, com evidências técnicas e observância da Regra Suprema.
+Etapas 3–10 NÃO INICIADAS; aguardar novo VERDE de implementação. Antes de desenvolver, confrontar documentos vigentes e contratos reais, criar backup, limitar diff, testar e registrar resultados e limitações. Não declarar funcionalidade implementada ou homologada por este registro documental.
+
+### 12. Regra Suprema de continuidade
+O assistente deverá adaptar-se ao CAPO, e não o CAPO adaptar-se ao assistente. Implantação independente e incremental; não reconstruir, substituir ou desconstruir funcionalidades homologadas. Preservar regras, estética, documentos, dados, permissões, rotas, automações e fluxos existentes. Toda intervenção futura depende de solicitação específica e VERDE.
+
+### 13. Identificação oficial
+**Assistente Virtual CAPO — 🌻 Posso ajudar?**
+“Facilitando sua rotina para que você possa dedicar mais tempo ao cuidado.”
+
+---
+
 ## 26/11/2026 — HOMOLOGADO, ENCERRADO E CONGELADO — correção pontual do contexto de homologação no Transporte
 
 Gestora/Titular declarou expressamente “HOMOLOGADO” em resposta à manutenção imediatamente anterior, relativa à orientação de seleção do paciente autorizado em manuteste e à continuidade da confirmação da solicitação e emissão do PDF de Transporte. Correção pontual aprovada pela Titular, encerrada e congelada conforme Regra Suprema. Preservar isolamento, regras de gravação, permissões, geração de documentos, assinaturas, links, canais e histórico. Fluxo funcional de Transporte permanece homologado e fechado. Esta aprovação operacional não equivale a execução independente de testes automatizados ou confirmação técnica de build/publicação. Nenhuma alteração de código ou banco nesta etapa; somente registro documental. Não estender esta homologação às manutenções estéticas ou de outros módulos ainda pendentes. Reabertura somente mediante erro concreto, solicitação específica e novo VERDE.
