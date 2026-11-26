@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — estética em grade do Calendário Mensal da Home Gestor/Titular
+
+Titular solicitou e aprovou expressamente o modelo de calendário tradicional com células delimitadas, linhas horizontais e verticais, fundo branco, cabeçalho azul suave e destaque azul da data atual. VERDE específico exclusivamente estético, sem alterar calendário de consultas nem outros quadros.
+
+Backup backup/calendario-estetica-grade-2026-11-26. Alteração única em src/features/gestor/GestorDashboard.tsx, commit f202974467d6782ab302f3b54e316fe8ab12cdb9, blob 833e9480fe1eae1f1112b76cf8ab5ec18d120652: grade de sete colunas sem espaçamento entre células, borda externa e divisórias internas uniformes, cabeçalhos delimitados, células vazias cinza suave, fins de semana diferenciados e altura mínima uniforme. Diff conferido: somente estilos do componente GestorMonthlyCalendar, sem alterar data civil, cálculos, navegação, Hoje, posição ao lado do Status do Sistema, responsividade da seção, demais componentes, banco, permissões ou outros perfis. CSS global intocado.
+
+Limites: na última consulta npm run build aguardava execução e Cloudflare Pages estava em andamento. Não houve teste autenticado visual ou automatizado independente desta alteração. Homologação ABERTA até aprovação expressa da Titular, quando o calendário e sua estética devem ficar congelados pela Regra Suprema.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — Calendário Mensal na Home Gestor/Titular
 
 Titular solicitou calendário mensal na parte inferior, ao lado de Status do Sistema, e aprovou modelo/VERDE específico: calendário civil compacto, navegação mensal/anual por setas, Hoje, destaque azul na data atual e fins de semana diferenciados, sem integração adicional com agenda ou dados. Matriz Funcional e Documento Mestre consultados; proteger indicadores existentes.
