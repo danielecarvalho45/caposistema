@@ -424,17 +424,17 @@ export function HomeScheduleGrid({
     appointments.map((appointment) => [appointment.appointment_id, appointment] as const),
   )
   const periodDays = datesBetween(startDate, endDate)
+  // No mês, compactar apenas as datas efetivas da grade autorizada.
+  // Horários livres, bloqueados e ocupados, visitas e sessões coletivas contam.
+  const monthlyDates = new Set([
+    ...slots.map((slot) => slot.slot_date),
+    ...homeVisits.map((visit) => visit.date),
+    ...(groupSessions ?? []).map((session) => session.date),
+  ])
   const days = view === 'month'
-    ? (() => {
-        const first = localDate(startDate)
-        first.setDate(first.getDate() - ((first.getDay() + 6) % 7))
-        return Array.from({ length: 42 }, (_, index) => {
-          const day = new Date(first)
-          day.setDate(day.getDate() + index)
-          return dateInputValue(day)
-        })
-      })()
+    ? periodDays.filter((day) => monthlyDates.has(day))
     : periodDays
+  const monthlyColumns = Math.max(1, new Set(days.map((day) => localDate(day).getDay())).size)
   // Um bloco de visita deve ocupar uma única faixa coletiva, não repetir linhas de bloqueio.
   const ordinarySlots = slots.filter(slot => !homeVisits.some(visit =>
     slot.slot_status === 'bloqueado'
@@ -448,6 +448,10 @@ export function HomeScheduleGrid({
     day: '2-digit',
     month: '2-digit',
   })
+
+  if (view === 'month' && days.length === 0) {
+    return <p className="agenda-schedule-no-hours">Nenhum dia de atendimento configurado neste período.</p>
+  }
 
   if (slots.length === 0 && homeVisits.length === 0 && view === 'day') {
     return <p className="agenda-schedule-no-hours">Nenhum horário configurado neste período.</p>
@@ -609,6 +613,7 @@ export function HomeScheduleGrid({
         view === 'week' ? 'agenda-schedule-grid--week' : '',
         view === 'month' ? 'agenda-schedule-grid--month' : '',
       ].filter(Boolean).join(' ')}
+      style={view === 'month' ? { gridTemplateColumns: `repeat(${monthlyColumns}, minmax(0, 1fr))` } : undefined}
       aria-label="Grade efetiva da agenda"
     >
       {days.map((day) => {
@@ -847,32 +852,22 @@ function AgendaResults({
     )
   }
 
-  const first = localDate(startDate)
-  const leadingDays = (first.getDay() + 6) % 7
-  const calendarStart = new Date(first)
-  calendarStart.setDate(calendarStart.getDate() - leadingDays)
-  const calendarDays = Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(calendarStart)
-    date.setDate(date.getDate() + index)
-    return dateInputValue(date)
-  })
+  // Sem grade disponível, mostrar somente datas com consultas retornadas.
+  const calendarDays = days.filter((day) => appointmentsForDay(appointments, day).length > 0)
+  const columns = Math.max(1, new Set(calendarDays.map((day) => localDate(day).getDay())).size)
+  const monthlyFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
 
   return (
-    <div className="agenda-month" aria-label="Agenda do mês">
-      {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((weekday) => (
-        <strong className="agenda-month-weekday" key={weekday}>
-          {weekday}
-        </strong>
-      ))}
+    <div className="agenda-month" aria-label="Agenda do mês" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+      {calendarDays.length === 0 && <p>Nenhum atendimento retornado neste período.</p>}
       {calendarDays.map((day) => {
         const dayAppointments = appointmentsForDay(appointments, day)
-        const outsideMonth = localDate(day).getMonth() !== first.getMonth()
         return (
           <article
-            className={`agenda-month-day${outsideMonth ? ' is-outside' : ''}`}
+            className="agenda-month-day"
             key={day}
           >
-            <time dateTime={day}>{localDate(day).getDate()}</time>
+            <time dateTime={day}>{monthlyFormatter.format(localDate(day))}</time>
             {dayAppointments.map((appointment) => (
               <div
                 className="agenda-month-appointment"
