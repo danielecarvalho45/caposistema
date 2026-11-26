@@ -12,6 +12,12 @@
 
 ---
 
+## 26/11/2026 — HOMOLOGADO E CONGELADO — apresentação dos grupos de Psicologia
+
+Gestora/Titular autorizou expressamente homologar a manutenção de apresentação de Arteterapia e demais grupos de Psicologia registrada abaixo, abrangendo agenda profissional, reserva, Agenda Geral e Homes administrativas. Etapa encerrada e congelada conforme Regra Suprema. A aprovação é da Titular; não equivale a confirmação independente de build, testes automatizados ou cenários técnicos ainda não verificados pelo assistente. Preservar regras, dados, isolamento e demais funcionalidades. Reabertura somente mediante solicitação específica e novo VERDE. Demais manutenções permanecem independentes.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — apresentação de Arteterapia e demais grupos de Psicologia
 
 Titular relatou ausência dos participantes na agenda profissional, durante reserva, na Agenda Geral sem filtro e nas Homes administrativas; autorizou correção pontual. Diagnóstico somente leitura: grupo ativo, sexta-feira 13h30–17h00, capacidade 8, bloco tipo outro, configuração vigente desde 12/11. Contagem física de agendados por sessão: 13/11 = 5; 27/11 = 6. Sem dados pessoais de pacientes neste registro. Grade oficial representa período coletivo como bloqueado/outro, enquanto Home filtra agendados. RPC de sessões exige profissional específico e preserva controle de escopo; frontend anteriormente não consultava sem filtro.
