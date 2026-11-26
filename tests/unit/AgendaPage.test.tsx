@@ -330,8 +330,11 @@ describe('AgendaPage', () => {
 
     await user.click(screen.getByRole('tab', { name: 'Mês' }))
     expect(await screen.findByLabelText('Agenda do mês')).toBeVisible()
-    expect(screen.getByText('Paciente autorizado')).toBeVisible()
-    expect(screen.getByText('Psicologia')).toBeVisible()
+    const patientLink = screen.getByRole('button', { name: 'Paciente autorizado' })
+    expect(patientLink).toBeVisible()
+    await user.click(patientLink)
+    expect(screen.getByRole('tab', { name: 'Dia' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByText('Paciente autorizado')).toBeVisible()
   })
 
   it('descarta uma resposta antiga depois de trocar o período', async () => {
