@@ -58,6 +58,26 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
       ]),
     ).values(),
   ).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+  const [groupRows, setGroupRows] = useState<readonly { group_id: string; name: string; capacity: number; date: string; start: string; end: string; blocked?: boolean; professional_id: string; professional_name: string; participants: readonly { appointment_id: string; patient_name: string; attendance_status: string }[] }[]>([])
+  const [groupError, setGroupError] = useState(false)
+  useEffect(() => {
+    let active = true
+    setGroupRows([])
+    setGroupError(false)
+    const professionals = Array.from(new Map(slots.filter((slot) => slot.block_type === 'outro')
+      .map((slot) => [slot.professional_id, slot.professional_name] as const)))
+    if (professionals.length) {
+      void Promise.all(professionals.map(async ([id, name]) => ({
+        id, name, result: await getRpcService().getPsychologyGroupSessions(id, day, day),
+      }))).then((results) => {
+        if (!active) return
+        setGroupRows(results.flatMap(({ id, name, result }) => result.status === 'success'
+          ? result.data.map((session) => ({ ...session, professional_id: id, professional_name: name })) : []))
+        setGroupError(results.some(({ result }) => result.status === 'error'))
+      }).catch(() => { if (active) setGroupError(true) })
+    }
+    return () => { active = false }
+  }, [slots, day])
   const visibleSlots = mode === 'today' ? slots.filter((slot) => slot.slot_status === 'agendado') :
     mode === 'next' ? slots.filter((slot) => slot.slot_status !== 'bloqueado') : slots
   // Os estados de confirmação são independentes da presença/falta assistencial.
@@ -168,6 +188,20 @@ export function DailyTeamAgendaRows({ slots, day: selectedDay, mode = 'all', sum
     <div className="capo-team-day-list" aria-label="Agenda do dia em ordem de horário">
       {state.error && <p role="alert">Não foi possível verificar as confirmações; confirmação manual indisponível. {state.error}</p>}
       {feedback && <p role="status">{feedback}</p>}
+      {groupError && <p role="alert">Não foi possível consultar os atendimentos em grupo.</p>}
+      {groupRows.filter((group) => group.participants.length > 0).sort((a, b) => Date.parse(a.start) - Date.parse(b.start)).map((group) => (
+        <div className="capo-team-day-entry is-agendado" key={`grupo:${group.group_id}:${group.date}`}>
+          <div className="capo-team-day-primary">
+            <strong className="capo-team-day-time">{clock(group.start)}–{clock(group.end)}</strong>
+            <span className="capo-team-day-patient">{group.name} · {group.participants.length}/{group.capacity} vagas{group.blocked ? ' · Grupo bloqueado' : ''}</span>
+          </div>
+          <div className="capo-team-day-secondary">
+            <span className="capo-team-day-professional">{group.professional_name}</span>
+            <Link className="capo-team-day-action" to="/agenda" state={{ origin: 'home_professional_schedule', professionalId: group.professional_id, slotDate: group.date }}>Consultar grupo</Link>
+          </div>
+          {group.participants.map((person) => <div className="capo-team-day-secondary" key={person.appointment_id}><span>{person.patient_name}</span><small>{person.attendance_status}</small></div>)}
+        </div>
+      ))}
       {orderedSlots([...visibleSlots, ...cancelledLinks]).map((slot) => {
         const id = slot.appointment_id
         const decision = id ? state.decisions[id] : null
