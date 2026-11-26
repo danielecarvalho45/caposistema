@@ -12,6 +12,14 @@
 
 ---
 
+## 26/11/2026 — VERDE EXECUTADO — fonte e visualização integral da agenda mensal
+
+Titular autorizou exclusivamente aumentar nomes para 13px e horários para 12px, retirar rolagem interna e permitir expansão automática das células para exibir todos os agendamentos retornados. Documento Mestre, Matriz Funcional e Manual Técnico consultados. Backup backup/agenda-mensal-fonte-sem-rolagem-2026-11-26. Alteração exclusiva em src/features/agenda/agenda-page.css, commit d78d22c94c99edfd954be5c249ac3ae2d5e93a05, blob f23ed93d86ba3d7d63c3721343b50d7c6ac353db. Regras restritas à classe agenda-month-compact, abrangendo grade efetiva e fallback, inclusive Home: altura automática, sem limite máximo, overflow visível na grade, células e lista interna; quebra de linha dos nomes. Preservados datas, cores, ausência de bordas, espaçamento, links, colunas e demais vistas. A página pode crescer verticalmente; não se elimina a rolagem geral do navegador. Nenhuma alteração de TSX, dados, permissões ou banco. Diff conferido, exclusivamente CSS.
+
+Limites: npm run build=completed/failure; Cloudflare Pages=in_progress/pendente. Não executados testes visuais autenticados ou automatizados independentes. Homologação ABERTA até aprovação expressa da Titular.
+
+---
+
 ## 26/11/2026 — VERDE EXECUTADO — agenda mensal resumida sem bordas
 
 Titular solicitou retirar bordas e divisórias da agenda mensal de consultas e autorizou VERDE exclusivamente estético. Documento Mestre, Matriz Funcional e Manual Técnico consultados. Backup backup/agenda-mensal-sem-bordas-2026-11-26. Alteração única em src/features/agenda/agenda-page.css, commit 7b163c217dec628d6717eec395331ea1a1ca4375, blob 5fca0a982da8ee7f68fd3a4bf92fa83b6be76b38: seletores restritos a agenda-month-compact retiram contornos externos, internos e divisórias dos grupos, mantendo separação discreta de 6px, cabeçalhos, grade, alturas, horários e nomes clicáveis. Sem alteração em TSX, regras, dados, banco, vistas diária/semanal ou calendários civis homologados. Diff conferido: apenas acréscimo CSS.
