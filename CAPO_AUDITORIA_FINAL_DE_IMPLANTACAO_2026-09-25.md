@@ -12,6 +12,16 @@
 
 ---
 
+## 26/11/2026 — VERDE — Manual visual do Assistente CAPO
+
+Titular autorizou substituir a abertura de módulo em outra aba nas orientações pelo botão “Visualizar exemplo preenchido”, com modelos fiéis aos campos existentes, dados fictícios, possibilidade de ampliar/reduzir/fechar, sem navegar ou gravar. Consultados Documento Mestre, Matriz Funcional, Manual Técnico e campos/controles dos componentes de Agenda, Transporte, Nutrição, Assistência Social, Familiar/Cuidador, Solicitações, Receita, Faltosos, Relatórios, TI, Coordenação e Notificações. Backup backup/assistente-modelos-visuais-2026-11-26.
+
+Implementação: help-examples.ts (050c22d1) contém recortes estáticos em HTML renderizado, não capturas reais das telas, para os 18 assuntos já cadastrados. Agenda administrativa contempla novo agendamento e remarcação; Transporte PDF contempla solicitação, endereço e periodicidade. Rotinas sem formulário recebem esquema visual de consulta. Asteriscos usados nos campos verificados; exemplos não são prescrição ou classificação clínica. Nenhuma informação real, URL de compartilhamento válida ou dados de paciente. CapoHelp.tsx (ff04329b): substituição do link de módulo por botão de exemplo, exibição local, ampliação/redução/fechamento e limpeza ao trocar assunto ou resolver. Mantida integração de suporte e acesso autorizado ao Painel Técnico na etapa de suporte, não confundido com o atalho removido. capo-help.css (2bfb4682): estilos exclusivos dos modelos. Sem alteração do posicionamento do assistente, girassol, menus, formulários operacionais, banco, permissões, navegação geral ou outras funcionalidades. Base de conhecimento e filtros de acesso existentes preservados.
+
+Verificação estática: 18 IDs de assunto e 18 chaves de modelo correspondentes, sem lacunas ou extras. Testes de cobertura adicionados em tests/unit/capo-help-examples.test.ts (4bab1a3f), não executados independentemente. Checks: npm run build=completed/failure; Cloudflare Pages=in_progress/pendente. Teste visual autenticado, mobile e publicação ainda não confirmados. Homologação ABERTA: conferir cada recorte com a tela real, legibilidade, ampliação e fechamento, ausência de navegação, preservação de formulários em andamento e dos controles de suporte. Modelos não representam todos os formulários do sistema, somente assuntos cadastrados. Atualizar modelo e fonte a cada manutenção homologada aplicável, sem modificar fluxos operacionais. Regra Suprema mantida.
+
+---
+
 ## 26/11/2026 — VERDE ESTÉTICO — Assistente CAPO à esquerda e girassol institucional
 
 Titular aprovou posição inferior esquerda, botão flutuante transparente e discreto, cores padrão CAPO e mesmo girassol da saudação “Tenha um ótimo dia de trabalho!”. Determinou somente elevar Sair e Status do Sistema, sem modificar sua aparência ou ação. Modelo ilustrativo aprovado exclusivamente quanto ao posicionamento; não substituir Home, logo, menus ou cartões. Conferidos Documento Mestre, Matriz, Manual Técnico, AppShell/GestorShell e estilos. Ambos os menus utilizam Conexão como indicador inferior; mantido texto e comportamento, sem deslocar quadro Status do Sistema da Home. Backup backup/assistente-estetica-esquerda-2026-11-26.
