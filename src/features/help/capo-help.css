@@ -1,10 +1,10 @@
 /* Isolado: não altera os estilos globais do CAPO. */
-.capo-help { position:fixed; right:max(12px,env(safe-area-inset-right)); bottom:max(12px,env(safe-area-inset-bottom)); z-index:900; display:flex; flex-direction:column; align-items:flex-end; gap:8px; width:min(370px,calc(100vw - 24px)); pointer-events:none; color:#28465f; font-size:.88rem; }
+.capo-help { position:fixed; left:max(14px,env(safe-area-inset-left)); bottom:max(12px,env(safe-area-inset-bottom)); z-index:900; display:flex; flex-direction:column; align-items:flex-start; gap:8px; width:min(370px,calc(100vw - 24px)); pointer-events:none; color:#28465f; font-size:.88rem; }
 .capo-help button,.capo-help a,.capo-help-panel {pointer-events:auto;}
 .capo-help button {font:inherit; cursor:pointer; border:1px solid #d3e3ef; border-radius:9px; padding:7px 10px; color:#315b80; background:#edf5fc; white-space:normal;}
 .capo-help button:disabled {opacity:.55;cursor:not-allowed;}
 .capo-help button:focus-visible,.capo-help a:focus-visible,.capo-help input:focus-visible {outline:2px solid #507aa6;outline-offset:2px;}
-.capo-help .capo-help-trigger {border-radius:999px; padding:10px 15px; font-weight:650; background:linear-gradient(150deg,#f5fbff,#dcebf8); box-shadow:0 3px 9px #315b8026,inset 0 1px 1px #fff; display:flex;align-items:center;gap:6px;}
+.capo-help .capo-help-trigger {border-radius:999px; padding:5px 12px; min-height:38px; font-size:12px; font-weight:600; color:#17365f; border:1px solid rgb(110 155 200 / 18%); background:linear-gradient(150deg,rgb(255 255 255 / 45%),rgb(218 237 255 / 22%)); box-shadow:0 2px 6px rgb(31 67 104 / 10%),inset 0 1px 0 rgb(255 255 255 / 45%); backdrop-filter:blur(3px); display:flex;align-items:center;gap:5px;}
 .capo-help-panel {width:100%; max-height:min(72dvh,640px); overflow:auto; background:#fff; border:1px solid #d2e2ef; border-radius:16px; box-shadow:0 7px 28px #234e7926; overscroll-behavior:contain;}
 .capo-help-header {display:flex;gap:9px;align-items:center;padding:12px;background:linear-gradient(140deg,#edf6fd,#e0edf9);position:sticky;top:0;z-index:1;}
 .capo-help-header>span {font-size:1.6rem;}
@@ -26,4 +26,19 @@
 .capo-help-actions {display:flex;flex-wrap:wrap;gap:5px;}
 .capo-help-actions button:first-child {background:#e7f3eb;color:#386650;}
 .capo-help-footer {text-align:center;color:#52697c;}
-@media(max-width:540px) {.capo-help {bottom:max(8px,env(safe-area-inset-bottom));right:8px;width:min(350px,calc(100vw - 16px));}.capo-help-panel{max-height:68dvh;}.capo-help .capo-help-trigger {padding:8px 12px;}}
+@media(max-width:540px) {.capo-help {bottom:max(8px,env(safe-area-inset-bottom));left:max(8px,env(safe-area-inset-left));width:min(350px,calc(100vw - 16px));}.capo-help-panel{max-height:68dvh;}.capo-help .capo-help-trigger {padding:5px 10px;}}
+
+/* VERDE estético: reserva espaço abaixo de Sair e Conexão, sem mudar
+   seus estilos, ordem, texto ou comandos. As listas continuam roláveis. */
+.app-shell:has(.capo-help) .app-sidebar,
+.gestor-shell:has(.capo-help) .gestor-sidebar {
+  box-sizing:border-box;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px));
+}
+.app-shell:has(.capo-help) .app-nav,
+.gestor-shell:has(.capo-help) .gestor-nav {
+  min-height:0;
+}
+.capo-help .capo-help-sunflower {width:22px;height:29px;object-fit:contain;flex-shrink:0;display:block;}
+.capo-help-header .capo-help-sunflower {width:32px;height:42px;}
+.capo-help .capo-help-trigger:hover {background:linear-gradient(150deg,rgb(255 255 255 / 68%),rgb(218 237 255 / 45%));}
