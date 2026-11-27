@@ -54,7 +54,7 @@ function referralService(result: object) {
       data: [{ specialty_id: 'specialty-id', specialty_name: 'Fisioterapia' }],
     }),
     getReferralTargets: vi.fn().mockResolvedValue({ status: 'empty' }),
-    searchReferralPatients: vi.fn().mockResolvedValue({ status: 'empty' }),
+    searchProfessionalPatients: vi.fn().mockResolvedValue({ status: 'empty' }),
     getInterprofessionalReferrals: vi.fn().mockResolvedValue(result),
     getReferralEvents: vi.fn().mockResolvedValue({ status: 'empty' }),
     createInterprofessionalReferral: vi
@@ -145,7 +145,7 @@ describe('ReferralsPage', () => {
   it('busca o paciente e cria um encaminhamento pela operação injetada', async () => {
     const user = userEvent.setup()
     const service = referralService({ status: 'empty' })
-    service.searchReferralPatients.mockResolvedValue({
+    service.searchProfessionalPatients.mockResolvedValue({
       status: 'success',
       data: [
         {
@@ -191,7 +191,7 @@ describe('ReferralsPage', () => {
       screen.getByRole('button', { name: 'Enviar para triagem' }),
     )
 
-    expect(service.searchReferralPatients).toHaveBeenCalledWith(
+    expect(service.searchProfessionalPatients).toHaveBeenCalledWith(
       'Paciente',
       20,
       0,
