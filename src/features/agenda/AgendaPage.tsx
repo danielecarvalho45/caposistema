@@ -4308,7 +4308,7 @@ export function AgendaPage({
                               <div className="agenda-psychology-booking">
                                 <p>Remarcar somente este participante para outra sessão do mesmo grupo.</p>
                                 <label>Nova data
-                                  <CapoDateInput  min={capoTodayIso()}
+                                  <CapoDateInput  min={accessContext.is_homologation_account && accessContext.homologation_context?.enabled ? undefined : capoTodayIso()}
                                     value={groupRescheduleDate} onChange={(event) => setGroupRescheduleDate(event.target.value)} />
                                 </label>
                                 <label>Motivo (opcional)
