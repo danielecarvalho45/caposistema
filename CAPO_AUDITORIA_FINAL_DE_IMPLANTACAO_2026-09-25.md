@@ -2715,3 +2715,7 @@ Não sobrepor consultas nem ignorar bloqueios, intervalos, capacidade, ciclo ati
 Primeira consulta semanal/quinzenal; retorno automático 7/14 dias; alteração de periodicidade em ambos os sentidos; Arteterapia com recorrência semanal, transição individual e encerramento; falta; horário ocupado; bloqueio; grupo lotado; duplicidade; comunicação administrativa; isolamento; ausência de regressão no familiar cuidador e demais perfis. Conferir persistência após recarga, permissões no banco e auditoria. Homologação operacional da Titular obrigatória antes do fechamento.
 
 **Estado:** especificação funcional autorizada e registrada. Implementação, testes, build e publicação ainda pendentes nesta etapa. Não declarar funcionalidade homologada apenas com este registro.
+
+
+### Execução parcial — fundação de periodicidade
+Migração `scheilla_followup_preferences_foundation_20261127` aplicada com sucesso: tabela privada `private.capo_scheilla_followup_preferences`, chave por acompanhamento de especialidade e profissional, frequência restrita a 7/14 dias, escopo restrito aos IDs verificados Scheilla e Psicólogo 2, responsável e data de atualização, RLS habilitada e revogação de acesso direto a public/anon/authenticated. Nenhuma periodicidade presumida, nenhum agendamento modificado. Esta fundação não ativa recorrência. Pendentes RPCs com validação de contexto e ciclo, integração da agenda, recorrência individual/grupo, conflitos, comunicação, testes e publicação. Homologação aberta.
