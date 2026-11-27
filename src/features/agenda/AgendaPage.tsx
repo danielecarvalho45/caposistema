@@ -1052,6 +1052,9 @@ export function AgendaPage({
   const [individualPeriods, setIndividualPeriods] = useState<Record<string, number>>({})
   const [pendingIndividualReturn, setPendingIndividualReturn] = useState<string | null>(null)
   const [individualFeedback, setIndividualFeedback] = useState('')
+  const [groupContinuity, setGroupContinuity] = useState<Record<string, 'grupo' | 'individual' | 'encerramento'>>({})
+  const [groupContinuityFeedback, setGroupContinuityFeedback] = useState('')
+  const [pendingGroupReturn, setPendingGroupReturn] = useState<string | null>(null)
   // Evita que um novo retorno seja confundido com remarcação de consulta ainda ativa.
   const [additionalAppointmentApproval, setAdditionalAppointmentApproval] = useState('')
   const [existingAppointmentWarning, setExistingAppointmentWarning] = useState<{
@@ -2512,6 +2515,33 @@ export function AgendaPage({
     </span>
   }
 
+  function ownArtetherapySession(id: string) {
+    return psychologyGroupSessions.find(session =>
+      session.professional_id === accessContext.professional_id &&
+      session.name.toLowerCase().replace(/\s+/g, '') === 'arteterapia' &&
+      session.participants.some(person => person.appointment_id === id))
+  }
+
+  async function runGroupFollowup(id: string) {
+    const client = getSupabaseClient() as unknown as {
+      rpc: (name: string, args: Record<string, unknown>) => Promise<{data: unknown; error: {message?: string} | null}>
+    }
+    try {
+      const {data,error} = await client.rpc('capo_scheilla_artetherapy_followup', {p_appointment_id:id})
+      const result = data as {status?: string} | null
+      if (!error && (result?.status === 'scheduled' || result?.status === 'existing')) {
+        setPendingGroupReturn(null)
+        setGroupContinuityFeedback(result.status === 'scheduled' ? 'Próxima Arteterapia agendada.' : 'Já existe retorno agendado; nenhuma duplicidade criada.')
+      } else {
+        setPendingGroupReturn(id)
+        setGroupContinuityFeedback(error?.message ?? 'Próxima sessão indisponível. A presença foi registrada; encaminhe ao Administrativo.')
+      }
+    } catch {
+      setPendingGroupReturn(id)
+      setGroupContinuityFeedback('Presença registrada; falha de comunicação ao agendar próxima sessão.')
+    }
+  }
+
   async function runIndividualFollowup(id: string, days?: number) {
     const client = getSupabaseClient() as unknown as {
       rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: {message?: string} | null }>
@@ -2636,12 +2666,28 @@ export function AgendaPage({
       setAttendanceReason('')
       const isIndividualFollowup = isScheillaFlow && action === 'confirmado' && !!individualAppointment(appointmentId)
       if (isIndividualFollowup) await runIndividualFollowup(appointmentId, individualPeriods[appointmentId])
+      const groupSession = isScheillaFlow && action === 'confirmado' ? ownArtetherapySession(appointmentId) : undefined
+      const groupChoice = groupContinuity[appointmentId] ?? 'grupo'
+      if (groupSession && groupChoice === 'grupo') await runGroupFollowup(appointmentId)
       const reloaded = await load()
       if (reloaded.status === 'error') {
         setAppointmentFeedback('Atendimento registrado, mas a recarga da agenda falhou: ' + reloaded.error.message)
       } else {
         setAppointmentFeedback('Atendimento atualizado. Agenda recarregada do banco.')
-        if (action === 'confirmado' && onConfirmed && !isIndividualFollowup) {
+        if (groupSession && groupChoice === 'individual') {
+          const person = groupSession.participants.find(item => item.appointment_id === appointmentId)
+          if (person) {
+            const source = (reloaded.status === 'success' ? reloaded.data.find(item => item.appointment_id === appointmentId) : undefined) ?? (state.status === 'success' ? state.data.find(item => item.appointment_id === appointmentId) : undefined)
+            if (source) prepareProfessionalReturn({...source, attendance_status:'confirmado'})
+            else {
+              setGroupContinuityFeedback('Presença registrada. Abra a agenda individual para agendar o retorno.')
+              if (embeddedHome) navigate('/agenda', {state:{origin:'professional_home_return',appointmentId,slotDate:groupSession.date}})
+            }
+          }
+        } else if (groupSession && groupChoice === 'encerramento') {
+          navigate('/encerramentos')
+        }
+        if (action === 'confirmado' && onConfirmed && !isIndividualFollowup && !groupSession) {
           const confirmedAppointment =
             (reloaded.status === 'success'
               ? reloaded.data.find((appointment) => appointment.appointment_id === appointmentId)
@@ -3257,6 +3303,7 @@ export function AgendaPage({
           </>
         )}
 
+        {isScheillaFlow && groupContinuityFeedback && <section className="agenda-contract-note" aria-live="polite"><p>{groupContinuityFeedback}</p>{pendingGroupReturn && <button type="button" disabled={busyAppointmentId !== null} onClick={async () => { const id = pendingGroupReturn; setBusyAppointmentId(id); try {await runGroupFollowup(id); await load()} finally {setBusyAppointmentId(null)} }}>Tentar próximo grupo</button>}</section>}
         {isScheillaFlow && individualFeedback && <section className="agenda-contract-note" aria-live="polite">
           <p>{individualFeedback}</p>
           {pendingIndividualReturn && [7,14].map(days => <button key={days} type="button" className="agenda-slot-schedule-button" disabled={busyAppointmentId !== null} onClick={async () => {
@@ -4306,6 +4353,9 @@ export function AgendaPage({
                         <span><strong>{participant.patient_name}</strong> · {participant.attendance_status}</span>
                         {canRegisterAttendance && participant.attendance_status === 'agendado' && (
                           <span className="agenda-home-patient-actions">
+                            {isScheillaFlow && ownArtetherapySession(participant.appointment_id) && <span role="group" aria-label="Continuidade Arteterapia">
+                              {(['grupo','individual','encerramento'] as const).map(mode => <button key={mode} type="button" className="agenda-slot-schedule-button" aria-pressed={(groupContinuity[participant.appointment_id] ?? 'grupo') === mode} disabled={busyAppointmentId !== null} onClick={() => setGroupContinuity(current => ({...current,[participant.appointment_id]:mode}))}>{mode === 'grupo' ? 'Grupo' : mode === 'individual' ? 'Individual' : 'Encerramento'}</button>)}
+                            </span>}
                             <button type="button" className="agenda-attendance-confirm"
                               disabled={busyAppointmentId !== null}
                               onClick={() => void updateAttendance(participant.appointment_id, 'confirmado')}>Confirmar</button>
