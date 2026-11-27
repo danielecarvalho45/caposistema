@@ -888,6 +888,15 @@ describe('camada de RPCs CAPO', () => {
       data: [{ patient_id: 'patient-id' }],
     })
 
+    const directoryTransport = transportWith([{
+      patient_id: 'directory-patient', full_name: 'Paciente cadastrado',
+      patient_number: '1', cms: null, status: 'ativo', total_count: 1,
+    }])
+    const directory = await createRpcService(directoryTransport).searchAssistentialDirectory('1', 20, 0)
+    expect(directoryTransport).toHaveBeenCalledWith('search_patients_for_professional_interface',
+      { p_query: '1', p_limit: 20, p_offset: 0 })
+    expect(directory).toMatchObject({ status: 'success', data: [{ patient_id: 'directory-patient', status: 'ativo' }] })
+
     const agendaTransport = transportWith([
       {
         appointment_id: 'appointment-id',
