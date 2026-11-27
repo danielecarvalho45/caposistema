@@ -604,36 +604,12 @@ describe('App', () => {
     expect(
       screen.queryByRole('heading', { name: 'Atendimentos de hoje' }),
     ).not.toBeInTheDocument()
-    const quickAccess = screen.getByRole('heading', { name: 'Acessos rápidos' })
-    const agenda = screen.getByRole('heading', { name: 'Minha agenda' })
-    expect(
-      quickAccess.compareDocumentPosition(agenda) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-    expect(agenda).toBeVisible()
-    expect(
-      screen.queryByText('Agenda própria com visualização por dia, semana e mês.'),
-    ).not.toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Dia' })).toBeVisible()
-    expect(screen.getByRole('tab', { name: 'Semana' })).toBeVisible()
-    expect(screen.getByRole('tab', { name: 'Mês' })).toBeVisible()
-    expect(
-      screen.getByRole('complementary', { name: 'Indicadores da agenda' }),
-    ).toHaveTextContent('Notificações')
-    expect(
-      screen.getByRole('complementary', { name: 'Indicadores da agenda' }),
-    ).toHaveTextContent('Faltosos')
-    expect(
-      screen.getByLabelText('Resumo rápido da agenda'),
-    ).toHaveTextContent('Agendados')
-    expect(
-      screen.getByLabelText('Resumo rápido da agenda'),
-    ).toHaveTextContent('Confirmados')
-    expect(
-      screen.getByLabelText('Resumo rápido da agenda'),
-    ).toHaveTextContent('Faltosos')
-    expect(
-      await screen.findByText('Nenhum agendamento encontrado no período.'),
-    ).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Pacientes — Atuação profissional' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Buscar pacientes do CAPO' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Acessos rápidos' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Dia' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Voltar ao início' })).toBeVisible()
+    expect(await screen.findByText('Resumo operacional')).toBeVisible()
     expect(screen.queryByRole('link', { name: 'Minha atuação' })).not.toBeInTheDocument()
   })
 
