@@ -29,6 +29,7 @@ type HomologationTarget = Readonly<{
   label: string
   roleCode: string | null
   specialtyName?: string
+  professionalName?: string
 }>
 
 const homologationTargets: readonly HomologationTarget[] = [
@@ -70,6 +71,14 @@ const homologationTargets: readonly HomologationTarget[] = [
     label: 'Psicologia',
     roleCode: 'profissional',
     specialtyName: 'Psicologia',
+    professionalName: 'Homologação — Psicologia',
+  },
+  {
+    key: 'psicologia_2_grupo',
+    label: 'Psicólogo 2 com grupo',
+    roleCode: 'profissional',
+    specialtyName: 'Psicologia',
+    professionalName: 'Homologação — Psicólogo 2 com grupo',
   },
   {
     key: 'fisioterapia',
@@ -89,6 +98,7 @@ function homologationTargetActive(
   if (target.specialtyName && current.specialty_name !== target.specialtyName) {
     return false
   }
+  if (target.professionalName && current.professional_name !== target.professionalName) return false
   return true
 }
 
@@ -198,6 +208,7 @@ export function ProfileShortcuts({
       const homologationProfessional = homologationOptions.professionals.find(
         (professional) =>
           professional.is_homologation_stub &&
+          (!target.professionalName || professional.professional_name === target.professionalName) &&
           professional.specialties.some(
             (specialty) => specialty.specialty_id === specialtyId,
           ),
