@@ -392,7 +392,7 @@ function AppointmentTable({
                     </>
                   )}
                   {onReturn && appointment.attendance_status === 'confirmado' && (
-                    <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>Agendar retorno</button>
+                    <button type="button" className="agenda-slot-schedule-button agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>Agendar retorno</button>
                   )}
                   {onCancel && ['agendado', 'confirmado'].includes(appointment.attendance_status) && (
                     <button type="button" className="agenda-cancel-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onCancel(appointment.appointment_id)}>Cancelar agendamento</button>
@@ -617,7 +617,7 @@ export function HomeScheduleGrid({
                       </button>
                     )}
                     {appointment && onReturn && appointment.attendance_status === 'confirmado' && (
-                      <button type="button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>
+                      <button type="button" className="agenda-slot-schedule-button agenda-slot-return-button" disabled={busyAppointmentId === appointment.appointment_id} onClick={() => onReturn(appointment)}>
                         Agendar retorno
                       </button>
                     )}
