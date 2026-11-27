@@ -580,6 +580,7 @@ export function HomeScheduleGrid({
                         onAttendance &&
                         attendanceStatus === 'agendado' && (
                           <span className="agenda-home-patient-actions">
+                            {!group && slot.appointment_id && renderIndividualPeriod?.(slot.appointment_id)}
                             <button
                               type="button"
                               className="agenda-attendance-confirm"
@@ -1050,6 +1051,7 @@ export function AgendaPage({
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
   const [individualPeriods, setIndividualPeriods] = useState<Record<string, number>>({})
+  const [savedIndividualPeriods, setSavedIndividualPeriods] = useState<Record<string, number>>({})
   const [pendingIndividualReturn, setPendingIndividualReturn] = useState<string | null>(null)
   const [individualFeedback, setIndividualFeedback] = useState('')
   const [groupContinuity, setGroupContinuity] = useState<Record<string, 'grupo' | 'individual' | 'encerramento'>>({})
@@ -2496,6 +2498,30 @@ export function AgendaPage({
     setBusyAppointmentId(null)
   }
 
+  useEffect(() => {
+    let active = true
+    setSavedIndividualPeriods({})
+    if (!isScheillaFlow || state.status !== 'success') return
+    const ids = state.data.filter(item => item.professional_id === accessContext.professional_id &&
+      ['primeiro_capo','primeiro_especialidade','primeira_consulta','retorno'].includes(String(item.appointment_type).toLowerCase())).map(item => item.appointment_id)
+    const client = getSupabaseClient() as unknown as {
+      rpc: (name: string, args: Record<string, unknown>) => Promise<{data: unknown; error: {message?: string} | null}>
+    }
+    if (ids.length) void Promise.all(Array.from({length: Math.ceil(ids.length/500)}, (_,i) =>
+      client.rpc('capo_scheilla_followup_periods',{p_appointment_ids:ids.slice(i*500,(i+1)*500)})))
+      .then(results => {
+        if (!active) return
+        const values: Record<string, number> = {}
+        for (const result of results) {
+          if (!result.error && result.data && typeof result.data === 'object') {
+            for (const [id,days] of Object.entries(result.data)) if (days === 7 || days === 14) values[id] = days
+          }
+        }
+        setSavedIndividualPeriods(values)
+      }).catch(() => { if (active) setSavedIndividualPeriods({}) })
+    return () => {active = false}
+  }, [isScheillaFlow, state, accessContext.professional_id])
+
   function individualAppointment(id: string) {
     const row = state.status === 'success' ? state.data.find(item => item.appointment_id === id) : undefined
     return row && row.professional_id === accessContext.professional_id &&
@@ -2508,7 +2534,7 @@ export function AgendaPage({
     if (!individualAppointment(id)) return null
     return <span role="group" aria-label="Periodicidade do retorno">
       {[7,14].map(days => <button key={days} type="button" className="agenda-slot-schedule-button"
-        aria-pressed={individualPeriods[id] === days} disabled={busyAppointmentId !== null}
+        aria-pressed={(individualPeriods[id] ?? savedIndividualPeriods[id]) === days} disabled={busyAppointmentId !== null}
         onClick={() => setIndividualPeriods(current => ({ ...current, [id]: days }))}>
         {days === 7 ? 'Semanal' : 'Quinzenal'}
       </button>)}
