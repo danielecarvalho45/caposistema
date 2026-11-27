@@ -2131,6 +2131,10 @@ export function AgendaPage({
 
   function prepareProfessionalReturn(appointment: AgendaAppointment) {
     if (!isProfessional || !accessContext.professional_id) return
+    if (embeddedHome) {
+      navigate('/agenda', { state: { origin: 'professional_home_return', appointmentId: appointment.appointment_id, slotDate: appointmentDay(appointment.appointment_date) } })
+      return
+    }
     const ownSpecialty =
       effectiveSpecialties.find((item) => item.is_primary) ??
       effectiveSpecialties[0]
@@ -2150,6 +2154,34 @@ export function AgendaPage({
     setSelectedSlotStart('')
     setAppointmentFeedback(null)
   }
+
+  // A Home encaminha para a agenda canônica; revalida a consulta no escopo do profissional.
+  useEffect(() => {
+    const source = location.state as { origin?: string; appointmentId?: string; slotDate?: string } | null
+    const ownId = accessContext.professional_id
+    if (embeddedHome || !isProfessional || !ownId || source?.origin !== 'professional_home_return' ||
+        !source.appointmentId || !source.slotDate) return
+    let active = true
+    const sourceDate = source.slotDate
+    const sourceId = source.appointmentId
+    void loadAgenda(sourceDate, sourceDate, ownId).then((result) => {
+      if (!active) return
+      const appointment = result.status === 'success' ? result.data.find((item) =>
+        item.appointment_id === sourceId && item.professional_id === ownId &&
+        item.attendance_status === 'confirmado') : undefined
+      if (!appointment) {
+        setAppointmentFeedback('Consulta confirmada não localizada na sua agenda. Selecione novamente o atendimento.')
+      } else {
+        prepareProfessionalReturn(appointment)
+      }
+      navigate('/agenda', { replace: true, state: null })
+    }).catch(() => {
+      if (!active) return
+      setAppointmentFeedback('Não foi possível consultar o atendimento para retorno.')
+      navigate('/agenda', { replace: true, state: null })
+    })
+    return () => { active = false }
+  }, [embeddedHome, isProfessional, accessContext.professional_id, location.state, loadAgenda, navigate])
 
   async function rescheduleAppointment() {
     if (isProfessional) {
