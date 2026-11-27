@@ -16,7 +16,7 @@ type Service = Pick<
   ReturnType<typeof getRpcService>,
   | 'getReferralSpecialties'
   | 'getReferralTargets'
-  | 'searchReferralPatients'
+  | 'searchProfessionalPatients'
   | 'getInterprofessionalReferrals'
   | 'getReferralEvents'
   | 'createInterprofessionalReferral'
@@ -196,13 +196,13 @@ export function ReferralsPage({
       setFeedback('Informe ao menos dois caracteres ou o Nº CAPO exato.')
       return
     }
-    const result = await service.searchReferralPatients(
+    const result = await service.searchProfessionalPatients(
       cleanQuery,
       20,
       0,
     )
     setPatients(result.status === 'success' ? result.data : [])
-    if (result.status === 'error') setFeedback(result.error.message)
+    setFeedback(result.status === 'error' ? result.error.message : result.status === 'empty' || (result.status === 'success' && result.data.length === 0) ? 'Nenhum paciente encontrado.' : null)
   }
 
   async function createReferral() {
