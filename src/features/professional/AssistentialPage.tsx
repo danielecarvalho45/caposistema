@@ -160,7 +160,7 @@ export function AssistentialPage({
   async function searchPatients(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const cleanQuery = query.trim()
-    if (cleanQuery.length < 2) {
+    if (cleanQuery.length < 2 && !/^\d$/.test(cleanQuery)) {
       setSearchState(null)
       return
     }
@@ -241,7 +241,7 @@ export function AssistentialPage({
         <h2 id="assistential-title">Acessos rápidos</h2>
         <div className="home-profile-grid">
           <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/agenda" /></span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
-          <Link className="home-profile-card quick-blue" to="/atuacao"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/atuacao" /></span><strong>Pacientes</strong><span>Consultar a própria atuação</span></Link>
+          <Link className="home-profile-card quick-blue" to="/atuacao"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/atuacao" /></span><strong>Pacientes</strong><span>Buscar pacientes cadastrados</span></Link>
           <Link className="home-profile-card quick-blue" to="/minha-agenda/gerenciar"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/minha-agenda/gerenciar" /></span><strong>Gerenciar minha agenda</strong><span>Bloqueios e ajustes temporários</span></Link>
           <Link className="home-profile-card quick-purple" to="/minha-agenda/solicitar-alteracao"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/minha-agenda/solicitar-alteracao" /></span><strong>Solicitar alteração de agenda</strong><span>Mudança estrutural para análise da Coordenação</span></Link>
           {canAccessAppRoute(accessContext, '/solicitacoes') && <Link className="home-profile-card quick-purple" to="/solicitacoes"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/solicitacoes" /></span><strong>Solicitações</strong><span>Acompanhar demandas autorizadas</span></Link>}
@@ -296,21 +296,20 @@ export function AssistentialPage({
 
       {(!homeOnly || searchState !== null) && (
       <article id="assistential-patients" className="assistential-card">
-        <h3>Pacientes sob sua atuação</h3>
+        <h3>Buscar pacientes do CAPO</h3>
         <p className="assistential-muted">
-          A busca retorna somente pacientes vinculados à sua atuação atual.
+          Identificação cadastral; as ações continuam sujeitas às permissões profissionais.
         </p>
         <form className="assistential-search" onSubmit={searchPatients}>
           <label>
             Nome, número CAPO ou CMS
             <input
               value={query}
-              minLength={2}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Digite ao menos 2 caracteres"
+              placeholder="Nome ou Nº CAPO exato"
             />
           </label>
-          <button type="submit" disabled={query.trim().length < 2}>
+          <button type="submit" disabled={query.trim().length < 2 && !/^\d$/.test(query.trim())}>
             Buscar
           </button>
         </form>
