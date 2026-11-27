@@ -444,6 +444,7 @@ export function HomeScheduleGrid({
   renderVisitActions,
   renderAdministrativeActions,
   renderFamilyReturnAction,
+  renderIndividualPeriod,
   onOpenMonthly,
   showProfessional = false,
 }: Readonly<{
@@ -467,6 +468,7 @@ export function HomeScheduleGrid({
   showProfessional?: boolean
   renderAdministrativeActions?: (appointmentId: string) => ReactNode
   renderFamilyReturnAction?: (appointmentId: string) => ReactNode
+  renderIndividualPeriod?: (appointmentId: string) => ReactNode
   onOpenMonthly?: OpenMonthlyAgenda
 }>) {
   const appointmentById = new Map(
@@ -788,6 +790,7 @@ export function HomeScheduleGrid({
                         onAttendance &&
                         attendanceStatus === 'agendado' && (
                         <div className="agenda-week-home-actions">
+                          {!group && slot.appointment_id && renderIndividualPeriod?.(slot.appointment_id)}
                           <button
                             type="button"
                             className="agenda-attendance-confirm"
@@ -1046,6 +1049,9 @@ export function AgendaPage({
   const [patientLinkCancelledSourceId, setPatientLinkCancelledSourceId] = useState('')
   const [appointmentNotes, setAppointmentNotes] = useState('')
   const [appointmentFeedback, setAppointmentFeedback] = useState<string | null>(null)
+  const [individualPeriods, setIndividualPeriods] = useState<Record<string, number>>({})
+  const [pendingIndividualReturn, setPendingIndividualReturn] = useState<string | null>(null)
+  const [individualFeedback, setIndividualFeedback] = useState('')
   // Evita que um novo retorno seja confundido com remarcação de consulta ainda ativa.
   const [additionalAppointmentApproval, setAdditionalAppointmentApproval] = useState('')
   const [existingAppointmentWarning, setExistingAppointmentWarning] = useState<{
@@ -1161,6 +1167,7 @@ export function AgendaPage({
     accessContext.primary_context.code === 'profissional'
   // Presença/Falta inicia o fluxo assistencial: somente no contexto profissional ativo.
   const canRegisterAttendance = isProfessional
+  const isScheillaFlow = isProfessional && ['32b4efb3-b464-4abc-b810-2c4f2ebb74f4', 'dc47611e-9612-4240-a6c0-111d22c27ad3'].includes(accessContext.professional_id ?? '')
   const canAccess = roleCodes.some((role) =>
     ['administrador', 'administrativo_operacional', 'coordenador', 'profissional'].includes(role),
   )
@@ -2486,6 +2493,54 @@ export function AgendaPage({
     setBusyAppointmentId(null)
   }
 
+  function individualAppointment(id: string) {
+    const row = state.status === 'success' ? state.data.find(item => item.appointment_id === id) : undefined
+    return row && row.professional_id === accessContext.professional_id &&
+      ['primeiro_capo','primeiro_especialidade','primeira_consulta','retorno'].includes(String(row.appointment_type).toLowerCase()) &&
+      !familyPsychologyCards.some(item => String(item.appointment_id) === id) &&
+      !psychologyGroupSessions.some(session => session.participants.some(person => person.appointment_id === id)) ? row : undefined
+  }
+
+  function renderIndividualPeriod(id: string) {
+    if (!individualAppointment(id)) return null
+    return <span role="group" aria-label="Periodicidade do retorno">
+      {[7,14].map(days => <button key={days} type="button" className="agenda-slot-schedule-button"
+        aria-pressed={individualPeriods[id] === days} disabled={busyAppointmentId !== null}
+        onClick={() => setIndividualPeriods(current => ({ ...current, [id]: days }))}>
+        {days === 7 ? 'Semanal' : 'Quinzenal'}
+      </button>)}
+    </span>
+  }
+
+  async function runIndividualFollowup(id: string, days?: number) {
+    const client = getSupabaseClient() as unknown as {
+      rpc: (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: {message?: string} | null }>
+    }
+    try {
+      const {data,error} = await client.rpc('capo_scheilla_individual_followup', {p_appointment_id:id,p_interval_days:days ?? null})
+      const result = data as {status?: string} | null
+      if (error || !result) {
+        setPendingIndividualReturn(id)
+        setIndividualFeedback(error?.message ?? 'Retorno não confirmado. Tente novamente.')
+      } else if (result.status === 'choose_interval') {
+        setPendingIndividualReturn(id)
+        setIndividualFeedback('Escolha a periodicidade do acompanhamento.')
+      } else if (result.status === 'unavailable') {
+        setPendingIndividualReturn(id)
+        setIndividualFeedback('Horário indisponível. Utilize Agendar retorno para escolher outra vaga.')
+      } else if (result.status === 'scheduled' || result.status === 'existing') {
+        setPendingIndividualReturn(null)
+        setIndividualFeedback(result.status === 'scheduled' ? 'Próximo retorno agendado.' : 'Já existe retorno agendado; nenhuma duplicidade criada.')
+      } else {
+        setPendingIndividualReturn(id)
+        setIndividualFeedback('Retorno não confirmado.')
+      }
+    } catch {
+      setPendingIndividualReturn(id)
+      setIndividualFeedback('Falha de comunicação. Presença registrada; verifique o retorno.')
+    }
+  }
+
     async function updateAttendance(appointmentId: string, action: string) {
     if (busyAppointmentId) return
     setBusyAppointmentId(appointmentId)
@@ -2579,12 +2634,14 @@ export function AgendaPage({
       setAttendanceOverrides((current) => ({ ...current, [appointmentId]: action }))
       setAttendanceNotes('')
       setAttendanceReason('')
+      const isIndividualFollowup = isScheillaFlow && action === 'confirmado' && !!individualAppointment(appointmentId)
+      if (isIndividualFollowup) await runIndividualFollowup(appointmentId, individualPeriods[appointmentId])
       const reloaded = await load()
       if (reloaded.status === 'error') {
         setAppointmentFeedback('Atendimento registrado, mas a recarga da agenda falhou: ' + reloaded.error.message)
       } else {
         setAppointmentFeedback('Atendimento atualizado. Agenda recarregada do banco.')
-        if (action === 'confirmado' && onConfirmed) {
+        if (action === 'confirmado' && onConfirmed && !isIndividualFollowup) {
           const confirmedAppointment =
             (reloaded.status === 'success'
               ? reloaded.data.find((appointment) => appointment.appointment_id === appointmentId)
@@ -3200,6 +3257,14 @@ export function AgendaPage({
           </>
         )}
 
+        {isScheillaFlow && individualFeedback && <section className="agenda-contract-note" aria-live="polite">
+          <p>{individualFeedback}</p>
+          {pendingIndividualReturn && [7,14].map(days => <button key={days} type="button" className="agenda-slot-schedule-button" disabled={busyAppointmentId !== null} onClick={async () => {
+            const id = pendingIndividualReturn
+            setBusyAppointmentId(id)
+            try { await runIndividualFollowup(id, days); await load() } finally { setBusyAppointmentId(null) }
+          }}>{days === 7 ? 'Semanal' : 'Quinzenal'}</button>)}
+        </section>}
         {showScheduleForm && (
           <section className="agenda-schedule-form" aria-labelledby="schedule-title">
             <div className="agenda-section-heading">
@@ -4155,6 +4220,7 @@ export function AgendaPage({
               previsitContacts={previsitContacts}
               groupSessions={psychologyGroupSessions}
               familyAppointments={familyPsychologyCards}
+              renderIndividualPeriod={isScheillaFlow ? renderIndividualPeriod : undefined}
               renderFamilyReturnAction={(appointmentId) => {
                 const family = familyPsychologyCards.find((item) => String(item.appointment_id) === appointmentId)
                 return family && (isProfessional || roleCodes.some((code) => ['administrador', 'administrativo_operacional'].includes(code)))
