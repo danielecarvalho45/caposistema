@@ -2719,3 +2719,7 @@ Primeira consulta semanal/quinzenal; retorno automático 7/14 dias; alteração 
 
 ### Execução parcial — fundação de periodicidade
 Migração `scheilla_followup_preferences_foundation_20261127` aplicada com sucesso: tabela privada `private.capo_scheilla_followup_preferences`, chave por acompanhamento de especialidade e profissional, frequência restrita a 7/14 dias, escopo restrito aos IDs verificados Scheilla e Psicólogo 2, responsável e data de atualização, RLS habilitada e revogação de acesso direto a public/anon/authenticated. Nenhuma periodicidade presumida, nenhum agendamento modificado. Esta fundação não ativa recorrência. Pendentes RPCs com validação de contexto e ciclo, integração da agenda, recorrência individual/grupo, conflitos, comunicação, testes e publicação. Homologação aberta.
+
+
+### Execução parcial — RPC de continuidade individual
+Migração `scheilla_individual_followup_rpc_20261127` aplicada. RPC `capo_scheilla_individual_followup(uuid,integer)` exige sessão profissional autenticada, termo, atendimento próprio confirmado/realizado, escopo dos dois perfis, isolamento, paciente ativo e acompanhamento ativo sob responsabilidade profissional. Persiste 7/14 dias, verifica retorno futuro existente, calcula mesmo horário local, consulta disponibilidade e reutiliza create_appointment_for_interface. Retorna choose_interval/existing/unavailable/scheduled. A função não foi ligada à interface, não houve execução em paciente, e comunicação administrativa, alternativas, Arteterapia e testes permanecem pendentes. Não declarar homologada.
