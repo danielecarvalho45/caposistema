@@ -18,7 +18,7 @@ import {
 } from './assistential-integration'
 import './assistential-page.css'
 import '../../styles/quick-access.css'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { BirthdayPanel } from '../../components/birthdays/BirthdayPanel'
 import { PatientCareSpecialties } from '../../components/patients/PatientCareSpecialties'
 import { PatientDischargeProximityIndicator } from '../../components/patients/PatientDischargeProximityIndicator'
@@ -101,6 +101,7 @@ export function AssistentialPage({
   const [reportState, setReportState] =
     useState<AsyncState<AssistentialOperationalReport>>(loadingState)
   const location = useLocation()
+  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [searchState, setSearchState] = useState<AsyncState<
     readonly AssistentialPatient[]
@@ -169,6 +170,10 @@ export function AssistentialPage({
   }
 
   async function openConfirmedPatient(appointment: AgendaAppointment) {
+    if (homeOnly) {
+      navigate('/atuacao', { state: { confirmedAppointmentId: appointment.appointment_id } })
+      return
+    }
     setQuery(appointment.patient_name)
     setSearchState(loadingState())
     const result = await integration.loadAppointmentContext(appointment.appointment_id)
@@ -237,7 +242,7 @@ export function AssistentialPage({
 
   return (
     <section className="assistential-page home-mobile-standard" aria-labelledby="assistential-title">
-      <nav className="assistential-card home-profile-standard" aria-label="Acessos rápidos do profissional">
+      {homeOnly && <nav className="assistential-card home-profile-standard" aria-label="Acessos rápidos do profissional">
         <h2 id="assistential-title">Acessos rápidos</h2>
         <div className="home-profile-grid">
           <Link className="home-profile-card quick-blue" to="/agenda"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/agenda" /></span><strong>Minha Agenda</strong><span>Dia, semana e mês</span></Link>
@@ -251,9 +256,9 @@ export function AssistentialPage({
           <Link className="home-profile-card quick-violet" to="/relatorios"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/relatorios" /></span><strong>Relatórios</strong><span>Indicadores da própria atuação</span></Link>
           <Link className="home-profile-card quick-yellow" to="/suporte"><span className="home-profile-icon" aria-hidden="true"><CapoShortcutIcon path="/suporte" /></span><strong>Solicitar manutenção</strong><span>Informar problema ao suporte</span></Link>
         </div>
-      </nav>
+      </nav>}
 
-      <section id="assistential-agenda">
+      {homeOnly && <section id="assistential-agenda">
         {specialtiesState.status === 'loading' && (
           <div className="assistential-card" aria-live="polite">
             Carregando especialidades…
@@ -290,11 +295,12 @@ export function AssistentialPage({
           onConfirmed={(appointment) => void openConfirmedPatient(appointment)}
           embeddedHome
         />
-      </section>
+      </section>}
 
-      <BirthdayPanel title="Aniversariantes" />
+      {homeOnly && <BirthdayPanel title="Aniversariantes" />}
+      {!homeOnly && <header className="assistential-card"><h2 id="assistential-title">Pacientes — Atuação profissional</h2><Link to="/">Voltar ao início</Link> · <Link to="/agenda">Minha agenda</Link></header>}
 
-      {(!homeOnly || searchState !== null) && (
+      {!homeOnly && (
       <article id="assistential-patients" className="assistential-card">
         <h3>Buscar pacientes do CAPO</h3>
         <p className="assistential-muted">
