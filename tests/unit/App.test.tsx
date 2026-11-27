@@ -159,7 +159,7 @@ function renderShell(
         service={{
           getReferralSpecialties: vi.fn(),
           getReferralTargets: vi.fn(),
-          searchReferralPatients: vi.fn(),
+          searchProfessionalPatients: vi.fn(),
           getInterprofessionalReferrals: vi
             .fn()
             .mockResolvedValue({ status: 'empty' }),
