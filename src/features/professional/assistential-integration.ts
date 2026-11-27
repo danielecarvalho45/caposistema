@@ -36,7 +36,7 @@ export function createAssistentialIntegration(
   return {
     loadSpecialties: () => service.getMyAssistentialSpecialties(),
     searchPatients: (query, limit = 20, offset = 0) =>
-      service.searchMyAssistentialPatients(query, limit, offset),
+      service.searchAssistentialDirectory(query, limit, offset),
     loadAgenda: (startDate, endDate, professionalId = null) =>
       service.getAgenda(startDate, endDate, professionalId),
     loadAppointmentContext: (appointmentId) =>
