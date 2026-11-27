@@ -3216,6 +3216,13 @@ export function createRpcService(transport: RpcTransport) {
         operation: 'get_my_assistential_specialties_for_interface',
         parse: parseAssistentialSpecialties,
       }),
+    searchAssistentialDirectory: (query: string, limit = 20, offset = 0) =>
+      execute({
+        transport,
+        operation: 'search_patients_for_professional_interface',
+        args: { p_query: query, p_limit: limit, p_offset: offset },
+        parse: parseAssistentialPatients,
+      }),
     searchMyAssistentialPatients: (query: string, limit = 20, offset = 0) =>
       execute({
         transport,
